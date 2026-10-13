@@ -1,0 +1,2 @@
+# Keep local Godot editor binaries out of the repository.
+/Godot_v4.7.2/

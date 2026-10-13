@@ -1,0 +1,16 @@
+{
+  "basic":{"name":"普通攻击","type":"basic","power":1.0,"cost":0,"cooldown":0,"target":"enemy","apply":"","duration":0},
+  "hero_strike":{"name":"疾风突袭","type":"ultimate","element":"owner","power":1.75,"cost":40,"cooldown":2,"target":"enemy","apply":"air","duration":1},
+  "hero_wave":{"name":"震荡波","type":"ultimate","free_target":true,"element":"owner","power":1.5,"cost":50,"cooldown":2,"target":"enemy","apply":"down","duration":1},
+  "hero_guard":{"name":"守护誓言","type":"ultimate","element":"owner","power":0.0,"cost":40,"cooldown":2,"target":"self","apply":"shield","duration":2,"value":75},
+  "sprout_burst":{"name":"藤蔓牵引","type":"ultimate","element":"owner","power":1.55,"cost":40,"cooldown":2,"target":"enemy","apply":"air","duration":1},
+  "ember_flare":{"name":"焰火喷射","type":"ultimate","element":"owner","power":1.9,"cost":60,"cooldown":3,"target":"enemy","apply":"down","duration":1},
+  "pebble_ram":{"name":"岩盾冲撞","type":"ultimate","element":"owner","power":1.5,"cost":40,"cooldown":2,"target":"enemy","apply":"stun","duration":1},
+  "mist_arc":{"name":"雾刃","type":"ultimate","free_target":true,"element":"owner","power":1.65,"cost":50,"cooldown":2,"target":"enemy","apply":"damage_down","duration":2,"value":0.25},
+  "hero_mend":{"name":"复苏援护","type":"ultimate","element":"none","power":0.0,"cost":40,"cooldown":2,"target":"ally","apply":"heal","value":36},
+  "hero_cleanse":{"name":"澄心净息","type":"ultimate","element":"none","power":0.0,"cost":40,"cooldown":2,"target":"ally","apply":"cleanse"},
+  "metal_edge":{"name":"金芒突刺","type":"ultimate","element":"owner","power":1.65,"cost":45,"cooldown":2,"target":"enemy","apply":"down","duration":1},
+  "enemy_burst":{"name":"猛击","type":"ultimate","element":"owner","power":1.45,"cost":40,"cooldown":2,"target":"enemy","apply":"down","duration":1},
+  "chase_air":{"name":"空中追击","type":"chase","element":"owner","power":0.8,"cost":0,"cooldown":0,"target":"enemy","trigger":"air","apply":"down","duration":1},
+  "chase_down":{"name":"倒地追击","type":"chase","element":"owner","power":0.8,"cost":0,"cooldown":0,"target":"enemy","trigger":"down","apply":"air","duration":1}
+}

@@ -1,0 +1,7 @@
+{
+ "initial_energy":20,"max_energy":100,"row_weight":{"front":6,"middle":3,"back":1},
+ "level_growth":{"hp":20,"attack":4,"defense":2,"initiative":1},
+ "defense_factor":0.5,"crit_multiplier":1.5,"base_exp_per_level":100,
+ "elements":{"wood":{"overcomes":["earth"]},"fire":{"overcomes":["metal"]},"earth":{"overcomes":["water"]},"metal":{"overcomes":["wood"]},"water":{"overcomes":["fire"]}},
+ "element_advantage":1.25,"element_disadvantage":0.8
+}

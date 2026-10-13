@@ -1,0 +1,39 @@
+灵伴回合冒险 · Godot 4.7.2 单机项目
+
+一、运行与入口
+使用 Godot 4.7.2 打开 project.godot，点击运行。启动场景已从 MainMenu 改为 MainCity；MainMenu 文件作为历史资源保留，但不会再进入玩家流程。推荐视口 1280×720。Godot 无头回归检查覆盖主城移动/NPC 对话/关卡解锁/编队/战斗与追打。
+
+二、当前玩家流程
+启动 → 2.5D 主城 → 点击地面移动或 WASD 移动 → 点击关卡向导自动接近，或靠近按 E → NPC 对话 → 查看关卡 → 独立关卡界面 → 已解锁关卡 → 九宫格编队 → 战斗 → 返回主城。也可在主城点击“调整阵容”仅保存编队而不进入战斗。点击对话“稍后再说”不会打开关卡页。
+
+三、操作与实现
+主城地图由 city_map.gd 绘制，世界范围 2080×900、可走范围 1952×430；镜头随人物横向滚动。补充了两片与主路自然相接的铺石广场、道路砖缝、路缘浅色线、建筑立面的石质腰线与廊柱、喷泉金色镶点，以及灯笼、花草和石柱；新增部分为纯绘制装饰，不新增障碍或修改原碰撞体。主城界面补齐标题、等级/历练/队员状态、队伍操作、导航提示和 NPC 对话图标；面板按视口动态布局。建筑由原有三处扩展为五处，追加远端花园与灯柱；屋顶瓦楞、窗棂、石砖与服饰纹饰共用青玉/暖石/金色配色，场景图像与人物模型不使用带标签的生成图，因此不含图像水印或残留文字。每处障碍都有对应 StaticBody2D/CollisionShape2D；同一组障碍坐标还用于半径安全距离检测、WASD 分轴防穿透，以及鼠标点击后的网格绕障寻路。玩家和关卡向导均使用 city_npc_model.gd 程序绘制的独立人物模型，主城不再加载旧版人物位图。鼠标左键点击可行走区域设置目的地；WASD 四方向移动会打断自动移动。向导为可交互 NPC，点击会先接近、进入交谈距离才出现对话；按 E 需处于交谈距离。对话期间停止移动，只有点击“查看关卡”才切换关卡页面。
+
+四、关卡兼容
+StageSelect.tscn 与 stage_select.gd 为独立关卡页，读取 data/stages.json 和 user://spirit_save.json 的 unlocked_stage。未解锁关卡禁用。选中已解锁关卡后仍调用 GameManager.select_stage 进入 TeamSelect；队伍仍按三乘三阵位保存，然后进入原 Battle 场景。战斗奖励、经验、关卡解锁规则不变。
+
+五、跨地图扩展
+主城东侧亮色出口位于世界坐标约 (1950, 696)；角色走入出口切换至“云庭外缘”。外缘左侧出口及右上“返回主城”按钮可回到主城东端。GameManager.enter_region(region, arrival) 处理区域切换与主城到达点；city_map.gd 的 EXIT_REGIONS 是可配置出口列表。新增地图只需增加对应场景、区域路由和出口数据，不影响现有 NPC 选关与战斗。
+
+六、核心目录
+project.godot                         入口与 AutoLoad
+scenes/MainCity.tscn                  2.5D 扩展主城及跟随镜头
+scenes/Outskirts.tscn                 可抵达并返回的邻接探索区
+scenes/StageSelect.tscn               独立关卡页
+scenes/TeamSelect.tscn                九宫格编队
+scenes/Battle.tscn                    回合制战斗
+scenes/BattleActor.tscn               独立战斗角色
+scripts/scenes/main_city.gd           场景、移动、NPC 对话
+scripts/scenes/city_map.gd            程序地图、障碍碰撞与绕障寻路
+scripts/scenes/city_npc_model.gd      统一配色的人物模型、服饰细节
+scripts/scenes/city_hud_icon.gd       程序绘制的导航、队伍、向导、等级图标
+scripts/scenes/outskirts.gd           邻接区域的移动与返回
+scripts/scenes/outskirts_map.gd       邻接区域程序绘制地貌
+scripts/scenes/stage_select.gd        副本列表与解锁状态
+scripts/managers/game_manager.gd      场景路由与待战斗状态
+scripts/tests/smoke_test.gd           无头回归
+assets/                              原创场景、角色图集、特效与历史 UI 原图
+data/                                单位、技能、被动、关卡和规则 JSON
+
+七、测试
+运行 Godot 控制台：--headless --path <项目目录> --script res://scripts/tests/smoke_test.gd。覆盖主场景、远距 NPC 对话门槛、自动接近、对话取消、三关解锁、主城直接编队不误进战斗，以及战斗动作与追打时序。主城 HUD 额外检查 1280×720、1600×900、960×540、640×480 四档布局、对话层边界及图标加载；脚本/场景中 42 条 res:// 引用文件检查均存在。无头检测只验证几何与资源，仍建议在窗口模式人工确认材质观感与文字截断。

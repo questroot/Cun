@@ -1,0 +1,5 @@
+{
+  "stage_1":{"name":"晨光草地","enemies":["enemy_seed","enemy_flame","enemy_stone","enemy_wisp"],"reward_exp":50,"energy_regen":20,"max_rounds":20,"chase_limit":3},
+  "stage_2":{"name":"碎石小径","enemies":["enemy_stone","enemy_flame","enemy_wisp","enemy_seed"],"reward_exp":80,"energy_regen":20,"max_rounds":20,"chase_limit":3},
+  "stage_3":{"name":"薄雾林缘","enemies":["enemy_wisp","enemy_seed","enemy_stone","enemy_flame"],"reward_exp":110,"energy_regen":20,"max_rounds":20,"chase_limit":3}
+}

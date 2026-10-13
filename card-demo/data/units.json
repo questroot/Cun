@@ -1,0 +1,12 @@
+{
+  "hero": {"elements":["wood"],"name":"旅者","hp":240,"attack":35,"defense":15,"initiative":22,"crit":0.12,"color":"#537bd9","skills":["hero_strike","hero_wave","hero_guard","hero_mend","hero_cleanse"],"passives":["brave","hero_guardian","hero_mend","hero_focus"],"chase":"chase_air"},
+  "sprout": {"playable":true,"elements":["wood"],"name":"芽灵","hp":180,"attack":31,"defense":12,"initiative":30,"crit":0.15,"color":"#68ba76","skills":["sprout_burst"],"passives":["renew","sprout_guard","sprout_growth","sprout_focus"],"chase":"chase_down"},
+  "ember": {"playable":true,"elements":["fire"],"name":"焰团","hp":170,"attack":38,"defense":10,"initiative":26,"crit":0.18,"color":"#f49a63","skills":["ember_flare"],"passives":["ember_drive","ember_guard","ember_mend","ember_focus"],"chase":"chase_air"},
+  "pebble": {"playable":true,"elements":["earth"],"name":"岩球","hp":230,"attack":27,"defense":20,"initiative":14,"crit":0.08,"color":"#ba9b79","skills":["pebble_ram"],"passives":["bulwark","pebble_stand","pebble_mend","pebble_focus"],"chase":"chase_down"},
+  "mist": {"playable":true,"elements":["water"],"name":"雾狐","hp":165,"attack":33,"defense":11,"initiative":34,"crit":0.2,"color":"#87b9ca","skills":["mist_arc"],"passives":["mist_veil","mist_mend","mist_focus","mist_guard"],"chase":"chase_air"},
+  "metal": {"playable":true,"elements":["metal"],"portrait":"res://assets/characters/pet_metal.png","name":"金犼","species":"金毛犼","hp":195,"attack":34,"defense":16,"initiative":24,"crit":0.12,"color":"#d3b96b","skills":["metal_edge"],"passives":["metal_edgeguard","metal_mend","metal_focus","metal_ward"],"chase":"chase_down"},
+  "enemy_seed": {"elements":["wood"],"name":"野生芽灵","hp":150,"attack":27,"defense":10,"initiative":20,"crit":0.08,"color":"#a6b570","skills":["enemy_burst"],"passives":[],"chase":"chase_down"},
+  "enemy_flame": {"elements":["fire"],"name":"野生焰团","hp":160,"attack":30,"defense":11,"initiative":18,"crit":0.1,"color":"#c58170","skills":["enemy_burst"],"passives":[],"chase":"chase_air"},
+  "enemy_stone": {"elements":["earth"],"name":"野生岩球","hp":190,"attack":24,"defense":18,"initiative":12,"crit":0.05,"color":"#9d967a","skills":["enemy_burst"],"passives":[],"chase":"chase_down"},
+  "enemy_wisp": {"elements":["water"],"name":"野生雾狐","hp":140,"attack":28,"defense":9,"initiative":23,"crit":0.12,"color":"#96abc1","skills":["enemy_burst"],"passives":[],"chase":"chase_air"}
+}
