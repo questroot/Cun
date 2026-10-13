@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 480" width="680" height="480" role="img" aria-label="Cun候选方向讨论导图">
+<style>text{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;text-anchor:middle;dominant-baseline:central}</style>
+<rect width="680" height="480" fill="#FFFFFF"/>
+<text x="340" y="30" font-size="14" font-weight="500" fill="#0C447C">Cun · 团队方向讨论</text>
+<text x="340" y="52" font-size="11" font-weight="400" fill="#0C447C">候选不是定案｜绿：用户前提　蓝：讨论候选　橙：待选择</text>
+<path d="M264 242 C248 242 248 126 232 126" fill="none" stroke="#85B7EB" stroke-width="1"/>
+<path d="M264 242 C248 242 248 260 232 260" fill="none" stroke="#85B7EB" stroke-width="1"/>
+<path d="M264 242 C248 242 248 394 232 394" fill="none" stroke="#85B7EB" stroke-width="1"/>
+<path d="M416 242 C432 242 432 126 448 126" fill="none" stroke="#85B7EB" stroke-width="1"/>
+<path d="M416 242 C432 242 432 260 448 260" fill="none" stroke="#85B7EB" stroke-width="1"/>
+<path d="M416 242 C432 242 432 394 448 394" fill="none" stroke="#85B7EB" stroke-width="1"/>
+<rect x="40" y="84" width="192" height="84" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+<text x="136" y="102" font-size="13" font-weight="500" fill="#085041">世界观起点</text>
+<text x="136" y="122" font-size="11" font-weight="400" fill="#085041">世界石化，我率先苏醒</text>
+<text x="136" y="139" font-size="11" font-weight="400" fill="#085041">范围、原因、复苏仍未定</text>
+<rect x="40" y="218" width="192" height="84" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.8"/>
+<text x="136" y="236" font-size="13" font-weight="500" fill="#0C447C">体验偏好 Q01 / Q07</text>
+<text x="136" y="256" font-size="11" font-weight="400" fill="#0C447C">收集构筑 / 冒险剧情</text>
+<text x="136" y="273" font-size="11" font-weight="400" fill="#0C447C">操作挑战 / 风险撤离</text>
+<text x="136" y="290" font-size="11" font-weight="400" fill="#0C447C">选最重要的两种体验</text>
+<rect x="40" y="352" width="192" height="84" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.8"/>
+<text x="136" y="370" font-size="13" font-weight="500" fill="#0C447C">画面候选 Q04</text>
+<text x="136" y="390" font-size="11" font-weight="400" fill="#0C447C">卡通科技水墨 / 像素</text>
+<text x="136" y="407" font-size="11" font-weight="400" fill="#0C447C">HD-2D / 其他</text>
+<text x="136" y="424" font-size="11" font-weight="400" fill="#0C447C">先比较样张，不批量生产</text>
+<rect x="448" y="84" width="192" height="84" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.8"/>
+<text x="544" y="102" font-size="13" font-weight="500" fill="#633806">操作路线 Q02 / Q03</text>
+<text x="544" y="122" font-size="11" font-weight="400" fill="#633806">布阵自动 / 自动加指令</text>
+<text x="544" y="139" font-size="11" font-weight="400" fill="#633806">逐单位回合 / 实时主角</text>
+<text x="544" y="156" font-size="11" font-weight="400" fill="#633806">视角另选，操作尚未定</text>
+<rect x="448" y="218" width="192" height="84" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.8"/>
+<text x="544" y="236" font-size="13" font-weight="500" fill="#633806">远征与模式 Q05 / Q06</text>
+<text x="544" y="256" font-size="11" font-weight="400" fill="#633806">单机 / 合作 / 对抗</text>
+<text x="544" y="273" font-size="11" font-weight="400" fill="#633806">搜寻、战斗、撤离与入库</text>
+<text x="544" y="290" font-size="11" font-weight="400" fill="#633806">失败能丢什么，仍需选择</text>
+<rect x="448" y="352" width="192" height="84" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.8"/>
+<text x="544" y="370" font-size="13" font-weight="500" fill="#633806">下一步交付 Q08</text>
+<text x="544" y="390" font-size="11" font-weight="400" fill="#633806">样张 / 战斗 / 一局 / 剧情</text>
+<text x="544" y="407" font-size="11" font-weight="400" fill="#633806">先收偏好，分歧用实验验证</text>
+<text x="544" y="424" font-size="11" font-weight="400" fill="#633806">确认后才成为制作任务</text>
+<rect x="264" y="212" width="152" height="60" rx="12" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+<text x="340" y="233" font-size="14" font-weight="500" fill="#085041">石化世界</text>
+<text x="340" y="253" font-size="13" font-weight="400" fill="#085041">异灵卡牌冒险？</text>
+<text x="340" y="458" font-size="11" font-weight="400" fill="#0C447C">先答8题 → 保留分歧 → 做小实验 → 明确确认｜新点子持续收录</text>
+</svg>

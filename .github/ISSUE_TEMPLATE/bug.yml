@@ -1,0 +1,23 @@
+name: 问题反馈
+description: 给能复现的问题留最少足够的信息。
+title: "[问题] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: 版本、系统和引擎
+      placeholder: commit / Windows、Linux等 / 引擎实际版本
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 如何复现
+      description: 从哪个场景开始、做了什么、预期是什么、实际是什么。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 影响和证据
+      description: 阻止运行、卡流程还是视觉问题？附截图或必要日志，删除隐私信息。

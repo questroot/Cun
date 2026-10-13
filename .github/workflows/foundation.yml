@@ -1,0 +1,44 @@
+name: Foundation checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  assets-and-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Tool regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Check foundation document links
+        run: python tools/check_docs.py
+      - name: Check asset registry
+        run: python tools/assets.py check
+      - name: Generate browsable catalog
+        run: python tools/assets.py catalog
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asset-catalog
+          path: |
+            assets/catalog.html
+            card-demo/assets/
+          # Keep relative preview paths usable after extracting the artifact.
+      # No Godot runtime gate until the team pins an available engine/toolchain.
+  windows-launcher:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native launcher core tests (fixture, not gameplay)
+        shell: powershell
+        run: powershell.exe -NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File tests/launcher.tests.ps1
+      - name: Build and render real WPF launcher window
+        shell: powershell
+        run: powershell.exe -NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File launcher/Launcher.ps1 -SmokeTest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-preview
+          path: .local/launcher-preview.png

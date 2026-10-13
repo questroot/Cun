@@ -1,0 +1,25 @@
+name: 想法或实验
+description: 用一个小实验验证游戏想法，不承诺直接开发完整系统。
+title: "[实验] "
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: 玩家会做什么？
+      description: 核心动作、选择和反馈，几句话即可。
+    validations:
+      required: true
+  - type: textarea
+    id: experiment
+    attributes:
+      label: 最小实验与边界
+      description: 谁负责、时间上限、做什么、不做什么。
+    validations:
+      required: true
+  - type: textarea
+    id: verdict
+    attributes:
+      label: 怎样判定值得继续？
+      description: 试玩者能观察到的体验；失败后缩小还是放弃。
+    validations:
+      required: true

@@ -1,2 +1,27 @@
 # Keep local Godot editor binaries out of the repository.
 /Godot_v4.7.2/
+
+# Foundation tool output and local files.
+__pycache__/
+*.py[cod]
+/assets/catalog.html
+/builds/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+# Launcher settings/logs/snapshots and test fixtures are local only.
+/.local/
+/launcher.settings.json
+# Godot-generated editor/import cache is not source.
+**/.godot/
+
+# Redistribute the verified compressed engine, not 181MB raw executables.
+/.setup/Godot/*
+!/.setup/Godot/gui.zip
+!/.setup/Godot/manifest.json
+!/.setup/Godot/README.md
+!/.setup/Godot/LICENSE.txt
+!/.setup/Godot/COPYRIGHT.txt

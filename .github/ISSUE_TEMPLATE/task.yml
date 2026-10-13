@@ -1,0 +1,23 @@
+name: 制作任务
+description: 程序、美术、音频、策划和文档共用短任务卡。
+title: "[任务] "
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标和范围
+      description: 给谁解决什么问题？本次不做什么？
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: 负责人和依赖
+      placeholder: 负责人 / 需要谁提供什么
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 完成标准
+      description: 可操作验证步骤、试玩或素材预览；不要仅写“代码完成”。
+    validations:
+      required: true
