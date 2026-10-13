@@ -8,6 +8,16 @@
 
 Windows 下载完整仓库后，双击 **[Launch.cmd](Launch.cmd)**。启动器会检测或让你选择已有Godot，并提供游戏/编辑器、文档、日志入口。无需Python即可打开启动器；仓库内置 [Godot 4.7.2压缩包](.setup/Godot/README.md)，首次可校验解压，无需联网下载。未打包独立游戏exe。详见 [启动器说明](launcher/README.md)。
 
+启动器、内置Godot和文档均在默认主分支 `main`。首次获取：
+
+```powershell
+git clone https://github.com/questroot/Cun.git
+cd Cun
+.\Launch.cmd
+```
+
+已有仓库：先保留本地修改，再 `git switch main` 和 `git pull --ff-only`。无需切到历史功能分支。
+
 ## 每次工作先看这里
 
 **[PROJECT_STATUS.md](PROJECT_STATUS.md)** 是共享现状入口：已做什么、实际验证、未验证、风险和下一步。成员/Agent先读它，工作结束核对并按事实更新；规则在 [AGENTS.md](AGENTS.md)，分工在 [文档维护规划](docs/documentation-plan.md)。
