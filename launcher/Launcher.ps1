@@ -1,11 +1,13 @@
 ﻿[CmdletBinding()]
 param([switch]$Diagnose, [switch]$SmokeTest)
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot 'Launcher.Core.ps1')
+$script:CoreFile = Join-Path $PSScriptRoot 'Launcher.Core.ps1'
+. $script:CoreFile
 $script:Paths = Get-CunPaths
 $script:EnginePath = ''
 $script:EngineInfo = @{ Ready = $false; Version = ''; Message = '尚未检测。' }
 $script:Running = $null
+$script:Worker = $null
 
 function Update-CunEnvironment {
     $settings = Read-CunSettings $script:Paths
@@ -73,7 +75,7 @@ try {
     function Show-CunEnvironment {
         $script:Controls.EngineText.Text = $(if ($script:EnginePath) { $script:EnginePath } else { '尚未选择 Godot 引擎' })
         $script:Controls.EnvironmentStatus.Text = $script:EngineInfo.Message + $(if ($script:EngineInfo.Version) { "`n版本：" + $script:EngineInfo.Version } else { '' })
-        $busy = $null -ne $script:Running
+        $busy = ($null -ne $script:Running) -or ($null -ne $script:Worker)
         $script:Controls.Play.IsEnabled = $script:EngineInfo.Ready -and -not $busy
         $script:Controls.Editor.IsEnabled = $script:EngineInfo.Ready -and -not $busy
         $script:Controls.Browse.IsEnabled = -not $busy
@@ -92,8 +94,17 @@ try {
     function Invoke-CunLaunch {
         param([string]$Mode)
         try {
-            $script:Running = Start-CunProject $script:Paths $script:EnginePath $Mode
-            $script:Controls.Feedback.Text = '已创建' + $(if ($Mode -eq 'Game') { '游戏' } else { '编辑器' }) + '进程；首次导入请等待。退出码和错误会记录到启动日志。'
+            if ($script:Running -or $script:Worker) { return }
+            $shell = [PowerShell]::Create()
+            $task = {
+                param($CoreFile, $Paths, $Engine, $Mode)
+                $ErrorActionPreference = 'Stop'
+                . $CoreFile
+                Start-CunProject $Paths $Engine $Mode
+            }
+            $shell.AddScript($task.ToString()).AddArgument($script:CoreFile).AddArgument($script:Paths).AddArgument($script:EnginePath).AddArgument($Mode) | Out-Null
+            $script:Worker = @{ Shell = $shell; Async = $shell.BeginInvoke(); Mode = $Mode }
+            $script:Controls.Feedback.Text = $(if ($Mode -eq 'Game') { '正在后台校验并导入资源/脚本，完成后才打开游戏；首次需等待，可查看日志。' } else { '正在准备编辑器，请稍候。' })
             Show-CunEnvironment
             $script:Timer.Start()
         } catch { Write-CunLog $script:Paths $_.Exception.Message; $script:Controls.Feedback.Text = $_.Exception.Message }
@@ -101,13 +112,26 @@ try {
     $script:Timer = New-Object Windows.Threading.DispatcherTimer
     $script:Timer.Interval = [TimeSpan]::FromMilliseconds(400)
     $script:Timer.Add_Tick({
+        if ($script:Worker -and $script:Worker.Async.IsCompleted) {
+            $worker = $script:Worker
+            try {
+                $result = $worker.Shell.EndInvoke($worker.Async)
+                if ($worker.Shell.HadErrors -or $result.Count -ne 1) { throw ($worker.Shell.Streams.Error | Out-String) }
+                $script:Running = $result[0].PSObject.BaseObject
+                $script:Controls.Feedback.Text = '资源准备完成，已创建' + $(if ($worker.Mode -eq 'Game') { '游戏' } else { '编辑器' }) + '进程；启动结果记录到日志。'
+            } catch {
+                $script:Controls.Feedback.Text = '启动准备失败：' + $_.Exception.Message
+                Write-CunLog $script:Paths $_.Exception.Message
+                $script:Timer.Stop()
+            } finally { $worker.Shell.Dispose(); $script:Worker = $null; Show-CunEnvironment }
+        }
         if ($script:Running -and $script:Running.Process.HasExited) {
             $run = $script:Running
             Write-CunLog $script:Paths ('Exited ' + $run.Mode + ' code=' + $run.Process.ExitCode)
             $outText = $run.Stdout.Result; $errText = $run.Stderr.Result
             if ($outText) { Write-CunLog $script:Paths $outText }
             if ($errText) { Write-CunLog $script:Paths $errText }
-            $errorDetected = $run.Process.ExitCode -ne 0 -or $errText -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error)'
+            $errorDetected = $run.Process.ExitCode -ne 0 -or ($outText + "`n" + $errText) -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error)'
             $script:Controls.Feedback.Text = $(if ($errorDetected) { '运行报告错误，请查看启动日志；不要将此结果视为试玩通过。' } else { '进程已退出。是否完整可玩仍需实际试玩确认。' })
             $run.Process.Dispose(); $script:Running = $null; $script:Timer.Stop(); Show-CunEnvironment
         }
@@ -136,7 +160,10 @@ try {
     $script:Controls.Log.Add_Click({ Open-CunFile '.local\launcher.log' })
     $script:Window.Add_Closing({
         param($sender, $eventArgs)
-        if ($script:Running) {
+        if ($script:Worker) {
+            $eventArgs.Cancel = $true
+            $script:Controls.Feedback.Text = '正在准备资源，请等待完成或错误提示后再关闭；不会遗留导入进程。'
+        } elseif ($script:Running) {
             # Keep the supervising launcher/log reader alive; never silently kill a running game/editor.
             $eventArgs.Cancel = $true
             $script:Controls.Feedback.Text = '请先从游戏/编辑器正常退出，再关闭启动器；不会强制结束你的进程。'

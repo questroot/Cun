@@ -40,6 +40,19 @@ public class CunLauncherFixture {
       Console.WriteLine(Environment.GetEnvironmentVariable("CUN_FIXTURE_VERSION") ?? "4.7.2.stable.fixture");
       return 0;
     }
+    if (Array.IndexOf(args, "--import") >= 0) {
+      if (Environment.GetEnvironmentVariable("CUN_FIXTURE_IMPORT_ERROR") == "1") {
+        Console.Error.WriteLine("SCRIPT ERROR: fixture import error, exit still zero");
+        return 0;
+      }
+      if (Environment.GetEnvironmentVariable("CUN_FIXTURE_IMPORT_SKIP_CACHE") != "1") {
+        string project = args[Array.IndexOf(args, "--path") + 1];
+        string cache = Path.Combine(project, ".godot");
+        Directory.CreateDirectory(cache);
+        File.WriteAllText(Path.Combine(cache, "global_script_class_cache.cfg"), "fixture only, not real Godot import");
+      }
+      return 0;
+    }
     File.WriteAllLines(Environment.GetEnvironmentVariable("CUN_FIXTURE_ARGS"), args);
     return 0;
   }
@@ -73,6 +86,32 @@ foreach ($mode in @('Game', 'Editor')) {
     Assert-Cun (($argv -contains '--editor') -eq ($mode -eq 'Editor')) ('Correct game/editor flags: ' + $mode)
     $run.Process.Dispose()
 }
+Assert-Cun (Test-Path -LiteralPath (Join-Path $paths.Project '.godot\global_script_class_cache.cfg')) 'Game start prepared script cache before creating game process'
+$shell = [PowerShell]::Create()
+$task = { param($CoreFile, $Paths, $Engine) $ErrorActionPreference='Stop'; . $CoreFile; Start-CunProject $Paths $Engine 'Game' }
+$shell.AddScript($task.ToString()).AddArgument((Join-Path $root 'launcher\Launcher.Core.ps1')).AddArgument($paths).AddArgument($fixture) | Out-Null
+$async = $shell.BeginInvoke()
+Assert-Cun ($async.AsyncWaitHandle.WaitOne(10000)) 'Background startup prepares without blocking the UI thread'
+$result = $shell.EndInvoke($async)
+$workerRun = $result[0].PSObject.BaseObject
+Assert-Cun (-not $shell.HadErrors -and $result.Count -eq 1 -and $workerRun.Mode -eq 'Game') 'Background worker returns the real process record to UI timer'
+$workerRun.Process.WaitForExit(5000) | Out-Null
+$workerRun.Process.Dispose(); $shell.Dispose()
+$env:CUN_FIXTURE_IMPORT_ERROR = '1'
+$blocked = $false
+try { Start-CunProject $paths $fixture 'Game' | Out-Null } catch { $blocked = $true }
+Assert-Cun $blocked 'Zero-exit import script errors still block game startup'
+Remove-Item Env:CUN_FIXTURE_IMPORT_ERROR -ErrorAction SilentlyContinue
+$coldRoot = Join-Path $tempRoot 'cold-fixture'
+[IO.Directory]::CreateDirectory((Join-Path $coldRoot 'card-demo\scenes')) | Out-Null
+$coldPaths = Get-CunPaths $coldRoot
+[IO.File]::Copy($paths.ProjectFile, $coldPaths.ProjectFile)
+[IO.File]::Copy((Join-Path $paths.Project 'scenes\MainCity.tscn'), (Join-Path $coldPaths.Project 'scenes\MainCity.tscn'))
+$env:CUN_FIXTURE_IMPORT_SKIP_CACHE = '1'
+$blocked = $false
+try { Start-CunProject $coldPaths $fixture 'Game' | Out-Null } catch { $blocked = $true }
+Assert-Cun $blocked 'Successful exit without a script cache still blocks startup'
+Remove-Item Env:CUN_FIXTURE_IMPORT_SKIP_CACHE -ErrorAction SilentlyContinue
 $quoted = ConvertTo-CunArgument 'a"b\'
 Assert-Cun ($quoted -eq '"a\"b\\"') 'Embedded quote and trailing slash quoting'
 $snapshot = Write-CunSnapshot $paths $engine $fixture

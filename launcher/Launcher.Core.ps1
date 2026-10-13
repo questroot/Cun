@@ -170,6 +170,32 @@ function Get-CunLaunchArguments {
     return $arguments
 }
 
+function Invoke-CunProjectImport {
+    param([hashtable]$Paths, [string]$EnginePath)
+    Get-CunProjectInfo $Paths | Out-Null
+    $process = New-Object Diagnostics.Process
+    $process.StartInfo.FileName = $EnginePath
+    $process.StartInfo.Arguments = (@('--headless','--path',$Paths.Project,'--editor','--import') | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' '
+    $process.StartInfo.WorkingDirectory = $Paths.Project
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.CreateNoWindow = $true
+    $process.StartInfo.RedirectStandardOutput = $true
+    $process.StartInfo.RedirectStandardError = $true
+    Write-CunLog $Paths 'Preparing Godot resources and global script classes before game launch.'
+    try {
+        if (-not $process.Start()) { throw '无法启动资源导入。' }
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(180000)) { $process.Kill(); throw '资源导入超过3分钟，已停止本次导入，未启动游戏。' }
+        $output = $stdout.Result + "`n" + $stderr.Result
+        if ($output) { Write-CunLog $Paths $output }
+        if ($process.ExitCode -ne 0 -or $output -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error)') { throw '资源/脚本导入报告错误，游戏未启动。请查看启动日志中的具体文件与错误。' }
+        $cache = Join-Path $Paths.Project '.godot\global_script_class_cache.cfg'
+        if (-not (Test-Path -LiteralPath $cache -PathType Leaf)) { throw '导入后仍缺少脚本类型缓存，已阻止空白游戏窗口。请查看启动日志。' }
+        Write-CunLog $Paths 'Godot import completed with no reported errors; launching game.'
+    } finally { $process.Dispose() }
+}
+
 function Start-CunProject {
     param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck)
     $project = Get-CunProjectInfo $Paths
@@ -177,6 +203,7 @@ function Start-CunProject {
         $engine = Get-CunEngineInfo $EnginePath $project.RequiredVersion
         if (-not $engine.Ready) { throw $engine.Message }
     }
+    if ($Mode -eq 'Game') { Invoke-CunProjectImport $Paths $EnginePath }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = $EnginePath
     $info.Arguments = ((Get-CunLaunchArguments $Paths $Mode | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' ')

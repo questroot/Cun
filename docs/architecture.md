@@ -20,7 +20,8 @@
 ```text
 Launch.cmd → Launcher.ps1（WPF）→ Launcher.Core.ps1
                                   ├─ Godot 可执行文件 --version / 诊断
-                                  ├─ game:   --path card-demo → project.godot → MainCity
+                                  ├─ game: 后台 --headless --editor --import → 错误/缓存门禁
+                                  │         → --path card-demo → project.godot → MainCity
                                   ├─ editor: --editor --path card-demo
                                   └─ .local/ 配置、日志、project-snapshot.md
 
