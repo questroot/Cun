@@ -424,6 +424,84 @@ func run_checks() -> void:
 			var original_actor: BattleUnit = battle.active_unit
 			var original_targeting_energy: int = targeting_hero.energy
 			battle.active_unit = targeting_hero
+			instance.refresh()
+			var equipped_skill: String = instance.active_skill_id(targeting_hero)
+			check(instance.shortcut_hint.visible and instance.shortcut_hint.text.contains("主键盘 / 小键盘 1 普攻") and instance.shortcut_hint.text.contains("2 主动技能") and instance.shortcut_hint.text.contains("选后点目标"), "面板关闭时仍显示主键盘与小键盘快捷键指南")
+			check(instance.summary_toggle.get_parent().get_parent().get_parent() == instance.skill_detail and not instance.summary_toggle.button_pressed and not instance.skill_detail.visible and instance.get_node_or_null("BasicSummary") == null, "简洁说明仅在默认关闭的技能描述面板内")
+			check(instance.skill_detail_text("basic", targeting_hero).contains("消耗：") and instance.skill_summary("basic").contains("威力系数 1.00"), "普攻提供详细与简洁两种描述")
+			check(instance.skill_detail_text("basic", targeting_hero).contains("最前排") and instance.skill_detail_text(equipped_skill, targeting_hero).contains("消耗：") and instance.skill_detail_text("hero_mend", targeting_hero).contains("治疗 36生命"), "详细说明区分目标、效果数值与资源")
+			var key_one := InputEventKey.new()
+			key_one.pressed = true
+			key_one.keycode = KEY_1
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "basic", "快捷键 1 选择普攻")
+			var key_two := InputEventKey.new()
+			key_two.pressed = true
+			key_two.keycode = KEY_2
+			instance._unhandled_key_input(key_two)
+			check(instance.pending_skill_id == equipped_skill, "快捷键 2 选择当前单位主动技能")
+			key_one.keycode = KEY_KP_1
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "basic", "小键盘 1 选择普攻")
+			key_two.keycode = KEY_KP_2
+			instance._unhandled_key_input(key_two)
+			check(instance.pending_skill_id == equipped_skill, "小键盘 2 选择主动技能")
+			instance.pending_skill_id = ""
+			key_one.echo = true
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "", "长按快捷键不会重复选择")
+			key_one.echo = false
+			battle.active_unit = front_enemy
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "", "敌方回合不能使用快捷键选择行动")
+			battle.active_unit = targeting_hero
+			targeting_hero.energy = 0
+			instance.refresh()
+			instance._unhandled_key_input(key_two)
+			check(instance.pending_skill_id == "" and instance.ultimate_button.disabled and instance.skill_detail_text(equipped_skill, targeting_hero).contains("能量不足"), "禁用技能仍可查看详情但快捷键无法绕过资源校验")
+			var hold_press := InputEventMouseButton.new()
+			hold_press.button_index = MOUSE_BUTTON_LEFT
+			hold_press.pressed = true
+			hold_press.position = instance.ultimate_button.get_global_rect().get_center()
+			instance._input(hold_press)
+			check(instance.held_skill_button == instance.ultimate_button and instance.skill_hold_timer.time_left > 0, "禁用按钮仍由全局输入识别长按")
+			instance.skill_hold_timer.stop()
+			instance.detail_skill_id = equipped_skill
+			instance.detail_actor = targeting_hero
+			instance.long_press_consumed = true
+			instance.refresh_skill_detail()
+			instance.skill_detail.show()
+			check(instance.skill_detail_label.text.contains("消耗：") and instance.skill_detail_label.text.contains("能量不足"), "长按默认显示当前技能详细说明")
+			var hold_release := InputEventMouseButton.new()
+			hold_release.button_index = MOUSE_BUTTON_LEFT
+			hold_release.pressed = false
+			instance._input(hold_release)
+			check(instance.skill_detail.visible and instance.held_skill_button == null and instance.pending_skill_id == "", "松开后描述保持可操作且未选择技能")
+			instance.activate_skill_button("ultimate")
+			check(instance.pending_skill_id == "", "长按释放不误触技能按钮")
+			instance.summary_toggle.button_pressed = true
+			check(instance.skill_detail_label.text.contains(str(data.get_entry("skills", equipped_skill).get("name", ""))) and not instance.skill_detail_label.text.contains("消耗："), "面板内切换简洁说明立即更新当前技能")
+			instance.close_skill_detail()
+			instance.detail_skill_id = "basic"
+			instance.detail_actor = targeting_hero
+			instance.refresh_skill_detail()
+			instance.skill_detail.show()
+			check(instance.skill_detail_label.text.contains("威力系数 1.00") and not instance.skill_detail_label.text.contains("冷却："), "简洁模式对随后打开的普攻生效")
+			instance.summary_toggle.button_pressed = false
+			check(instance.skill_detail_label.text.contains("目标：") and instance.skill_detail_label.text.contains("冷却："), "面板内可切回详细模式")
+			instance.skill_detail.get_child(0).get_child(1).get_child(1).emit_signal("pressed")
+			check(not instance.skill_detail.visible, "关闭按钮可关闭描述面板")
+			instance.detail_actor = targeting_hero
+			instance.detail_skill_id = "basic"
+			instance.skill_detail.show()
+			var outside_press := InputEventMouseButton.new()
+			outside_press.button_index = MOUSE_BUTTON_LEFT
+			outside_press.pressed = true
+			outside_press.position = Vector2(700, 300)
+			instance._input(outside_press)
+			check(not instance.skill_detail.visible, "点击面板外部可关闭技能说明")
+			targeting_hero.energy = original_targeting_energy
+			instance.refresh()
 			check(battle.valid_targets(targeting_hero, "basic").has(front_enemy) and not battle.valid_targets(targeting_hero, "basic").has(middle_enemy) and not battle.valid_targets(targeting_hero, "basic").has(back_enemy), "普通攻击仅允许选最前方存活列")
 			check(battle.valid_targets(targeting_hero, "hero_strike").has(front_enemy) and not battle.valid_targets(targeting_hero, "hero_strike").has(back_enemy), "未标记自由选目标的奥义也受前排限制")
 			check(bool(data.get_entry("skills", "hero_wave").get("free_target", false)) and bool(data.get_entry("skills", "mist_arc").get("free_target", false)) and battle.valid_targets(targeting_hero, "hero_wave").has(back_enemy), "明确标记自由目标的技能可跨排选后排")
@@ -488,7 +566,14 @@ func run_checks() -> void:
 			battle.active_unit = pet
 			pet.energy = 100
 			pet.cooldowns.erase(pet_skill)
+			instance.summary_toggle.button_pressed = true
+			instance.detail_skill_id = pet_skill
+			instance.detail_actor = pet
+			instance.refresh_skill_detail()
+			instance.skill_detail.show()
 			instance.refresh()
+			check(instance.summary_toggle.button_pressed and instance.skill_detail_label.text.contains(str(data.get_entry("skills", pet_skill).get("name", ""))) and not instance.skill_detail_label.text.contains(str(data.get_entry("skills", initial_skill).get("name", ""))) and not instance.skill_detail_label.text.contains("消耗："), "切换我方单位时简洁说明持续生效并显示新单位技能")
+			instance.close_skill_detail()
 			check(not instance.basic_button.disabled and not instance.ultimate_button.disabled and instance.basic_button.text.contains(pet.name) and instance.ultimate_button.text.contains(str(data.get_entry("skills", pet_skill).get("name", ""))), "宠物回合可手动选择普通攻击或自身主动技能")
 			pet.energy = 0
 			instance.refresh()
@@ -617,6 +702,33 @@ func run_checks() -> void:
 			root.get_node("UIManager").close_popup()
 		instance.queue_free()
 		await process_frame
+	# 独立战斗场景验证取消与确认逃跑，不干扰原有结算回归。
+	var escape_scene: Control = load("res://scenes/Battle.tscn").instantiate()
+	root.add_child(escape_scene)
+	await process_frame
+	check(escape_scene.escape_button.visible and escape_scene.escape_button.text == "逃跑", "战斗中显示逃跑入口")
+	escape_scene.escape_button.emit_signal("pressed")
+	check(escape_scene.escape_confirmation.visible, "逃跑需要二次确认")
+	escape_scene.escape_confirmation.emit_signal("canceled")
+	escape_scene.escape_confirmation.hide()
+	check(battle.running and not battle.busy and escape_scene.escape_button.visible, "取消逃跑继续战斗")
+	var escape_hero: BattleUnit = battle.allies[0]
+	var escape_enemy: BattleUnit = battle.enemies[0]
+	battle.queue.clear()
+	battle.active_unit = escape_hero
+	var escape_hp: int = escape_enemy.hp
+	var escape_result: String = game.last_result
+	var escape_exp: Dictionary = (data.save_data["exp"] as Dictionary).duplicate(true)
+	battle.player_action("basic", battle.valid_targets(escape_hero, "basic")[0])
+	check(battle.busy, "逃跑前存在等待演出的旧动作")
+	var serial_before_escape: int = battle.battle_serial
+	escape_scene.escape_confirmation.emit_signal("confirmed")
+	check(not battle.running and not battle.busy and battle.battle_serial == serial_before_escape + 1 and battle.active_unit == null and battle.queue.is_empty() and battle.selected_target == null and escape_scene.pending_skill_id == "", "确认逃跑清理战斗与选招状态")
+	for escape_frame in range(5):
+		await process_frame
+	check(escape_enemy.hp == escape_hp and game.last_result == escape_result and (data.save_data["exp"] as Dictionary) == escape_exp and (root.get_node("UIManager").popup == null or not root.get_node("UIManager").popup.visible), "逃跑中断旧协程、不发经验且不出现战败弹窗")
+	check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn", "逃跑返回主城")
+	escape_scene.queue_free()
 	# 在真正的战斗场景中验证支援奥义仅治疗一次，不写入玩家存档。
 	var original_skill: String = str(data.save_data["hero_skill"])
 	data.save_data["hero_skill"] = "hero_mend"

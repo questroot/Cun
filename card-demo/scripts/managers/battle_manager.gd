@@ -462,6 +462,22 @@ func check_end() -> bool:
 		return true
 	return false
 
+func abort() -> void:
+	if not running:
+		return
+	running = false
+	busy = false
+	battle_serial += 1
+	queue.clear()
+	active_unit = null
+	selected_target = null
+	expected_action_id = -1
+	expected_phase = ""
+	acknowledged = false
+	chase_count = 0
+	chase_used.clear()
+	state_changed.emit()
+
 func finish(won: bool) -> void:
 	if not running:
 		return
