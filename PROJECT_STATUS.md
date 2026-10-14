@@ -27,7 +27,7 @@
 - Windows启动器：已修复未导入项目首次启动灰屏。游戏启动前后台导入资源/类型，错误或缺缓存阻止开窗；[真实冷启动回归](tests/launcher-cold.tests.ps1)从无缓存复制项目经启动器进入主城并渲染截图通过，当前原项目导入也已完成，无存档重置。[原生测试](tests/launcher.tests.ps1)34项检查通过（参数、版本、设置、失败路径、快照）；真实WPF窗口已构造显示并渲染检查，缺引擎时禁用、发现4.7.2后启用、快照生成正常；真实86MB归档校验解压到本机缓存通过；启动器核心已创建真实Godot主城窗口并正常关闭自有隔离测试进程。夹具测试、窗口启动和完整玩法验收仍分别记录。
 - 验证纠正：此前用的是已导入副本，没有覆盖首次下载/无缓存启动。已真实复现未导入项目报BattleUnit类型与ctex缺失、进程仍退出0，增加错误输出门禁和真实主场景冷启动截图回归，不能再只凭窗口出现验收。
 - 真实Godot游戏：4.7.2引擎版本输出 `4.7.2.stable.official.ed1daf0bf`。编队页默认/切换奥义说明断言通过，尚未真实窗口人工验收。本轮修正冒烟测试的技能装备前提：测试开始临时在内存中装备 `hero_strike`，结束恢复原技能，不写玩家存档；真实Godot完整无头冒烟连续两次 `PASS (0 failed)`、退出 0。此前本机存档装备 `hero_mend` 导致援护未装备断言和追打断言失败；本轮没有改战斗逻辑。“逐段目标与伤害反馈实际更新”本轮通过，先前波动仍未单独定位，不能称已修复。本次十关扩展在真实Godot 4.7.2下完整无头冒烟连续两次 `PASS (0 failed)`、退出0；新增断言覆盖十关配置递增、选关解锁和第十关敌方生命成长。关卡难度手感、战斗长按/面板点击/逃跑手感尚未人审。
-- 远端：[默认主分支 main](https://github.com/questroot/Cun/tree/main) 仍为 `74c06da`（含灰屏修复 `7bda1b0`）；战斗说明、快捷键与逃跑 `26c3095`、编队页技能说明 `2cb6ce0`、冒烟测试装备前提修正 `be9b6c5` 已按原提交历史推送至 [功能分支 codex/battle-skill-hints-escape](https://github.com/questroot/Cun/tree/codex/battle-skill-hints-escape)，远端分支头已核对为 `be9b6c5`。功能分支尚未合并 main，伙伴默认更新不会取得这些改动；本次十关扩展待提交并推送，交付后据实际远端状态核对。远端Actions尚未核实。
+- 远端：战斗说明、快捷键与逃跑 `26c3095`、编队页技能说明 `2cb6ce0`、冒烟测试装备前提修正 `be9b6c5`、十关扩展 `2cdd8c2` 均按原提交历史推送至 [功能分支 codex/battle-skill-hints-escape](https://github.com/questroot/Cun/tree/codex/battle-skill-hints-escape) 和 [默认主分支 main](https://github.com/questroot/Cun/tree/main)；两分支均已快进至十关扩展提交，伙伴默认更新可取得改动。远端Actions尚未核实。
 - 未完成的人审：真实玩法、美术/音频体验、素材商用权、团队方向定案、GitHub强制审核/保护规则。
 
 ## 运行与读取入口
