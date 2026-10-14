@@ -331,6 +331,14 @@ func run_checks() -> void:
 				if instance.skill_picker.get_item_metadata(option_index) == "hero_cleanse":
 					cleanse_in_picker = true
 			check(cleanse_in_picker, "编队页可装备净化奥义")
+			var initial_skill_id: String = str(instance.skill_picker.get_item_metadata(instance.skill_picker.selected))
+			check(instance.skill_description.text.contains(str(data.get_entry("skills", initial_skill_id).get("name", ""))) and instance.skill_description.text.contains("目标：") and instance.skill_description.text.contains("效果：") and instance.skill_description.text.contains("冷却："), "编队页展示当前主角奥义说明")
+			for option_index in range(instance.skill_picker.item_count):
+				if instance.skill_picker.get_item_metadata(option_index) == "hero_mend":
+					instance.skill_picker.select(option_index)
+					instance.skill_picker.item_selected.emit(option_index)
+					break
+			check(instance.skill_description.text.contains("复苏援护") and instance.skill_description.text.contains("友方单体") and instance.skill_description.text.contains("治疗 36 生命") and instance.skill_description.text.contains("40 能量"), "切换主角奥义时同步展示实际效果与消耗")
 			check(instance.get_child(0).texture.resource_path == "res://assets/backgrounds/menu_pet_garden.png", "编队页使用统一背景")
 			check(not game.stage_pending, "主城直接编队时不会误入旧副本")
 			var before: int = formation.find("hero")
