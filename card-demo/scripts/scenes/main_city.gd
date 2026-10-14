@@ -429,7 +429,7 @@ func _refresh_status() -> void:
 		return
 	var level := int((DataManager.save_data.get("levels", {}) as Dictionary).get("hero", 1))
 	var unlocked := int(DataManager.save_data.get("unlocked_stage", 1))
-	status_label.text = "主角 Lv.%d   ·   历练 %d/3   ·   队员 %d" % [level, unlocked, (DataManager.save_data.get("team", []) as Array).size()]
+	status_label.text = "主角 Lv.%d   ·   历练 %d/%d   ·   队员 %d" % [level, unlocked, DataManager.tables["stages"].size(), (DataManager.save_data.get("team", []) as Array).size()]
 
 func _layout_hud() -> void:
 	if header == null:

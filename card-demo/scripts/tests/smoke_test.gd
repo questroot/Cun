@@ -30,6 +30,13 @@ func run_checks() -> void:
 	check(formation.has("hero"), "主角在阵")
 	check(data.available_pets().size() == 5 and data.available_pets().has("metal"), "金木水火土五只宠物可选")
 	check(data.valid_team(data.save_data["team"], formation), "旧阵容兼容五人上阵验证")
+	var previous_enemy_level := 0
+	var previous_reward := 0
+	for stage_number in range(1, 11):
+		var stage_data: Dictionary = data.get_entry("stages", "stage_%d" % stage_number)
+		check(stage_data.size() > 0 and (stage_data.get("enemies", []) as Array).size() == 4 and int(stage_data.get("enemy_level", 0)) > previous_enemy_level and int(stage_data.get("reward_exp", 0)) > previous_reward, "第 %d 关敌人等级与奖励逐关递增" % stage_number)
+		previous_enemy_level = int(stage_data.get("enemy_level", 0))
+		previous_reward = int(stage_data.get("reward_exp", 0))
 	var invalid_team: Array = (data.save_data["team"] as Array).duplicate()
 	invalid_team[4] = invalid_team[1]
 	check(not data.valid_team(invalid_team, formation), "重复宠物阵容不可入场")
@@ -153,6 +160,9 @@ func run_checks() -> void:
 	var timeout_started: int = Time.get_ticks_msec()
 	await battle.wait_for_animation(9021, "windup", battle.battle_serial)
 	check(Time.get_ticks_msec() - timeout_started < 4000 and battle.expected_action_id == -1, "缺失演出回执后不永久卡住")
+	battle.running = false
+	battle.start("stage_10")
+	check(battle.enemies.size() == 4 and battle.enemies[0].max_hp == int(data.get_entry("units", str(battle.enemies[0].id)).get("hp", 0)) + 9 * int((data.tables["rules"]["level_growth"] as Dictionary).get("hp", 20)), "第十关实战按等级提升敌人生命")
 	battle.running = false
 	game.current_stage = "stage_1"
 	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/MainCity.tscn", "启动直接进入主城")
@@ -313,9 +323,9 @@ func run_checks() -> void:
 			instance.close_dialogue()
 			check(not instance.dialogue.visible, "取消 NPC 对话保持主城")
 		elif path.ends_with("StageSelect.tscn"):
-			check(instance.stage_buttons.size() == 3, "独立关卡场景包含三关")
+			check(instance.stage_buttons.size() == 10, "独立关卡场景包含十关")
 			check(instance.get_child(0).texture.resource_path == "res://assets/backgrounds/menu_pet_garden.png", "关卡页使用统一背景")
-			for i in range(3):
+			for i in range(10):
 				check(instance.stage_buttons[i].disabled == (i + 1 > int(data.save_data["unlocked_stage"])), "关卡解锁状态匹配存档 %d" % (i + 1))
 		elif path.ends_with("Outskirts.tscn"):
 			check(instance.model != null and instance.player_foot.distance_to(Vector2(140, 576)) < 2.0, "邻接区域成功加载并显示人物")
