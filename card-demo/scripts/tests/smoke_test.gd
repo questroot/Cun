@@ -15,6 +15,8 @@ func run_checks() -> void:
 	var data := root.get_node("DataManager")
 	var game := root.get_node("GameManager")
 	var battle := root.get_node("BattleManager")
+	var saved_hero_skill: String = str(data.save_data["hero_skill"])
+	data.save_data["hero_skill"] = "hero_strike"
 	root.add_child(Node2D.new())
 	current_scene = root.get_child(root.get_child_count() - 1)
 	var formation: Array = data.save_data["formation"]
@@ -821,6 +823,7 @@ func run_checks() -> void:
 		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn", "外缘左侧传送点实际切换回主城")
 		if current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn":
 			check(current_scene.player_foot.distance_to(Vector2(1900, 729)) < 2.0, "返城到达点位于东侧道路")
+	data.save_data["hero_skill"] = saved_hero_skill
 	print("SMOKE RESULT: %s (%d failed)" % ["PASS" if failures == 0 else "FAIL", failures])
 	quit(0 if failures == 0 else 1)
 
