@@ -3,7 +3,6 @@ extends Control
 const PLAYER_ART := preload("res://assets/characters/pet_hero.png")
 const AREA := Rect2(58, 340, 1155, 315)
 const RETURN := Rect2(58, 479, 58, 155)
-const WATER_PORTAL := Rect2(1000, 500, 88, 115)
 var player_foot := Vector2(140, 576)
 var model: Sprite2D
 var target := Vector2.ZERO
@@ -31,7 +30,7 @@ func _ready() -> void:
 	header.add_theme_stylebox_override("panel", skin)
 	add_child(header)
 	var message := Label.new()
-	message.text = "云庭外缘  /  传送门广场\nWASD 或点击移动 · 右侧水门进入漂流浮台 · 左侧返回主城"
+	message.text = "云庭外缘  /  探索区域\nWASD 或点击移动 · 从左侧出口返回主城"
 	message.add_theme_color_override("font_color", Color("#fff1d0"))
 	message.add_theme_font_size_override("font_size", 20)
 	header.add_child(message)
@@ -41,12 +40,6 @@ func _ready() -> void:
 	back.size = Vector2(170, 47)
 	back.pressed.connect(func() -> void: GameManager.enter_region("city", Vector2(1900, 729)))
 	add_child(back)
-	var portal_button := Button.new()
-	portal_button.text = "漂流浮台 →"
-	portal_button.position = Vector2(1000, 608)
-	portal_button.size = Vector2(150, 43)
-	portal_button.pressed.connect(func() -> void: GameManager.goto_scene("water_activity"))
-	add_child(portal_button)
 	model.position = player_foot
 	# Prevent an immediate bounce when the arrival spawn overlaps the return gate.
 	call_deferred("_enable_transition")
@@ -82,6 +75,3 @@ func _process(delta: float) -> void:
 	if transition_ready and RETURN.has_point(player_foot):
 		transition_ready = false
 		GameManager.enter_region("city", Vector2(1900, 729))
-	elif transition_ready and WATER_PORTAL.has_point(player_foot):
-		transition_ready = false
-		GameManager.goto_scene("water_activity")

@@ -26,25 +26,16 @@ func _ready() -> void:
 	hint.position = Vector2(99, 134)
 	hint.add_theme_color_override("font_color", Color("#e8f5e9"))
 	add_child(hint)
-	var stage_list := ScrollContainer.new()
-	stage_list.position = Vector2(96, 202)
-	stage_list.size = Vector2(1140, 392)
-	add_child(stage_list)
-	var grid := GridContainer.new()
-	grid.columns = 5
-	grid.add_theme_constant_override("h_separation", 16)
-	grid.add_theme_constant_override("v_separation", 16)
-	stage_list.add_child(grid)
-	for i in range(1, DataManager.tables["stages"].size() + 1):
+	for i in range(1, 4):
 		var stage_id := "stage_%d" % i
 		var stage: Dictionary = DataManager.get_entry("stages", stage_id)
 		var unlocked := i <= int(DataManager.save_data["unlocked_stage"])
 		var button := Button.new()
 		button.name = "Stage%d" % i
-		button.custom_minimum_size = Vector2(212, 170)
-		var detail: String = str(stage.get("tactic", "敌人 Lv.%d · 经验 +%d" % [int(stage.get("enemy_level", 1)), int(stage.get("reward_exp", 0))]))
-		button.text = "第 %d 关\n%s\n%s\n%s" % [i, str(stage.get("name", stage_id)), detail, "进入编队 →" if unlocked else "尚未解锁"]
-		button.add_theme_font_size_override("font_size", 17)
+		button.position = Vector2(96 + (i - 1) * 380, 226)
+		button.size = Vector2(340, 316)
+		button.text = "第 %d 关\n\n%s\n\n经验 +%d\n\n%s" % [i, str(stage.get("name", stage_id)), int(stage.get("reward_exp", 0)), "进入编队 →" if unlocked else "尚未解锁"]
+		button.add_theme_font_size_override("font_size", 23)
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(0.07, 0.31, 0.30, 0.95) if unlocked else Color(0.21, 0.26, 0.27, 0.92)
 		style.border_color = Color("#dbc991")
@@ -61,7 +52,7 @@ func _ready() -> void:
 		button.add_theme_stylebox_override("focus", focus)
 		button.disabled = not unlocked
 		button.pressed.connect(func() -> void: GameManager.select_stage(stage_id))
-		grid.add_child(button)
+		add_child(button)
 		stage_buttons.append(button)
 	var back := Button.new()
 	back.text = "← 返回主城"

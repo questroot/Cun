@@ -10,7 +10,6 @@ var roster_buttons: Array[Button] = []
 var reserve_buttons: Array[Button] = []
 var selected_id := ""
 var skill_picker: OptionButton
-var skill_description: Label
 var status_label: Label
 
 func _ready() -> void:
@@ -99,18 +98,8 @@ func _ready() -> void:
 		if skill_picker.get_item_metadata(i) == DataManager.save_data["hero_skill"]:
 			skill_picker.select(i)
 	add_child(skill_picker)
-	skill_description = Label.new()
-	skill_description.name = "HeroSkillDescription"
-	skill_description.position = Vector2(65, 665)
-	skill_description.size = Vector2(1125, 42)
-	skill_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	skill_description.add_theme_font_size_override("font_size", 15)
-	skill_description.add_theme_color_override("font_color", Color("#fff0c9"))
-	add_child(skill_description)
-	skill_picker.item_selected.connect(func(_index: int) -> void: update_skill_description())
-	update_skill_description()
 	status_label = Label.new()
-	status_label.position = Vector2(455, 584)
+	status_label.position = Vector2(455, 654)
 	status_label.add_theme_color_override("font_color", Color("#fff0c9"))
 	add_child(status_label)
 	var save := Button.new()
@@ -128,23 +117,6 @@ func _ready() -> void:
 	back.pressed.connect(func() -> void: save_team(false))
 	add_child(back)
 	refresh()
-
-func update_skill_description() -> void:
-	var skill: Dictionary = DataManager.get_entry("skills", str(skill_picker.get_item_metadata(skill_picker.selected)))
-	var target: String = str(skill.get("target", "enemy"))
-	var target_text: String = "自身" if target == "self" else "友方单体" if target == "ally" else "敌方任意存活目标" if bool(skill.get("free_target", false)) else "敌方最前排存活目标"
-	var effects: Array[String] = []
-	if float(skill.get("power", 0)) > 0:
-		effects.append("威力系数 %.2f" % float(skill.get("power", 0)))
-	var duration: int = int(skill.get("duration", 0))
-	var value: float = float(skill.get("value", 0))
-	match str(skill.get("apply", "")):
-		"air": effects.append("浮空 %d 轮" % duration)
-		"down": effects.append("倒地 %d 轮" % duration)
-		"shield": effects.append("护盾 %d · 持续 %d 轮" % [roundi(value), duration])
-		"heal": effects.append("治疗 %d 生命" % roundi(value))
-		"cleanse": effects.append("净化友方负面状态")
-	skill_description.text = "%s｜目标：%s｜效果：%s｜消耗：%d 能量 · 冷却：%d 轮" % [str(skill.get("name", "")), target_text, "、".join(effects), int(skill.get("cost", 0)), int(skill.get("cooldown", 0))]
 
 func card_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

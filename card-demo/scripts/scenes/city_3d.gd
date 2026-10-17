@@ -273,7 +273,7 @@ func _refresh_status() -> void:
 	if status_label == null:
 		return
 	var level := int((DataManager.save_data.get("levels", {}) as Dictionary).get("hero", 1))
-	status_label.text = "主角 Lv.%d · 历练 %d/%d" % [level, int(DataManager.save_data.get("unlocked_stage", 1)), DataManager.tables["stages"].size()]
+	status_label.text = "主角 Lv.%d · 历练 %d/3" % [level, int(DataManager.save_data.get("unlocked_stage", 1))]
 
 func _layout_ui() -> void:
 	if header == null:

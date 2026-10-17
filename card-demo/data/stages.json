@@ -1,12 +1,5 @@
 {
-  "stage_1":{"name":"晨光草地","enemies":["enemy_seed","enemy_flame","enemy_stone","enemy_wisp"],"enemy_level":1,"reward_exp":50,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_2":{"name":"碎石小径","enemies":["enemy_stone","enemy_flame","enemy_wisp","enemy_seed"],"enemy_level":2,"reward_exp":80,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_3":{"name":"薄雾林缘","enemies":["enemy_wisp","enemy_seed","enemy_stone","enemy_flame"],"enemy_level":3,"reward_exp":110,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_4":{"name":"赤砂岔道","enemies":["enemy_flame","enemy_stone","enemy_seed","enemy_wisp"],"enemy_level":4,"reward_exp":140,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_5":{"name":"苔石密径","enemies":["enemy_stone","enemy_stone","enemy_wisp","enemy_seed"],"enemy_skills":["pebble_ram","enemy_burst","enemy_burst","enemy_burst"],"tactic":"注意阵容搭配，合理安排前后排","enemy_level":5,"reward_exp":170,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_6":{"name":"风鸣高地","enemies":["enemy_wisp","enemy_flame","enemy_seed","enemy_stone"],"enemy_level":6,"reward_exp":200,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_7":{"name":"余烬营地","enemies":["enemy_flame","enemy_seed","enemy_stone","enemy_wisp"],"enemy_level":7,"reward_exp":230,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_8":{"name":"断岩隘口","enemies":["enemy_stone","enemy_wisp","enemy_flame","enemy_seed"],"enemy_level":8,"reward_exp":260,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_9":{"name":"幽雾深处","enemies":["enemy_wisp","enemy_stone","enemy_seed","enemy_flame"],"enemy_level":9,"reward_exp":290,"energy_regen":20,"max_rounds":20,"chase_limit":3},
-  "stage_10":{"name":"终途试炼","enemies":["enemy_flame","enemy_stone","enemy_wisp","enemy_flame"],"enemy_skills":["ember_flare","enemy_burst","mist_arc","enemy_burst"],"tactic":"注意阵容搭配，兼顾生存与输出","enemy_level":10,"reward_exp":320,"energy_regen":20,"max_rounds":20,"chase_limit":3}
+  "stage_1":{"name":"晨光草地","enemies":["enemy_seed","enemy_flame","enemy_stone","enemy_wisp"],"reward_exp":50,"energy_regen":20,"max_rounds":20,"chase_limit":3},
+  "stage_2":{"name":"碎石小径","enemies":["enemy_stone","enemy_flame","enemy_wisp","enemy_seed"],"reward_exp":80,"energy_regen":20,"max_rounds":20,"chase_limit":3},
+  "stage_3":{"name":"薄雾林缘","enemies":["enemy_wisp","enemy_seed","enemy_stone","enemy_flame"],"reward_exp":110,"energy_regen":20,"max_rounds":20,"chase_limit":3}
 }
