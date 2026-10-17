@@ -13,6 +13,10 @@ const COLLECTOR_WOOD := 2
 const COLLECTOR_SCRAP := 3
 const ORDER_WATER := 2
 const ORDER_ROPE := 2
+const UPGRADE_WOOD := 2
+const UPGRADE_SCRAP := 2
+const WORKSHOP_WOOD := 2
+const WORKSHOP_SCRAP := 2
 
 var wood := 0
 var scrap := 0
@@ -22,6 +26,10 @@ var rope := 0
 var raft_tiles := 1
 var collectors := 0
 var orders_completed := 0
+var pending_water := 0
+var pending_fiber := 0
+var automated_collecting := false
+var workshop_built := false
 var production_elapsed := 0.0
 var wave_elapsed := 0.0
 var debris_elapsed := 0.0
@@ -36,6 +44,9 @@ var goal_label: Label
 var result_label: Label
 var expand_button: Button
 var collector_button: Button
+var claim_button: Button
+var upgrade_button: Button
+var workshop_button: Button
 var process_button: Button
 var order_button: Button
 
@@ -52,7 +63,7 @@ func _ready() -> void:
 	title.add_theme_color_override("font_color", Color("#f5efd7"))
 	add_child(title)
 	var rules := Label.new()
-	rules.text = "WASD / 方向键或点击水域移动 · 靠近漂浮木料自动拾取 · 扩建、建站、加工并交付委托"
+	rules.text = "WASD / 方向键或点击水域移动 · 靠近漂浮物拾荒 · 建站、领取产出、加工并交付委托"
 	rules.position = Vector2(74, 75)
 	rules.add_theme_font_size_override("font_size", 18)
 	rules.add_theme_color_override("font_color", Color("#d7f1f0"))
@@ -75,12 +86,15 @@ func _ready() -> void:
 	_make_button("重新开始", Vector2(938, 23), Vector2(118, 43), _start_round)
 	var back := _make_button("返回外缘", Vector2(1070, 23), Vector2(138, 43), func() -> void: GameManager.goto_scene("outskirts"))
 	back.name = "ReturnButton"
-	expand_button = _make_button("扩建浮台  -3木料  -2废料", Vector2(858, 340), Vector2(345, 60), _expand_raft)
-	collector_button = _make_button("建造集水打捞站  -2木料  -3废料", Vector2(858, 416), Vector2(345, 60), _build_collector)
-	process_button = _make_button("搓制绳索  -1纤维  +1绳索", Vector2(858, 492), Vector2(345, 50), _process_fiber)
-	order_button = _make_button("交付委托  -2清水  -2绳索", Vector2(858, 550), Vector2(345, 50), _fulfill_order)
+	expand_button = _make_button("扩建浮台  -3木料  -2废料", Vector2(858, 263), Vector2(345, 44), _expand_raft)
+	collector_button = _make_button("建造集水打捞站  -2木料  -3废料", Vector2(858, 313), Vector2(345, 44), _build_collector)
+	claim_button = _make_button("领取产出", Vector2(858, 363), Vector2(345, 44), _claim_production)
+	upgrade_button = _make_button("升级站：自动收取  -2木料  -2废料", Vector2(858, 413), Vector2(345, 44), _upgrade_collector)
+	workshop_button = _make_button("建造简易工坊  -2木料  -2废料", Vector2(858, 463), Vector2(345, 44), _build_workshop)
+	process_button = _make_button("搓制绳索  -1纤维  +1绳索", Vector2(858, 513), Vector2(345, 44), _process_fiber)
+	order_button = _make_button("交付委托  -2清水  -2绳索", Vector2(858, 563), Vector2(345, 44), _fulfill_order)
 	var note := Label.new()
-	note.text = "每座站每4秒产出1清水、1纤维；交付奖励2木料、2废料。\n漂浮物每6秒补充一份，最多5份；每份得木料和废料各1。\n仅本次活动有效；离开后进度重置，不写存档。"
+	note.text = "建站后每4秒产出清水、纤维各1；升级前请手动领取。\n委托奖励木料、废料各2；第二单后解锁工坊自动搓绳。\n漂浮物每6秒补充，最多5份；重开/离开仅重置本活动。"
 	note.position = Vector2(862, 615)
 	note.add_theme_font_size_override("font_size", 16)
 	note.add_theme_color_override("font_color", Color("#c9e2de"))
@@ -105,6 +119,10 @@ func _start_round() -> void:
 	raft_tiles = 1
 	collectors = 0
 	orders_completed = 0
+	pending_water = 0
+	pending_fiber = 0
+	automated_collecting = false
+	workshop_built = false
 	production_elapsed = 0.0
 	wave_elapsed = 0.0
 	debris_elapsed = 0.0
@@ -143,7 +161,7 @@ func _build_collector() -> bool:
 	wood -= COLLECTOR_WOOD
 	scrap -= COLLECTOR_SCRAP
 	collectors += 1
-	result_label.text = "集水打捞站建成，开始定时产出。"
+	result_label.text = "集水打捞站建成，开始定时产出。请点击领取产出。"
 	_refresh_ui()
 	return true
 
@@ -154,10 +172,54 @@ func _tick_production(delta: float) -> void:
 	var cycles := int(production_elapsed / PRODUCTION_INTERVAL)
 	if cycles > 0:
 		production_elapsed -= cycles * PRODUCTION_INTERVAL
-		water += cycles * collectors
-		fiber += cycles * collectors
-		result_label.text = "设施产出：清水和纤维各 +%d。" % (cycles * collectors)
+		if automated_collecting:
+			water += cycles * collectors
+			if workshop_built:
+				rope += cycles * collectors
+			else:
+				fiber += cycles * collectors
+		else:
+			pending_water += cycles * collectors
+			pending_fiber += cycles * collectors
+		result_label.text = "设施已产出 %d 批%s。" % [cycles * collectors, "，自动收取并加工" if workshop_built else ("，自动收取" if automated_collecting else "，等待领取")]
 		_refresh_ui()
+
+func _claim_production() -> bool:
+	if automated_collecting or pending_water == 0 and pending_fiber == 0:
+		return false
+	water += pending_water
+	fiber += pending_fiber
+	result_label.text = "领取产出：清水 +%d，纤维 +%d。" % [pending_water, pending_fiber]
+	pending_water = 0
+	pending_fiber = 0
+	_refresh_ui()
+	return true
+
+func _upgrade_collector() -> bool:
+	if collectors == 0 or automated_collecting or orders_completed < 1 or wood < UPGRADE_WOOD or scrap < UPGRADE_SCRAP:
+		return false
+	wood -= UPGRADE_WOOD
+	scrap -= UPGRADE_SCRAP
+	automated_collecting = true
+	water += pending_water
+	fiber += pending_fiber
+	pending_water = 0
+	pending_fiber = 0
+	result_label.text = "站点升级完成：已有待领产出一并领取，此后自动收取。"
+	_refresh_ui()
+	return true
+
+func _build_workshop() -> bool:
+	if not automated_collecting or workshop_built or orders_completed < 2 or wood < WORKSHOP_WOOD or scrap < WORKSHOP_SCRAP:
+		return false
+	wood -= WORKSHOP_WOOD
+	scrap -= WORKSHOP_SCRAP
+	workshop_built = true
+	rope += fiber
+	fiber = 0
+	result_label.text = "简易工坊建成：现有纤维已加工，此后产出自动制成绳索。"
+	_refresh_ui()
+	return true
 
 func _process_fiber() -> bool:
 	if fiber < 1:
@@ -176,15 +238,34 @@ func _fulfill_order() -> bool:
 	wood += 2
 	scrap += 2
 	orders_completed += 1
-	result_label.text = "委托完成！获得2木料、2废料，可以继续经营。"
+	if orders_completed == 1:
+		result_label.text = "首单完成！奖励木料、废料各2；现在可升级站点自动收取。"
+	elif orders_completed == 2:
+		result_label.text = "第二单完成！奖励木料、废料各2；现在可建工坊自动加工。"
+	else:
+		result_label.text = "委托完成！获得2木料、2废料，可以继续经营。"
 	_refresh_ui()
 	return true
 
 func _refresh_ui() -> void:
-	status_label.text = "木料 %d    废料 %d    清水 %d    纤维 %d    绳索 %d" % [wood, scrap, water, fiber, rope]
-	goal_label.text = "浮台 %d 格    集水打捞站 %d 座    已完成委托 %d 单" % [raft_tiles, collectors, orders_completed]
+	status_label.text = "木料 %d    废料 %d    清水 %d    纤维 %d    绳索 %d    待领清水/纤维 %d/%d" % [wood, scrap, water, fiber, rope, pending_water, pending_fiber]
+	if collectors == 0:
+		goal_label.text = "浮台 %d 格 · 站点 %d 座 · 委托 %d 单 | 先打捞5份，扩建并建站" % [raft_tiles, collectors, orders_completed]
+	elif orders_completed == 0:
+		goal_label.text = "委托1：清水 %d/%d · 绳索 %d/%d | 手动领取、搓绳并交付" % [water, ORDER_WATER, rope, ORDER_ROPE]
+	elif not automated_collecting:
+		goal_label.text = "委托1已完成 | 花2木料、2废料升级站点；解锁自动收取"
+	elif orders_completed == 1:
+		goal_label.text = "委托2：清水 %d/%d · 绳索 %d/%d | 交付后解锁自动加工" % [water, ORDER_WATER, rope, ORDER_ROPE]
+	elif not workshop_built:
+		goal_label.text = "委托2已完成 | 花2木料、2废料建工坊；解锁自动搓绳"
+	else:
+		goal_label.text = "已完成委托 %d 单 | 下单：清水 %d/%d · 绳索 %d/%d（自动生产/加工）" % [orders_completed, water, ORDER_WATER, rope, ORDER_ROPE]
 	expand_button.disabled = wood < EXPAND_WOOD or scrap < EXPAND_SCRAP
 	collector_button.disabled = collectors >= raft_tiles - 1 or wood < COLLECTOR_WOOD or scrap < COLLECTOR_SCRAP
+	claim_button.disabled = automated_collecting or pending_water == 0 and pending_fiber == 0
+	upgrade_button.disabled = collectors == 0 or automated_collecting or orders_completed < 1 or wood < UPGRADE_WOOD or scrap < UPGRADE_SCRAP
+	workshop_button.disabled = not automated_collecting or workshop_built or orders_completed < 2 or wood < WORKSHOP_WOOD or scrap < WORKSHOP_SCRAP
 	process_button.disabled = fiber < 1
 	order_button.disabled = water < ORDER_WATER or rope < ORDER_ROPE
 	queue_redraw()
