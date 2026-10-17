@@ -161,15 +161,21 @@ func run_checks() -> void:
 	await battle.wait_for_animation(9021, "windup", battle.battle_serial)
 	check(Time.get_ticks_msec() - timeout_started < 4000 and battle.expected_action_id == -1, "缺失演出回执后不永久卡住")
 	battle.running = false
+	battle.start("stage_5")
+	check(battle.enemies.size() == 4 and battle.enemies[0].id == "enemy_stone" and battle.enemies[1].id == "enemy_stone" and battle.enemies[0].skills == ["pebble_ram"] and battle.enemies[1].skills == ["enemy_burst"] and battle.can_cast(battle.enemies[0], "pebble_ram"), "第五关双岩前排与眩晕技能实际入场")
+	battle.running = false
 	battle.start("stage_10")
 	check(battle.enemies.size() == 4 and battle.enemies[0].max_hp == int(data.get_entry("units", str(battle.enemies[0].id)).get("hp", 0)) + 9 * int((data.tables["rules"]["level_growth"] as Dictionary).get("hp", 20)), "第十关实战按等级提升敌人生命")
+	check(battle.enemies[0].skills == ["ember_flare"] and battle.enemies[2].skills == ["mist_arc"] and battle.enemies[3].id == "enemy_flame", "第十关火焰压阵与雾狐削弱技能实际入场")
+	battle.enemies[0].energy = 60
+	check(battle.can_cast(battle.enemies[0], "ember_flare"), "第十关火焰技能蓄能后可施放")
 	battle.running = false
 	game.current_stage = "stage_1"
 	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/MainCity.tscn", "启动直接进入主城")
 	var prior_stage: String = game.current_stage
 	game.select_stage("stage_999")
 	check(game.current_stage == prior_stage and not game.stage_pending, "未解锁副本不能绕过独立关卡页进入战斗")
-	var scene_paths := ["res://scenes/MainMenu.tscn", "res://scenes/MainCity.tscn", "res://scenes/StageSelect.tscn", "res://scenes/Outskirts.tscn", "res://scenes/TeamSelect.tscn", "res://scenes/Battle.tscn"]
+	var scene_paths := ["res://scenes/MainMenu.tscn", "res://scenes/MainCity.tscn", "res://scenes/StageSelect.tscn", "res://scenes/Outskirts.tscn", "res://scenes/WaterActivity.tscn", "res://scenes/TeamSelect.tscn", "res://scenes/Battle.tscn"]
 	for path in scene_paths:
 		var scene: PackedScene = load(path)
 		check(scene != null, "场景可加载: " + path)
@@ -324,6 +330,7 @@ func run_checks() -> void:
 			check(not instance.dialogue.visible, "取消 NPC 对话保持主城")
 		elif path.ends_with("StageSelect.tscn"):
 			check(instance.stage_buttons.size() == 10, "独立关卡场景包含十关")
+			check("注意阵容搭配" in instance.stage_buttons[4].text and "注意阵容搭配" in instance.stage_buttons[9].text and "双岩" not in instance.stage_buttons[4].text and "烈焰" not in instance.stage_buttons[9].text, "关键关卡提示搭配且不提前透露敌方阵容")
 			check(instance.get_child(0).texture.resource_path == "res://assets/backgrounds/menu_pet_garden.png", "关卡页使用统一背景")
 			for i in range(10):
 				check(instance.stage_buttons[i].disabled == (i + 1 > int(data.save_data["unlocked_stage"])), "关卡解锁状态匹配存档 %d" % (i + 1))
@@ -331,6 +338,25 @@ func run_checks() -> void:
 			check(instance.model != null and instance.player_foot.distance_to(Vector2(140, 576)) < 2.0, "邻接区域成功加载并显示人物")
 			check(instance.RETURN.has_point(Vector2(84, 570)), "邻接区域包含可返回主城的出口")
 			check(instance.model.texture.resource_path == "res://assets/characters/pet_hero.png", "外缘玩家复用主角美术")
+			check(instance.WATER_PORTAL.has_point(Vector2(1044, 560)), "外缘水门位于可移动区域")
+		elif path.ends_with("WaterActivity.tscn"):
+			check(instance.raft_tiles == 1 and instance.collectors == 0 and instance.orders_completed == 0, "水上经营活动完成初始化")
+			check(not instance._expand_raft() and not instance._build_collector() and not instance._fulfill_order(), "资源不足不能扩建、造站或交付")
+			check(instance.model.texture.resource_path == "res://assets/characters/pet_hero.png" and instance.debris.size() == 5, "水域显示现有精灵及可拾取漂浮物")
+			for point in instance.debris.duplicate():
+				instance.player_foot = point
+				instance._collect_nearby()
+			check(instance.debris.is_empty() and instance.wood == 5 and instance.scrap == 5, "靠近漂浮物自动打捞并获得建造资源")
+			instance._process(6.0)
+			check(instance.debris.size() == 1, "漂浮物定时补充且不可无限点击获取")
+			check(instance._expand_raft() and instance.raft_tiles == 2, "消耗资源扩建浮台")
+			check(instance._build_collector() and instance.collectors == 1 and not instance._build_collector(), "空位建造资源站且不可超建")
+			instance._tick_production(8.0)
+			check(instance.water == 2 and instance.fiber == 2, "资源站定时产出清水与纤维")
+			check(instance._process_fiber() and instance._process_fiber() and instance.rope == 2 and instance.fiber == 0, "纤维加工为绳索")
+			check(instance._fulfill_order() and instance.orders_completed == 1 and instance.wood == 2 and instance.scrap == 2, "提交清水与绳索完成委托并获得循环资源")
+			instance._start_round()
+			check(instance.wood == 0 and instance.rope == 0 and instance.raft_tiles == 1 and instance.orders_completed == 0, "水上经营活动可重开")
 		elif path.ends_with("TeamSelect.tscn"):
 			check(instance.grid_buttons.size() == 9, "阵容九格可见")
 			var support_in_picker := false
@@ -826,6 +852,21 @@ func run_checks() -> void:
 	check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "踏入东侧传送点实际切换到云庭外缘")
 	if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
 		var outskirts = current_scene
+		outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
+		outskirts._process(0.0)
+		for frame in range(4):
+			await process_frame
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "外缘水门实际进入漂流浮台")
+		if current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn":
+			current_scene.get_node("ReturnButton").pressed.emit()
+			for frame in range(4):
+				await process_frame
+			check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "活动返回按钮实际回到外缘")
+		if current_scene == null or current_scene.scene_file_path != "res://scenes/Outskirts.tscn":
+			data.save_data["hero_skill"] = saved_hero_skill
+			quit(1)
+			return
+		outskirts = current_scene
 		outskirts.player_foot = outskirts.RETURN.get_center()
 		outskirts._process(0.0)
 		for frame in range(4):

@@ -42,7 +42,8 @@ func _ready() -> void:
 		var button := Button.new()
 		button.name = "Stage%d" % i
 		button.custom_minimum_size = Vector2(212, 170)
-		button.text = "第 %d 关\n%s\n敌人 Lv.%d · 经验 +%d\n%s" % [i, str(stage.get("name", stage_id)), int(stage.get("enemy_level", 1)), int(stage.get("reward_exp", 0)), "进入编队 →" if unlocked else "尚未解锁"]
+		var detail: String = str(stage.get("tactic", "敌人 Lv.%d · 经验 +%d" % [int(stage.get("enemy_level", 1)), int(stage.get("reward_exp", 0))]))
+		button.text = "第 %d 关\n%s\n%s\n%s" % [i, str(stage.get("name", stage_id)), detail, "进入编队 →" if unlocked else "尚未解锁"]
 		button.add_theme_font_size_override("font_size", 17)
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(0.07, 0.31, 0.30, 0.95) if unlocked else Color(0.21, 0.26, 0.27, 0.92)
