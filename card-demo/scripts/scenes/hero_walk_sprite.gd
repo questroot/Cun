@@ -1,5 +1,6 @@
 extends Sprite2D
 ## Shared exploration sprite. Call with actual movement after collision resolution.
+const IDLE_ART := preload("res://assets/characters/hero/idle/hero_idle.png")
 const SHEETS := {
 	"E": preload("res://assets/characters/hero/walk/walk_E.png"),
 	"SE": preload("res://assets/characters/hero/walk/walk_SE.png"),
@@ -18,20 +19,26 @@ var walk_elapsed := 0.0
 var walking := false
 
 func _init() -> void:
-	texture = SHEETS[facing]
-	hframes = 4
-	vframes = 2
+	_show_idle()
 	offset = Vector2(0, -248)
 	scale = Vector2.ONE * BASE_SCALE
+
+func _show_idle() -> void:
+	frame = 0
+	hframes = 1
+	vframes = 1
+	texture = IDLE_ART
 
 func update_movement(displacement: Vector2, delta: float) -> void:
 	walking = displacement.length_squared() > 0.0001
 	if not walking:
 		walk_elapsed = 0.0
-		frame = 0
+		_show_idle()
 		return
 	var sector := posmod(roundi(displacement.angle() / (PI / 4.0)), 8)
 	facing = DIRECTIONS[sector]
 	texture = SHEETS[facing]
+	hframes = 4
+	vframes = 2
 	walk_elapsed = fposmod(walk_elapsed + maxf(delta, 0.0), 8.0 / FPS)
 	frame = int(walk_elapsed * FPS) % 8

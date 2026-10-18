@@ -32,7 +32,10 @@ func run_checks() -> void:
 	await process_frame
 	var sprite := HeroWalkScript.new()
 	root.add_child(sprite)
-	check(sprite.facing == "S" and sprite.frame == 0 and sprite.hframes == 4 and sprite.vframes == 2, "默认南向、8帧网格")
+	check(sprite.facing == "S" and sprite.frame == 0 and sprite.hframes == 1 and sprite.vframes == 1 and sprite.texture == HeroWalkScript.IDLE_ART, "默认显示独立站立图且不按行走网格裁切")
+	var idle_rect := sprite.get_rect()
+	var idle_image := sprite.texture.get_image()
+	check(idle_image.get_size() == Vector2i(448, 512) and idle_image.get_pixel(0, 0).a == 0.0 and idle_image.get_pixel(447, 511).a == 0.0 and idle_image.get_pixel(200, 240).a > 0.9, "站立运行图背景透明、角色主体保留")
 	for sector in range(8):
 		var motion := Vector2.RIGHT.rotated(sector * PI / 4.0)
 		sprite.update_movement(Vector2.ZERO, 0.0)
@@ -40,8 +43,9 @@ func run_checks() -> void:
 		var direction: String = HeroWalkScript.DIRECTIONS[sector]
 		check(sprite.facing == direction and sprite.texture.resource_path.ends_with("walk_%s.png" % direction) and sprite.texture.get_size() == Vector2(1792, 1024), "方向及实际图集正确: " + direction)
 		check(sprite.walking and sprite.frame == 1 and not sprite.flip_h and sprite.scale.x > 0.0, "行走使用真实方向帧而非镜像: " + direction)
+		check(sprite.get_rect() == idle_rect and sprite.hframes == 4 and sprite.vframes == 2, "待机切行走保持脚底与显示尺寸: " + direction)
 		sprite.update_movement(Vector2.ZERO, 1.0)
-		check(not sprite.walking and sprite.frame == 0 and sprite.facing == direction, "停止回到原朝向第0帧: " + direction)
+		check(not sprite.walking and sprite.frame == 0 and sprite.facing == direction and sprite.texture == HeroWalkScript.IDLE_ART and sprite.hframes == 1 and sprite.vframes == 1 and sprite.get_rect() == idle_rect, "停止切回完整站立图并记住移动朝向: " + direction)
 	var seen: Dictionary = {}
 	for tick in range(80):
 		sprite.update_movement(Vector2.RIGHT, 0.011)
@@ -59,7 +63,7 @@ func run_checks() -> void:
 	city.open_gm_panel()
 	var foot: Vector2 = city.player_foot
 	city._process(0.11)
-	check(city.player_foot == foot and not city.player_model.walking and city.player_model.frame == 0, "打开GM面板停步并停止动画")
+	check(city.player_foot == foot and not city.player_model.walking and city.player_model.texture == HeroWalkScript.IDLE_ART, "打开GM面板停步并显示站立图")
 	city.gm_panel.hide()
 	city.player_foot = Vector2(550, 550)
 	city.has_destination = false
@@ -84,6 +88,11 @@ func run_checks() -> void:
 	city._process(0.11)
 	check(city.player_model.walking and city.player_model.facing == "SE", "主城斜向位移使用东南帧")
 	await capture("city")
+	city.has_destination = false
+	city.path_points.clear()
+	city._process(0.11)
+	check(city.player_model.texture == HeroWalkScript.IDLE_ART and city.player_model.hframes == 1, "主城正常停步显示完整待机图")
+	await capture("city_idle")
 	city.free()
 	for scene_name in ["Outskirts", "WaterActivity"]:
 		var zone = load("res://scenes/%s.tscn" % scene_name).instantiate()
@@ -98,7 +107,7 @@ func run_checks() -> void:
 		check(zone.model.walking and zone.model.facing == "NW" and zone.model.frame > 0, scene_name + "点击移动使用西北动画")
 		zone.moving = false
 		zone._process(0.11)
-		check(not zone.model.walking and zone.model.frame == 0 and zone.model.facing == "NW", scene_name + "停步保留朝向")
+		check(not zone.model.walking and zone.model.frame == 0 and zone.model.facing == "NW" and zone.model.texture == HeroWalkScript.IDLE_ART and zone.model.hframes == 1 and zone.model.vframes == 1, scene_name + "停步显示完整待机图并记住移动朝向")
 		await capture(scene_name)
 		zone.free()
 	var portrait: Texture2D = load("res://scripts/battle/sprite_atlas.gd").pet_texture("hero")

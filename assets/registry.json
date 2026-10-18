@@ -772,6 +772,40 @@
       "status": "draft",
       "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
       "sha256": "4605e095df0f8bbd196ba4220b7a4ab6b2aa6558901f9c0f11ba14a4472a7038"
+    },
+    {
+      "id": "asset_32b0c531abef7da1",
+      "name": "主角站立待机-透明运行图",
+      "path": "card-demo/assets/characters/hero/idle/hero_idle.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "idle",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/boss-03-celestial-executioner.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_idle.py 去除紫红背景，448x512，脚底(224,504)。单张正面站姿。",
+      "sha256": "e892de49848c9785786d229d34962c27fc9ec1415436d16907ebdd13746d2a00"
+    },
+    {
+      "id": "asset_4b24c4741a9a4119",
+      "name": "主角站立待机-原始图",
+      "path": "card-demo/assets/characters/hero/idle/source/boss-03-celestial-executioner.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "idle",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/boss-03-celestial-executioner.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样迁入的RGB站姿图，带紫红背景。",
+      "sha256": "f6adcc4a1faf1fc20063522ac5a25a89c8eb9e4874f3a253b757b3022b0ee56c"
     }
   ]
 }
