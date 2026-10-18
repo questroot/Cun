@@ -126,14 +126,35 @@ func valid_team(team: Array, formation: Array) -> bool:
 	return true
 
 ## 保存单机进度、阵容和成长；断电保护可在后续版本增加临时文件轮换。
-func write_save() -> void:
+func write_save() -> bool:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
 		push_error("存档写入失败")
-		return
+		return false
 	file.store_string(JSON.stringify(save_data, "  "))
 	file.close()
 	save_changed.emit()
+	return true
+
+## GM 只提升已拥有宠物，保留当前经验、主角、编队与其他存档字段。
+## 返回实际提升数量；无效请求或保存失败返回 -1。
+func gm_raise_pet_levels(pet_ids: Array[String], target_level: int) -> int:
+	if pet_ids.is_empty() or target_level < 1 or target_level > 999:
+		return -1
+	var owned: Array[String] = owned_pets()
+	for id: String in pet_ids:
+		if not owned.has(id):
+			return -1
+	var previous: Dictionary = (save_data["levels"] as Dictionary).duplicate(true)
+	var changed := 0
+	for id: String in pet_ids:
+		if int(save_data["levels"].get(id, 1)) < target_level:
+			save_data["levels"][id] = target_level
+			changed += 1
+	if changed > 0 and not write_save():
+		save_data["levels"] = previous
+		return -1
+	return changed
 
 func add_experience(amount: int) -> void:
 	for id in save_data["team"]:

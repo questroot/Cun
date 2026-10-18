@@ -39,3 +39,19 @@ func finish_battle(won: bool) -> void:
 		var stage_number := int(current_stage.trim_prefix("stage_"))
 		DataManager.save_data["unlocked_stage"] = mini(3, maxi(int(DataManager.save_data["unlocked_stage"]), stage_number + 1))
 		DataManager.write_save()
+
+## GM 跳关仍走正常编队入口；先验证真实关卡，再保存解锁进度。
+func gm_jump_to_stage(stage_id: String) -> bool:
+	if not stage_id.begins_with("stage_") or not stage_id.trim_prefix("stage_").is_valid_int():
+		return false
+	var stage_number := int(stage_id.trim_prefix("stage_"))
+	if stage_number < 1 or DataManager.get_entry("stages", stage_id).is_empty():
+		return false
+	var previous := int(DataManager.save_data["unlocked_stage"])
+	if stage_number > previous:
+		DataManager.save_data["unlocked_stage"] = stage_number
+		if not DataManager.write_save():
+			DataManager.save_data["unlocked_stage"] = previous
+			return false
+	select_stage(stage_id)
+	return true

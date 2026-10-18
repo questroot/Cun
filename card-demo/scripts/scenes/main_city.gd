@@ -4,6 +4,7 @@ const CityMapScript = preload("res://scripts/scenes/city_map.gd")
 const PLAYER_ART := preload("res://assets/characters/pet_hero.png")
 const GUIDE_ART := preload("res://assets/characters/pet_guide.png")
 const HudIconScript = preload("res://scripts/scenes/city_hud_icon.gd")
+const GMPanelScript = preload("res://scripts/scenes/gm_panel.gd")
 const AtlasScript = preload("res://scripts/battle/sprite_atlas.gd")
 const ELEMENT_NAMES := {"metal": "金", "wood": "木", "water": "水", "fire": "火", "earth": "土"}
 const EFFECT_NAMES := {"air": "小浮空", "down": "倒地", "stun": "眩晕", "shield": "护盾", "damage_up": "增伤", "damage_down": "减伤", "heal": "治疗"}
@@ -29,6 +30,8 @@ var status_panel: PanelContainer
 var nav_panel: PanelContainer
 var party_button: Button
 var bag_button: Button
+var gm_button: Button
+var gm_panel: Control
 var party_panel: PanelContainer
 var pet_bag: PanelContainer
 var pet_list: VBoxContainer
@@ -92,6 +95,8 @@ func _ready() -> void:
 	_build_hud()
 	_build_pet_bag()
 	_build_dialogue()
+	gm_panel = GMPanelScript.new()
+	add_child(gm_panel)
 	_update_actors(0.0)
 	_update_camera()
 	resized.connect(_layout_hud)
@@ -162,6 +167,13 @@ func _build_hud() -> void:
 	bag_button.add_theme_stylebox_override("normal", card_style(Color(0.04, 0.25, 0.26, 0.96)))
 	bag_button.pressed.connect(toggle_pet_bag)
 	party_row.add_child(bag_button)
+	gm_button = Button.new()
+	gm_button.name = "GMButton"
+	gm_button.text = "GM 工具"
+	gm_button.size = Vector2(120, 44)
+	gm_button.add_theme_stylebox_override("normal", card_style(Color(0.04, 0.25, 0.26, 0.96)))
+	gm_button.pressed.connect(open_gm_panel)
+	add_child(gm_button)
 	nav_panel = _make_hud_panel("CityNavigation")
 	var nav_row := HBoxContainer.new()
 	nav_row.add_theme_constant_override("separation", 8)
@@ -203,6 +215,11 @@ func _build_pet_bag() -> void:
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color("#f3d591"))
 	heading.add_child(title)
+	var gm_upgrade := Button.new()
+	gm_upgrade.text = "GM 升级"
+	gm_upgrade.custom_minimum_size = Vector2(96, 42)
+	gm_upgrade.pressed.connect(open_gm_panel)
+	heading.add_child(gm_upgrade)
 	var close := Button.new()
 	close.text = "关闭 ×"
 	close.custom_minimum_size = Vector2(86, 42)
@@ -256,6 +273,14 @@ func toggle_pet_bag() -> void:
 		path_points.clear()
 		waiting_for_npc = false
 		_refresh_pet_bag()
+
+func open_gm_panel() -> void:
+	pet_bag.hide()
+	close_dialogue()
+	has_destination = false
+	path_points.clear()
+	waiting_for_npc = false
+	gm_panel.open_for_pet(selected_pet_id)
 
 func _clear_container(container: Node) -> void:
 	for child: Node in container.get_children():
@@ -447,6 +472,7 @@ func _layout_hud() -> void:
 	status_panel.size = Vector2(minf(330.0 if compact else 393.0, width - 2.0 * margin), 48)
 	party_panel.position = Vector2(margin, margin + 119) if narrow else Vector2(width - margin - 315, margin)
 	party_panel.size = Vector2(315, 56)
+	gm_button.position = Vector2(width - margin - 120, height - margin - 44)
 	if pet_bag != null:
 		pet_bag.position = Vector2(margin, margin + 174) if narrow else Vector2(maxf(margin, (width - minf(940.0, width - 2.0 * margin)) * 0.5), maxf(margin + 70.0, (height - minf(540.0, height - 2.0 * margin)) * 0.5))
 		pet_bag.size = Vector2(minf(940.0, width - 2.0 * margin), minf(540.0, height - margin - 186.0) if narrow else minf(540.0, height - 2.0 * margin))
@@ -500,6 +526,10 @@ func _build_dialogue() -> void:
 	actions.add_child(cancel)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if gm_panel.visible:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+			gm_panel.hide()
+		return
 	if pet_bag.visible:
 		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 			toggle_pet_bag()
@@ -522,7 +552,7 @@ func set_destination(point: Vector2) -> void:
 	waiting_for_npc = false
 
 func request_npc_conversation() -> void:
-	if dialogue.visible:
+	if dialogue.visible or gm_panel.visible:
 		return
 	if player_foot.distance_to(NPC_FOOT) <= TALK_DISTANCE:
 		open_dialogue()
@@ -543,7 +573,7 @@ func close_dialogue() -> void:
 
 func _process(delta: float) -> void:
 	var direction := Vector2.ZERO
-	if not dialogue.visible and not pet_bag.visible:
+	if not dialogue.visible and not pet_bag.visible and not gm_panel.visible:
 		direction = Vector2(float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A)), float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))).normalized()
 		if direction != Vector2.ZERO:
 			has_destination = false
@@ -570,7 +600,7 @@ func _process(delta: float) -> void:
 			open_dialogue()
 	_update_actors(delta)
 	_update_camera()
-	if exit_armed and not dialogue.visible and not pet_bag.visible:
+	if exit_armed and not dialogue.visible and not pet_bag.visible and not gm_panel.visible:
 		for exit_data: Dictionary in city_map.EXIT_REGIONS:
 			if (exit_data["area"] as Rect2).has_point(player_foot):
 				exit_armed = false
