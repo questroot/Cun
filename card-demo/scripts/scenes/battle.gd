@@ -20,6 +20,18 @@ var pending_skill_id: String = ""
 var last_hit_damage := -1
 var basic_button: Button
 var ultimate_button: Button
+var summary_toggle: CheckButton
+var shortcut_hint: Label
+var skill_detail: PanelContainer
+var skill_detail_label: Label
+var detail_skill_id := ""
+var detail_actor: BattleUnit
+var escape_button: Button
+var escape_confirmation: ConfirmationDialog
+var skill_hold_timer: Timer
+var held_skill_button: Button
+var held_actor: BattleUnit
+var long_press_consumed := false
 var fx_player: AnimationPlayer
 var fx_particles: GPUParticles2D
 var float_layer: Control
@@ -173,6 +185,31 @@ func build_ui() -> void:
 	order_label.position = Vector2(48, 58)
 	order_label.add_theme_color_override("font_color", Color("#e4f9ed"))
 	add_child(order_label)
+	shortcut_hint = Label.new()
+	shortcut_hint.name = "ShortcutHint"
+	shortcut_hint.position = Vector2(785, 20)
+	shortcut_hint.text = "主键盘 / 小键盘 1 普攻 · 2 主动技能；选后点目标"
+	shortcut_hint.add_theme_font_size_override("font_size", 14)
+	shortcut_hint.add_theme_color_override("font_color", Color("#ffe2a8"))
+	add_child(shortcut_hint)
+	escape_button = Button.new()
+	escape_button.name = "EscapeButton"
+	escape_button.position = Vector2(1110, 55)
+	escape_button.size = Vector2(110, 35)
+	escape_button.text = "逃跑"
+	add_child(escape_button)
+	escape_button.pressed.connect(func() -> void:
+		if BattleManager.running:
+			escape_confirmation.popup_centered()
+	)
+	escape_confirmation = ConfirmationDialog.new()
+	escape_confirmation.name = "EscapeConfirmation"
+	escape_confirmation.title = "确认逃跑"
+	escape_confirmation.dialog_text = "逃跑后将返回主城，本场战斗不会结算奖励。"
+	escape_confirmation.ok_button_text = "确认逃跑"
+	escape_confirmation.cancel_button_text = "继续战斗"
+	add_child(escape_confirmation)
+	escape_confirmation.confirmed.connect(escape_battle)
 	combo_label = Label.new()
 	combo_label.position = Vector2(533, 108)
 	combo_label.add_theme_font_size_override("font_size", 33)
@@ -220,18 +257,47 @@ func build_ui() -> void:
 	basic_button.custom_minimum_size = Vector2(225, 68)
 	basic_button.add_theme_stylebox_override("normal", make_panel(Color("#276b68"), Color("#a9e8d1")))
 	controls.add_child(basic_button)
-	basic_button.pressed.connect(func() -> void: begin_targeting("basic"))
+	basic_button.pressed.connect(activate_skill_button.bind("basic"))
 	ultimate_button = Button.new()
 	ultimate_button.custom_minimum_size = Vector2(260, 68)
 	ultimate_button.add_theme_stylebox_override("normal", make_panel(Color("#965d38"), Color("#f9d588")))
 	controls.add_child(ultimate_button)
-	ultimate_button.pressed.connect(func() -> void:
-		var unit: BattleUnit = BattleManager.active_unit
-		if unit != null and unit.side == "ally":
-			begin_targeting(active_skill_id(unit))
-	)
+	ultimate_button.pressed.connect(activate_skill_button.bind("ultimate"))
+	skill_hold_timer = Timer.new()
+	skill_hold_timer.one_shot = true
+	skill_hold_timer.wait_time = 0.45
+	add_child(skill_hold_timer)
+	skill_hold_timer.timeout.connect(show_held_skill)
+	skill_detail = PanelContainer.new()
+	skill_detail.name = "SkillDetail"
+	skill_detail.position = Vector2(38, 363)
+	skill_detail.custom_minimum_size = Vector2(430, 0)
+	skill_detail.add_theme_stylebox_override("panel", make_panel(Color(0.02, 0.12, 0.14, 0.97), Color("#f9d588")))
+	skill_detail.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(skill_detail)
+	var detail_content := VBoxContainer.new()
+	detail_content.add_theme_constant_override("separation", 6)
+	skill_detail.add_child(detail_content)
+	skill_detail_label = Label.new()
+	skill_detail_label.add_theme_font_size_override("font_size", 16)
+	skill_detail_label.add_theme_color_override("font_color", Color("#fff1ce"))
+	skill_detail_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	detail_content.add_child(skill_detail_label)
+	var detail_controls := HBoxContainer.new()
+	detail_content.add_child(detail_controls)
+	summary_toggle = CheckButton.new()
+	summary_toggle.name = "SummaryToggle"
+	summary_toggle.text = "简洁说明"
+	detail_controls.add_child(summary_toggle)
+	summary_toggle.toggled.connect(func(_enabled: bool) -> void: refresh_skill_detail())
+	var detail_close := Button.new()
+	detail_close.name = "DetailClose"
+	detail_close.text = "关闭"
+	detail_controls.add_child(detail_close)
+	detail_close.pressed.connect(close_skill_detail)
+	skill_detail.hide()
 	log_label = Label.new()
-	log_label.custom_minimum_size = Vector2(645, 90)
+	log_label.custom_minimum_size = Vector2(645, 68)
 	log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	log_label.add_theme_color_override("font_color", Color("#f4f7e9"))
 	controls.add_child(log_label)
@@ -311,10 +377,122 @@ func card_for(unit: BattleUnit) -> Control:
 		return null
 	return ally_cards[unit.cell] if unit.side == "ally" else enemy_cards[unit.cell]
 
+func skill_summary(skill_id: String) -> String:
+	var skill: Dictionary = DataManager.get_entry("skills", skill_id)
+	if skill.is_empty():
+		return "未装备主动技能"
+	var effect: String = skill_effect_text(skill)
+	return "%s · %s · %s" % [str(skill.get("name", "")), "普攻" if skill_id == "basic" else "主动", effect]
+
+func skill_effect_text(skill: Dictionary) -> String:
+	var power: float = float(skill.get("power", 0))
+	var parts: Array[String] = []
+	if power > 0:
+		parts.append("威力系数 %.2f" % power)
+	var apply: String = str(skill.get("apply", ""))
+	var duration: int = int(skill.get("duration", 0))
+	var value: float = float(skill.get("value", 0))
+	match apply:
+		"air", "down", "stun":
+			parts.append("附加%s %d轮" % [{"air": "浮空", "down": "倒地", "stun": "眩晕"}[apply], duration])
+		"damage_down": parts.append("降低目标输出 %d%% · %d轮" % [roundi(value * 100), duration])
+		"shield": parts.append("获得护盾 %d" % roundi(value))
+		"heal": parts.append("治疗 %d生命" % roundi(value))
+		"cleanse": parts.append("净化友方负面状态")
+	return "，".join(parts) if not parts.is_empty() else "无额外效果"
+
+func skill_detail_text(skill_id: String, unit: BattleUnit) -> String:
+	var skill: Dictionary = DataManager.get_entry("skills", skill_id)
+	if skill.is_empty():
+		return "主动技能 · 未装备该主动技能"
+	var target: String = str(skill.get("target", "enemy"))
+	var target_text: String = "自身" if target == "self" else "友方单体" if target == "ally" else "敌方任意存活目标" if bool(skill.get("free_target", false)) else "敌方最前排存活目标"
+	var availability: String = "可使用" if skill_id == "basic" else ultimate_reason(unit, skill_id)
+	return "%s · %s\n目标：%s\n效果：%s\n消耗：%d 能量 · 冷却：%d 轮\n状态：%s" % [str(skill.get("name", "")), "普通攻击" if skill_id == "basic" else "主动技能", target_text, skill_effect_text(skill), int(skill.get("cost", 0)), int(skill.get("cooldown", 0)), availability]
+
+func activate_skill_button(kind: String) -> void:
+	if long_press_consumed:
+		long_press_consumed = false
+		return
+	var unit: BattleUnit = BattleManager.active_unit
+	if kind == "basic":
+		begin_targeting("basic")
+	elif unit != null and unit.side == "ally":
+		begin_targeting(active_skill_id(unit))
+
+func _input(event: InputEvent) -> void:
+	if not event is InputEventMouseButton or event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if not event.pressed:
+		if long_press_consumed and held_skill_button != null:
+			get_viewport().set_input_as_handled()
+			held_skill_button.set_pressed_no_signal(false)
+		skill_hold_timer.stop()
+		held_skill_button = null
+		held_actor = null
+		# release 后仍保留消费标记至按钮 pressed 信号，避免长按误释放。
+		return
+	if skill_detail.visible and not skill_detail.get_global_rect().has_point(event.position):
+		close_skill_detail()
+	long_press_consumed = false
+	if not BattleManager.running or BattleManager.busy:
+		return
+	var unit: BattleUnit = BattleManager.active_unit
+	if unit == null or unit.side != "ally" or not unit.alive() or unit.has_effect("stun"):
+		return
+	var button: Button = basic_button if basic_button.get_global_rect().has_point(event.position) else ultimate_button if ultimate_button.get_global_rect().has_point(event.position) else null
+	if button != null:
+		held_actor = unit
+		held_skill_button = button
+		skill_hold_timer.start()
+
+func show_held_skill() -> void:
+	if held_skill_button == null or held_actor != BattleManager.active_unit or not BattleManager.running or BattleManager.busy or not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		return
+	long_press_consumed = true
+	detail_skill_id = "basic" if held_skill_button == basic_button else active_skill_id(held_actor)
+	detail_actor = held_actor
+	refresh_skill_detail()
+	skill_detail.show()
+
+func refresh_skill_detail() -> void:
+	if detail_actor != null:
+		skill_detail_label.text = skill_summary(detail_skill_id) if summary_toggle.button_pressed else skill_detail_text(detail_skill_id, detail_actor)
+
+func close_skill_detail() -> void:
+	skill_detail.hide()
+	detail_actor = null
+	detail_skill_id = ""
+
+func clear_skill_hold() -> void:
+	skill_hold_timer.stop()
+	held_skill_button = null
+	held_actor = null
+	long_press_consumed = false
+	close_skill_detail()
+
+func escape_battle() -> void:
+	if not BattleManager.running:
+		return
+	clear_skill_hold()
+	pending_skill_id = ""
+	BattleManager.abort()
+	GameManager.goto_scene("city")
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo or not BattleManager.running or BattleManager.busy:
+		return
+	var unit: BattleUnit = BattleManager.active_unit
+	if unit == null or unit.side != "ally" or not unit.alive() or unit.has_effect("stun"):
+		return
+	match event.keycode:
+		KEY_1, KEY_KP_1: begin_targeting("basic")
+		KEY_2, KEY_KP_2: begin_targeting(active_skill_id(unit))
+
 ## 先选择行动，再在同一合法目标池内点击角色立绘或名册卡。
 func begin_targeting(skill_id: String) -> void:
 	var actor: BattleUnit = BattleManager.active_unit
-	if not BattleManager.running or actor == null or actor.side != "ally" or not actor.alive() or BattleManager.busy:
+	if not BattleManager.running or actor == null or actor.side != "ally" or not actor.alive() or actor.has_effect("stun") or BattleManager.busy:
 		return
 	if skill_id != "basic" and not BattleManager.can_cast(actor, skill_id):
 		return
@@ -384,6 +562,8 @@ func ultimate_reason(unit: BattleUnit, skill_id: String) -> String:
 	return "可释放"
 
 func refresh() -> void:
+	if held_skill_button != null and (not BattleManager.running or BattleManager.busy or held_actor != BattleManager.active_unit):
+		clear_skill_hold()
 	if pending_skill_id != "" and (not BattleManager.running or BattleManager.busy or BattleManager.active_unit == null or BattleManager.active_unit.side != "ally"):
 		pending_skill_id = ""
 	round_label.text = "第 %d / %d 回合 · %s" % [BattleManager.round_number, int(BattleManager.stage.get("max_rounds", 20)), str(BattleManager.stage.get("name", ""))]
@@ -432,18 +612,24 @@ func refresh() -> void:
 	var unit: BattleUnit = BattleManager.active_unit
 	var allowed: bool = BattleManager.running and not BattleManager.busy and unit != null and unit.side == "ally" and unit.alive() and not unit.has_effect("stun")
 	basic_button.disabled = not allowed
-	basic_button.text = "%s · 普通攻击" % unit.name if allowed else "普通攻击 · 无消耗"
+	basic_button.text = ("%s · 普通攻击" % unit.name if allowed else "普通攻击 · 无消耗") + "\n快捷键 1"
 	var skill_id: String = active_skill_id(unit) if allowed else ""
 	var skill: Dictionary = DataManager.get_entry("skills", skill_id) if skill_id != "" else {}
 	var reason: String = ultimate_reason(unit, skill_id) if allowed else "等待我方行动"
-	ultimate_button.text = "%s · %s能量" % [str(skill.get("name", "主动技能")), str(skill.get("cost", 0))] if allowed else "主动技能 · 等待行动"
+	ultimate_button.text = ("%s · %s能量" % [str(skill.get("name", "主动技能")), str(skill.get("cost", 0))] if allowed else "主动技能 · 等待行动") + "\n快捷键 2"
 	ultimate_button.disabled = not allowed or not BattleManager.can_cast(unit, skill_id)
+	basic_button.tooltip_text = "长按查看普通攻击详情"
+	ultimate_button.tooltip_text = "长按查看主动技能详情"
+	if skill_detail.visible:
+		refresh_skill_detail()
+	escape_button.disabled = not BattleManager.running
 	if BattleManager.running:
 		action_hint.text = ("点击高亮目标释放 %s · 仅高亮目标可选" % str(DataManager.get_entry("skills", pending_skill_id).get("name", "攻击"))) if pending_skill_id != "" else "当前操作：%s · 选择普攻或技能后点击目标    技能：%s    当前能量 %d" % [unit.name, reason, unit.energy] if allowed else "等待我方单位行动 · 敌方行动与追打自动执行"
 	else:
 		action_hint.text = "战斗已结束 · 请在结算弹窗返回主城"
 
 func on_turn(unit: BattleUnit) -> void:
+	clear_skill_hold()
 	pending_skill_id = ""
 	log_label.text = "轮到%s行动，选择普通攻击或主动技能，再点击高亮目标。" % unit.name
 	var pulse := create_tween()
@@ -837,6 +1023,7 @@ func show_action(message: String, _target: BattleUnit, damage: int) -> void:
 	log_label.text = message + ("  -%d" % damage if damage > 0 else "  +%d 治疗" % -damage if damage < 0 else "")
 
 func on_finished(won: bool) -> void:
+	clear_skill_hold()
 	focused_target = null
 	target_label.text = "战斗结束  ·  " + ("胜利" if won else "失败")
 	refresh()

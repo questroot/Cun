@@ -8,7 +8,7 @@ var last_result := ""
 
 ## 统一切换场景，避免 UI 模块直接依赖关卡实现。
 func goto_scene(scene_name: String) -> void:
-	var paths := {"menu": "res://scenes/MainMenu.tscn", "city": "res://scenes/MainCity.tscn", "team": "res://scenes/TeamSelect.tscn", "battle": "res://scenes/Battle.tscn", "stages": "res://scenes/StageSelect.tscn", "outskirts": "res://scenes/Outskirts.tscn"}
+	var paths := {"menu": "res://scenes/MainMenu.tscn", "city": "res://scenes/MainCity.tscn", "team": "res://scenes/TeamSelect.tscn", "battle": "res://scenes/Battle.tscn", "stages": "res://scenes/StageSelect.tscn", "outskirts": "res://scenes/Outskirts.tscn", "water_activity": "res://scenes/WaterActivity.tscn"}
 	if paths.has(scene_name):
 		if scene_name == "city":
 			stage_pending = false
@@ -37,7 +37,7 @@ func finish_battle(won: bool) -> void:
 		var stage := DataManager.get_entry("stages", current_stage)
 		DataManager.add_experience(int(stage.get("reward_exp", 0)))
 		var stage_number := int(current_stage.trim_prefix("stage_"))
-		DataManager.save_data["unlocked_stage"] = mini(3, maxi(int(DataManager.save_data["unlocked_stage"]), stage_number + 1))
+		DataManager.save_data["unlocked_stage"] = mini(DataManager.tables["stages"].size(), maxi(int(DataManager.save_data["unlocked_stage"]), stage_number + 1))
 		DataManager.write_save()
 
 ## GM 跳关仍走正常编队入口；先验证真实关卡，再保存解锁进度。

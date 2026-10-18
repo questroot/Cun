@@ -54,7 +54,7 @@ func run_checks() -> void:
 	city.open_gm_panel()
 	var gm = city.gm_panel
 	check(gm.visible and not city.pet_bag.visible and gm.pet_picker.get_item_metadata(gm.pet_picker.selected) == "metal", "背包选中宠物可带入 GM 面板")
-	check(gm.stage_picker.item_count == 3 and gm.z_index > city.npc.z_index, "GM 列出所有关卡且位于世界角色上方")
+	check(gm.stage_picker.item_count == 10 and gm.z_index > city.npc.z_index, "GM 列出合并后的十关且位于世界角色上方")
 	city.set_destination(Vector2(600, 550))
 	city.open_gm_panel()
 	var foot: Vector2 = city.player_foot
@@ -89,24 +89,27 @@ func run_checks() -> void:
 	check(not game.gm_jump_to_stage("stage_999") and not game.gm_jump_to_stage("bad") and data.save_data["unlocked_stage"] == 1, "无效跳关不会修改解锁状态")
 	game.select_stage("stage_3")
 	check(not game.stage_pending, "普通选关仍拒绝未解锁关卡")
-	gm.stage_picker.select(2)
+	gm.stage_picker.select(9)
 	gm.jump_button.pressed.emit()
 	await process_frame
 	await process_frame
-	check(game.current_stage == "stage_3" and game.stage_pending and current_scene.scene_file_path.ends_with("TeamSelect.tscn"), "GM 从第一关跳至第三关实际编队场景")
+	check(game.current_stage == "stage_10" and game.stage_pending and current_scene.scene_file_path.ends_with("TeamSelect.tscn"), "GM 从第一关跳至第十关实际编队场景")
 	data.load_save()
-	check(int(data.save_data["unlocked_stage"]) == 3 and int(data.save_data["levels"]["metal"]) == 25, "跳关与升级进度均持久保存")
+	check(int(data.save_data["unlocked_stage"]) == 10 and int(data.save_data["levels"]["metal"]) == 25, "第十关跳关与升级进度均持久保存")
 	current_scene.save_team(true)
 	await process_frame
 	await process_frame
-	check(current_scene.scene_file_path.ends_with("Battle.tscn") and game.current_stage == "stage_3" and battle.running, "编队确认后进入所选第三关战斗")
+	check(current_scene.scene_file_path.ends_with("Battle.tscn") and game.current_stage == "stage_10" and battle.running, "编队确认后进入所选第十关战斗")
 	var grown_pet: BattleUnit = null
 	for unit: BattleUnit in battle.allies:
 		if unit.id == "sprout":
 			grown_pet = unit
 	check(grown_pet != null and grown_pet.max_hp == int(data.get_entry("units", "sprout")["hp"]) + 29 * int(data.tables["rules"]["level_growth"]["hp"]), "升级后的宠物属性实际进入战斗")
 	battle.running = false
-	check(game.gm_jump_to_stage("stage_1") and int(data.save_data["unlocked_stage"]) == 3, "回跳低关卡不会降低解锁进度")
+	game.finish_battle(true)
+	data.load_save()
+	check(int(data.save_data["unlocked_stage"]) == 10, "第十关胜利后解锁上限仍为十关且持久保存")
+	check(game.gm_jump_to_stage("stage_1") and int(data.save_data["unlocked_stage"]) == 10, "回跳低关卡不会降低十关解锁进度")
 	await process_frame
 	await process_frame
 	current_scene.save_team(false)
