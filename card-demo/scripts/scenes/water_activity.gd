@@ -1,6 +1,6 @@
 extends Control
 
-const PLAYER_ART := preload("res://assets/characters/pet_hero.png")
+const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const SEA := Rect2(72, 238, 744, 414)
 const PLAYER_SPEED := 220.0
 const PICKUP_RADIUS := 35.0
@@ -37,7 +37,7 @@ var player_foot := Vector2(240, 480)
 var debris: Array[Vector2] = []
 var target := Vector2.ZERO
 var moving := false
-var model: Sprite2D
+var model: HeroWalkScript
 
 var status_label: Label
 var goal_label: Label
@@ -51,10 +51,8 @@ var process_button: Button
 var order_button: Button
 
 func _ready() -> void:
-	model = Sprite2D.new()
-	model.texture = PLAYER_ART
-	model.offset = Vector2(0, -128)
-	model.scale = Vector2(0.36, 0.36)
+	model = HeroWalkScript.new()
+	model.scale = Vector2(0.18, 0.18)
 	add_child(model)
 	var title := Label.new()
 	title.text = "漂流浮台  /  水上经营"
@@ -128,6 +126,7 @@ func _start_round() -> void:
 	debris_elapsed = 0.0
 	player_foot = Vector2(240, 480)
 	model.position = player_foot
+	model.update_movement(Vector2.ZERO, 0.0)
 	moving = false
 	debris = [Vector2(152, 350), Vector2(295, 590), Vector2(735, 350), Vector2(735, 570), Vector2(148, 575)]
 	result_label.text = "走近水面漂浮物自动打捞；收集五份可扩建浮台并建造第一座站。"
@@ -304,6 +303,7 @@ func _process(delta: float) -> void:
 			moving = false
 		else:
 			direction = (target - player_foot).normalized()
+	var previous_foot := player_foot
 	var motion := direction * delta * PLAYER_SPEED
 	if moving and motion.length() > player_foot.distance_to(target):
 		motion = target - player_foot
@@ -311,8 +311,7 @@ func _process(delta: float) -> void:
 	player_foot.x = clampf(player_foot.x, SEA.position.x + 24, SEA.end.x - 24)
 	player_foot.y = clampf(player_foot.y, SEA.position.y + 96, SEA.end.y - 12)
 	model.position = player_foot
-	if absf(direction.x) > 0.01:
-		model.flip_h = direction.x < 0
+	model.update_movement(player_foot - previous_foot, delta)
 	_collect_nearby()
 	queue_redraw()
 

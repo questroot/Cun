@@ -468,6 +468,310 @@
       "status": "draft",
       "notes": "",
       "sha256": "c46e0d9382fdb4973fa2c004d22c4d4d524e1fc6091d98baa76d27bf8422b00d"
+    },
+    {
+      "id": "asset_961e0351fbc2029c",
+      "name": "主角行走-E-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/E.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "E",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/E.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "bc3122c7349223db4e0daf009100b323598d70a8e936f0cc05429443b1cfe81a"
+    },
+    {
+      "id": "asset_5ce2eb461c31185b",
+      "name": "主角行走-N-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/N.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "N",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/N.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "fb024cf86fa89abc1b550b4199b86d5643e8b51a6bff9acbb6d2f65b7a40b66b"
+    },
+    {
+      "id": "asset_47ed8c9a3fa61fb4",
+      "name": "主角行走-NE-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/NE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NE",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "75bab280a647981ac22228057bac4c1276dae9dd522863add6c1ef4a4157fdf3"
+    },
+    {
+      "id": "asset_c7e321675ee82598",
+      "name": "主角行走-NW-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/NW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NW",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "bfbe2e35b2cb1c63ae68acdd4c3a491f96edb060393f5219854f418c2cb2e844"
+    },
+    {
+      "id": "asset_22eff2f4f9a73594",
+      "name": "主角行走-S-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/S.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "S",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/S.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "89665eec37207de55c5c40f01a8c4bde04ab004fcf0c7924bc578736406c162a"
+    },
+    {
+      "id": "asset_4c71316eaaa569e2",
+      "name": "主角行走-SE-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/SE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SE",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "9733f05e4d15a6ae966b4faf14967372b8c4c2a643cbfd54c7ffda1a23ef0187"
+    },
+    {
+      "id": "asset_86a8f9d9429afc44",
+      "name": "主角行走-SW-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/SW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SW",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "d1538c086b0d7db3ce9694b3ae5b1fe0524c0432505cb8145123ece38562735d"
+    },
+    {
+      "id": "asset_abaf3ddd73d3f7fb",
+      "name": "主角行走-W-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/W.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "W",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/W.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "d24aefe4138f1640df46541a5777724132e1f20ab85a7964db815d7b8f3c3255"
+    },
+    {
+      "id": "asset_c48f3da24a7b670a",
+      "name": "主角行走-E-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_E.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "E",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/E.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "470d5035eca9ead4531802c6c4df0045427423a70c2b78256971108a09235625"
+    },
+    {
+      "id": "asset_74f28c39b70c9cc3",
+      "name": "主角行走-N-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_N.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "N",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/N.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "2a34d65d3bab4f6fe565fa265d73d89d8ff77fc0b77ca7d7e4fb55c6343db07a"
+    },
+    {
+      "id": "asset_908fb49a1a9ab26a",
+      "name": "主角行走-NE-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_NE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NE",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "f65bb24a703a5b305d74d7b5e68df82c422bef03e8230e6d325a88b755314630"
+    },
+    {
+      "id": "asset_32ae18b6f25e3499",
+      "name": "主角行走-NW-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_NW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NW",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "623ce9f6dfb69211ff6bca3579ef8042a4898cd4c9f90d915b4b783e4cf004ed"
+    },
+    {
+      "id": "asset_302cb5237aed1432",
+      "name": "主角行走-S-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_S.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "S",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/S.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "39a3b4cd5ed16e3e231c91f497653d994add8c523511b4e55cb5655add743fc9"
+    },
+    {
+      "id": "asset_8af1beddb0f48ffa",
+      "name": "主角行走-SE-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_SE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SE",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "4341738d36feb67ac9b90293ab70099a57778418b7fba2d2177a92de58f46fdb"
+    },
+    {
+      "id": "asset_211e1fd1454a107a",
+      "name": "主角行走-SW-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_SW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SW",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "c1bc5f033b9f87dfd8fb7d0e716f657aa52eebc3fe7ea0e35cf944d658c7144c"
+    },
+    {
+      "id": "asset_2ce56671c303e5c6",
+      "name": "主角行走-W-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_W.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "W",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/W.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "4605e095df0f8bbd196ba4220b7a4ab6b2aa6558901f9c0f11ba14a4472a7038"
     }
   ]
 }

@@ -1,7 +1,7 @@
 extends Control
 ## 2.5D 主城：地面点击寻点 / WASD 行走，接近向导后对话开启独立关卡页。
 const CityMapScript = preload("res://scripts/scenes/city_map.gd")
-const PLAYER_ART := preload("res://assets/characters/pet_hero.png")
+const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const GUIDE_ART := preload("res://assets/characters/pet_guide.png")
 const HudIconScript = preload("res://scripts/scenes/city_hud_icon.gd")
 const GMPanelScript = preload("res://scripts/scenes/gm_panel.gd")
@@ -40,7 +40,7 @@ var pet_bag_hint: Label
 var selected_pet_id: String = ""
 var status_label: Label
 var nav_label: Label
-var facing_left := false
+var player_model: HeroWalkScript
 
 func _ready() -> void:
 	city_map = CityMapScript.new()
@@ -84,12 +84,9 @@ func _ready() -> void:
 	avatar.visible = false
 	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	actor_layer.add_child(avatar)
-	var player_model := Sprite2D.new()
+	player_model = HeroWalkScript.new()
 	player_model.name = "VisiblePlayerModel"
-	player_model.texture = PLAYER_ART
 	player_model.position = Vector2.ZERO
-	player_model.offset = Vector2(0, -128)
-	player_model.scale = Vector2(0.52, 0.52)
 	actor_layer.add_child(player_model)
 	player_model.set_meta("player_model", true)
 	_build_hud()
@@ -572,6 +569,7 @@ func close_dialogue() -> void:
 	dialogue.hide()
 
 func _process(delta: float) -> void:
+	var previous_foot := player_foot
 	var direction := Vector2.ZERO
 	if not dialogue.visible and not pet_bag.visible and not gm_panel.visible:
 		direction = Vector2(float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A)), float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))).normalized()
@@ -593,11 +591,9 @@ func _process(delta: float) -> void:
 		if has_destination and not path_points.is_empty() and step.length() > player_foot.distance_to(path_points[0]):
 			step = path_points[0] - player_foot
 		move_with_collision(step)
-		if absf(direction.x) > 0.05:
-			facing_left = direction.x < 0.0
-			avatar.flip_h = facing_left
 		if waiting_for_npc and player_foot.distance_to(NPC_FOOT) <= TALK_DISTANCE:
 			open_dialogue()
+	player_model.update_movement(player_foot - previous_foot, delta)
 	_update_actors(delta)
 	_update_camera()
 	if exit_armed and not dialogue.visible and not pet_bag.visible and not gm_panel.visible:
@@ -640,7 +636,7 @@ func _update_actors(_delta: float) -> void:
 	for child in actor_layer.get_children():
 		if child.has_meta("player_model"):
 			child.position = player_foot
-			child.scale = Vector2(-scale_factor * 0.52 if facing_left else scale_factor * 0.52, scale_factor * 0.52)
+			child.scale = Vector2.ONE * scale_factor * HeroWalkScript.BASE_SCALE
 			child.z_index = int(player_foot.y)
 	# Foreground actors render over actors farther up the avenue.
 	avatar.z_index = int(player_foot.y)

@@ -1,11 +1,11 @@
 extends Control
 ## Small linked exploration zone. Future areas can reuse the same region entry contract.
-const PLAYER_ART := preload("res://assets/characters/pet_hero.png")
+const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const AREA := Rect2(58, 340, 1155, 315)
 const RETURN := Rect2(58, 479, 58, 155)
 const WATER_PORTAL := Rect2(1000, 500, 88, 115)
 var player_foot := Vector2(140, 576)
-var model: Sprite2D
+var model: HeroWalkScript
 var target := Vector2.ZERO
 var moving := false
 var transition_ready := false
@@ -14,10 +14,7 @@ func _ready() -> void:
 	var landscape := Node2D.new()
 	landscape.set_script(preload("res://scripts/scenes/outskirts_map.gd"))
 	add_child(landscape)
-	model = Sprite2D.new()
-	model.texture = PLAYER_ART
-	model.offset = Vector2(0, -128)
-	model.scale = Vector2(0.52, 0.52)
+	model = HeroWalkScript.new()
 	add_child(model)
 	var header := PanelContainer.new()
 	header.position = Vector2(28, 24)
@@ -62,6 +59,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			moving = true
 
 func _process(delta: float) -> void:
+	var previous_foot := player_foot
 	var direction := Vector2(float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A)), float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))).normalized()
 	if direction != Vector2.ZERO:
 		moving = false
@@ -77,8 +75,7 @@ func _process(delta: float) -> void:
 	player_foot.x = clampf(player_foot.x, AREA.position.x + 10, AREA.end.x - 10)
 	player_foot.y = clampf(player_foot.y, AREA.position.y + 10, AREA.end.y - 10)
 	model.position = player_foot
-	if absf(direction.x) > 0.01:
-		model.flip_h = direction.x < 0
+	model.update_movement(player_foot - previous_foot, delta)
 	if transition_ready and RETURN.has_point(player_foot):
 		transition_ready = false
 		GameManager.enter_region("city", Vector2(1900, 729))
