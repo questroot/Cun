@@ -178,6 +178,7 @@ func run() -> void:
 		check(at("steps", "return"), "voluntary object return")
 		check(at("shelter", "farewell_consent"), "Zhou consents to last bell after reports")
 		check(at("steps", "begin_release") and state.s.phase == "night" and state.s.ending == "", "bringing answers begins shore scene not instant ending")
+		check(state.flag("tongue_home") and not state.item("拆下的铜舌"), "last bell has physically restored tongue and no duplicate inventory")
 		check(not at("steps", "release_dawn"), "player cannot skip boatman's own release")
 		check(at("steps", "release_rope") and state.flag("released"), "boatman releases his own rope")
 		check(not at("steps", "board") and not at("steps", "shen") and not at("steps", "answer_whistle"), "departed boat cannot be boarded or interrogated")

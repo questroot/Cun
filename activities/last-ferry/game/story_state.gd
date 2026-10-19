@@ -120,7 +120,9 @@ func act(id: String) -> bool:
 			set_flag("morning_decided")
 			if id == "roof_commission":
 				set_flag("roof_commissioned")
-				note("许宁在门边等到老葛路过，问他认不认识补瓦的师傅。老葛说午后可带人来，只看屋顶，不替她决定房子的事。\n她把钥匙留给陶婶保管，写下自己的电话。盆里的水还没倒，先做能做完的一件。" + ("昨晚端去接水的盆不必挪回老位置。" if flag("basin_placed") else "她这才把空盆挪到桌脚的新湿处。"))
+				s.flags.erase("basin_carried")
+				set_flag("basin_placed")
+				note("许宁在门边等到老葛路过，问他认不认识补瓦的师傅。老葛说午后可带人来，只看屋顶，不替她决定房子的事。\n她把钥匙留给陶婶保管，写下自己的电话。盆里的水还没倒，先做能做完的一件。" + "她确认盆放在桌脚新湿处，不再把它挪回滴不到水的老位置。")
 			else:
 				set_flag("contact_left")
 				note("许宁还不能答应自己会留下。她写了电话号码，压在陶婶以前给的糖纸下面，请有屋顶消息就联系她。\n没写‘永不再走’，也没把房子交给河上的声音。关门时，她回头确认窗扣上了。")
@@ -400,8 +402,15 @@ func act(id: String) -> bool:
 			finish("light")
 		"begin_release":
 			if p != "steps" or s.phase != "night" or not farewell_ready() or flag("closing_light"): return refuse("先让两岸的人分别作答、归还旧物，再带回周伯愿意敲最后一次钟的答复。不是由你替他们断开联系。")
+			var repair := ""
+			if not flag("tongue_home"):
+				repair = "周伯先把钟提到干阶边。" + ("你把随身带着的铜舌交给他。" if item("拆下的铜舌") else "他卸下白罩，取出压在灯内的铜舌。") + "他当面挂回钟腹，轻试一下，确认金属能碰响。白灯不再招人上船；最后一声由他来敲。\n"
+				set_flag("shade_off")
+				set_flag("tongue_taken")
+				set_flag("tongue_home")
+				take("拆下的铜舌")
 			set_flag("closing_release")
-			note("你把最后的答复带到干阶上。周伯没有举灯，而是把红绳剩下的线头收进衣袋。\n‘这次不是谁没接到。’他说。\n沈渡听完，低头看了一眼系缆石：‘那就由我解。你们留在岸上。’\n他没有把绳索递给你。你可以看着他做完，也可以先和岸上的人站一会儿。")
+			note(repair + "你把最后的答复带到干阶上。周伯没有举灯，而是把红绳剩下的线头收进衣袋。\n‘这次不是谁没接到。’他说。\n沈渡听完，低头看了一眼系缆石：‘那就由我解。你们留在岸上。’\n他没有把绳索递给你。你可以看着他做完，也可以先和岸上的人站一会儿。")
 		"release_rope":
 			if p != "steps" or not flag("closing_release") or flag("released"): return false
 			set_flag("released")
