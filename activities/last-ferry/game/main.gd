@@ -387,7 +387,7 @@ func update_world() -> void:
 			add_object("lamp", "卸下白罩的旧灯" if story.flag("shade_off") else "白罩船灯", Vector2(250, 360))
 			add_object("bell", "铜舌归位的钟" if story.flag("tongue_home") else "缺铜舌的钟", Vector2(550, 240))
 			add_object("inscription", "黄灯底座", Vector2(620, 390))
-			if story.s.phase == "night" and story.flag("closing_light"):
+			if story.s.phase == "night" and (story.flag("closing_light") or story.flag("closing_release")):
 				add_object("zhou_absent", "周伯留下的空凳（他去了旧阶）", Vector2(455,430))
 			elif story.s.phase != "epilogue" or story.s.ending == "light": add_object("zhou", "周伯", Vector2(455, 430), "npc")
 			else: add_object("morning", "渡口次日告示", Vector2(455, 430))
@@ -415,12 +415,14 @@ func refresh_ui() -> void:
 		return
 	hud.text = "%s\n%s · %s" % [story.who(), {"dusk":"傍晚", "night":"入夜", "epilogue":"次日尾声"}[story.s.phase], Story.PLACES[story.s.place]]
 	summary.text = "侵入 %d / 2　证据 %d 项\n%s" % [story.s.pollution, story.s.evidence.size(), (story.ending_name() if not story.s.ending.is_empty() else "无倒计时 · 调查/普通交谈不增加侵入")]
+	if story.flag("closing_release") and story.s.phase == "night":
+		summary.text += "\n" + ("船已离岸；可再陪站，或确认迎天明。" if story.flag("released") else "答复已带回；在旧阶看沈渡自己解缆。")
 	if story.flag("closing_light") and story.s.phase == "night":
 		summary.text += "\n" + ("周伯已敲钟；可再陪站，或由你确认迎接天明。" if story.flag("closing_rang") else "黄灯已亮；周伯在旧阶等你，一起把钟敲完。")
 	message.text = story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
 	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
-	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
+	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light") and not story.flag("closing_release"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
@@ -437,6 +439,10 @@ func object_title(id: String) -> String:
 	return ""
 
 func show_help() -> void:
+	if story.flag("closing_release") and story.s.phase == "night":
+		open_modal("答复已到岸上", "缆绳应由沈渡自己解，不必再找线索或改灯。旧阶上可以走近他与周伯所在的位置，继续眼前的事。\n" + ("船已离岸。还可以陪岸上的人站一会儿，再确认迎接天明。" if story.flag("released") else "他还没有收回缆绳。你留在干阶上看他做完即可，不必登船。"))
+		button(modal_body, "回到岸上", close_modal)
+		return
 	if story.flag("closing_light") and story.s.phase == "night":
 		open_modal("当晚还没结束", "黄灯已经亮了，装置不必再重做。\n" + ("周伯已在旧阶敲过钟。可以继续在岸上听一会儿、同他说话，再由你选择‘今夜到这里，迎接天明’。没有倒计时。" if story.flag("closing_rang") else "周伯去了旧石阶，等你在干阶上陪他把钟敲完。从候船棚东侧路口过去，走近他再交互；不必登船或再找物品。"))
 		button(modal_body, "回到岸上", close_modal)
@@ -588,7 +594,7 @@ func interact() -> void:
 				if target == "inscription" and story.flag("consent") and story.s.phase == "dusk":
 					if story.s.identity == "he" and story.item("手提黄灯") and not story.flag("swapped"): act_button("把借来的黄灯安在等候的位置，暂不点亮", "swap")
 					button(modal_body, "等天暗再点灯（现在不结束傍晚）", func(): close_modal(); story.note("灯的位置已经可以安排，火要等暗下来再点。你还可以回街上、看旧屋，或准备好后主动确认入夜；钟和灯不会重置。"); refresh_ui())
-				if target == "inscription" and story.s.phase == "night" and story.flag("consent") and not story.flag("closing_light"):
+				if target == "inscription" and story.s.phase == "night" and story.flag("consent") and not story.flag("closing_light") and not story.flag("closing_release"):
 					button(modal_body, "将黄灯留在等候的位置，点亮灯芯", func(): confirm("点亮黄灯后仍留在夜里，周伯会到旧阶兑现敲钟的承诺；等你决定才进入次日。现在点亮？", func(): do_action("light_yellow")))
 				if target == "lamp" and story.s.phase == "night" and not story.flag("shade_off"):
 					if story.s.identity == "he" and not story.flag("swapped"): act_button("用手提黄灯换下白罩（需周伯同意）", "swap")
