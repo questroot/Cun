@@ -22,6 +22,10 @@ cd Cun
 
 GM 与现有玩法回归可运行 `powershell -NoProfile -ExecutionPolicy Bypass -File tests/gm.tests.ps1 -Render`；自动复制工程并使用独立测试存档，`-Render` 同时检查真实窗口渲染并截图。
 
+## AI 游玩 MCP
+
+[公共游玩MCP说明](tools/play_mcp/README.md)提供标准 stdio MCP：入口 `python tools/play_mcp/server.py`，工具包含项目列表、隔离启动、观察、真实输入和停止。公共原型先接入，个人活动复用同一协议；默认独立存档、仅本机回环桥，未开启时不监听。不提供GM、任意代码或内部状态写入，不修改用户DSH配置。另有供现有Agent调用的本地HTTP便利代理，它不是标准MCP HTTP传输。实际验证和未验项以共享状态为准。
+
 ## 每次工作先看这里
 
 **[PROJECT_STATUS.md](PROJECT_STATUS.md)** 是共享现状入口：已做什么、实际验证、未验证、风险和下一步。成员/Agent先读它，工作结束核对并按事实更新；规则在 [AGENTS.md](AGENTS.md)，分工在 [文档维护规划](docs/documentation-plan.md)。

@@ -43,6 +43,7 @@ var nav_label: Label
 var facing_left := false
 
 func _ready() -> void:
+	add_to_group("cun_play_visible")
 	city_map = CityMapScript.new()
 	city_map.name = "CityMap"
 	add_child(city_map)
@@ -96,12 +97,22 @@ func _ready() -> void:
 	_build_pet_bag()
 	_build_dialogue()
 	gm_panel = GMPanelScript.new()
+	gm_panel.set_meta("cun_play_blocked", true)
 	add_child(gm_panel)
 	_update_actors(0.0)
 	_update_camera()
 	resized.connect(_layout_hud)
 	_layout_hud()
 	DataManager.save_changed.connect(_refresh_status)
+
+## Accessibility description of already rendered actors, not hidden game state.
+func play_visible() -> Dictionary:
+	var player_point := player_foot - camera_offset
+	var guide_point := NPC_FOOT - camera_offset
+	var visible_description := {"location":"云庭主城", "player_screen":{"x":player_point.x,"y":player_point.y}, "controls":"WASD移动；点击地面寻路；靠近向导交谈；东侧出口通往外缘"}
+	if get_viewport_rect().has_point(guide_point):
+		visible_description["guide_screen"] = {"x":guide_point.x,"y":guide_point.y}
+	return visible_description
 
 func card_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -169,6 +180,7 @@ func _build_hud() -> void:
 	party_row.add_child(bag_button)
 	gm_button = Button.new()
 	gm_button.name = "GMButton"
+	gm_button.set_meta("cun_play_blocked", true)
 	gm_button.text = "GM 工具"
 	gm_button.size = Vector2(120, 44)
 	gm_button.add_theme_stylebox_override("normal", card_style(Color(0.04, 0.25, 0.26, 0.96)))
@@ -217,6 +229,7 @@ func _build_pet_bag() -> void:
 	heading.add_child(title)
 	var gm_upgrade := Button.new()
 	gm_upgrade.text = "GM 升级"
+	gm_upgrade.set_meta("cun_play_blocked", true)
 	gm_upgrade.custom_minimum_size = Vector2(96, 42)
 	gm_upgrade.pressed.connect(open_gm_panel)
 	heading.add_child(gm_upgrade)
@@ -275,6 +288,10 @@ func toggle_pet_bag() -> void:
 		_refresh_pet_bag()
 
 func open_gm_panel() -> void:
+	# Player-MCP sessions must not turn visible developer tools into a cheat API.
+	# Ordinary launches and existing GM tests have no bridge token and keep their behavior.
+	if OS.get_environment("CUN_PLAY_TOKEN").length() >= 32:
+		return
 	pet_bag.hide()
 	close_dialogue()
 	has_destination = false
