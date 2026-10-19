@@ -41,10 +41,13 @@ try:
     started=obs();assert '次日尾声' not in '\n'.join(started['texts'])
     go(590,445);key('e');click('留在干阶上');rung=obs();assert '那边也应了' in json.dumps(rung,ensure_ascii=False)
     key('escape');departed=obs();assert any(o['title']=='已离岸的夜船' for o in departed['visible'][0]['objects']),departed
+    click('保存');key('d',8);click('读取');click('确认')
+    restored=obs();assert restored['visible'][0]['player_screen']==departed['visible'][0]['player_screen'],restored
+    assert '次日尾声' not in '\n'.join(restored['texts']) and any(o['title']=='已离岸的夜船' for o in restored['visible'][0]['objects']),restored
     key('e');click('船离岸后');click('不必等话');click('确认');dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']) and '结束渡程' in json.dumps(dawn,ensure_ascii=False)
     go(115,565);key('e');go(95,565);key('e');go(100,440);key('e')
     go(320,375);key('e');click('先请人看屋顶');morning=obs();assert '午后可带人来' in json.dumps(morning,ensure_ascii=False)
     go(450,575);key('e');go(450,565);key('e');click('离开这段体验');click('确认')
     left=obs();assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
-    out=s.run_dir/'release-evidence.json';out.write_text(json.dumps({'begun':started,'rope_released':rung,'departed_world':departed,'dawn':dawn,'morning_choice':morning,'formal_departure':left,'method':'normal opening, bounded MCP inputs only; coordinator knows route, not blind play'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
+    out=s.run_dir/'release-evidence.json';out.write_text(json.dumps({'begun':started,'rope_released':rung,'departed_world':departed,'restored_mid_scene':restored,'dawn':dawn,'morning_choice':morning,'formal_departure':left,'method':'normal opening, bounded MCP inputs only; coordinator knows route, not blind play'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
 finally:s.stop()
