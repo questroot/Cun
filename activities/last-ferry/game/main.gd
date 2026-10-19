@@ -485,7 +485,7 @@ func show_spoiler_help() -> void:
 
 func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
-		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize", "hypothesis_voices", "hypothesis_brightness", "hypothesis_signals"]:
+		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize", "hypothesis_voices", "hypothesis_brightness", "hypothesis_signals", "wick_explain"]:
 			continue_zhou(id)
 		elif conversation_target in ["closing_zhou", "release_scene"] and id in ["closing_ring", "closing_speak", "closing_silent", "closing_watch", "release_rope", "release_watch"]:
 			var target := conversation_target
@@ -602,7 +602,9 @@ func interact() -> void:
 				button(modal_body, "闲谈 · 门口那只杯子", func(): close_modal(); story.note("陶婶：门口那只杯子别收，接漏水的。喝水用柜子上那只。\n" + ("许宁想起从前赊账的橘子糖。陶婶说还卖，不过现在得自己付钱。" if story.s.identity == "xu" else "阿禾说杯沿缺了一角，明天换个盆吧。陶婶看了看天：盆接铺子里头那处漏，门口先用这个。")); refresh_ui())
 				if story.s.identity == "he": act_button("向陶婶借手提黄灯（物品）", "yellow")
 			"ledger":
-				if story.s.identity == "he": act_button("核对周伯两份灯芯的账", "ledger")
+				if story.s.identity == "he":
+					act_button("核对周伯两份灯芯的账", "ledger")
+					if story.item("新灯芯"): act_button("这卷先留店里，亲自向周伯说明未送", "wick_keep")
 				else: button(modal_body, "不翻别人的账本", close_modal)
 			"paper":
 				act_button("查看旧桌（尊重私人物品）", "paper")
@@ -642,6 +644,7 @@ func interact() -> void:
 			"zhou":
 				button(modal_body, "闲谈 · 明早的渡船", func(): close_modal(); story.note("周伯：最后一班已经走了。明天六点。桥开了，这棚就拆。我还能守几年？她要是回来，看不见灯怎么办？"); refresh_ui())
 				if story.s.identity == "he" and story.item("新灯芯"): act_button("交付新灯芯（物品）", "deliver")
+				if story.flag("wick_kept") and not story.flag("wick_explained"): act_button("亲口说明这卷留店，不把未送推给陶婶", "wick_explain")
 				if story.has("inscription"): act_button("问他：黄灯底座写的‘钟声归岸’是什么意思？", "verify")
 				if not story.core() and story.has("covenant"):
 					button(modal_body, "把目前查到的事告诉周伯", func(): close_modal(); story.note("周伯听完，摇摇头：你说这些都是一回事，可我想知道你在哪儿看见的。\n仍可去现场查看：" + story.missing_sources()); refresh_ui())

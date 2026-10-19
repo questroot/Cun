@@ -133,7 +133,7 @@ func act(id: String) -> bool:
 			return true
 		if id == "epilogue":
 			var lines := {
-				"street":"陶婶仍在盘点。" + ("她把停航告示钉在门外，暂不再借渡口的工具。" if s.ending == "flood" else "她说今年的灯芯她来买，不是替谁承诺一生。阿禾还要清点货物。"),
+				"street":"陶婶仍在盘点。" + ("她把停航告示钉在门外，暂不再借渡口的工具。" if s.ending == "flood" else "她说今年的灯芯她来买，不是替谁承诺一生。阿禾还要清点货物。" + ("他把昨晚留店的那卷重新包好，是否送货的决定也写在自己账下。" if flag("wick_kept") else "")),
 				"house":"许宁决定先找人修漏雨的屋顶。卖不卖房，不必在今早一次决定。",
 				"shelter":("周伯已随居民撤走。普通渡船停航。" if s.ending == "flood" else ("周伯坐在棚下。普通渡船照常开航。" if s.ending == "light" else "周伯没在第一班船旁，陶婶说他今天睡晚了。普通渡船照常开航，夜船不再回来。")),
 				"steps":"旧阶留下" + ("过街水痕，渡口封闭。" if s.ending == "flood" else ("一盏只供等候的黄灯。夜间误唤停止，来年是否等候由当地人决定。" if s.ending == "light" else "安静的系缆石。铜钟还能报时，不再唤回夜船。"))}
@@ -149,6 +149,15 @@ func act(id: String) -> bool:
 		"ledger":
 			if p != "street" or s.identity != "he": return refuse("这不是你能核对的店内账目。")
 			learn("purchases")
+		"wick_keep":
+			if p != "street" or s.identity != "he" or not item("新灯芯"): return refuse("只有经手这卷灯芯的阿禾能重新安排这份货。")
+			take("新灯芯")
+			set_flag("wick_kept")
+			note("阿禾把未送出的灯芯放回干货抽屉，在周伯名字旁划掉‘再送一卷’，写明‘今晚未交，留店待用’。\n陶婶问是不是忘了送。他说不是，想先看看棚里已有的灯为什么还不够。她把账推回来：‘那这笔就由你自己跟他说。’\n这不替周伯决定要不要等谁，也不禁止你以后去找他。")
+		"wick_explain":
+			if p != "shelter" or s.identity != "he" or not flag("wick_kept"): return false
+			set_flag("wick_explained")
+			note("阿禾直说今晚没有再带一卷灯芯，不是忘送，也不是代陶婶拒收账。\n周伯看了他空着的手一眼：‘你也会自己拿主意了。’\n他没因此把灯交给你。你仍得问明白他为什么要照这一整夜；不多供一卷货，也不能替他收起女儿回来的位置。")
 		"yellow":
 			if p != "street" or s.identity != "he": return refuse("请在店里以学徒身份向陶婶借灯。")
 			give("手提黄灯")

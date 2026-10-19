@@ -122,6 +122,13 @@ func run() -> void:
 		check(state.save_game() and state.load_game() and state.flag("xu_identified"), "encounter progress survives save")
 		check(at("steps", "ask_departure") and state.has("xu_wish"), "ask person rather than infer desired ending")
 
+	state.fresh("xu")
+	check(not at("street", "wick_keep"), "returnee cannot take apprentice order responsibility")
+	state.fresh("he")
+	check(at("street", "wick_keep") and not state.item("新灯芯"), "apprentice can honestly retain undelivered goods")
+	check(not at("shelter", "deliver") and not state.flag("consent"), "retained order is neither duplicate delivery nor ending consent")
+	check(at("shelter", "wick_explain") and state.flag("wick_explained") and not state.flag("consent"), "personal explanation does not replace negotiation")
+	check(state.save_game() and state.load_game() and state.flag("wick_kept"), "new order decision compatible with v1 saves")
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
 		check(not at("shelter", "retrieve_tongue"), "cannot retrieve through closed shade")
