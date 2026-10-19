@@ -45,6 +45,8 @@ func play_visible() -> Dictionary:
 	var obstacles: Array = []
 	for rect in solids:
 		obstacles.append({"x":rect.position.x,"y":rect.position.y,"width":rect.size.x,"height":rect.size.y})
+	if story.s.place == "house":
+		result["visible_basin"] = {"x":(player.x + 15 if story.flag("basin_carried") else (450.0 if story.flag("basin_placed") else 600.0)),"y":(player.y - 8 if story.flag("basin_carried") else (340.0 if story.flag("basin_placed") else 250.0)),"appearance":("端在手上" if story.flag("basin_carried") else ("接住滴水" if story.flag("basin_placed") else "空盆"))}
 	result["objects"] = targets
 	result["obstacles"] = obstacles
 	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
@@ -247,6 +249,28 @@ func show_items() -> void:
 	open_modal("物品", text)
 	button(modal_body, "返回探索", close_modal)
 
+## Direct manipulation uses the same location-checked rules as keyboard accessibility.
+func try_world_click(point: Vector2) -> bool:
+	if not started or modal_open or paused or story.s.left or story.s.place != "house": return false
+	if story.s.phase == "epilogue": return false
+	if story.flag("basin_carried"):
+		if player.distance_to(point) > 82: return false
+		if point.distance_to(Vector2(450, 340)) < 35:
+			do_action("basin_place")
+			return true
+		if point.distance_to(Vector2(130, 300)) < 35:
+			do_action("basin_wrong")
+			return true
+	elif not story.flag("basin_placed") and player.distance_to(Vector2(600, 250)) < 82 and point.distance_to(Vector2(600, 250)) < 35:
+		if not story.flag("heard_drip"): story.act("roof_listen")
+		do_action("basin_take")
+		return true
+	return false
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if try_world_click(event.position): get_viewport().set_input_as_handled()
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo: return
 	if event.keycode == KEY_ESCAPE:
@@ -365,6 +389,7 @@ func refresh_ui() -> void:
 	summary.text = "侵入 %d / 2　证据 %d 项\n%s" % [story.s.pollution, story.s.evidence.size(), (story.ending_name() if not story.s.ending.is_empty() else "无倒计时 · 调查/普通交谈不增加侵入")]
 	message.text = story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
+	if story.s.place == "house": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
