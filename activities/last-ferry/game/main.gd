@@ -445,7 +445,7 @@ func show_spoiler_help() -> void:
 
 func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
-		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize"]:
+		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize", "hypothesis_voices", "hypothesis_brightness", "hypothesis_signals"]:
 			continue_zhou(id)
 		elif conversation_target == "closing_zhou" and id in ["closing_ring", "closing_speak", "closing_silent", "closing_watch"]:
 			var target := conversation_target
@@ -591,8 +591,11 @@ func interact() -> void:
 				if not story.core() and story.has("covenant"):
 					button(modal_body, "把目前查到的事告诉周伯", func(): close_modal(); story.note("周伯听完，摇摇头：你说这些都是一回事，可我想知道你在哪儿看见的。\n仍可去现场查看：" + story.missing_sources()); refresh_ui())
 				act_button("问他：小满以前坐渡船是什么样？", "zhou_memory")
+				act_button("提出解释：河上的声音都不可信，最好一概不听", "hypothesis_voices")
+				if story.has("lamp"):
+					act_button("提出解释：白罩太亮，遮暗些就行", "hypothesis_brightness")
 				if story.has("lamp") and story.has("timetable"):
-					act_button("把白罩与通航告示放在一起，讲出自己的猜测", "signal_guess")
+					act_button("提出解释：等候的光和招呼登船的光混在了一处", "hypothesis_signals")
 				if (story.flag("heard_zhou") or story.flag("signal_compared")) and not story.flag("consent"):
 					act_button("说以后自己会一直替他守灯", "promise_forever")
 					act_button("提议只把今晚的等候和通航分开，不承诺替任何人守一生", "waiting_plan")

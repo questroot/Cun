@@ -194,6 +194,17 @@ func act(id: String) -> bool:
 			if p != "shelter": return false
 			set_flag("heard_zhou")
 			note("周伯把灯放在膝上，拇指停在一道旧划痕上。\n‘小满小时候坐船晕，非说盯着岸上这点黄光就不难受。她下船以后，第一件事是骂我没接稳。’\n他笑了一下，又看向桥的围挡。\n‘你们说桥好了，渡口没用了。我也知道。可她要是照旧回来，岸上连个认得的地方都没有，谁告诉她搬哪儿了？’\n" + ("许宁没有说自己也失去过弟弟就一定懂他。她只把半哨攥在手里，等他把话说完。" if s.identity == "xu" else "阿禾本来想说以后自己也能买灯芯，话到嘴边停了：替人守一年，与替人答应一辈子，不是一回事。"))
+		"hypothesis_voices":
+			if p != "shelter": return false
+			set_flag("guessed_all_false")
+			note("你说河上的声音可能全是假的，索性一概不听。\n周伯问：‘老葛他娘还活着，他听到旧时候的声音，这说明有假的。可你怎么拿它证明，这里没有一个真的？’\n他没有因为你怀疑就发火：‘不听可以是你的选择，不能拿来替别人说他们等的谁都不存在。你要修的，是这盏灯怎么把人招上船。’")
+		"hypothesis_brightness":
+			if p != "shelter" or not has("lamp"): return refuse("先走近看过灯，再谈它哪里不对。")
+			set_flag("guessed_brightness")
+			note("你指着白罩，说也许只是太亮，遮暗些就好。\n周伯捻了一下灯芯：‘若只讲亮，黄灯拨旺也亮。旧告示上说的白灯，是照路，还是叫人做什么？’\n他没有给你记一次错。罩子的颜色、挂的位置、朝哪边开，不只是火有多大；你可以拿告示再比较。")
+		"hypothesis_signals":
+			if p != "shelter" or not has("lamp") or not has("timetable"): return refuse("这种解释需要你亲眼看过白罩与通航告示。两者都可以回现场补看。")
+			return act("signal_guess")
 		"signal_guess":
 			if p != "shelter" or not has("lamp") or not has("timetable"): return refuse("先看过白罩和通航告示，猜测才有亲眼所见的依据。")
 			set_flag("signal_compared")
