@@ -395,6 +395,7 @@ func update_world() -> void:
 			add_object("steps_gate", "去旧石阶", Vector2(750, 570), "gate")
 		"steps":
 			add_object("mooring", "系缆石", Vector2(460, 295))
+			if story.flag("closing_release") and story.s.phase == "night": add_object("release_scene", "正收缆绳的沈渡与岸上的人", Vector2(590,410), "npc")
 			if story.flag("closing_light") and story.s.phase == "night": add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
 			if not story.flag("tool_returned") and not story.item("老葛的工具袋"): add_object("toolbag", "湿阶低处的布袋", Vector2(235, 355))
 			if story.s.phase == "night": add_object("ship", "靠岸夜船", Vector2(700, 295))
@@ -453,7 +454,7 @@ func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
 		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize", "hypothesis_voices", "hypothesis_brightness", "hypothesis_signals"]:
 			continue_zhou(id)
-		elif conversation_target == "closing_zhou" and id in ["closing_ring", "closing_speak", "closing_silent", "closing_watch"]:
+		elif conversation_target in ["closing_zhou", "release_scene"] and id in ["closing_ring", "closing_speak", "closing_silent", "closing_watch", "release_rope", "release_watch"]:
 			var target := conversation_target
 			story.act(id)
 			conversation_response = story.notice
@@ -502,7 +503,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -520,7 +521,7 @@ func interact() -> void:
 		travel(dest)
 		return
 	if target == "back": travel("steps"); return
-	conversation_target = target if target in ["zhou", "mooring", "voices", "closing_zhou"] else ""
+	conversation_target = target if target in ["zhou", "mooring", "voices", "closing_zhou", "release_scene"] else ""
 	open_modal(object_title(target), conversation_response if not conversation_target.is_empty() and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
 	if story.s.phase == "epilogue":
 		open_modal(object_title(target), "天已经亮了。夜里的处理不会因为你走访而重来；看看人们各自准备做的事，再决定何时离开。")
@@ -536,6 +537,12 @@ func interact() -> void:
 		match target:
 			"zhou_absent":
 				button(modal_body, "看看棚边留下什么", func(): close_modal(); story.note("矮凳空着，通向旧阶的钟绳已经绷直。周伯没有消失，他说过要亲自把钟敲完。旧阶的路就在棚东侧。"); refresh_ui())
+			"release_scene":
+				if not story.flag("released"):
+					act_button("留在干阶上，看沈渡自己解缆", "release_rope")
+				else:
+					act_button("船离岸后，陪岸上的人再站一会儿", "release_watch")
+					button(modal_body, "不必等话都说完，迎接天明", func(): confirm("这次渡程已经结束，进入可走访的次日？", func(): do_action("release_dawn")))
 			"closing_zhou":
 				if not story.flag("closing_rang"):
 					act_button("站到周伯身旁，等他敲钟", "closing_ring")
@@ -619,7 +626,7 @@ func interact() -> void:
 					act_button("询问沈渡是否愿意结束渡程", "shen")
 					if not story.flag("closing_light"):
 						act_button("经本人同意归还旧物（不销毁）", "return")
-						act_button("解缆：让沈渡结束这一程", "untie")
+						if not story.flag("closing_release"): act_button("把两岸的答复带给沈渡，请他自己解缆", "begin_release")
 				else: button(modal_body, "查看旧阶", func(): close_modal(); story.note("普通渡船已走。系缆石上留下年复一年的磨痕。准备好后主动确认入夜。"); refresh_ui())
 			"ship":
 				if story.s.phase == "night" and story.s.identity == "xu": act_button("许宁独有：踏上靠岸侧舷（可随时回岸）", "board")

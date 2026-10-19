@@ -174,7 +174,12 @@ func run() -> void:
 		check(not state.farewell_ready(), "wishes alone are insufficient")
 		check(at("steps", "return"), "voluntary object return")
 		check(at("shelter", "farewell_consent"), "Zhou consents to last bell after reports")
-		check(at("steps", "untie") and state.s.ending == "untie", identity + " completes negotiated untie")
+		check(at("steps", "begin_release") and state.s.phase == "night" and state.s.ending == "", "bringing answers begins shore scene not instant ending")
+		check(not at("steps", "release_dawn"), "player cannot skip boatman's own release")
+		check(at("steps", "release_rope") and state.flag("released"), "boatman releases his own rope")
+		check(at("steps", "release_watch") and state.s.phase == "night", "shore remains after departure")
+		check(state.save_game() and state.load_game() and state.flag("released"), "departure scene saves mid-night")
+		check(at("steps", "release_dawn") and state.s.ending == "untie", identity + " completes negotiated untie")
 		check(at("street", "leave"), "untie can leave")
 
 	state.fresh("xu")

@@ -122,7 +122,7 @@ func act(id: String) -> bool:
 			return true
 		notice = "天已经亮了。可以走访各处，再从街口确认离开。"
 		return false
-	if flag("closing_light") and id in ["light_yellow", "restore", "untie", "danger", "break", "swap", "remove_shade", "retrieve_tongue", "install_tongue", "return", "farewell_consent"]:
+	if (flag("closing_light") or flag("closing_release")) and id in ["light_yellow", "restore", "untie", "danger", "break", "swap", "remove_shade", "retrieve_tongue", "install_tongue", "return", "farewell_consent"]:
 		return refuse("今晚已经点灯恢复边界，周伯在旧阶等着兑现敲钟的承诺。可以继续走动、交谈或保存，不必重做装置或把另一个结局叠在上面。")
 	match id:
 		"ledger":
@@ -379,6 +379,21 @@ func act(id: String) -> bool:
 			set_flag("tongue_home")
 			set_flag("yellow_lit")
 			finish("light")
+		"begin_release":
+			if p != "steps" or s.phase != "night" or not farewell_ready() or flag("closing_light"): return refuse("先让两岸的人分别作答、归还旧物，再带回周伯愿意敲最后一次钟的答复。不是由你替他们断开联系。")
+			set_flag("closing_release")
+			note("你把最后的答复带到干阶上。周伯没有举灯，而是把红绳剩下的线头收进衣袋。\n‘这次不是谁没接到。’他说。\n沈渡听完，低头看了一眼系缆石：‘那就由我解。你们留在岸上。’\n他没有把绳索递给你。你可以看着他做完，也可以先和岸上的人站一会儿。")
+		"release_rope":
+			if p != "steps" or not flag("closing_release") or flag("released"): return false
+			set_flag("released")
+			set_flag("tongue_home")
+			note("周伯敲钟。沈渡把缆绳从石上绕回来，慢慢解开被水泡紧的结；中间卡了一下，他换了只手。\n‘这边已到齐。’岸上传过去。\n‘那边也应了。’他回答。\n船离开半尺，没再把踏板伸出来。不是水面突然变得空白，而是那盏旧船灯终于有了离岸的方向。")
+		"release_watch":
+			if p != "steps" or not flag("released"): return false
+			note("许宁把空下来的手放进口袋。周伯拣起落在石缝里的短线头，没往河里抛。\n有人像还想说一句，船上却只传来一声知道了。水仍在流，你们不用站到所有话都说完才回去。")
+		"release_dawn":
+			if p != "steps" or not flag("closing_release") or not flag("released"): return refuse("缆绳还在石上，等沈渡自己完成解约。")
+			finish("untie")
 		"untie":
 			if p != "steps" or s.phase != "night" or not farewell_ready(): return refuse("解缆未完成：须了解灯钟因果、询问三方意愿、归还旧物，再征得周伯最后敲钟的同意。")
 			set_flag("tongue_home")
