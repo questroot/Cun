@@ -475,9 +475,13 @@ func interact() -> void:
 				if story.has("inscription"): act_button("问他：黄灯底座写的‘钟声归岸’是什么意思？", "verify")
 				if not story.core() and story.has("covenant"):
 					button(modal_body, "把目前查到的事告诉周伯", func(): close_modal(); story.note("周伯听完，摇摇头：你说这些都是一回事，可我想知道你在哪儿看见的。\n仍可去现场查看：" + story.missing_sources()); refresh_ui())
-				if story.core():
-					act_button("拿出所见的告示、灯罩与钟，问能否把各自位置还原", "consent")
-					if not story.flag("consent"): act_button("不愿再等，坚持先收白灯", "force")
+				act_button("问他：小满以前坐渡船是什么样？", "zhou_memory")
+				if story.has("lamp") and story.has("timetable"):
+					act_button("把白罩与通航告示放在一起，讲出自己的猜测", "signal_guess")
+				if story.flag("heard_zhou") and not story.flag("consent"):
+					act_button("说以后自己会一直替他守灯", "promise_forever")
+					act_button("提议只把今晚的等候和通航分开，不承诺替任何人守一生", "waiting_plan")
+				if story.core() and not story.flag("consent"): act_button("不愿再等，坚持先收白灯", "force")
 				if story.flag("forced"): act_button("为强硬干预道歉并重新说明", "apologize")
 				if story.s.phase == "night":
 					act_button("转述本人意愿，请周伯敲最后一次钟", "farewell_consent")
