@@ -289,6 +289,21 @@ func run() -> void:
 	scene.continue_river("call_paper")
 	check(scene.modal_open and scene.story.s.pollution == 0 and scene.conversation_response == scene.story.notice, "river response stays visible without punishing question")
 	scene.close_modal()
+	scene.story.set_flag("closing_release")
+	scene.update_world()
+	scene.player = Vector2(590,445)
+	scene.nearest = "release_scene"
+	scene.interact()
+	var release_button = null
+	for child in scene.modal_body.get_children():
+		if child is Button and child.text.begins_with("留在干阶上"):
+			release_button = child
+	check(release_button != null, "actual departure scene exposes boatman action")
+	if release_button != null:
+		release_button.pressed.emit()
+		check(scene.story.flag("released") and scene.modal_open, "departure callback preserves scene")
+		check(scene.object_title("ship") == "已离岸的夜船", "departure callback refreshes actual object list immediately")
+	scene.close_modal()
 	for id in ["xu", "he"]:
 		scene.start_game(id)
 		for place in ["street", "house", "shelter", "steps"]:

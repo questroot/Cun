@@ -463,6 +463,9 @@ func act_button(text: String, id: String) -> void:
 		elif conversation_target in ["closing_zhou", "release_scene"] and id in ["closing_ring", "closing_speak", "closing_silent", "closing_watch", "release_rope", "release_watch"]:
 			var target := conversation_target
 			story.act(id)
+			if id == "release_rope":
+				last_place = ""
+				update_world()
 			conversation_response = story.notice
 			modal_open = false
 			nearest = target
