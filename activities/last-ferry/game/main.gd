@@ -444,7 +444,7 @@ func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
 		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize"]:
 			continue_zhou(id)
-		elif conversation_target in ["mooring", "voices"] and id in ["listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen"]:
+		elif conversation_target in ["mooring", "voices"] and id in ["listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen", "whistle_short", "whistle_long", "whistle_listen", "whistle_reset"]:
 			continue_river(id)
 		else:
 			close_modal()
@@ -598,7 +598,13 @@ func add_river_choices() -> void:
 	act_button("先站住，听河上有什么声音", "listen_river")
 	if story.flag("river_heard"):
 		act_button("问那张湿纸到底要带什么", "call_paper")
-		act_button("用旧日的哨声回应，不向船上走", "answer_whistle")
+		if story.s.identity == "he":
+			act_button("请许宁按她记得的方式回应，自己留在岸上", "answer_whistle")
+		elif not story.flag("xu_identified"):
+			act_button("吹一声短音 ·", "whistle_short")
+			act_button("吹一声长音 ——", "whistle_long")
+			act_button("停下，听听这次是否有人回答", "whistle_listen")
+			act_button("放下哨子，等回声散去再试", "whistle_reset")
 	if story.flag("xu_identified"):
 		act_button("先谈旧屋漏雨的事，不催着告别", "ask_roof")
 		act_button("问他：你希望这一程结束吗？", "ask_departure")

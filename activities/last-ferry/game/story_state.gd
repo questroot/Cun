@@ -246,6 +246,29 @@ func act(id: String) -> bool:
 		"call_paper":
 			if s.phase != "night" or not p in ["steps", "boat"] or not flag("river_heard"): return false
 			note("你照着湿纸问要带什么。河上好几处一起回答‘过来’，没有一个先叫你的名字。你停住，没有往前走。\n那张没有署名的纸至少不能替任何一个人表达意愿。回应一次普通问话没有增加侵入。")
+		"whistle_short", "whistle_long":
+			if s.identity != "xu" or not item("铜哨") or s.phase != "night" or not p in ["steps", "boat"]: return refuse("这不是你手里的物品；阿禾可以请许宁自己回应，不必模仿她的回忆。")
+			if not flag("river_heard"): return refuse("先听一听，再决定朝哪个方向吹。")
+			var count := 0
+			for n in range(3):
+				if flag("whistle_note_" + str(n)): count += 1
+			if count >= 3: return refuse("已吹完三声。先停下听，或重新来，不必一直吹。")
+			set_flag("whistle_note_" + str(count))
+			if id == "whistle_long": set_flag("whistle_long_" + str(count))
+			note("铜哨：" + ("——（长音）" if id == "whistle_long" else "·（短音）") + "\n这是第%s声。你还可以接着吹，或停下听。" % (count + 1))
+		"whistle_reset":
+			if s.phase != "night" or not p in ["steps", "boat"]: return false
+			for n in range(3):
+				s.flags.erase("whistle_note_" + str(n))
+				s.flags.erase("whistle_long_" + str(n))
+			note("你放下哨子，等回声消失。可以重新试，不必跟着每个声音回答。")
+		"whistle_listen":
+			if s.identity != "xu" or s.phase != "night" or not p in ["steps", "boat"]: return false
+			if not flag("whistle_note_2") or flag("whistle_long_0") or flag("whistle_long_1") or not flag("whistle_long_2"):
+				note("水面把你吹过的声音原样送回来。没有那句熟悉的抱怨。许宁没有往前走；可以想想旧屋里练过的回答，再试一次。")
+				return true
+			if not flag("whistle_rhythm"): return refuse("回声与记忆似乎相像，但你还不能只凭巧合认人。旧屋里留下的往事，可先亲自想一遍。")
+			return act("answer_whistle")
 		"answer_whistle":
 			if s.phase != "night" or not p in ["steps", "boat"]: return false
 			if s.identity == "he":

@@ -108,7 +108,16 @@ func run() -> void:
 			at("shelter", "lamp")
 			at("shelter", "bell")
 			check(at("house", "exchange"), "apprentice gets explicit cooperation")
-		check(at("steps", "answer_whistle") and state.flag("xu_identified") and not state.has("xu_wish"), "identification distinct from deciding wishes")
+		if identity == "xu":
+			check(at("steps", "whistle_long") and at("steps", "whistle_listen") and not state.flag("xu_identified"), "wrong partial rhythm gives feedback not identification")
+			check(state.s.pollution == 0, "wrong rhythm never punishes ordinary experiment")
+			check(at("steps", "whistle_reset"), "can reset audible sequence")
+			check(at("steps", "whistle_short") and at("steps", "whistle_short") and at("steps", "whistle_long"), "player constructs three-note signal")
+			check(state.save_game() and state.load_game() and state.flag("whistle_note_2"), "partial physical sequence persists")
+			check(at("steps", "whistle_listen") and state.flag("xu_identified") and not state.has("xu_wish"), "matching response identifies but does not decide wish")
+		else:
+			check(not at("steps", "whistle_short"), "apprentice does not magically carry private whistle")
+			check(at("steps", "answer_whistle") and state.flag("xu_identified") and not state.has("xu_wish"), "cooperation distinct from deciding wishes")
 		check(at("steps", "ask_roof") and not state.has("xu_wish"), "ordinary conversation not automatic farewell")
 		check(state.save_game() and state.load_game() and state.flag("xu_identified"), "encounter progress survives save")
 		check(at("steps", "ask_departure") and state.has("xu_wish"), "ask person rather than infer desired ending")
