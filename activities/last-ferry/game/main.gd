@@ -321,6 +321,7 @@ func update_world() -> void:
 			solids.append(Rect2(145, 190, 235, 95))
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
+			add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
 			add_object("shelter_gate", "去候船棚", Vector2(750, 385), "gate")
 			add_object("house_gate", "去许家旧屋", Vector2(100, 440), "gate")
 			add_object("departure", "街口·离开体验", Vector2(450, 570), "gate")
@@ -343,7 +344,8 @@ func update_world() -> void:
 			add_object("street_gate", "回街口", Vector2(95, 570), "gate")
 			add_object("steps_gate", "去旧石阶", Vector2(750, 570), "gate")
 		"steps":
-			add_object("mooring", "系缆石·两岸传话", Vector2(460, 295))
+			add_object("mooring", "系缆石", Vector2(460, 295))
+			if not story.flag("tool_returned") and not story.item("老葛的工具袋"): add_object("toolbag", "湿阶低处的布袋", Vector2(235, 355))
 			if story.s.phase == "night": add_object("ship", "靠岸夜船", Vector2(700, 295))
 			else: add_object("morning", "河面与普通渡船", Vector2(700, 295))
 			add_object("shelter_gate", "回候船棚", Vector2(115, 565), "gate")
@@ -402,7 +404,7 @@ func travel(place: String) -> void:
 func do_action(id: String) -> void:
 	var before_phase: String = story.s.phase
 	story.act(id)
-	if before_phase != story.s.phase: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -427,6 +429,10 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"ge":
+				act_button("坐下听他说昨晚的事", "ge_talk")
+				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
+			"toolbag": act_button("站在干阶上，用竹竿挑起布袋", "tool_retrieve")
 			"tao":
 				button(modal_body, "闲谈 · 门口那只杯子", func(): close_modal(); story.note("陶婶：门口那只杯子别收，接漏水的。喝水用柜子上那只。\n许宁想起从前赊账的橘子糖。陶婶说还卖，不过现在得自己付钱。"); refresh_ui())
 				if story.s.identity == "he": act_button("向陶婶借手提黄灯（物品）", "yellow")

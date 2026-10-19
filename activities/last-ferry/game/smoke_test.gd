@@ -72,6 +72,11 @@ func run() -> void:
 
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
+		check(not at("steps", "tool_retrieve"), "unidentified bag not automatically looted")
+		check(at("street", "ge_talk"), "living witness has ordinary context")
+		check(at("steps", "tool_retrieve") and state.item("老葛的工具袋"), "retrieve physical bag safely")
+		check(not at("steps", "tool_retrieve"), "cannot duplicate optional bag")
+		check(at("street", "tool_return") and state.flag("tool_returned") and not state.item("老葛的工具袋"), "return belongs to living owner")
 		check(not at("house", "basin_place"), "cannot place absent basin")
 		check(not at("house", "basin_take"), "observe leak before moving basin")
 		check(at("house", "roof_listen") and at("house", "basin_take"), "observe and carry basin")

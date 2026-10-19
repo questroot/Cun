@@ -104,6 +104,20 @@ func act(id: String) -> bool:
 			if p != "street" or s.identity != "he": return refuse("请在店里以学徒身份向陶婶借灯。")
 			give("手提黄灯")
 			note("陶婶借出手提黄灯：只供等候，不招呼人上船。你答应天亮归还。")
+		"ge_talk":
+			if p != "street": return false
+			set_flag("ge_met")
+			note("老葛蹲在围挡旁补鞋。\n‘昨晚有人叫我吃饭，是我妈的声音。’他用锥子比了一下河边，‘她活着呢，今早还骂我裤脚没洗干净。可昨晚那一声，跟小时候一样。’\n他没说河上全是假的，只说自己的工具袋还挂在旧阶低处，天亮以后才敢去拿。")
+		"tool_retrieve":
+			if p != "steps" or not flag("ge_met"): return refuse("台阶低处挂着一只布袋，不是无主的东西。先问清楚再拿。")
+			if flag("tool_returned") or item("老葛的工具袋"): return refuse("袋子已经拿上来了，不会再多出一份。")
+			give("老葛的工具袋")
+			note("你不踩湿苔，用上一级石缝里的旧竹竿挑起布袋。袋底破了一个口，少了把扳手；袋绳却还完整。水里有一声很近的‘回来’，没有人因你捡起工具就获准拉你下去。")
+		"tool_return":
+			if p != "street" or not item("老葛的工具袋"): return refuse("你还没取回工具袋。老葛说不急：鞋还没补好。")
+			take("老葛的工具袋")
+			set_flag("tool_returned")
+			note("老葛接过袋子，数了数工具，没有说谢谢就立刻消失。\n‘扳手没了，别下去找。我还有一把。’他把长凳让出一半，继续缝鞋，‘白灯本来是让活人上船的，这几天周伯拿它照一整夜。我以为他眼睛坏了。你要问就好好问，他听得见。’\n围挡后有人喊他明早量桥。他答应一声，这里的活还没做完。")
 		"roof_listen":
 			if p != "house": return false
 			set_flag("heard_drip")
@@ -317,7 +331,7 @@ func valid_save(data: Variant) -> bool:
 	for id in data.evidence:
 		if not id is String or not EVIDENCE.has(id): return false
 	for id in data.items:
-		if not id is String or not id in ["铜哨", "新灯芯", "手提黄灯", "拆下的铜舌"]: return false
+		if not id is String or not id in ["铜哨", "新灯芯", "手提黄灯", "拆下的铜舌", "老葛的工具袋"]: return false
 	if data.identity == "he" and "铜哨" in data.items: return false
 	for line in data.journal:
 		if not line is String: return false
