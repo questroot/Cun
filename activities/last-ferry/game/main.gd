@@ -146,8 +146,17 @@ func _setup_ui() -> void:
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sc.custom_minimum_size.y = 480
 	modal_column.add_child(sc)
-	button(navigation, "向上翻阅", func(): sc.scroll_vertical = maxi(0, sc.scroll_vertical - 260))
-	button(navigation, "向下翻阅", func(): sc.scroll_vertical += 260)
+	var page_up := button(navigation, "向上翻阅", func(): sc.scroll_vertical = maxi(0, sc.scroll_vertical - 260))
+	var page_down := button(navigation, "向下翻阅", func(): sc.scroll_vertical += 260)
+	var bar := sc.get_v_scroll_bar()
+	var update_paging := func():
+		page_up.disabled = bar.value <= bar.min_value
+		page_down.disabled = bar.value + bar.page >= bar.max_value
+		page_up.text = "已在顶部" if page_up.disabled else "向上翻阅"
+		page_down.text = "已到底部" if page_down.disabled else "向下翻阅"
+	bar.changed.connect(update_paging)
+	bar.value_changed.connect(func(_value: float): update_paging.call())
+	update_paging.call()
 	modal_body = VBoxContainer.new()
 	modal_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	modal_body.add_theme_constant_override("separation", 12)
