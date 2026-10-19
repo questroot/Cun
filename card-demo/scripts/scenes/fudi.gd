@@ -4,8 +4,10 @@ const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
 const Tools = preload("res://scripts/scenes/exploration_tools.gd")
 const Hero = preload("res://scripts/scenes/hero_walk_sprite.gd")
+const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const Landscape = preload("res://scripts/scenes/fudi_landscape.gd")
 const ENEMY_ART := preload("res://assets/characters/pet_enemy_stone.png")
-const ARENA := Rect2(64, 250, 1152, 382)
+const ARENA := Rect2(24, 212, 1232, 430)
 const SPEED := 260.0
 const ATTACKS := {
 	"j": {"damage": 26, "cooldown": 0.32, "radius": 112.0, "name": "斩击"},
@@ -31,13 +33,35 @@ var hint: Label
 var outcome: PanelContainer
 var result: Label
 var finished := false
+var round_cleared := false
+var world_view: Control
+var world_canvas: Control
+var camera_origin := Vector2.ZERO
+var minimap: Control
+var dialogue: PanelContainer
+var dialogue_text: Label
+var journal: PanelContainer
+var journal_text: RichTextLabel
+var continue_button: Button
 
 func _ready() -> void:
 	DisplayServer.window_set_title("福地")
-	for id: String in ["grove", "quarry", "ruins"]:
+	for item: String in Catalog.ITEMS:
+		inventory[item] = 0
+	for id: String in Maps.IDS:
 		states[id] = _create_region(id)
+	world_view = Control.new()
+	world_view.position = ARENA.position
+	world_view.size = ARENA.size
+	world_view.clip_contents = true
+	world_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(world_view)
+	world_canvas = Control.new()
+	world_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	world_canvas.draw.connect(_draw_world)
+	world_view.add_child(world_canvas)
 	model = Hero.new()
-	add_child(model)
+	world_canvas.add_child(model)
 	_build_hud()
 	tools = Tools.new()
 	tools.region = region
@@ -49,35 +73,66 @@ func _ready() -> void:
 
 func _create_region(id: String) -> Dictionary:
 	var pickups: Array[Dictionary] = []
-	var index := 0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7001 + Maps.IDS.find(id) * 79
+	var extent: Vector2 = Maps.MAPS[id].size
 	for item: String in Catalog.REGIONS[id].resources:
 		for n in range(int(Catalog.REGIONS[id].resources[item])):
-			var point := Vector2(135 + (index % 8) * 140, 328 + floori(index / 8.0) * 126)
+			var point := _free_point(id, rng, pickups)
 			pickups.append({"item": item, "position": point})
-			index += 1
 	var enemies: Array[Dictionary] = []
 	for n in range(int(Catalog.REGIONS[id].enemies)):
-		enemies.append({"position": Vector2(190 + n * 170, 565 if n % 2 == 0 else 320), "hp": 60, "flash": 0.0})
-	return {"pickups": pickups, "enemies": enemies}
+		var point := _free_point(id, rng, enemies)
+		enemies.append({"position": point, "home": point, "hp": 60, "flash": 0.0})
+	return {"pickups": pickups, "enemies": enemies, "visited": [false, false, false], "rested": false, "foot": Maps.MAPS[id].spawn * extent}
+
+func _free_point(id: String, rng: RandomNumberGenerator, occupied: Array) -> Vector2:
+	var extent: Vector2 = Maps.MAPS[id].size
+	for attempt in range(3000):
+		var point := Vector2(rng.randf_range(130, extent.x - 130), rng.randf_range(160, extent.y - 130))
+		if not Maps.walkable(id, point, 55) or point.distance_to(Maps.MAPS[id].spawn * extent) < 400:
+			continue
+		var clear := true
+		for site: Array in Maps.MAPS[id].sites:
+			if point.distance_to(site[1] * extent) < 150:
+				clear = false
+		for exit: Array in Maps.MAPS[id].exits:
+			if point.distance_to(exit[1] * extent) < 160:
+				clear = false
+		for other: Dictionary in occupied:
+			if point.distance_to(other.position) < 76:
+				clear = false
+		if clear:
+			return point
+	# A deterministic safe road point; normal configured densities never exhaust the attempts.
+	return Maps.MAPS[id].spawn * extent
 
 func _build_hud() -> void:
 	var header := PanelContainer.new()
 	header.position = Vector2(24, 20)
-	header.size = Vector2(1232, 126)
+	header.size = Vector2(1232, 124)
 	header.add_theme_stylebox_override("panel", UI.panel())
 	add_child(header)
 	var layout := VBoxContainer.new()
 	header.add_child(layout)
-	status = UI.label("", 27, Color("#f4daa0"))
+	status = UI.label("", 25, Color("#f4daa0"))
 	layout.add_child(status)
 	bag = UI.label("", 19)
 	layout.add_child(bag)
-	layout.add_child(UI.label("WASD 移动  /  J 朝向斩击  /  K 朝向灵弹  /  L 范围震荡  /  靠近光点自动采集", 18))
+	layout.add_child(UI.label("WASD 移动  /  J 斩击  K 灵弹  L 震荡  /  E 调查·休息·通行  /  B 行囊与见闻  /  靠近光点采集", 17))
 	skills = UI.label("", 19, Color("#b5d9d1"))
 	skills.position = Vector2(350, 169)
 	add_child(skills)
-	hint = UI.label("", 19, Color("#e5d49e"))
-	hint.position = Vector2(66, 662)
+	minimap = Control.new()
+	minimap.position = Vector2(1000, 230)
+	minimap.size = Vector2(238, 158)
+	minimap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	minimap.draw.connect(_draw_minimap)
+	add_child(minimap)
+	hint = UI.label("", 17, Color("#e5d49e"))
+	hint.position = Vector2(28, 652)
+	hint.size = Vector2(1224, 66)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(hint)
 	var layer := CanvasLayer.new()
 	layer.layer = 80
@@ -93,9 +148,39 @@ func _build_hud() -> void:
 	result = UI.label("", 25, Color("#f4daa0"))
 	result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	end_layout.add_child(result)
+	continue_button = UI.button("继续自由探索", func() -> void: finished = false; outcome.hide())
+	end_layout.add_child(continue_button)
 	end_layout.add_child(UI.button("重新开始一轮", restart))
 	end_layout.add_child(UI.button("返回游戏选择", func() -> void: GameManager.goto_scene("menu")))
 	outcome.hide()
+	dialogue = PanelContainer.new()
+	dialogue.position = Vector2(210, 250)
+	dialogue.size = Vector2(860, 280)
+	dialogue.add_theme_stylebox_override("panel", UI.panel(Color("#142e35")))
+	layer.add_child(dialogue)
+	var talk_layout := VBoxContainer.new()
+	talk_layout.add_theme_constant_override("separation", 18)
+	dialogue.add_child(talk_layout)
+	dialogue_text = UI.label("", 22, Color("#f0dfb5"))
+	dialogue_text.custom_minimum_size = Vector2(810, 160)
+	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	talk_layout.add_child(dialogue_text)
+	talk_layout.add_child(UI.button("收起记录  E / Esc", func() -> void: dialogue.hide()))
+	dialogue.hide()
+	journal = PanelContainer.new()
+	journal.position = Vector2(180, 100)
+	journal.size = Vector2(920, 520)
+	journal.add_theme_stylebox_override("panel", UI.panel())
+	layer.add_child(journal)
+	var book_layout := VBoxContainer.new()
+	journal.add_child(book_layout)
+	journal_text = RichTextLabel.new()
+	journal_text.custom_minimum_size = Vector2(860, 420)
+	journal_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	journal_text.add_theme_font_size_override("normal_font_size", 20)
+	book_layout.add_child(journal_text)
+	book_layout.add_child(UI.button("继续探索  B / Esc", func() -> void: journal.hide()))
+	journal.hide()
 
 func remaining_resources(id: String) -> Dictionary:
 	var counts: Dictionary = {}
@@ -107,17 +192,26 @@ func remaining_resources(id: String) -> Dictionary:
 		counts[pickup.item] += 1
 	return counts
 
-func enter_region(id: String) -> void:
+func enter_region(id: String, via_gate: bool = false) -> void:
 	if not states.has(id) or finished:
 		return
+	var previous := region
+	if world_canvas.size != Vector2.ZERO:
+		states[region].foot = player_foot
 	region = id
 	tools.region = id
-	player_foot = Vector2(640, 460)
+	player_foot = states[id].foot
+	if via_gate:
+		for exit: Array in Maps.MAPS[id].exits:
+			if exit[0] == previous:
+				player_foot = exit[1] * Maps.MAPS[id].size + Vector2(100 if exit[1].x < 0.5 else -100, 0)
+	world_canvas.size = Maps.MAPS[id].size
 	model.position = player_foot
 	model.update_movement(Vector2.ZERO, 0)
 	projectiles.clear()
 	effects.clear()
 	hurt_timer = maxf(hurt_timer, 1.0)
+	_update_camera()
 	_refresh_ui()
 	queue_redraw()
 
@@ -125,17 +219,33 @@ func restart() -> void:
 	GameManager.goto_scene("fudi")
 
 func _unhandled_input(event: InputEvent) -> void:
-	if tools.is_open() or finished:
-		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
+		if dialogue.visible:
+			if key in [KEY_E, KEY_ESCAPE]:
+				dialogue.hide()
+			get_viewport().set_input_as_handled()
+			return
+		if journal.visible:
+			if key in [KEY_B, KEY_ESCAPE]:
+				journal.hide()
+			get_viewport().set_input_as_handled()
+			return
+		if tools.is_open() or finished:
+			return
+		if key == KEY_B:
+			open_journal()
+			get_viewport().set_input_as_handled()
+		elif key == KEY_E:
+			interact()
+			get_viewport().set_input_as_handled()
 		var actions := {KEY_J: "j", KEY_K: "k", KEY_L: "l"}
 		if actions.has(key):
 			attack(actions[key])
 			get_viewport().set_input_as_handled()
 
 func attack(kind: String) -> bool:
-	if not ATTACKS.has(kind) or finished or tools.is_open() or float(cooldowns[kind]) > 0:
+	if not ATTACKS.has(kind) or finished or _paused() or float(cooldowns[kind]) > 0:
 		return false
 	var config: Dictionary = ATTACKS[kind]
 	cooldowns[kind] = config.cooldown
@@ -150,7 +260,7 @@ func attack(kind: String) -> bool:
 		effects.append({"position": origin, "radius": config.radius, "life": 0.22, "kind": kind, "facing": facing})
 	_remove_dead()
 	_refresh_ui()
-	queue_redraw()
+	world_canvas.queue_redraw()
 	return true
 
 func _damage(enemy: Dictionary, amount: int) -> void:
@@ -165,7 +275,8 @@ func _remove_dead() -> void:
 	var remaining := 0
 	for id: String in states:
 		remaining += states[id].enemies.size()
-	if remaining == 0:
+	if remaining == 0 and not round_cleared:
+		round_cleared = true
 		_end_round(true)
 
 func _collect_nearby() -> void:
@@ -176,13 +287,12 @@ func _collect_nearby() -> void:
 			pickups.remove_at(i)
 
 func _process(delta: float) -> void:
-	if tools.is_open() or finished:
+	if _paused() or finished:
 		model.update_movement(Vector2.ZERO, 0)
 		return
 	var direction := Vector2(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))).normalized()
 	var previous := player_foot
-	player_foot += direction * SPEED * delta
-	player_foot = player_foot.clamp(ARENA.position + Vector2(24, 64), ARENA.end - Vector2(24, 16))
+	player_foot = move_world(player_foot, direction * SPEED * minf(delta, 0.1))
 	if direction != Vector2.ZERO:
 		facing = direction
 	model.position = player_foot
@@ -194,9 +304,9 @@ func _process(delta: float) -> void:
 	for enemy: Dictionary in states[region].enemies:
 		enemy.flash = maxf(0, float(enemy.flash) - delta)
 		var offset: Vector2 = player_foot - enemy.position
-		if offset.length() > 32:
-			enemy.position += offset.normalized() * minf(76.0 * delta, offset.length() - 32)
-		elif hurt_timer <= 0:
+		if offset.length() > 32 and offset.length() < 380:
+			enemy.position = move_world(enemy.position, offset.normalized() * minf(76.0 * delta, offset.length() - 32))
+		elif offset.length() <= 32 and hurt_timer <= 0:
 			health = maxi(0, health - 10)
 			hurt_timer = 1.0
 	_tick_projectiles(delta)
@@ -208,7 +318,8 @@ func _process(delta: float) -> void:
 	if health <= 0:
 		_end_round(false)
 	_refresh_ui()
-	queue_redraw()
+	_update_camera()
+	world_canvas.queue_redraw()
 
 func _tick_projectiles(delta: float) -> void:
 	for i in range(projectiles.size() - 1, -1, -1):
@@ -227,13 +338,14 @@ func _tick_projectiles(delta: float) -> void:
 		if not hit.is_empty():
 			_damage(hit, int(ATTACKS.k.damage))
 			shot.life = 0.0
-		if float(shot.life) <= 0 or not ARENA.has_point(shot.position):
+		if float(shot.life) <= 0 or not Maps.walkable(region, shot.position, 0):
 			projectiles.remove_at(i)
 	_remove_dead()
 
 func _end_round(won: bool) -> void:
 	finished = true
-	result.text = "三境已肃清 · 本轮探索完成\n采集物品 %d 份" % _inventory_total() if won else "本轮探索结束\n采集物品 %d 份，重开后再试一次。" % _inventory_total()
+	result.text = "五域已肃清 · 战斗目标完成\n采集 %d 份，可继续寻找人物线索。" % _inventory_total() if won else "本轮探索结束\n采集物品 %d 份，重开后再试一次。" % _inventory_total()
+	continue_button.visible = won
 	outcome.show()
 
 func _inventory_total() -> int:
@@ -244,7 +356,8 @@ func _inventory_total() -> int:
 
 func _refresh_ui() -> void:
 	status.text = "福地  /  %s     生命 %d / 100     守卫 %d" % [Catalog.REGIONS[region].name, health, states[region].enemies.size()]
-	bag.text = "行囊    木料 %d     灵草 %d     玄铁 %d     灵晶 %d" % [inventory.wood, inventory.herb, inventory.ore, inventory.crystal]
+	var extent: Vector2 = Maps.MAPS[region].size
+	bag.text = "%s · %s   |   行囊 %d 份   |   坐标 %d, %d / %d × %d" % [Maps.MAPS[region].npc, Maps.MAPS[region].chapter, _inventory_total(), int(player_foot.x), int(player_foot.y), int(extent.x), int(extent.y)]
 	var parts: Array[String] = []
 	for key: String in cooldowns:
 		parts.append("%s %s  %s" % [key.to_upper(), ATTACKS[key].name, "就绪" if float(cooldowns[key]) <= 0 else "%.1fs" % cooldowns[key]])
@@ -253,37 +366,166 @@ func _refresh_ui() -> void:
 	for id: String in states:
 		if states[id].enemies.is_empty():
 			cleared += 1
-	hint.text = "三境肃清 %d / 3  ·  %s" % [cleared, "本地已清理，按 M 选择下一地图；可继续收集资源。" if states[region].enemies.is_empty() else "面向守卫攻击，保持移动躲避接触伤害。"]
+	var target := interaction_target()
+	var prompt := "E " + str(target.name) if not target.is_empty() else "循路探索地标；M 跨区旅行，B 查看行囊与已发现线索。"
+	var next := states[region].visited.find(false)
+	var objective := "本地人物线索已齐" if next < 0 else "下一线索：" + str(Maps.MAPS[region].sites[next][0])
+	hint.text = "%s   |   %s\n五域肃清 %d / 5  ·  人物见闻 %d / 15  ·  小地图：金色菱形为地标，蓝圈为出口，白点为你。" % [prompt, objective, cleared, _visited_total()]
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#0d1c26"))
-	draw_style_box(UI.panel(Color(Catalog.REGIONS[region].color)), ARENA)
-	for x in range(100, 1200, 70):
-		for y in range(280, 620, 70):
-			draw_circle(Vector2(x, y), 2, Color(0.7, 0.8, 0.7, 0.10))
+
+func _draw_world() -> void:
 	if not states.has(region):
 		return
+	var canvas := world_canvas
+	Landscape.paint(canvas, region, Rect2(camera_origin, ARENA.size))
 	var font := ThemeDB.fallback_font
+	var data: Dictionary = Maps.MAPS[region]
+	for i in range(data.sites.size()):
+		var site: Array = data.sites[i]
+		var point: Vector2 = site[1] * data.size
+		Landscape.landmark(canvas, point, site[3], Color(data.accent))
+		canvas.draw_string(font, point + Vector2(-76, 44), str(site[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(data.accent))
+		canvas.draw_string(font, point + Vector2(-65, 68), "已记录" if states[region].visited[i] else "靠近按 E 调查", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("#c4d3c9"))
+	var rest: Vector2 = data.spawn * data.size
+	canvas.draw_circle(rest, 38, Color("#68c7c0", 0.3))
+	canvas.draw_arc(rest, 38, 0, TAU, 36, Color("#a4ded2"), 3, true)
+	canvas.draw_string(font, rest + Vector2(-72, 60), "休息点 · E 恢复一次", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#b1e6d9"))
+	for exit: Array in data.exits:
+		var point: Vector2 = exit[1] * data.size
+		canvas.draw_arc(point - Vector2(0, 35), 42, 0, TAU, 32, Color("#88cce3"), 5, true)
+		canvas.draw_string(font, point + Vector2(-70, 36), "E → " + str(Catalog.REGIONS[exit[0]].name), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#a2d8e4"))
 	for pickup: Dictionary in states[region].pickups:
 		var color := Color(Catalog.ITEMS[pickup.item].color)
-		draw_circle(pickup.position, 19, Color(color, 0.16))
-		draw_circle(pickup.position, 7, color)
-		draw_string(font, pickup.position + Vector2(-18, 35), Catalog.ITEMS[pickup.item].name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
+		canvas.draw_circle(pickup.position, 19, Color(color, 0.16))
+		canvas.draw_circle(pickup.position, 7, color)
+		canvas.draw_string(font, pickup.position + Vector2(-18, 35), Catalog.ITEMS[pickup.item].name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
 	for enemy: Dictionary in states[region].enemies:
 		var point: Vector2 = enemy.position
-		draw_set_transform(point, 0, Vector2(1, 0.30))
-		draw_circle(Vector2.ZERO, 29, Color(0.02, 0.04, 0.05, 0.45))
-		draw_set_transform(Vector2.ZERO)
-		draw_texture_rect(ENEMY_ART, Rect2(point - Vector2(38, 76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color.WHITE)
-		draw_rect(Rect2(point - Vector2(28, 84), Vector2(56, 5)), Color("#18212b"))
-		draw_rect(Rect2(point - Vector2(28, 84), Vector2(56 * float(enemy.hp) / 60.0, 5)), Color("#dc947e"))
+		canvas.draw_set_transform(point, 0, Vector2(1, 0.30))
+		canvas.draw_circle(Vector2.ZERO, 29, Color(0.02, 0.04, 0.05, 0.45))
+		canvas.draw_set_transform(Vector2.ZERO)
+		canvas.draw_texture_rect(ENEMY_ART, Rect2(point - Vector2(38, 76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color.WHITE)
+		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56, 5)), Color("#18212b"))
+		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56 * float(enemy.hp) / 60.0, 5)), Color("#dc947e"))
 	var origin := player_foot - Vector2(0, 30)
-	draw_line(origin + facing * 26, origin + facing * 48, Color("#f5d69b"), 3, true)
+	canvas.draw_line(origin + facing * 26, origin + facing * 48, Color("#f5d69b"), 3, true)
 	for shot: Dictionary in projectiles:
-		draw_circle(shot.position, 10, Color("#9ceafa"))
-		draw_circle(shot.position, 4, Color.WHITE)
+		canvas.draw_circle(shot.position, 10, Color("#9ceafa"))
+		canvas.draw_circle(shot.position, 4, Color.WHITE)
 	for effect: Dictionary in effects:
 		var color := Color("#b9a0f5") if effect.kind == "l" else Color("#ffe6ab")
 		color.a = clampf(float(effect.life) / 0.22, 0, 1)
 		var angle: float = effect.facing.angle()
-		draw_arc(effect.position, float(effect.radius), 0 if effect.kind == "l" else angle - 1.4, TAU if effect.kind == "l" else angle + 1.4, 48, color, 7, true)
+		canvas.draw_arc(effect.position, float(effect.radius), 0 if effect.kind == "l" else angle - 1.4, TAU if effect.kind == "l" else angle + 1.4, 48, color, 7, true)
+
+func _paused() -> bool:
+	return tools.is_open() or dialogue.visible or journal.visible
+
+func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
+	var point := origin
+	var steps := maxi(1, ceili(displacement.length() / 12.0))
+	var step := displacement / steps
+	for i in range(steps):
+		var horizontal := point + Vector2(step.x, 0)
+		if Maps.walkable(region, horizontal):
+			point.x = horizontal.x
+		var vertical := point + Vector2(0, step.y)
+		if Maps.walkable(region, vertical):
+			point.y = vertical.y
+	return point
+
+func _update_camera() -> void:
+	camera_origin = (player_foot - ARENA.size * 0.5).clamp(Vector2.ZERO, Maps.MAPS[region].size - ARENA.size)
+	world_canvas.position = -camera_origin
+	minimap.queue_redraw()
+
+func interaction_target() -> Dictionary:
+	var data: Dictionary = Maps.MAPS[region]
+	for i in range(data.sites.size()):
+		if player_foot.distance_to(Maps.site_position(region, i)) <= 100:
+			return {"kind": "site", "index": i, "name": str(data.sites[i][0]) + " · " + str(data.npc)}
+	if player_foot.distance_to(data.spawn * data.size) < 95:
+		return {"kind": "rest", "name": "休息点（本地每轮一次）"}
+	for exit: Array in data.exits:
+		if player_foot.distance_to(exit[1] * data.size) <= 120:
+			return {"kind": "exit", "destination": exit[0], "name": "前往" + str(Catalog.REGIONS[exit[0]].name)}
+	return {}
+
+func interact() -> void:
+	if finished or _paused():
+		return
+	var target := interaction_target()
+	if target.is_empty():
+		return
+	var data: Dictionary = Maps.MAPS[region]
+	match target.kind:
+		"exit":
+			enter_region(target.destination, true)
+			return
+		"rest":
+			if states[region].rested:
+				dialogue_text.text = "这里的恢复物资已经用过。继续探索，其他区域也有休息点。"
+			elif health >= 100:
+				dialogue_text.text = "生命充足，恢复物资留在这里。需要时再回来休息。"
+			else:
+				health = 100
+				states[region].rested = true
+				dialogue_text.text = "拾一已确认周围安全。生命恢复至 100；这个休息点本轮不再补充物资。"
+		"site":
+			var index: int = target.index
+			if index > 0 and not states[region].visited[index - 1]:
+				dialogue_text.text = "线索尚缺一段。先前往“%s”调查，再回来看这里的记录。" % data.sites[index - 1][0]
+			else:
+				states[region].visited[index] = true
+				dialogue_text.text = "%s · %s\n%s\n\n%s" % [data.npc, data.chapter, data.sites[index][2], "五位人物的见闻已收齐。后续复苏与调查的故事仍待继续。" if _visited_total() == 15 else "已记入见闻。B 可回看。"]
+	dialogue.show()
+	model.update_movement(Vector2.ZERO, 0)
+	_refresh_ui()
+	world_canvas.queue_redraw()
+
+func _visited_total() -> int:
+	var count := 0
+	for state: Dictionary in states.values():
+		for visited: bool in state.visited:
+			if visited:
+				count += 1
+	return count
+
+func open_journal() -> void:
+	var lines: Array[String] = ["行囊与见闻  ·  本轮采集 %d 份  ·  人物线索 %d / 15" % [_inventory_total(), _visited_total()], "材料供探索收集，武器合成与升级仍为后续内容。"]
+	for item: String in inventory:
+		if inventory[item] > 0:
+			lines.append("%s × %d" % [Catalog.ITEMS[item].name, inventory[item]])
+	for id: String in Maps.IDS:
+		var data: Dictionary = Maps.MAPS[id]
+		lines.append("\n%s · %s" % [data.npc, data.chapter])
+		for i in range(data.sites.size()):
+			lines.append("%s：%s" % [data.sites[i][0], data.sites[i][2] if states[id].visited[i] else "尚未调查"])
+	journal_text.text = "\n".join(lines)
+	journal.show()
+	model.update_movement(Vector2.ZERO, 0)
+
+func _draw_minimap() -> void:
+	if not states.has(region):
+		return
+	var rect := Rect2(Vector2(10, 30), minimap.size - Vector2(20, 40))
+	var extent: Vector2 = Maps.MAPS[region].size
+	minimap.draw_style_box(UI.panel(Color(0.03, 0.08, 0.1, 0.93)), Rect2(Vector2.ZERO, minimap.size))
+	minimap.draw_string(ThemeDB.fallback_font, Vector2(12, 22), "%s  %d × %d" % [Catalog.REGIONS[region].name, int(extent.x), int(extent.y)], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#e7d4a8"))
+	for road: Array in Maps.MAPS[region].roads:
+		var points := PackedVector2Array()
+		for point: Vector2 in road:
+			points.append(rect.position + point * rect.size)
+		minimap.draw_polyline(points, Color("#7f927d"), 2, true)
+	for obstacle: Rect2 in Maps.obstacles(region):
+		minimap.draw_rect(Rect2(rect.position + obstacle.position / extent * rect.size, obstacle.size / extent * rect.size), Color("#63716b"))
+	for i in range(3):
+		var point := rect.position + Maps.site_position(region, i) / extent * rect.size
+		var color := Color("#9ecab7") if states[region].visited[i] else Color("#f1d291")
+		minimap.draw_colored_polygon(PackedVector2Array([point + Vector2(0, -5), point + Vector2(5, 0), point + Vector2(0, 5), point + Vector2(-5, 0)]), color)
+	for exit: Array in Maps.MAPS[region].exits:
+		minimap.draw_arc(rect.position + exit[1] * rect.size, 5, 0, TAU, 12, Color("#8ed6ec"), 2, true)
+	minimap.draw_rect(Rect2(rect.position + camera_origin / extent * rect.size, ARENA.size / extent * rect.size), Color("#d4e7d2"), false)
+	minimap.draw_circle(rect.position + player_foot / extent * rect.size, 4, Color.WHITE)

@@ -53,7 +53,7 @@ func open_map() -> void:
 		atlas.open(region)
 
 func switch_game() -> void:
-	if region in ["grove", "quarry", "ruins", "water_activity"]:
+	if region in Atlas.Catalog.FUDI_REGIONS or region == "water_activity":
 		confirm.show()
 	else:
 		GameManager.goto_scene("menu")

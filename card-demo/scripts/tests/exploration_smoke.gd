@@ -1,5 +1,6 @@
 extends SceneTree
 const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
+const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 var checks := 0
 var failures := 0
 var game
@@ -78,8 +79,8 @@ func run_checks() -> void:
 	await frames()
 	game = current_scene
 	game.set_process(false)
-	check(game.name == "Fudi" and game.health == 100 and game.states.size() == 3, "通过实际入口按钮进入福地，初始三境与生命正确")
-	for id: String in ["grove", "quarry", "ruins"]:
+	check(game.name == "Fudi" and game.health == 100 and game.states.size() == 5, "通过实际入口按钮进入福地，初始五域与生命正确")
+	for id: String in Maps.IDS:
 		check(game.remaining_resources(id) == Catalog.REGIONS[id].resources, "地图配置与真实采集节点一致: " + id)
 	check(Catalog.scarcity(0) == "已采尽" and Catalog.scarcity(1) == "极稀缺" and Catalog.scarcity(3) == "稀缺" and Catalog.scarcity(6) == "适中" and Catalog.scarcity(8) == "丰富", "稀缺度边界与已采尽正确")
 	for code: int in [KEY_W, KEY_A, KEY_S, KEY_D]:
@@ -98,11 +99,11 @@ func run_checks() -> void:
 	key(KEY_W, false)
 	key(KEY_D, false)
 	check(is_equal_approx(game.player_foot.distance_to(Vector2(640, 460)), game.SPEED * 0.1), "斜向移动归一化，不额外加速")
-	game.player_foot = game.ARENA.end - Vector2(24, 16)
+	game.player_foot = Maps.MAPS[game.region].size - Vector2(24, 24)
 	key(KEY_D)
 	game._process(1)
 	key(KEY_D, false)
-	check(game.player_foot.x <= game.ARENA.end.x - 24, "地图边界阻止移出区域")
+	check(game.player_foot.x <= Maps.MAPS[game.region].size.x - 22, "地图边界阻止移出区域")
 	game.player_foot = Vector2(640, 460)
 	key(KEY_M)
 	key(KEY_M, false)
@@ -203,7 +204,7 @@ func run_checks() -> void:
 	for id: String in game.states:
 		game.states[id].enemies.clear()
 	game._remove_dead()
-	check(game.finished and game.outcome.visible and game.result.text.contains("三境已肃清"), "清理全部三境显示胜利结算")
+	check(game.finished and game.outcome.visible and game.result.text.contains("五域已肃清"), "清理全部五域显示胜利结算")
 	await capture("victory")
 	game.tools.switch_game()
 	await frames()

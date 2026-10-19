@@ -1,6 +1,7 @@
 extends Control
 const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 signal travel_requested(region: String)
 signal closed
 var current_region := "city"
@@ -74,12 +75,12 @@ func _place_regions() -> void:
 	map_surface.queue_redraw()
 
 func _draw_map() -> void:
-	var pairs := [["city", "outskirts"], ["outskirts", "water_activity"], ["grove", "quarry"], ["quarry", "ruins"]]
+	var pairs := [["city", "outskirts"], ["outskirts", "water_activity"], ["grove", "post"], ["post", "quarry"], ["quarry", "ruins"], ["ruins", "refuge"], ["refuge", "grove"]]
 	for pair: Array in pairs:
 		map_surface.draw_line(Catalog.REGIONS[pair[0]].point * map_surface.size, Catalog.REGIONS[pair[1]].point * map_surface.size, Color("#557e75"), 3, true)
 	var font := ThemeDB.fallback_font
 	map_surface.draw_string(font, Vector2(16, 34), "灵伴 · 云庭诸域", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#9cbdb3"))
-	map_surface.draw_string(font, Vector2(16, map_surface.size.y * 0.49), "福地 · 三境探访", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#d7c18b"))
+	map_surface.draw_string(font, Vector2(16, map_surface.size.y * 0.45), "福地 · 五域行旅", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#d7c18b"))
 
 func open(region: String) -> void:
 	current_region = region
@@ -112,6 +113,9 @@ func select_region(id: String) -> void:
 	if resources.is_empty():
 		_line("物品种类：0\n稀缺程度：不适用（无采集点）", 19)
 	elif data.game == "福地":
+		var area: Dictionary = Maps.MAPS[id]
+		_line("活动范围 %d × %d  ·  %s" % [int(area.size.x), int(area.size.y), area.npc], 17)
+		_line("地标：" + " → ".join(PackedStringArray([area.sites[0][0], area.sites[1][0], area.sites[2][0]])), 16)
 		var remaining: Dictionary = resource_provider.call(id) if resource_provider.is_valid() else resources.duplicate()
 		_line("物品种类：%d  /  %s" % [resources.size(), "本轮剩余 / 初始份数" if resource_provider.is_valid() else "初始配置份数"], 17)
 		for item: String in resources:
