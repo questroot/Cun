@@ -17,6 +17,12 @@ def obs():return s.call('observe',{})
 def key(k,n=1):return s.call('action',{'kind':'key','key':k,'frames':n})
 def click(prefix):
     o=obs();b=next((b for b in o['buttons'] if b['text'].startswith(prefix)),None)
+    for _ in range(8):
+        if b: break
+        down=next((v for v in o['buttons'] if v['text']=='向下翻阅'),None)
+        if not down: break
+        s.call('action',{'kind':'click','button_id':down['id']})
+        o=obs();b=next((v for v in o['buttons'] if v['text'].startswith(prefix)),None)
     assert b,(prefix,o)
     return s.call('action',{'kind':'click','button_id':b['id']})
 def walk(axis,target):
@@ -32,7 +38,9 @@ try:
     go(320,375);key('e');click('坐一会儿');go(450,575);key('e')
     go(750,390);key('e')
     inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)
-    go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('提议只把今晚');key('escape')
+    go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('问他：小满以前');click('提议只把今晚')
+    agreed=obs();assert '收的是这个' in json.dumps(agreed,ensure_ascii=False),agreed
+    click('先不做');assert not obs()['visible'][0]['modal_open'],obs()
     click('准备好了');click('确认');go(750,565);key('e')
     go(460,335);key('e');click('先站住');click('吹一声短音');click('吹一声短音');click('吹一声长音');click('停下，听听');click('问他：你希望')
     click('请周伯先辨认');click('听父女谈');click('明确问她');click('询问沈渡');click('经本人同意')
