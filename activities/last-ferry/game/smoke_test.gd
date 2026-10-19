@@ -215,6 +215,17 @@ func run() -> void:
 	scene.show_pause()
 	check(scene.paused and scene.modal_open, "pause stops world input")
 	scene.close_modal()
+	scene.start_game("xu")
+	scene.travel("shelter")
+	scene.story.set_flag("consent")
+	scene.player = Vector2(750, 550)
+	check(not scene.try_world_click(Vector2(250,360)), "direct repair cannot work remotely")
+	scene.player = Vector2(250,400)
+	check(scene.try_world_click(Vector2(250,360)) and scene.story.flag("shade_off"), "direct click removes shade nearby")
+	check(scene.try_world_click(Vector2(250,360)) and scene.story.item("拆下的铜舌"), "direct click takes revealed tongue")
+	scene.player = Vector2(550,280)
+	check(scene.try_world_click(Vector2(550,240)) and scene.story.flag("tongue_home"), "direct install changes equipment")
+	check(not scene.modal_open, "repair manipulation does not open choice menus")
 	for id in ["xu", "he"]:
 		scene.start_game(id)
 		for place in ["street", "house", "shelter", "steps"]:

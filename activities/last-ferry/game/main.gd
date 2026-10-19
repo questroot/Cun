@@ -47,6 +47,9 @@ func play_visible() -> Dictionary:
 		obstacles.append({"x":rect.position.x,"y":rect.position.y,"width":rect.size.x,"height":rect.size.y})
 	if story.s.place == "house":
 		result["visible_basin"] = {"x":(player.x + 15 if story.flag("basin_carried") else (450.0 if story.flag("basin_placed") else 600.0)),"y":(player.y - 8 if story.flag("basin_carried") else (340.0 if story.flag("basin_placed") else 250.0)),"appearance":("端在手上" if story.flag("basin_carried") else ("接住滴水" if story.flag("basin_placed") else "空盆"))}
+	if story.s.place == "shelter":
+		result["visible_equipment"] = {"outer_shade":("放在灯旁" if story.flag("shade_off") else "扣在灯上"),"bell":("铜片挂在钟内" if story.flag("tongue_home") else "挂孔空着"),"yellow_lamp":("亮着" if story.flag("yellow_lit") else "未点亮")}
+		if story.item("拆下的铜舌"): result["visible_equipment"]["carried"] = "手上铜片"
 	result["objects"] = targets
 	result["obstacles"] = obstacles
 	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
@@ -251,8 +254,25 @@ func show_items() -> void:
 
 ## Direct manipulation uses the same location-checked rules as keyboard accessibility.
 func try_world_click(point: Vector2) -> bool:
-	if not started or modal_open or paused or story.s.left or story.s.place != "house": return false
+	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if story.s.place == "shelter":
+		if player.distance_to(point) > 82: return false
+		if point.distance_to(Vector2(250, 360)) < 35 and story.flag("consent"):
+			if not story.flag("shade_off"): do_action("remove_shade")
+			elif not story.flag("tongue_taken"): do_action("retrieve_tongue")
+			else: return false
+			return true
+		if point.distance_to(Vector2(550, 240)) < 35 and story.item("拆下的铜舌"):
+			do_action("install_tongue")
+			return true
+		if point.distance_to(Vector2(620, 390)) < 35 and story.flag("consent"):
+			if story.s.phase == "night" and story.flag("shade_off") and story.flag("tongue_home"):
+				confirm("在等候的位置点亮黄灯，让钟声送夜船归岸？这会结束今晚的处理，进入次日；如果还想交谈，可以先取消。", func(): do_action("light_yellow"))
+			else: do_action("light_yellow")
+			return true
+		return false
+	if story.s.place != "house": return false
 	if story.flag("basin_carried"):
 		if player.distance_to(point) > 82: return false
 		if point.distance_to(Vector2(450, 340)) < 35:
@@ -360,8 +380,8 @@ func update_world() -> void:
 		"shelter":
 			solids.append(Rect2(350, 285, 100, 70))
 			add_object("timetable", "旧通航告示", Vector2(125, 250))
-			add_object("lamp", "白罩船灯", Vector2(250, 360))
-			add_object("bell", "缺铜舌的钟", Vector2(550, 240))
+			add_object("lamp", "卸下白罩的旧灯" if story.flag("shade_off") else "白罩船灯", Vector2(250, 360))
+			add_object("bell", "铜舌归位的钟" if story.flag("tongue_home") else "缺铜舌的钟", Vector2(550, 240))
 			add_object("inscription", "黄灯底座", Vector2(620, 390))
 			if story.s.phase != "epilogue" or story.s.ending == "light": add_object("zhou", "周伯", Vector2(455, 430), "npc")
 			else: add_object("morning", "渡口次日告示", Vector2(455, 430))
@@ -390,6 +410,7 @@ func refresh_ui() -> void:
 	message.text = story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
 	if story.s.place == "house": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
+	if story.s.place == "shelter" and story.flag("consent"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
@@ -428,8 +449,10 @@ func travel(place: String) -> void:
 
 func do_action(id: String) -> void:
 	var before_phase: String = story.s.phase
+	story.s.x = player.x
+	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -487,10 +510,13 @@ func interact() -> void:
 				if target == "lamp" and story.flag("consent"):
 					if not story.flag("shade_off"): act_button("扶稳灯，松开外罩卡扣", "remove_shade")
 					elif not story.flag("tongue_taken"): act_button("解开罩内的棉线，取出铜片", "retrieve_tongue")
+				if target == "inscription" and story.flag("consent") and story.s.phase == "dusk":
+					if story.s.identity == "he" and story.item("手提黄灯") and not story.flag("swapped"): act_button("把借来的黄灯安在等候的位置，暂不点亮", "swap")
+					button(modal_body, "等天暗再点灯（现在不结束傍晚）", func(): close_modal(); story.note("灯的位置已经可以安排，火要等暗下来再点。你还可以回街上、看旧屋，或准备好后主动确认入夜；钟和灯不会重置。"); refresh_ui())
 				if target == "inscription" and story.s.phase == "night" and story.flag("consent"):
-					act_button("将黄灯留在等候的位置，点亮灯芯", "light_yellow")
-				if target == "lamp" and story.s.phase == "night":
-					if story.s.identity == "he": act_button("用手提黄灯换下白罩（需周伯同意）", "swap")
+					button(modal_body, "将黄灯留在等候的位置，点亮灯芯", func(): confirm("点亮黄灯会完成今晚的处理并进入次日。若还想与夜船上的人交谈，可以先取消。现在点亮？", func(): do_action("light_yellow")))
+				if target == "lamp" and story.s.phase == "night" and not story.flag("shade_off"):
+					if story.s.identity == "he" and not story.flag("swapped"): act_button("用手提黄灯换下白罩（需周伯同意）", "swap")
 					button(modal_body, "危险：举白灯回应河声", func():
 						var warning := "白灯表示可以登船。河声会借熟人的声音叫人，继续回应可能让它越过岸边界限。确认举灯？"
 						if story.s.pollution == 1: warning = "水迹已越过候船棚。再次回应将使渡口失守；你仍可取消，回去分开灯罩、归还钟舌。确认再次举灯？"
@@ -575,7 +601,11 @@ func _draw() -> void:
 			var lamp_color := Color("e9bd5d") if story.flag("shade_off") or story.flag("swapped") else Color("e5edf0")
 			draw_circle(Vector2(250, 360), 45, Color(lamp_color, 0.08))
 			draw_circle(Vector2(250, 360), 14, lamp_color)
-			draw_circle(Vector2(620, 390), 12, Color("dbad53"))
+			draw_circle(Vector2(620, 390), 12, Color("f7d276") if story.flag("yellow_lit") else Color("77654a"))
+			draw_arc(Vector2(550, 240), 22, PI, TAU, 24, Color("b49b6c"), 4)
+			if story.flag("tongue_home"): draw_line(Vector2(550, 223), Vector2(550, 253), Color("c4a26a"), 5)
+			if story.item("拆下的铜舌"): draw_line(player + Vector2(12, -8), player + Vector2(12, 12), Color("c4a26a"), 4)
+			if story.flag("shade_off"): draw_rect(Rect2(275, 375, 28, 19), Color("d4d8d6"), false, 3)
 			if story.s.pollution > 0: draw_rect(Rect2(90, 478, 690, 100), Color(0.2, 0.36, 0.4, 0.55))
 		"steps":
 			draw_rect(Rect2(40, 175, 780, 135), Color("223d4a"))

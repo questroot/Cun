@@ -209,7 +209,8 @@ func act(id: String) -> bool:
 		"swap":
 			if p != "shelter" or s.identity != "he" or not item("手提黄灯") or not flag("consent"): return refuse(("黄灯已备，但周伯还没有同意。要解释信号冲突，先分别看过通航告示、灯罩、缺舌铜钟与黄灯底座，再与他谈；你现在还没查看：" + missing_sources()) if item("手提黄灯") else "你手里没有借来的黄灯，可先回陶记询问。")
 			set_flag("swapped")
-			note("阿禾把手提黄灯安在棚边，换下外层白罩；周伯不再举白灯。铜舌仍须归钟才能完成旧约。")
+			set_flag("shade_off")
+			note("阿禾把借来的黄灯安在等候的位置，白罩放在灯旁；周伯不再举白灯。" + ("铜舌已挂回钟里。黄灯尚未点亮，可以在底座旁等到入夜再点。" if flag("tongue_home") else "灯内的铜片还需取出，挂回铜钟。"))
 		"board":
 			if p != "steps" or s.phase != "night" or s.identity != "xu": return refuse("阿禾没有登船资格，可以在岸上协作。")
 			change_place("boat")
@@ -297,7 +298,7 @@ func act(id: String) -> bool:
 			finish("untie")
 		"danger":
 			if p != "shelter" or s.phase != "night": return false
-			if flag("swapped"): return refuse("白灯罩已由阿禾安全换下，不能再用它误唤。")
+			if flag("swapped") or flag("shade_off"): return refuse("白灯罩已经取下，不能再用它误唤。")
 			s.pollution += 1
 			if s.pollution == 1:
 				change_place("street")
@@ -305,6 +306,7 @@ func act(id: String) -> bool:
 			else: finish("flood")
 		"break":
 			if p != "shelter" or s.phase != "night": return false
+			if flag("tongue_taken") or flag("tongue_home"): return refuse("铜舌已不在灯内，不能砸坏一件不存在于这里的东西。")
 			s.pollution = 2
 			finish("flood")
 		"mark":
