@@ -444,9 +444,23 @@ func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
 		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize"]:
 			continue_zhou(id)
+		elif conversation_target in ["mooring", "voices"] and id in ["listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen"]:
+			continue_river(id)
 		else:
 			close_modal()
 			do_action(id))
+
+func continue_river(id: String) -> void:
+	var target := conversation_target
+	if not started or story.s.phase != "night" or not story.s.place in ["steps", "boat"]: return
+	var location := Vector2(460,295) if target == "mooring" else Vector2(570,335)
+	if player.distance_to(location) > 82: return
+	story.act(id)
+	conversation_response = story.notice
+	modal_open = false
+	nearest = target
+	interact()
+	refresh_ui()
 
 func continue_zhou(id: String) -> void:
 	# Keep the actual interlocutor nearby; never move or acquire evidence off-screen.
@@ -489,8 +503,8 @@ func interact() -> void:
 		travel(dest)
 		return
 	if target == "back": travel("steps"); return
-	conversation_target = target if target == "zhou" else ""
-	open_modal(object_title(target), conversation_response if target == "zhou" and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
+	conversation_target = target if target in ["zhou", "mooring", "voices"] else ""
+	open_modal(object_title(target), conversation_response if not conversation_target.is_empty() and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
 	if story.s.phase == "epilogue":
 		act_button("看看这里今早怎样继续", "epilogue")
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")

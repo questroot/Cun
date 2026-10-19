@@ -247,6 +247,16 @@ func run() -> void:
 	check(scene.modal_open and not scene.story.flag("consent"), "disagreement stays in dialogue not exit loop")
 	scene.close_modal()
 	check(scene.conversation_target == "" and scene.conversation_response == "", "leaving dialogue clears only presentation")
+	scene.story.act("night")
+	scene.travel("steps")
+	scene.player = Vector2(460,335)
+	scene.nearest = "mooring"
+	scene.interact()
+	scene.continue_river("listen_river")
+	check(scene.modal_open and scene.story.flag("river_heard"), "listening holds river scene open")
+	scene.continue_river("call_paper")
+	check(scene.modal_open and scene.story.s.pollution == 0 and scene.conversation_response == scene.story.notice, "river response stays visible without punishing question")
+	scene.close_modal()
 	for id in ["xu", "he"]:
 		scene.start_game(id)
 		for place in ["street", "house", "shelter", "steps"]:
