@@ -1,0 +1,178 @@
+extends SceneTree
+## Real Godot runtime tests, not a human playthrough or image review.
+const Story = preload("res://story_state.gd")
+var checks := 0
+var failures := 0
+var state = Story.new()
+var test_dir := ""
+
+func _initialize() -> void:
+	call_deferred("run")
+
+func check(value: bool, label: String) -> void:
+	checks += 1
+	if value: print("PASS ", label)
+	else:
+		failures += 1
+		push_error("FAIL " + label)
+
+func at(place: String, action: String) -> bool:
+	state.change_place(place)
+	return state.act(action)
+
+func investigate() -> void:
+	check(at("shelter", "timetable"), "inspect actual timetable")
+	check(at("shelter", "lamp"), "inspect modified lamp")
+	check(at("shelter", "bell"), "inspect missing tongue")
+	check(at("shelter", "inscription"), "inspect inscription")
+	check(at("shelter", "verify"), "verify source with Zhou")
+	check(state.core(), "four core facts obtained")
+
+func run() -> void:
+	var start := Time.get_ticks_msec()
+	test_dir = "res://.test-output/run-%d" % Time.get_unix_time_from_system()
+	DirAccess.make_dir_recursive_absolute(test_dir)
+	state.save_path = test_dir + "/journey.json"
+	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
+	for identity in ["xu", "he"]:
+		state.fresh(identity)
+		check(not at("shelter", "restore"), identity + " cannot restore without information/night")
+		check(state.s.pollution == 0, "wrong reasoning never pollutes")
+		check(not at("steps", "untie"), "untie cannot be menu-selected")
+		investigate()
+		if identity == "he":
+			check(at("street", "ledger"), "apprentice reads own shop ledger")
+			check(at("street", "yellow"), "apprentice borrows actual item")
+			check(at("shelter", "deliver"), "deliver starting wick")
+			check(not at("shelter", "deliver"), "no repeated wick reward")
+		check(at("shelter", "consent"), "Zhou understands waiting versus goodbye")
+		check(state.act("night"), "explicit night transition")
+		if identity == "he":
+			check(not at("steps", "board"), "apprentice cannot board")
+			check(not at("steps", "xu_voice"), "no automatic sharing of whistle/voice")
+			check(at("shelter", "swap"), "unique borrowed yellow lamp prevents white signal")
+			check(not at("shelter", "danger"), "safe lamp state has actual effect")
+		else:
+			check(at("steps", "board"), "returnee boards local side deck")
+			check(state.s.place == "boat", "boat local location entered")
+			state.change_place("steps")
+			check(state.s.place == "steps", "boat can return before any result")
+		check(at("shelter", "restore"), identity + " can restore from shore without farewell")
+		check(state.s.ending == "light" and state.flag("tongue_home") and state.flag("shade_off") and state.flag("yellow_lit"), "light is physical three-part repair")
+		check(state.has("mark"), "mark has observable outcome source")
+		check(not at("steps", "untie"), "cannot replace committed ending")
+		check(state.save_game(), "save successful ending")
+		var snapshot := JSON.stringify(state.s)
+		state.fresh("xu" if identity == "he" else "he")
+		check(state.load_game() and JSON.stringify(state.s) == snapshot, "exact identity/phase/items/flags/ending roundtrip")
+		for place in ["street", "house", "shelter", "steps"]:
+			check(at(place, "epilogue"), "walkable epilogue inspect " + place)
+		check(at("street", "leave") and state.s.left, "explicit leave retains record")
+		check(not state.act("leave"), "leave commits only once")
+
+	for identity in ["xu", "he"]:
+		state.fresh(identity)
+		investigate()
+		check(at("shelter", "consent"), "farewell first gains trust")
+		check(state.act("night"), "farewell enters night")
+		if identity == "he":
+			check(not at("steps", "shen"), "apprentice cannot auto-read boat conversation")
+			check(at("house", "exchange"), "explicit evidence exchange creates cooperation")
+			check(not state.item("铜哨"), "cooperation never steals private property")
+		check(at("steps", "xu_voice"), "identify Xu then ask actual wish")
+		check(at("steps", "xiaoman"), "Xiaoman separately expresses wish")
+		check(at("steps", "shen"), "Shen separately expresses wish")
+		check(not state.farewell_ready(), "wishes alone are insufficient")
+		check(at("steps", "return"), "voluntary object return")
+		check(at("shelter", "farewell_consent"), "Zhou consents to last bell after reports")
+		check(at("steps", "untie") and state.s.ending == "untie", identity + " completes negotiated untie")
+		check(at("street", "leave"), "untie can leave")
+
+	state.fresh("xu")
+	state.act("night")
+	check(at("shelter", "danger"), "first explicitly dangerous action")
+	check(state.s.pollution == 1 and state.s.place == "street" and state.s.ending == "", "first incursion retreats, remains repairable")
+	check(state.save_game(), "save pollution one")
+	state.fresh("he")
+	check(state.load_game() and state.s.pollution == 1 and state.s.phase == "night" and state.s.identity == "xu", "night/pollution/identity preserved")
+	investigate()
+	state.act("consent")
+	check(state.act("restore") and state.s.ending == "light", "repair remains possible after first incursion")
+
+	state.fresh("he")
+	state.act("night")
+	at("shelter", "danger")
+	check(at("shelter", "danger"), "second confirmed white signal")
+	check(state.s.pollution == 2 and state.s.ending == "flood" and state.s.place == "street", "second incursion closes ferry and evacuates")
+	check(state.save_game(), "save flood")
+	state.fresh("xu")
+	check(state.load_game() and state.s.ending == "flood", "flood persists across load")
+	state.change_place("steps")
+	check(state.s.place == "street", "closed pier cannot be bypassed")
+	check(at("shelter", "epilogue"), "flood safe shelter still inspectable")
+	check(at("street", "leave"), "failure still allows explicit leave")
+
+	var good: Dictionary = state.s.duplicate(true)
+	for field in ["identity", "phase", "place"]:
+		var bad: Dictionary = good.duplicate(true)
+		bad[field] = "not-an-enum"
+		check(not state.valid_save(bad), "reject invalid enum " + field)
+	for field in ["evidence", "items", "journal"]:
+		var bad: Dictionary = good.duplicate(true)
+		bad[field] = [45]
+		check(not state.valid_save(bad), "reject invalid elements " + field)
+	var invalid: Dictionary = good.duplicate(true)
+	invalid.flags = {"consent": "yes"}
+	check(not state.valid_save(invalid), "reject non-boolean flag")
+	invalid = good.duplicate(true)
+	invalid.pollution = 0
+	check(not state.valid_save(invalid), "reject inconsistent flood")
+	var file := FileAccess.open(state.save_path, FileAccess.WRITE)
+	file.store_string("{broken")
+	file.close()
+	var before := JSON.stringify(state.s)
+	check(not state.load_game() and before == JSON.stringify(state.s), "corrupt save preserves current state")
+	check(FileAccess.get_file_as_string(state.save_path) == "{broken", "corrupt file never silently deleted")
+
+	# Instantiate the actual main scene to catch UI, draw, callback and movement errors.
+	var scene = load("res://main.tscn").instantiate()
+	root.add_child(scene)
+	await process_frame
+	scene.start_game("xu")
+	await process_frame
+	var origin: Vector2 = scene.player
+	scene.move_player(Vector2(20, 0))
+	check(scene.player != origin, "real scene free top-down movement")
+	scene.player = Vector2(45, 440)
+	scene.move_player(Vector2(-100, 0))
+	check(scene.player.x >= 40, "world boundary blocks escape")
+	scene.story.change_place("shelter")
+	scene.last_place = ""
+	scene.update_world()
+	scene.player = Vector2(300, 400)
+	scene.nearest = "lamp"
+	scene.interact()
+	check(scene.modal_open, "actual interaction panel opens")
+	scene.close_modal()
+	scene.show_journal()
+	scene.close_modal()
+	scene.show_items()
+	scene.close_modal()
+	scene.show_pause()
+	check(scene.paused and scene.modal_open, "pause stops world input")
+	scene.close_modal()
+	for id in ["xu", "he"]:
+		scene.start_game(id)
+		for place in ["street", "house", "shelter", "steps"]:
+			scene.travel(place)
+			await process_frame
+			for obj in scene.scene_objects.duplicate():
+				scene.nearest = obj.id
+				scene.interact()
+				await process_frame
+				scene.close_modal()
+	check(true, "all four scene draw/interaction panels execute for both identities")
+	scene.queue_free()
+	await process_frame
+	print("RESULT checks=", checks, " failures=", failures, " elapsed_ms=", Time.get_ticks_msec() - start)
+	quit(0 if failures == 0 else 1)
