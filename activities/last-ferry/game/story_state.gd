@@ -92,6 +92,26 @@ func act(id: String) -> bool:
 			s.left = true
 			note("旅途记录：%s。保留经历，不带走当地人的财物与身份。许宁与阿禾仍会继续自己的生活。" % ending_name())
 			return true
+		if id == "return_lamp" and p == "street" and s.identity == "he":
+			if not item("手提黄灯"): return refuse("借来的灯已经还了，不必再交一次。")
+			take("手提黄灯")
+			set_flag("lamp_returned")
+			note("阿禾把灯放回柜台，擦干提柄上的水。陶婶先看灯，再看他的手：‘没烫着吧？’\n她没有问河上到底来了谁。阿禾说灯芯用了些，账记自己名下。\n陶婶拿起笔，又放下：‘先吃饭，账晚点再算。’")
+			return true
+		if id in ["roof_commission", "leave_contact"] and p == "house" and s.identity == "xu":
+			if flag("morning_decided"): return refuse("许宁已留下今早的安排。不必为了穷尽选项，把刚作的决定反复改写。")
+			set_flag("morning_decided")
+			if id == "roof_commission":
+				set_flag("roof_commissioned")
+				note("许宁在门边等到老葛路过，问他认不认识补瓦的师傅。老葛说午后可带人来，只看屋顶，不替她决定房子的事。\n她把钥匙留给陶婶保管，写下自己的电话。盆里的水还没倒，先做能做完的一件。" + ("昨晚端去接水的盆不必挪回老位置。" if flag("basin_placed") else "她这才把空盆挪到桌脚的新湿处。"))
+			else:
+				set_flag("contact_left")
+				note("许宁还不能答应自己会留下。她写了电话号码，压在陶婶以前给的糖纸下面，请有屋顶消息就联系她。\n没写‘永不再走’，也没把房子交给河上的声音。关门时，她回头确认窗扣上了。")
+			return true
+		if id == "morning_ge" and p == "street":
+			note(("老葛接过昨晚归还的工具袋，翻出锥子继续补鞋：‘等鞋干了，我去桥上看看。’" if flag("tool_returned") else "老葛把缺了工具的位置空在脚边，先用借来的锥子补鞋：‘袋子晚些再找，今天也得开张。’") + "\n他母亲从巷里喊他吃饭。他应了一声，回头问你要不要加双鞋垫。昨晚听到的声音没有替今早过日子。")
+			set_flag("morning_ge_seen")
+			return true
 		if id == "epilogue":
 			var lines := {
 				"street":"陶婶仍在盘点。" + ("她把停航告示钉在门外，暂不再借渡口的工具。" if s.ending == "flood" else "她说今年的灯芯她来买，不是替谁承诺一生。阿禾还要清点货物。"),
@@ -338,8 +358,7 @@ func finish(result: String) -> void:
 		change_place("steps")
 		note("解缆：周伯敲最后一次钟，沈渡解除尚有人未接到的承诺，亲自解开系缆。话说不完，船仍要离岸。这不是高于留灯的真结局。天明后请走访，再离开。")
 	if item("手提黄灯"):
-		take("手提黄灯")
-		note(notice + " 你把借来的手提黄灯还给陶婶。")
+		note(notice + " 借来的手提黄灯还在你手边，天亮后可亲自回陶记归还，不会隔空自动交付。")
 
 func ending_name() -> String:
 	return {"light":"留灯·恢复边界", "untie":"解缆·结束渡程", "flood":"漫水·渡口停航，未恢复边界"}.get(s.ending, "尚未完成")

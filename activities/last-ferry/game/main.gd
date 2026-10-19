@@ -492,7 +492,12 @@ func interact() -> void:
 	conversation_target = target if target == "zhou" else ""
 	open_modal(object_title(target), conversation_response if target == "zhou" and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
 	if story.s.phase == "epilogue":
-		act_button("查看次日生活与后果", "epilogue")
+		act_button("看看这里今早怎样继续", "epilogue")
+		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
+		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
+		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
+			act_button("先请人看屋顶，不急着决定卖不卖房", "roof_commission")
+			act_button("今天还不能留下，先给陶婶写联络方式", "leave_contact")
 		if target == "departure":
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:

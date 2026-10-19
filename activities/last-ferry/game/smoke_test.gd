@@ -67,6 +67,15 @@ func run() -> void:
 		check(state.load_game() and JSON.stringify(state.s) == snapshot, "exact identity/phase/items/flags/ending roundtrip")
 		for place in ["street", "house", "shelter", "steps"]:
 			check(at(place, "epilogue"), "walkable epilogue inspect " + place)
+		check(at("street", "morning_ge"), "living town has morning routines")
+		if identity == "he":
+			check(at("street", "return_lamp") and not state.item("手提黄灯"), "borrowed property actually returned")
+			check(not at("street", "return_lamp"), "lamp return cannot duplicate")
+			check(not at("house", "roof_commission"), "apprentice cannot decide for house owner")
+		else:
+			check(at("house", "roof_commission") and state.flag("roof_commissioned"), "returnee makes own modest morning plan")
+			check(not at("house", "leave_contact"), "cannot overwrite committed morning choice by sweeping buttons")
+		check(state.save_game() and state.load_game() and state.s.ending == "light", "morning choices persist without replacing night ending")
 		check(at("street", "leave") and state.s.left, "explicit leave retains record")
 		check(not state.act("leave"), "leave commits only once")
 
