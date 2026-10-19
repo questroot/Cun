@@ -63,6 +63,12 @@ func learn(id: String) -> void:
 func core() -> bool:
 	return has("timetable") and has("lamp") and has("bell") and has("covenant")
 
+func missing_sources() -> String:
+	var missing: Array[String] = []
+	for pair in [["timetable","旧通航告示"],["lamp","白灯罩"],["bell","缺舌铜钟"],["covenant","黄灯底座与周伯的旧约"]]:
+		if not has(pair[0]): missing.append(pair[1])
+	return "、".join(missing) if not missing.is_empty() else "无；现在可以直接向周伯说明所见。"
+
 func farewell_ready() -> bool:
 	return core() and has("xu_wish") and has("xiaoman_wish") and has("shen_wish") and flag("returned") and flag("zhou_farewell")
 
@@ -183,7 +189,7 @@ func act(id: String) -> bool:
 			s.phase = "night"
 			note("你确认结束傍晚。风向变了，夜船靠近旧阶。人物可能移动；遗漏的核心线索和工具仍可补查，没有倒计时。")
 		"swap":
-			if p != "shelter" or s.identity != "he" or not item("手提黄灯") or not flag("consent"): return refuse("须先借陶婶的黄灯，并让周伯同意区分信号。")
+			if p != "shelter" or s.identity != "he" or not item("手提黄灯") or not flag("consent"): return refuse(("黄灯已备，但周伯还没有同意。要解释信号冲突，先分别看过通航告示、灯罩、缺舌铜钟与黄灯底座，再与他谈；你现在还没查看：" + missing_sources()) if item("手提黄灯") else "你手里没有借来的黄灯，可先回陶记询问。")
 			set_flag("swapped")
 			note("阿禾把手提黄灯安在棚边，换下外层白罩；周伯不再举白灯。铜舌仍须归钟才能完成旧约。")
 		"board":
