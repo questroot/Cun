@@ -15,7 +15,7 @@
 
 ## 可重复真实输入回归
 
-运行 `python activities/last-ferry/verify_real_input.py`，或加 `--render` 使用普通窗口（不会截图）。脚本只调用公共PlayService的launch/observe/action/stop，不读剧情状态、不emit信号、不直切场景；从许宁正常开局按已知路线到解缆次日。证据留在忽略的MCP运行目录，自有游戏在finally停止；不会停止独立玩家端点。它是已知路线回归，包含解法，不提供给盲玩会话；不替代人的体验与视听验收。
+运行 `python activities/last-ferry/verify_real_input.py`，或加 `--render` 使用普通窗口（不会截图）。脚本只调用公共PlayService的launch/observe/action/stop，不读剧情状态、不emit信号、不直切场景；从许宁正常开局按已知路线到解缆次日，再回旧屋选择请人看屋顶，最后街口正式离开。普通窗口 `--render` 已实际闭环通过，证据 `.runtime/91b6024082fc4f6c85713f191b1803b0/release-evidence.json`，不使用桌面截图。证据留在忽略的MCP运行目录，自有游戏在finally停止；不会停止独立玩家端点。它是已知路线回归，包含解法，不提供给盲玩会话；不替代人的体验与视听验收。
 
 ## 新收束实机闭环（协调者知道机制，非盲玩）
 
