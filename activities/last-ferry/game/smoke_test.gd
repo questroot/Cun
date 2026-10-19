@@ -177,6 +177,7 @@ func run() -> void:
 		check(at("steps", "begin_release") and state.s.phase == "night" and state.s.ending == "", "bringing answers begins shore scene not instant ending")
 		check(not at("steps", "release_dawn"), "player cannot skip boatman's own release")
 		check(at("steps", "release_rope") and state.flag("released"), "boatman releases his own rope")
+		check(not at("steps", "board") and not at("steps", "shen") and not at("steps", "answer_whistle"), "departed boat cannot be boarded or interrogated")
 		check(at("steps", "release_watch") and state.s.phase == "night", "shore remains after departure")
 		check(state.save_game() and state.load_game() and state.flag("released"), "departure scene saves mid-night")
 		check(at("steps", "release_dawn") and state.s.ending == "untie", identity + " completes negotiated untie")

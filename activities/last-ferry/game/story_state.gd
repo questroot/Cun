@@ -124,6 +124,8 @@ func act(id: String) -> bool:
 		return false
 	if (flag("closing_light") or flag("closing_release")) and id in ["light_yellow", "restore", "untie", "danger", "break", "swap", "remove_shade", "retrieve_tongue", "install_tongue", "return", "farewell_consent"]:
 		return refuse("今晚已经点灯恢复边界，周伯在旧阶等着兑现敲钟的承诺。可以继续走动、交谈或保存，不必重做装置或把另一个结局叠在上面。")
+	if flag("released") and flag("closing_release") and id in ["board", "xu_voice", "answer_whistle", "listen_river", "ask_departure", "ask_roof", "xiaoman", "xiaoman_recognize", "xiaoman_wait", "xiaoman_ask", "shen", "whistle_short", "whistle_long", "whistle_listen"]:
+		return refuse("船已离岸。不能隔着已经结束的渡程继续索要回答；仍可陪岸上的人站一会儿，再迎接天明。")
 	match id:
 		"ledger":
 			if p != "street" or s.identity != "he": return refuse("这不是你能核对的店内账目。")

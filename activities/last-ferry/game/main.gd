@@ -398,7 +398,7 @@ func update_world() -> void:
 			if story.flag("closing_release") and story.s.phase == "night": add_object("release_scene", "正收缆绳的沈渡与岸上的人", Vector2(590,410), "npc")
 			if story.flag("closing_light") and story.s.phase == "night": add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
 			if not story.flag("tool_returned") and not story.item("老葛的工具袋"): add_object("toolbag", "湿阶低处的布袋", Vector2(235, 355))
-			if story.s.phase == "night": add_object("ship", "靠岸夜船", Vector2(700, 295))
+			if story.s.phase == "night": add_object("ship", "已离岸的夜船" if story.flag("released") else "靠岸夜船", Vector2(700, 245) if story.flag("released") else Vector2(700,295))
 			else: add_object("morning", "河面与普通渡船", Vector2(700, 295))
 			add_object("shelter_gate", "回候船棚", Vector2(115, 565), "gate")
 		"boat":
@@ -623,7 +623,9 @@ func interact() -> void:
 				if story.s.phase == "night":
 					act_button("转述本人意愿，请周伯敲最后一次钟", "farewell_consent")
 			"mooring":
-				if story.s.phase == "night":
+				if story.s.phase == "night" and story.flag("released"):
+					act_button("回身看看仍留在岸上的人", "release_watch")
+				elif story.s.phase == "night":
 					add_river_choices()
 					if not story.flag("xiaoman_known"): act_button("请周伯先辨认他女儿的回应", "xiaoman_recognize")
 					else:
@@ -635,7 +637,9 @@ func interact() -> void:
 						if not story.flag("closing_release"): act_button("把两岸的答复带给沈渡，请他自己解缆", "begin_release")
 				else: button(modal_body, "查看旧阶", func(): close_modal(); story.note("普通渡船已走。系缆石上留下年复一年的磨痕。准备好后主动确认入夜。"); refresh_ui())
 			"ship":
-				if story.s.phase == "night" and story.s.identity == "xu": act_button("许宁独有：踏上靠岸侧舷（可随时回岸）", "board")
+				if story.flag("released"):
+					button(modal_body, "目送，不再登船", func(): close_modal(); story.note("缆绳已不在岸上。船灯远了一些，踏板没有再伸回来。可以回身陪岸上的人，不必追到所有话都说完。"); refresh_ui())
+				elif story.s.phase == "night" and story.s.identity == "xu": act_button("许宁独有：踏上靠岸侧舷（可随时回岸）", "board")
 				else: button(modal_body, "留在岸上", func(): close_modal(); story.note("夜船不公开卖票。阿禾不能凭身份登船；可以调查灯钟，在岸上恢复边界，或明确请许宁协助传话。"); refresh_ui())
 			"voices":
 				add_river_choices()
@@ -707,8 +711,9 @@ func _draw() -> void:
 				draw_line(Vector2(55, 188 + i * 16), Vector2(805, 188 + i * 16), Color("36505b"), 2)
 			for i in range(4): draw_line(Vector2(60, 310 + i * 34), Vector2(810, 310 + i * 34), Color("a3a69b"), 3)
 			if story.s.phase == "night":
-				draw_colored_polygon(PackedVector2Array([Vector2(565, 230), Vector2(810, 230), Vector2(777, 300), Vector2(605, 300)]), Color("332e2b"))
-				draw_line(Vector2(460, 295), Vector2(625, 275), Color("baab87"), 3)
+				var drift := Vector2(0,-60) if story.flag("released") else Vector2.ZERO
+				draw_colored_polygon(PackedVector2Array([Vector2(565,230)+drift,Vector2(810,230)+drift,Vector2(777,300)+drift,Vector2(605,300)+drift]), Color("332e2b"))
+				if not story.flag("released"): draw_line(Vector2(460, 295), Vector2(625, 275), Color("baab87"), 3)
 		"boat":
 			draw_rect(Rect2(40, 175, 780, 445), Color("403d37"))
 			for i in range(10): draw_line(Vector2(55 + i * 80, 180), Vector2(55 + i * 80, 610), Color("746957"), 2)
