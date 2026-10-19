@@ -40,15 +40,18 @@ def main():
 	gm.size = Vector2(120,40)
 	gm.set_meta("cun_play_blocked", true)
 	add_child(gm)
+var combat_keys := {"j":0,"k":0,"l":0}
 var physical_frames := 0
 var released := false
 func _process(_delta: float) -> void:
+	for pair in [["j",KEY_J],["k",KEY_K],["l",KEY_L]]:
+		if Input.is_physical_key_pressed(pair[1]): combat_keys[pair[0]] += 1
 	if Input.is_physical_key_pressed(KEY_W):
 		physical_frames += 1
 	elif physical_frames > 0:
 		released = true
 func play_visible() -> Dictionary:
-	return {"description": "Fixture drawn marker at screen 20,20", "physical_frames": physical_frames, "released": released}
+	return {"description": "Fixture drawn marker at screen 20,20", "physical_frames": physical_frames, "released": released, "combat_keys":combat_keys}
 ''')
     with socket.socket() as reserved:
         reserved.bind(('127.0.0.1',0)); port = reserved.getsockname()[1]
@@ -90,6 +93,9 @@ func play_visible() -> Dictionary:
             assert key_result['ok'], key_result
             physical = key_result['result']['visible'][0]
             assert 1 <= physical['physical_frames'] <= 7 and physical['released'], physical
+            for attack in ['j','k','l']:
+                held=request('action',{'kind':'key','key':attack,'frames':4})
+                assert held['ok'] and 1 <= held['result']['visible'][0]['combat_keys'][attack] <= 5, held
             assert not request('observe',secret='wrong')['ok']
             assert not request('eval')['ok']
             assert not request('action',{'kind':'key','key':'enter','frames':121})['ok']
