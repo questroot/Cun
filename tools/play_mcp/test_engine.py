@@ -26,6 +26,15 @@ def main():
         time.sleep(.3)
         original = service.call('observe',{})
         assert original['buttons'],original
+        # The shared entry now opens the game selection lobby. Enter through
+        # the visible player button before checking the spirit game's bag.
+        entries = [b for b in original['buttons'] if not b['disabled'] and b['text'] == '进入灵伴回合冒险']
+        if entries:
+            evidence['lobby'] = original
+            service.call('action',{'kind':'click','button_id':entries[0]['id']})
+            time.sleep(.3)
+            original = service.call('observe',{})
+            assert original['scene'] != evidence['lobby']['scene'],original
         # Wrong token cannot read even visible state.
         with socket.create_connection(('127.0.0.1',service.port),timeout=5) as peer:
             peer.sendall(b'{"token":"bad","method":"observe"}\n')

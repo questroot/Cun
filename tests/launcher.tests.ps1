@@ -87,6 +87,15 @@ foreach ($mode in @('Game', 'Editor')) {
     $run.Process.Dispose()
 }
 Assert-Cun (Test-Path -LiteralPath (Join-Path $paths.Project '.godot\global_script_class_cache.cfg')) 'Game start prepared script cache before creating game process'
+[IO.File]::WriteAllText((Join-Path $paths.Project 'scenes\Fudi.tscn'), '[gd_scene format=3]', [Text.Encoding]::UTF8)
+foreach ($selection in @('Spirit', 'Fudi')) {
+    $run = Start-CunProject $paths $fixture 'Game' -Game $selection
+    Assert-Cun ($run.Process.WaitForExit(5000)) ('Selected game starts: ' + $selection)
+    $argv = [IO.File]::ReadAllLines($env:CUN_FIXTURE_ARGS)
+    $expected = if ($selection -eq 'Fudi') { 'res://scenes/Fudi.tscn' } else { 'res://scenes/MainCity.tscn' }
+    Assert-Cun ($argv -contains $expected) ('Selected scene survives process arguments: ' + $selection)
+    $run.Process.Dispose()
+}
 $shell = [PowerShell]::Create()
 $task = { param($CoreFile, $Paths, $Engine) $ErrorActionPreference='Stop'; . $CoreFile; Start-CunProject $Paths $Engine 'Game' }
 $shell.AddScript($task.ToString()).AddArgument((Join-Path $root 'launcher\Launcher.Core.ps1')).AddArgument($paths).AddArgument($fixture) | Out-Null

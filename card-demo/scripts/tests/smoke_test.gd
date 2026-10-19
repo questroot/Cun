@@ -171,7 +171,7 @@ func run_checks() -> void:
 	check(battle.can_cast(battle.enemies[0], "ember_flare"), "第十关火焰技能蓄能后可施放")
 	battle.running = false
 	game.current_stage = "stage_1"
-	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/MainCity.tscn", "启动直接进入主城")
+	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/MainMenu.tscn", "启动进入双游戏选择大厅")
 	var prior_stage: String = game.current_stage
 	game.select_stage("stage_999")
 	check(game.current_stage == prior_stage and not game.stage_pending, "未解锁副本不能绕过独立关卡页进入战斗")
@@ -337,12 +337,12 @@ func run_checks() -> void:
 		elif path.ends_with("Outskirts.tscn"):
 			check(instance.model != null and instance.player_foot.distance_to(Vector2(140, 576)) < 2.0, "邻接区域成功加载并显示人物")
 			check(instance.RETURN.has_point(Vector2(84, 570)), "邻接区域包含可返回主城的出口")
-			check(instance.model.texture.resource_path == "res://assets/characters/pet_hero.png", "外缘玩家复用主角美术")
+			check(instance.model.texture.resource_path == "res://assets/characters/hero/idle/hero_idle.png" and instance.model.hframes == 1 and instance.model.vframes == 1, "外缘玩家使用完整的主角站立图")
 			check(instance.WATER_PORTAL.has_point(Vector2(1044, 560)), "外缘水门位于可移动区域")
 		elif path.ends_with("WaterActivity.tscn"):
 			check(instance.raft_tiles == 1 and instance.collectors == 0 and instance.orders_completed == 0, "水上经营活动完成初始化")
 			check(not instance._expand_raft() and not instance._build_collector() and not instance._fulfill_order(), "资源不足不能扩建、造站或交付")
-			check(instance.model.texture.resource_path == "res://assets/characters/pet_hero.png" and instance.debris.size() == 5, "水域显示现有精灵及可拾取漂浮物")
+			check(instance.model.texture.resource_path == "res://assets/characters/hero/idle/hero_idle.png" and instance.model.hframes == 1 and instance.debris.size() == 5, "水域显示主角站立图及可拾取漂浮物")
 			for point in instance.debris.duplicate():
 				instance.player_foot = point
 				instance._collect_nearby()

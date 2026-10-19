@@ -468,6 +468,1432 @@
       "status": "draft",
       "notes": "",
       "sha256": "c46e0d9382fdb4973fa2c004d22c4d4d524e1fc6091d98baa76d27bf8422b00d"
+    },
+    {
+      "id": "asset_961e0351fbc2029c",
+      "name": "主角行走-E-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/E.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "E",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/E.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "bc3122c7349223db4e0daf009100b323598d70a8e936f0cc05429443b1cfe81a"
+    },
+    {
+      "id": "asset_5ce2eb461c31185b",
+      "name": "主角行走-N-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/N.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "N",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/N.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "fb024cf86fa89abc1b550b4199b86d5643e8b51a6bff9acbb6d2f65b7a40b66b"
+    },
+    {
+      "id": "asset_47ed8c9a3fa61fb4",
+      "name": "主角行走-NE-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/NE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NE",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "75bab280a647981ac22228057bac4c1276dae9dd522863add6c1ef4a4157fdf3"
+    },
+    {
+      "id": "asset_c7e321675ee82598",
+      "name": "主角行走-NW-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/NW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NW",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "bfbe2e35b2cb1c63ae68acdd4c3a491f96edb060393f5219854f418c2cb2e844"
+    },
+    {
+      "id": "asset_22eff2f4f9a73594",
+      "name": "主角行走-S-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/S.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "S",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/S.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "89665eec37207de55c5c40f01a8c4bde04ab004fcf0c7924bc578736406c162a"
+    },
+    {
+      "id": "asset_4c71316eaaa569e2",
+      "name": "主角行走-SE-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/SE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SE",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "9733f05e4d15a6ae966b4faf14967372b8c4c2a643cbfd54c7ffda1a23ef0187"
+    },
+    {
+      "id": "asset_86a8f9d9429afc44",
+      "name": "主角行走-SW-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/SW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SW",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "d1538c086b0d7db3ce9694b3ae5b1fe0524c0432505cb8145123ece38562735d"
+    },
+    {
+      "id": "asset_abaf3ddd73d3f7fb",
+      "name": "主角行走-W-原始序列图",
+      "path": "card-demo/assets/characters/hero/walk/source/W.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "W",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/W.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原文件原样迁入；4列2行8帧。",
+      "sha256": "d24aefe4138f1640df46541a5777724132e1f20ab85a7964db815d7b8f3c3255"
+    },
+    {
+      "id": "asset_c48f3da24a7b670a",
+      "name": "主角行走-E-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_E.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "E",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/E.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "470d5035eca9ead4531802c6c4df0045427423a70c2b78256971108a09235625"
+    },
+    {
+      "id": "asset_74f28c39b70c9cc3",
+      "name": "主角行走-N-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_N.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "N",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/N.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "2a34d65d3bab4f6fe565fa265d73d89d8ff77fc0b77ca7d7e4fb55c6343db07a"
+    },
+    {
+      "id": "asset_908fb49a1a9ab26a",
+      "name": "主角行走-NE-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_NE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NE",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "f65bb24a703a5b305d74d7b5e68df82c422bef03e8230e6d325a88b755314630"
+    },
+    {
+      "id": "asset_32ae18b6f25e3499",
+      "name": "主角行走-NW-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_NW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "NW",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/NW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "623ce9f6dfb69211ff6bca3579ef8042a4898cd4c9f90d915b4b783e4cf004ed"
+    },
+    {
+      "id": "asset_302cb5237aed1432",
+      "name": "主角行走-S-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_S.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "S",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/S.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "39a3b4cd5ed16e3e231c91f497653d994add8c523511b4e55cb5655add743fc9"
+    },
+    {
+      "id": "asset_8af1beddb0f48ffa",
+      "name": "主角行走-SE-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_SE.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SE",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SE.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "4341738d36feb67ac9b90293ab70099a57778418b7fba2d2177a92de58f46fdb"
+    },
+    {
+      "id": "asset_211e1fd1454a107a",
+      "name": "主角行走-SW-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_SW.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "SW",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/SW.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "c1bc5f033b9f87dfd8fb7d0e716f657aa52eebc3fe7ea0e35cf944d658c7144c"
+    },
+    {
+      "id": "asset_2ce56671c303e5c6",
+      "name": "主角行走-W-运行图集",
+      "path": "card-demo/assets/characters/hero/walk/walk_W.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "walk",
+        "8-direction",
+        "W",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/W.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_walk.py 从同目录 source 原图生成；4列2行，448x512/帧，脚底(224,504)。",
+      "sha256": "4605e095df0f8bbd196ba4220b7a4ab6b2aa6558901f9c0f11ba14a4472a7038"
+    },
+    {
+      "id": "asset_32b0c531abef7da1",
+      "name": "主角站立待机-透明运行图",
+      "path": "card-demo/assets/characters/hero/idle/hero_idle.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "idle",
+        "runtime"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/boss-03-celestial-executioner.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由 tools/prepare_hero_idle.py 去除紫红背景，448x512，脚底(224,504)。单张正面站姿。",
+      "sha256": "e892de49848c9785786d229d34962c27fc9ec1415436d16907ebdd13746d2a00"
+    },
+    {
+      "id": "asset_4b24c4741a9a4119",
+      "name": "主角站立待机-原始图",
+      "path": "card-demo/assets/characters/hero/idle/source/boss-03-celestial-executioner.png",
+      "kind": "image",
+      "tags": [
+        "hero",
+        "idle",
+        "source"
+      ],
+      "source": "用户于2026-10-18提供的 card-demo/raw/boss-03-celestial-executioner.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样迁入的RGB站姿图，带紫红背景。",
+      "sha256": "f6adcc4a1faf1fc20063522ac5a25a89c8eb9e4874f3a253b757b3022b0ee56c"
+    },
+    {
+      "id": "asset_5c1efca7d449d526",
+      "name": "残旗剑士",
+      "path": "card-demo/assets/characters/bosses/H01.png",
+      "kind": "image",
+      "tags": [
+        "boss",
+        "fudi",
+        "runtime"
+      ],
+      "source": "用户提供：美术/怪物boss/H01.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样复制透明单帧美术；地图配置见docs/fudi-bosses.md。",
+      "sha256": "a332fcb03027364af18f94c3bf6f5ce9a891dd69938d31632f785e0be433be37"
+    },
+    {
+      "id": "asset_8aecfa937d7e2527",
+      "name": "荆冠鹿骑",
+      "path": "card-demo/assets/characters/bosses/H02.png",
+      "kind": "image",
+      "tags": [
+        "boss",
+        "fudi",
+        "runtime"
+      ],
+      "source": "用户提供：美术/怪物boss/H02.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样复制透明单帧美术；地图配置见docs/fudi-bosses.md。",
+      "sha256": "35ea3c87c1469756f1a2754d2aede4b9017a27d8fbdd57e2c696370e5f6ad736"
+    },
+    {
+      "id": "asset_3c872f33235ffaaf",
+      "name": "沉潜重装",
+      "path": "card-demo/assets/characters/bosses/H03.png",
+      "kind": "image",
+      "tags": [
+        "boss",
+        "fudi",
+        "runtime"
+      ],
+      "source": "用户提供：美术/怪物boss/H03.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样复制透明单帧美术；地图配置见docs/fudi-bosses.md。",
+      "sha256": "dae19a562e79e61ac8329d2c84b836cbbe8d057c20f98a2f0a1ce4ce1bc6668f"
+    },
+    {
+      "id": "asset_235b304cf0d1fa13",
+      "name": "灰翼审判者",
+      "path": "card-demo/assets/characters/bosses/H04.png",
+      "kind": "image",
+      "tags": [
+        "boss",
+        "fudi",
+        "runtime"
+      ],
+      "source": "用户提供：美术/怪物boss/H04.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样复制透明单帧美术；地图配置见docs/fudi-bosses.md。",
+      "sha256": "74317958935e77530380e088b7dfacfe9cce84ff00ce556102e5019a8e264510"
+    },
+    {
+      "id": "asset_ef5292dc210cd50e",
+      "name": "霜典记录者",
+      "path": "card-demo/assets/characters/bosses/H05.png",
+      "kind": "image",
+      "tags": [
+        "boss",
+        "fudi",
+        "runtime"
+      ],
+      "source": "用户提供：美术/怪物boss/H05.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样复制透明单帧美术；地图配置见docs/fudi-bosses.md。",
+      "sha256": "abf396172c1c3bb7f969e857d710fe7f50e0b8923db3030ad918aae83c3efea6"
+    },
+    {
+      "id": "asset_5c02816997ae9229",
+      "name": "锈钟守望者",
+      "path": "card-demo/assets/characters/bosses/H06.png",
+      "kind": "image",
+      "tags": [
+        "boss",
+        "fudi",
+        "runtime"
+      ],
+      "source": "用户提供：美术/怪物boss/H06.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "原样复制透明单帧美术；地图配置见docs/fudi-bosses.md。",
+      "sha256": "13bb792019f37df130b40b4bba8214a65af098e483e7dacc278d336d6939950d"
+    },
+    {
+      "id": "asset_86e52706847e7a14",
+      "name": "s1-boots",
+      "path": "card-demo/assets/items/s1-boots.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set1-zhuiGui/s1-boots.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 96533eb01ff17acbd8e29882c90aa99a597970b47df935cfeac933bc05440196",
+      "sha256": "bca48ac1d4f2fad80fbeb6b600423a41488fcc4b9dbc39ff94a87c7970669422"
+    },
+    {
+      "id": "asset_f23959002be60202",
+      "name": "s1-legs",
+      "path": "card-demo/assets/items/s1-legs.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set1-zhuiGui/s1-legs.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 04c57de285aafd5abddfe30090ba0e9617bbc0fea8037bfbae64505e6818c179",
+      "sha256": "21908e5bb99dd846a41e265b98ecb9b338a7586d4ef19b2fd244796e5237e458"
+    },
+    {
+      "id": "asset_3f905b449ebb5ac0",
+      "name": "s1-necklace",
+      "path": "card-demo/assets/items/s1-necklace.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set1-zhuiGui/s1-necklace.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 27fb5139744dd7053f92056b21686b1f9b40f866f298ce5fa3dea30de261c363",
+      "sha256": "df90a8d890fcd12827365c421742294761e59e782cb30bf9a9e2b2ecfa9f3e04"
+    },
+    {
+      "id": "asset_22dce4586a197517",
+      "name": "s1-ring",
+      "path": "card-demo/assets/items/s1-ring.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set1-zhuiGui/s1-ring.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 8defbd618d2d967896438680e8bdc57c6188500aaaf7d44494c5823ffa928f54",
+      "sha256": "b0fe3cdc14fc744f8db39f9f5097455e81cc55ad3c3b7f37642ed03fa1238bc4"
+    },
+    {
+      "id": "asset_97d5c7b830fcf512",
+      "name": "s1-top",
+      "path": "card-demo/assets/items/s1-top.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set1-zhuiGui/s1-top.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 b8d05917513caf7360c838fd12db2dbaf058e3580c7173b0dc43fb7501fd5cad",
+      "sha256": "92922f64d9152e047213321218e1f7d4371b375fc8e2f1c1f43909e90ee8996c"
+    },
+    {
+      "id": "asset_24e7626095f4af0d",
+      "name": "s2-boots",
+      "path": "card-demo/assets/items/s2-boots.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set2-fengLu/s2-boots.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 a97fb4602845a373d363c81a2101c272321428efade33fc3d986593ac77f38ae",
+      "sha256": "34fab2a445b674a8888be68c5176c1345d27067ece1401392bf969985e3e1c24"
+    },
+    {
+      "id": "asset_10146ec2229aac37",
+      "name": "s2-legs",
+      "path": "card-demo/assets/items/s2-legs.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set2-fengLu/s2-legs.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 38613bbe18772fc1d3a0f40c26c2cd88342aed79ad4432f7e93503b16aa788ca",
+      "sha256": "dff5125b513ed158159f26edbb4ed8d5755549e74f8645886989f033dc2d2c83"
+    },
+    {
+      "id": "asset_2bee489c18e21b5b",
+      "name": "s2-necklace",
+      "path": "card-demo/assets/items/s2-necklace.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set2-fengLu/s2-necklace.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 c8692bae3b25041f82496553b8d0d744214153468ea6606c2e401e5787ec3784",
+      "sha256": "8a32c1317f39b66dafd9894ffe28fdd2c5d552b04e477ae2281620c1cbf93881"
+    },
+    {
+      "id": "asset_d1c4cedaba853b2c",
+      "name": "s2-ring",
+      "path": "card-demo/assets/items/s2-ring.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set2-fengLu/s2-ring.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 ca6e6797c760dcc308cad6daf7747df51c46c9fdf3315fad438b1204d776b6d9",
+      "sha256": "ac14678fd665d570a5bc7b9d3cbbfdc26819d5e67291180b32d7e0287eda1381"
+    },
+    {
+      "id": "asset_3947e5d058c4a244",
+      "name": "s2-top",
+      "path": "card-demo/assets/items/s2-top.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set2-fengLu/s2-top.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 287763beb76e5e1e6107af1e30e1760efa1308a521ac80bf377eadac65bc578c",
+      "sha256": "3da4d29fd3f1746aa2aab4dc9acb92797b365f184c85bc47aac4ca334a2132fb"
+    },
+    {
+      "id": "asset_2f9456ba467ef7b1",
+      "name": "s3-boots",
+      "path": "card-demo/assets/items/s3-boots.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set3-jingChao/s3-boots.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 a6b066b07d860b79c45aae7783fb8f15ad1a199136c9a4b3155f8e85ff8e6715",
+      "sha256": "a6a1fd0061b3029f53b9a82eb047550a1abc31a795392797e229fc149beacd2a"
+    },
+    {
+      "id": "asset_618e5610c287678e",
+      "name": "s3-legs",
+      "path": "card-demo/assets/items/s3-legs.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set3-jingChao/s3-legs.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 45aa0a9b332f0ae58df0d0a2d43b580b66c38b5a4db973a656136a48b23bf391",
+      "sha256": "d861ecea8165ee02b97bd9372c34c27af3350aeff3114cdc964dd21800073aa0"
+    },
+    {
+      "id": "asset_bad73a48c74c43b6",
+      "name": "s3-necklace",
+      "path": "card-demo/assets/items/s3-necklace.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set3-jingChao/s3-necklace.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 00111fd192b9f2a8a7f53e1801b31aa005970311b77f5e3d38aa7f60cf779c61",
+      "sha256": "62b7682fee1d35421bfab2ca7a6b8377232552591ed23eab4919861684bc2e4b"
+    },
+    {
+      "id": "asset_14a686a11d90d7f9",
+      "name": "s3-ring",
+      "path": "card-demo/assets/items/s3-ring.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set3-jingChao/s3-ring.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 21bef64dde4293f0d87aa3ddb0f771eeefd473ab3c1fb63bab95b2f52622b532",
+      "sha256": "db8e61bcfbcb20fa9a1bd2a2cde6a91a8a5f471f3f8ec122f82cc2a1b6749490"
+    },
+    {
+      "id": "asset_3e9f49ef489fbf61",
+      "name": "s3-top",
+      "path": "card-demo/assets/items/s3-top.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/物品/set3-jingChao/s3-top.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 69a3ae7cf0546b19296d49c995ea925d21d1098ef8834b830366e42519a5ee1c",
+      "sha256": "574b7fd9cdc34831cc6cf2e4a760c67df206a0a63105bf44b5a2d6e1257069cc"
+    },
+    {
+      "id": "asset_d9f4b87781b733be",
+      "name": "w01-ashen-echo",
+      "path": "card-demo/assets/items/w01-ashen-echo.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/武器/w01-ashen-echo.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 e51c4cac899059d12dc90954f139416446f82883aa7865ea3501435bdfbcdc22",
+      "sha256": "f1b75c4a5faafc5d3c01770ae6879d9c1f64eac5c2c143438b4ac4eadb49f3da"
+    },
+    {
+      "id": "asset_271c2c133dbae4c9",
+      "name": "w02-ruinsplitter",
+      "path": "card-demo/assets/items/w02-ruinsplitter.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/武器/w02-ruinsplitter.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 2ba91b2fbceb32bb42f2ff9f516478be2f589b0203a554ed8e3a01e90cf2231f",
+      "sha256": "5ed8850c574cdf8fbe3c7d55c2312ee145d06edf6868b46e0843069fe36fa836"
+    },
+    {
+      "id": "asset_2ef53c3ecea526f7",
+      "name": "w03-prism-saber",
+      "path": "card-demo/assets/items/w03-prism-saber.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/武器/w03-prism-saber.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 051b2f8d9ca352b7af69652d6d321d445ecbd43f0c6c27b2d4d21e518fd272ca",
+      "sha256": "296dccad2129a63ad7806855f45a0ff42de1e33ead422cd28e2cacb47473d32b"
+    },
+    {
+      "id": "asset_796aefdac9827321",
+      "name": "w05-bone-halberd",
+      "path": "card-demo/assets/items/w05-bone-halberd.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/武器/w05-bone-halberd.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 96e8b2747b90546f890b9c5407b4383194f431531a83a544b38d70d0b4a2bdf4",
+      "sha256": "4a2f03cfa3e0f2e47ae829f82c201ab75d3896b70afbee3129a9f97101416983"
+    },
+    {
+      "id": "asset_315355dd40bd4a3a",
+      "name": "w06-falling-crag",
+      "path": "card-demo/assets/items/w06-falling-crag.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "loot",
+        "equipment"
+      ],
+      "source": "用户指定的仓库原图：美术/武器/w06-falling-crag.png",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "draft",
+      "notes": "由tools/prepare_loot_icons.py等比生成160x160图标；原图SHA256 cc7734e73a1d36b91e0b4388c675f75792ca30c2dc4778490ec0077c1b603c04",
+      "sha256": "4e482c9abb6e4cec33b7fcc4e8c002a31ec473eece830d79da013c169c162489"
+    },
+    {
+      "id": "asset_86d34f4a8ba7e4e3",
+      "name": "amb_fire",
+      "path": "card-demo/assets/audio/ambience/amb_fire.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "ambience"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "fire; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "a260684fc5ab73ee6fac97dafe0b981a19ca34bc7e03a139bc0b80958d9ed2df"
+    },
+    {
+      "id": "asset_dd53df0793d30083",
+      "name": "amb_forest",
+      "path": "card-demo/assets/audio/ambience/amb_forest.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "ambience"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "forest; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "9501e8f007a28f89a600a4095d2ea6c4647a4ad7655c5319e14f4e02aba4ffe8"
+    },
+    {
+      "id": "asset_b9c485f1b9151ca9",
+      "name": "amb_rain",
+      "path": "card-demo/assets/audio/ambience/amb_rain.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "ambience"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "rain; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "806317aa2c61b1477fe5263246e8d58e39e39c117e29fa53b5621c4ee4635dfb"
+    },
+    {
+      "id": "asset_82d2bf92af03ddfa",
+      "name": "amb_water",
+      "path": "card-demo/assets/audio/ambience/amb_water.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "ambience"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "water; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "10959233d94209a00a7d4dcce7bf3a8e6b570883180e0a54b11fd34cd27dfb33"
+    },
+    {
+      "id": "asset_5925a376bfa0d5ab",
+      "name": "amb_wind",
+      "path": "card-demo/assets/audio/ambience/amb_wind.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "ambience"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "wind; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "c77db9d143cc2a53a45884ae9fe98bd600f411fbeedb6de636c644e82db9feee"
+    },
+    {
+      "id": "asset_55e81a0a6a6eae3b",
+      "name": "boss_H01",
+      "path": "card-demo/assets/audio/music/boss_H01.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "残旗急阵; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "0f4914995cb4799f319811e65b711aa0276e41300a6ae66356266228f51e8f9e"
+    },
+    {
+      "id": "asset_41a15ce9246b8609",
+      "name": "boss_H02",
+      "path": "card-demo/assets/audio/music/boss_H02.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "荆冠逐猎; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "bcdf71a5dc1fa57b92c91d9b87ffeab956d934ed0e07dedb44c4d81f395ead33"
+    },
+    {
+      "id": "asset_898eb4e2450e8b30",
+      "name": "boss_H03",
+      "path": "card-demo/assets/audio/music/boss_H03.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "沉潜铁潮; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "6fd7343ff9b6a84523e72d688d0924338c65adade66f3de0347aaa9a2f2b97e7"
+    },
+    {
+      "id": "asset_74eca930013992f5",
+      "name": "boss_H04",
+      "path": "card-demo/assets/audio/music/boss_H04.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "灰翼裁决; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "8b21ac629def10fdb860296ff21dd78865977426b2d412ddd92f561f68de41f5"
+    },
+    {
+      "id": "asset_b83189114f338419",
+      "name": "boss_H05",
+      "path": "card-demo/assets/audio/music/boss_H05.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "霜文封印; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "46f23ef4ee331e0fbf3e822d1d6b694d0c6d8039bc1e0b7d2c156004d4db257d"
+    },
+    {
+      "id": "asset_3e87ef803c98193b",
+      "name": "boss_H06",
+      "path": "card-demo/assets/audio/music/boss_H06.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "锈钟震鸣; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "58af38a10112b2abae457d5aa0087ec44b76c1a20fb31b3eacb73929f73418c5"
+    },
+    {
+      "id": "asset_99be6405247862af",
+      "name": "map_archive",
+      "path": "card-demo/assets/audio/music/map_archive.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "镜沙残页; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "17fdbee87e42808bd2c1ca4262149835c3bf4c0e93d82c69015f2dde47625a4f"
+    },
+    {
+      "id": "asset_15299352be1621a4",
+      "name": "map_causeway",
+      "path": "card-demo/assets/audio/music/map_causeway.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "断桥彼岸; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "c9d60e1ba6f43b9a4bc2332d47cb6639350026ee08e8d1fa4bc6b20f27ca0205"
+    },
+    {
+      "id": "asset_6b6b652d5e3ff0c2",
+      "name": "map_grove",
+      "path": "card-demo/assets/audio/music/map_grove.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "灶火与青岚; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "b707180cb4f1023cd079c12fcbbe0b66b5d03e575cf17b08aaf2aa8fa070b398"
+    },
+    {
+      "id": "asset_a6aa62ae877545d1",
+      "name": "map_kilnwood",
+      "path": "card-demo/assets/audio/music/map_kilnwood.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "松烟余温; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "d13efece1c1532c8c22e53d239b3bfa967924d02fa3e5552219388c6d3cfc60a"
+    },
+    {
+      "id": "asset_d83c7c8c322f441a",
+      "name": "map_post",
+      "path": "card-demo/assets/audio/music/map_post.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "未寄出的信; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "da4652b665dd5a51d88242caa3a6c2bc68add300c3e82a2fd7747cc5c383ba7b"
+    },
+    {
+      "id": "asset_ec5340ca740c122e",
+      "name": "map_quarry",
+      "path": "card-demo/assets/audio/music/map_quarry.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "赤岩晚钟; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "6faf9765946b2d1caf9899816eda3f51b8335e3019c5857dde6fc169f3bdb1c0"
+    },
+    {
+      "id": "asset_343755a768a8b3cb",
+      "name": "map_refuge",
+      "path": "card-demo/assets/audio/music/map_refuge.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "循光归航; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "24718f5dbc332e9f868c0f318fe00303b5a8537b88dc263a8b970e2b049d850f"
+    },
+    {
+      "id": "asset_e5ec184e409f4db3",
+      "name": "map_ruins",
+      "path": "card-demo/assets/audio/music/map_ruins.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "灵泉旧记录; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "2340b2d700616b702ef7c5942f3890b70ec4d1a4e75c5697a9176c4c5053e718"
+    },
+    {
+      "id": "asset_7a204cf2de688265",
+      "name": "map_snowridge",
+      "path": "card-demo/assets/audio/music/map_snowridge.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "霜脊信标; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "7547d1d756742497751fb93732aceec2d0ddf4b9708cbc9d417d16c6b54fa5fa"
+    },
+    {
+      "id": "asset_bdd64f3819610c69",
+      "name": "map_wetland",
+      "path": "card-demo/assets/audio/music/map_wetland.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "music"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "雨灯浮水; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "fd0c6d46c9787a76862237750da89fd45f54bc72748ad1dd9418802b310b34c2"
+    },
+    {
+      "id": "asset_dc196e4a2f6e279b",
+      "name": "boss_down",
+      "path": "card-demo/assets/audio/sfx/boss_down.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "boss_down; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "bd1a989e20af5b6027c2f0389a245edd8e054fc7e11a0993d88d0a443f25bcda"
+    },
+    {
+      "id": "asset_3f4e7942bafa0411",
+      "name": "cast",
+      "path": "card-demo/assets/audio/sfx/cast.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "cast; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "c0bb5b4ef6655b2e4a956abf7be4e1452ea59227deded9e3afb122cdfda5fc56"
+    },
+    {
+      "id": "asset_ee8e7f1a7a137e78",
+      "name": "chest",
+      "path": "card-demo/assets/audio/sfx/chest.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "chest; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "6a27763a5413ae5d5c5242e46a387d9024e1df589f710eccede00e2798ff1837"
+    },
+    {
+      "id": "asset_83faa114550871a4",
+      "name": "defeat",
+      "path": "card-demo/assets/audio/sfx/defeat.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "defeat; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "cb7bbfdcae97e65dcb033260f42f80e32f55626b0984d1e0b4aeb4047eaea876"
+    },
+    {
+      "id": "asset_47380302d5e0c75c",
+      "name": "discovery",
+      "path": "card-demo/assets/audio/sfx/discovery.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "discovery; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "6475bc6d113d3028447754a352c5e5776fe563b56f48e2658be5ea92e0ec824f"
+    },
+    {
+      "id": "asset_96897a14fa9921b7",
+      "name": "hit",
+      "path": "card-demo/assets/audio/sfx/hit.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "hit; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "b3b038011d46a15a5d0deda6dd30718b7ba8cb0f6df13ca3ab3b70bb1c65fa9d"
+    },
+    {
+      "id": "asset_739c37d852253f48",
+      "name": "hurt",
+      "path": "card-demo/assets/audio/sfx/hurt.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "hurt; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "743f6d66e16365217c520e888b5c20080e7d2f4915e2b83bbbd6cecd63254e80"
+    },
+    {
+      "id": "asset_83aa1c300f270d7b",
+      "name": "pickup",
+      "path": "card-demo/assets/audio/sfx/pickup.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "pickup; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "8591041b38fa690effa2d36c816da22faff0ed39a0adda63d0a29f4acebd0536"
+    },
+    {
+      "id": "asset_8768ed1b02e64a36",
+      "name": "slam",
+      "path": "card-demo/assets/audio/sfx/slam.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "slam; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "07fb54579d688f5e8f806e9a8dc8cf0156587ed1b655f25d044ff56bafd20a57"
+    },
+    {
+      "id": "asset_e7dd71b3f32900a6",
+      "name": "slash",
+      "path": "card-demo/assets/audio/sfx/slash.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "slash; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "979d4459aaed1119a0afc5a484076bb784d6e01bb07d911e1c31f6eff2d9a6ca"
+    },
+    {
+      "id": "asset_61a2f80d1e583e2e",
+      "name": "step_grass",
+      "path": "card-demo/assets/audio/sfx/step_grass.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "step_grass; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "949af32bcf8450c3069991cba5585ebbab51c239129d0e76dcabdb9d1d8cdad4"
+    },
+    {
+      "id": "asset_2d567478f72b3cc4",
+      "name": "step_snow",
+      "path": "card-demo/assets/audio/sfx/step_snow.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "step_snow; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "066a8beeef149e3f8efd180011b728cd70eddb240081a252e5ac86e08f210380"
+    },
+    {
+      "id": "asset_5771698a46161b76",
+      "name": "step_stone",
+      "path": "card-demo/assets/audio/sfx/step_stone.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "step_stone; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "b46006ef9136eae1cca987e548503ae773f8a5f2b2dbc0c6f90aa5307e550c25"
+    },
+    {
+      "id": "asset_89094d0a8ce04615",
+      "name": "step_water",
+      "path": "card-demo/assets/audio/sfx/step_water.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "step_water; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "694deb0d7203c7db81fc4fe346efd64f4c787ddf4d214ca06a4e2a5742646e6e"
+    },
+    {
+      "id": "asset_012a37b3fb6c5ab5",
+      "name": "thunder",
+      "path": "card-demo/assets/audio/sfx/thunder.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "thunder; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "92909868dc17b2a379ab890c7ddb6e04cfdf0ce9a57784cb871130bd75cbfcea"
+    },
+    {
+      "id": "asset_c8ad645313ae13db",
+      "name": "victory",
+      "path": "card-demo/assets/audio/sfx/victory.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "victory; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "6ef9226c15d68a467a7f2568ad42f09f9c045be3d5f7ee486a0ead49ceab3b13"
+    },
+    {
+      "id": "asset_4130ea152f1ba293",
+      "name": "warning",
+      "path": "card-demo/assets/audio/sfx/warning.wav",
+      "kind": "audio",
+      "tags": [
+        "fudi",
+        "procedural-audio",
+        "sfx"
+      ],
+      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "license": "unknown",
+      "author": "Codex procedural composition for Cun",
+      "status": "draft",
+      "notes": "warning; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
+      "sha256": "1844f09677811c7eb95842c9e5754e0237bd2cba7d40e356515d834d1aea966c"
     }
   ]
 }

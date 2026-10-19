@@ -24,7 +24,7 @@ $config = [IO.File]::ReadAllText($paths.ProjectFile, [Text.Encoding]::UTF8)
 $saveName = 'Cun-Cold-Launch-' + (Split-Path -Leaf $base)
 $config = $config.Replace('[application]', "[application]`nconfig/use_custom_user_dir=true`nconfig/custom_user_dir_name=`"$saveName`"")
 [IO.File]::WriteAllText($paths.ProjectFile, $config, (New-Object Text.UTF8Encoding($false)))
-$city = Join-Path $paths.Project 'scripts\scenes\main_city.gd'
+$city = Join-Path $paths.Project 'scripts\scenes\main_menu.gd'
 $text = [IO.File]::ReadAllText($city, [Text.Encoding]::UTF8).Replace("`r`n", "`n")
 if (-not $text.Contains("func _ready() -> void:`n")) { throw 'Cannot attach isolated capture to actual main-scene startup.' }
 $text = $text.Replace("func _ready() -> void:`n", "func _ready() -> void:`n`tcall_deferred(`"_launcher_cold_capture`")`n")
