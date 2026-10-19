@@ -1,0 +1,46 @@
+"""Known-route regression using real MCP inputs, not blind play.
+
+Run from any directory with Python 3. Godot is resolved by the shared service.
+Creates only an isolated project/save; evidence stays in ignored MCP .runtime.
+No external HTTP endpoint or credentials are needed. Always stops its owned game.
+"""
+import argparse
+import sys,json
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools/play_mcp'))
+from server import PlayService
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--render', action='store_true', help='Use an ordinary game window; no screenshot capture.')
+args = parser.parse_args()
+s=PlayService()
+def obs():return s.call('observe',{})
+def key(k,n=1):return s.call('action',{'kind':'key','key':k,'frames':n})
+def click(prefix):
+    o=obs();b=next((b for b in o['buttons'] if b['text'].startswith(prefix)),None)
+    assert b,(prefix,o)
+    return s.call('action',{'kind':'click','button_id':b['id']})
+def walk(axis,target):
+    for _ in range(16):
+        p=obs()['visible'][0]['player_screen'];d=target-p[axis]
+        if abs(d)<10:return
+        key((('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w')),min(100,max(2,int(abs(d)/2))))
+    raise AssertionError(('blocked',axis,target,p))
+def go(x,y):walk('y',400);walk('x',x);walk('y',y)
+def inspect(x,y):go(x,y);key('e');click('现场检查')
+try:
+    s.call('launch',{'project':'last-ferry','headless':not args.render});click('许宁 ·')
+    go(320,375);key('e');click('坐一会儿');go(450,575);key('e')
+    go(750,390);key('e')
+    inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)
+    go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('提议只把今晚');key('escape')
+    click('准备好了');click('确认');go(750,565);key('e')
+    go(460,335);key('e');click('先站住');click('吹一声短音');click('吹一声短音');click('吹一声长音');click('停下，听听');click('问他：你希望')
+    click('请周伯先辨认');click('听父女谈');click('明确问她');click('询问沈渡');click('经本人同意')
+    go(115,565);key('e');go(455,465);key('e');click('转述本人意愿')
+    go(750,565);key('e');go(460,335);key('e');click('把两岸的答复')
+    started=obs();assert '次日尾声' not in '\n'.join(started['texts'])
+    go(590,445);key('e');click('留在干阶上');rung=obs();assert '那边也应了' in json.dumps(rung,ensure_ascii=False)
+    key('escape');departed=obs();assert any(o['title']=='已离岸的夜船' for o in departed['visible'][0]['objects']),departed
+    key('e');click('船离岸后');click('不必等话');click('确认');dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']) and '结束渡程' in json.dumps(dawn,ensure_ascii=False)
+    out=s.run_dir/'release-evidence.json';out.write_text(json.dumps({'begun':started,'rope_released':rung,'departed_world':departed,'dawn':dawn,'method':'normal opening, bounded MCP inputs only; coordinator knows route, not blind play'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
+finally:s.stop()
