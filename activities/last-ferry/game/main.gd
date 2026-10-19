@@ -414,10 +414,12 @@ func refresh_ui() -> void:
 		return
 	hud.text = "%s\n%s · %s" % [story.who(), {"dusk":"傍晚", "night":"入夜", "epilogue":"次日尾声"}[story.s.phase], Story.PLACES[story.s.place]]
 	summary.text = "侵入 %d / 2　证据 %d 项\n%s" % [story.s.pollution, story.s.evidence.size(), (story.ending_name() if not story.s.ending.is_empty() else "无倒计时 · 调查/普通交谈不增加侵入")]
+	if story.flag("closing_light") and story.s.phase == "night":
+		summary.text += "\n" + ("周伯已敲钟；可再陪站，或由你确认迎接天明。" if story.flag("closing_rang") else "黄灯已亮；周伯在旧阶等你，一起把钟敲完。")
 	message.text = story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
 	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
-	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue": foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
+	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
@@ -434,6 +436,10 @@ func object_title(id: String) -> String:
 	return ""
 
 func show_help() -> void:
+	if story.flag("closing_light") and story.s.phase == "night":
+		open_modal("当晚还没结束", "黄灯已经亮了，装置不必再重做。\n" + ("周伯已在旧阶敲过钟。可以继续在岸上听一会儿、同他说话，再由你选择‘今夜到这里，迎接天明’。没有倒计时。" if story.flag("closing_rang") else "周伯去了旧石阶，等你在干阶上陪他把钟敲完。从候船棚东侧路口过去，走近他再交互；不必登船或再找物品。"))
+		button(modal_body, "回到岸上", close_modal)
+		return
 	open_modal("操作与当前目标", "走近圆环物件或人物，按E或点击交互。用WASD/方向键或按住地图下方方向按钮走动。调查、普通交谈和暂停都不会让侵入升级。\n\n傍晚：了解这里的生活，亲眼看看渡口有什么变化。准备好才确认入夜。\n入夜：你可以介入灯的信号，也可先问清各人的意愿。危险举灯有明确警告与取消。\n次日：走访你改变的生活，再从街口离开本段体验。\n\n记录本只显示已获取证据。需要时可以主动打开带剧透的详细路线。")
 	button(modal_body, "需要详细路线（有剧透，不授予证据）", func(): confirm("详细路线会直接说明三个结果的条件，仍要查看？", show_spoiler_help))
 	button(modal_body, "回到探索", close_modal)
