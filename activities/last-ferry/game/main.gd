@@ -277,6 +277,13 @@ func show_items() -> void:
 func try_world_click(point: Vector2) -> bool:
 	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if story.s.place == "steps" and point.distance_to(Vector2(235,355)) < 35 and player.distance_to(Vector2(235,355)) < 82:
+		if not story.flag("tool_returned") and not story.item("老葛的工具袋"):
+			do_action("tool_retrieve")
+			return true
+	if story.s.place == "street" and story.item("老葛的工具袋") and point.distance_to(Vector2(620,470)) < 35 and player.distance_to(Vector2(620,470)) < 82:
+		do_action("tool_return")
+		return true
 	if story.s.place == "shelter":
 		if player.distance_to(point) > 82: return false
 		if point.distance_to(Vector2(250, 360)) < 35 and story.flag("consent"):
@@ -440,6 +447,9 @@ func refresh_ui() -> void:
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
 	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
 	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light") and not story.flag("closing_release"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
+	if story.s.phase != "epilogue" and story.flag("ge_met") and not story.flag("tool_returned"):
+		if story.s.place == "steps" and not story.item("老葛的工具袋"): foot_hint.text += "\n老葛说的布袋在湿阶低处；走近后点击，用竹竿挑回，不必涉水（E也可）。"
+		if story.s.place == "street" and story.item("老葛的工具袋"): foot_hint.text += "\n带回了工具袋，走近老葛点击交还，或按E交谈。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
