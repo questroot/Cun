@@ -291,6 +291,19 @@ func act(id: String) -> bool:
 			if s.identity == "he" and not flag("xu_help"): return refuse("你尚未与许宁交换信息、获得协助，不能替她确认弟弟。")
 			learn("xu_wish")
 			note("铜哨隔开混杂呼唤。许澄问：屋顶还漏吗？许宁答：还没修，我会先找人补。许澄说：我只叫你，不是叫你上船；后来声音太多，不能把那张没有姓名的湿纸当成我的意愿。你明确问他是否想让这一程结束，他说愿意，但不替姐姐决定以后。")
+		"xiaoman_recognize":
+			if p != "steps" or s.phase != "night" or not flag("consent"): return refuse("先与周伯谈妥，他才愿意一起到旧阶听清楚。")
+			set_flag("xiaoman_known")
+			note("周伯没有朝每一声‘爹’应答。他问：‘上回摔坏了什么，还赖我没接稳？’\n声音答：‘不是碗，是你给我装的那面小镜子。你说旧船晃，怪不得你。’\n周伯低头笑了一下：‘是我装歪了。’\n水面还黑着，他不再催你判断眼前究竟算什么。至少这句话，是他们之间的。")
+		"xiaoman_wait":
+			if p != "steps" or not flag("xiaoman_known"): return false
+			set_flag("xiaoman_heard")
+			note("周伯问来年还点不点灯。小满先问桥修好后，他是不是终于能去城里看腿。\n‘你不是一直说坐车头晕？’\n‘我会挑慢一点的车。’\n她没有叫他忘记，也没让他证明愿意等多久。周伯说那盏灯也不是只给她一个人看的。\n你还没有替他们问出最终答案，可以先听着，或明确谈这条夜船往后怎么办。")
+		"xiaoman_ask":
+			if p != "steps" or not flag("xiaoman_known"): return refuse("先让周伯辨认他女儿的回应，别向一片河声索要同意。")
+			if not flag("xiaoman_heard"): return refuse("她还没有讲完以后想怎样过。先听听，不要把辨认当作同意。")
+			learn("xiaoman_wish")
+			note("你问的是这一次渡程要不要结束，不是她还爱不爱父亲。\n小满说：‘可以。我不想每次见面，都得先让他担心又没接到谁。’\n周伯没有马上点头，问她那根红绳呢。她说愿意自己拿着，打结总比他打得好。这回他说，好。")
 		"xiaoman":
 			if p != "steps" or s.phase != "night" or not flag("consent"): return refuse("先与周伯谈妥，他才愿意到旧阶核实女儿的声音。")
 			learn("xiaoman_wish")

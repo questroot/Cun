@@ -455,7 +455,7 @@ func act_button(text: String, id: String) -> void:
 			nearest = target
 			interact()
 			refresh_ui()
-		elif conversation_target in ["mooring", "voices"] and id in ["listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen", "whistle_short", "whistle_long", "whistle_listen", "whistle_reset"]:
+		elif conversation_target in ["mooring", "voices"] and id in ["listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen", "whistle_short", "whistle_long", "whistle_listen", "whistle_reset", "xiaoman_recognize", "xiaoman_wait", "xiaoman_ask"]:
 			continue_river(id)
 		else:
 			close_modal()
@@ -603,7 +603,10 @@ func interact() -> void:
 			"mooring":
 				if story.s.phase == "night":
 					add_river_choices()
-					act_button("请周伯到黄灯旁，让小满自己表达意愿", "xiaoman")
+					if not story.flag("xiaoman_known"): act_button("请周伯先辨认他女儿的回应", "xiaoman_recognize")
+					else:
+						act_button("听父女谈来年怎样等、怎样过日子", "xiaoman_wait")
+						act_button("明确问她：愿不愿结束这一次渡程？", "xiaoman_ask")
 					act_button("询问沈渡是否愿意结束渡程", "shen")
 					act_button("经本人同意归还旧物（不销毁）", "return")
 					act_button("解缆：让沈渡结束这一程", "untie")
