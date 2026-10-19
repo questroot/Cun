@@ -171,7 +171,7 @@ func run_checks() -> void:
 	check(battle.can_cast(battle.enemies[0], "ember_flare"), "第十关火焰技能蓄能后可施放")
 	battle.running = false
 	game.current_stage = "stage_1"
-	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/MainCity.tscn", "启动直接进入主城")
+	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/MainMenu.tscn", "启动进入双游戏选择大厅")
 	var prior_stage: String = game.current_stage
 	game.select_stage("stage_999")
 	check(game.current_stage == prior_stage and not game.stage_pending, "未解锁副本不能绕过独立关卡页进入战斗")

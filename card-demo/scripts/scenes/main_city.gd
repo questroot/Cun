@@ -1,4 +1,6 @@
 extends Control
+const ExplorationTools = preload("res://scripts/scenes/exploration_tools.gd")
+var exploration_tools: ExplorationTools
 ## 2.5D 主城：地面点击寻点 / WASD 行走，接近向导后对话开启独立关卡页。
 const CityMapScript = preload("res://scripts/scenes/city_map.gd")
 const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
@@ -43,6 +45,7 @@ var nav_label: Label
 var player_model: HeroWalkScript
 
 func _ready() -> void:
+	DisplayServer.window_set_title("灵伴回合冒险")
 	city_map = CityMapScript.new()
 	city_map.name = "CityMap"
 	add_child(city_map)
@@ -99,6 +102,8 @@ func _ready() -> void:
 	resized.connect(_layout_hud)
 	_layout_hud()
 	DataManager.save_changed.connect(_refresh_status)
+	exploration_tools = ExplorationTools.new()
+	add_child(exploration_tools)
 
 func card_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -523,6 +528,8 @@ func _build_dialogue() -> void:
 	actions.add_child(cancel)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if exploration_tools != null and exploration_tools.is_open():
+		return
 	if gm_panel.visible:
 		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 			gm_panel.hide()
@@ -569,6 +576,9 @@ func close_dialogue() -> void:
 	dialogue.hide()
 
 func _process(delta: float) -> void:
+	if exploration_tools != null and exploration_tools.is_open():
+		player_model.update_movement(Vector2.ZERO, 0)
+		return
 	var previous_foot := player_foot
 	var direction := Vector2.ZERO
 	if not dialogue.visible and not pet_bag.visible and not gm_panel.visible:

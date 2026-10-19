@@ -1,6 +1,6 @@
 # 轻量架构边界
 
-目标是让小团队能独立推进、合并后可试玩，而不是提前搭建框架。正式游戏方向、正式引擎、首发平台和工程位置均待确认；**当前明确任务是为现有 Godot 原型提供 Windows 启动器、架构与文档维护规划，并由有权限的负责人处理 GitHub 交付**，不是授权实现候选新玩法。
+目标是让小团队能独立推进、合并后可试玩，而不是提前搭建框架。正式游戏方向、正式引擎、首发平台和工程位置均待确认。现有底座包含 Windows 启动器、架构与文档维护规划；2026-10-19 用户明确要求地图物品稀缺度与第二游戏“福地”（WASD / JKL），本轮按动作试玩接入，不扩大为候选石化世界的全部玩法。
 
 本文区分三类信息：**现有**是已读取的配置/源码事实，不等于实机通过；**本次新增**是当前任务的交付边界，落地与测试结果以[共享现状](../PROJECT_STATUS.md)和实际源码为准；**未来建议**须另行批准，不宣称已实现。文档维护约定见[文档规划](documentation-plan.md)。
 
@@ -8,10 +8,11 @@
 
 | 层 / 模块 | 现有事实或本次边界 | 不应越过的职责 |
 | --- | --- | --- |
-| Windows 入口（本次新增） | 根 `Launch.cmd` 调用 `launcher/Launcher.ps1`；Windows PowerShell 5.1 WPF GUI | 不修改原型入口、玩法或默认创建新项目 |
+| Windows 入口 | 根 `Launch.cmd` 调用 `launcher/Launcher.ps1`；Windows PowerShell 5.1 WPF GUI，选择大厅/灵伴/福地 | 不写玩家存档或默认创建新工程 |
 | 启动器界面（本次新增） | 收集 Godot 选择和 game/editor 操作，展示诊断与文档入口；调用 `launcher/Launcher.Core.ps1` | 不复制核心探测规则，不代替共享状态或游戏验收 |
 | 启动器核心（本次新增） | 选择/探测 Godot、内置压缩包校验解压、实际版本检测、启动 game/editor、诊断及本机快照；本机配置/日志/快照写入 `.local/` 忽略目录 | 不联网、不调用运行时 LLM、不改 Godot 配置/游戏存档、不推送 GitHub |
-| Godot 原型入口（现有） | [项目配置](../card-demo/project.godot#L9-L34)：`config_version=5`，入口 `MainCity.tscn`，标记 `4.7` / `GL Compatibility`，四个 Autoload | 配置标记不能证明本机版本、兼容性或运行成功 |
+| Godot 原型入口（现有） | [项目配置](../card-demo/project.godot#L9-L34)：`config_version=5`，入口 `MainMenu.tscn`，选择灵伴/福地，标记 `4.7` / `GL Compatibility`，四个 Autoload | 配置标记不能证明本机版本、兼容性或运行成功 |
+| 地图与福地 | [区域资源配置](../card-demo/scripts/scenes/exploration_catalog.gd)同时用于地图与实际采集节点；[福地](../card-demo/scripts/scenes/fudi.gd)独立维护生命、攻击、三境资源/敌人及当局行囊；地图/确认框暂停所在场景 | 福地不调用回合伤害或写灵伴存档；离开场景重置当局，不宣称已完成远征持久化 |
 | 场景与表现（现有） | [主城](../card-demo/scripts/scenes/main_city.gd#L1-L9)是 Control/2.5D 交互；[场景路由](../card-demo/scripts/managers/game_manager.gd#L9-L32)按场景名切换并关闭弹窗 | 已有 3D 实验不是默认流程，也不是新方向决策 |
 | 规则与战斗（现有） | [战斗管理器](../card-demo/scripts/managers/battle_manager.gd#L1-L80)管理单位/队列/行动序号；[行动流程](../card-demo/scripts/managers/battle_manager.gd#L104-L129)中我方等待玩家、敌方自动 | 不误称已实现候选自动战斗/远征；演出回执不能变成另一套伤害结算 |
 | 数据与持久化（现有） | [数据管理器](../card-demo/scripts/managers/data_manager.gd#L5-L27)加载 JSON 表并返回深拷贝，使用 `user://spirit_save.json`；[写档](../card-demo/scripts/managers/data_manager.gd#L128-L136)发送 `save_changed` | 游戏存档与启动器 `.local/` 配置各自独立 |
@@ -21,7 +22,7 @@
 Launch.cmd → Launcher.ps1（WPF）→ Launcher.Core.ps1
                                   ├─ Godot 可执行文件 --version / 诊断
                                   ├─ game: 后台 --headless --editor --import → 错误/缓存门禁
-                                  │         → --path card-demo → project.godot → MainCity
+                                  │         → --path card-demo → MainMenu / MainCity / Fudi
                                   ├─ editor: --editor --path card-demo
                                   └─ .local/ 配置、日志、project-snapshot.md
 

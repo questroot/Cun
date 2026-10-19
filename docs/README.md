@@ -44,7 +44,7 @@ Cun 由用户与伙伴共同开发。正式游戏方向尚未确定；当前先�
 
 ## 现有原型与事实边界
 
-[card-demo 项目配置](../card-demo/project.godot)显示：项目名为“灵伴回合冒险 MVP”，`config/features` 标记为 `4.7` 与 `GL Compatibility`，入口是 `MainCity.tscn`，已有数据、游戏、UI、战斗四个 Autoload。配置标记不等于已验证本机安装或可正常运行。
+[card-demo 项目配置](../card-demo/project.godot)显示：项目名为“灵伴回合冒险 MVP”，`config/features` 标记为 `4.7` 与 `GL Compatibility`，默认入口是 `MainMenu.tscn` 游戏选择大厅，提供灵伴与福地动作试玩，已有数据、游戏、UI、战斗四个 Autoload。地图与操作见[根使用说明](../README.md)。配置标记不等于已验证本机安装或可正常运行。
 
 该项目是保留的 Godot 原型，不迁移，不认定为正式游戏方向；未来正式工程的位置与引擎另行确认。本文档未报告任何实机验证结果。
 

@@ -164,9 +164,14 @@ function Get-CunEngineInfo {
 }
 
 function Get-CunLaunchArguments {
-    param([hashtable]$Paths, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game')
+    param([hashtable]$Paths, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [ValidateSet('Menu', 'Spirit', 'Fudi')][string]$Game = 'Menu')
     $arguments = @('--path', $Paths.Project)
     if ($Mode -eq 'Editor') { $arguments += '--editor' }
+    elseif ($Game -ne 'Menu') {
+        $scene = if ($Game -eq 'Fudi') { 'res://scenes/Fudi.tscn' } else { 'res://scenes/MainCity.tscn' }
+        if (-not (Test-Path -LiteralPath (Join-Path $Paths.Project $scene.Substring(6)) -PathType Leaf)) { throw ('缺少游戏入口：' + $scene) }
+        $arguments += $scene
+    }
     return $arguments
 }
 
@@ -197,8 +202,9 @@ function Invoke-CunProjectImport {
 }
 
 function Start-CunProject {
-    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck)
+    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi')][string]$Game = 'Menu')
     $project = Get-CunProjectInfo $Paths
+    $launchArguments = Get-CunLaunchArguments $Paths $Mode $Game
     if (-not $SkipVersionCheck) {
         $engine = Get-CunEngineInfo $EnginePath $project.RequiredVersion
         if (-not $engine.Ready) { throw $engine.Message }
@@ -206,7 +212,7 @@ function Start-CunProject {
     if ($Mode -eq 'Game') { Invoke-CunProjectImport $Paths $EnginePath }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = $EnginePath
-    $info.Arguments = ((Get-CunLaunchArguments $Paths $Mode | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' ')
+    $info.Arguments = (($launchArguments | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' ')
     $info.WorkingDirectory = $Paths.Project
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true

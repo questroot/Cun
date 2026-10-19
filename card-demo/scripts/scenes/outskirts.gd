@@ -1,4 +1,6 @@
 extends Control
+const ExplorationTools = preload("res://scripts/scenes/exploration_tools.gd")
+var exploration_tools: ExplorationTools
 ## Small linked exploration zone. Future areas can reuse the same region entry contract.
 const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const AREA := Rect2(58, 340, 1155, 315)
@@ -47,11 +49,16 @@ func _ready() -> void:
 	model.position = player_foot
 	# Prevent an immediate bounce when the arrival spawn overlaps the return gate.
 	call_deferred("_enable_transition")
+	exploration_tools = ExplorationTools.new()
+	exploration_tools.region = "outskirts"
+	add_child(exploration_tools)
 
 func _enable_transition() -> void:
 	transition_ready = true
 
 func _unhandled_input(event: InputEvent) -> void:
+	if exploration_tools.is_open():
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * (event as InputEventMouseButton).position
 		if AREA.has_point(point):
@@ -59,6 +66,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			moving = true
 
 func _process(delta: float) -> void:
+	if exploration_tools.is_open():
+		model.update_movement(Vector2.ZERO, 0)
+		return
 	var previous_foot := player_foot
 	var direction := Vector2(float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A)), float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))).normalized()
 	if direction != Vector2.ZERO:

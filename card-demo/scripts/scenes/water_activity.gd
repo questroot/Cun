@@ -1,4 +1,6 @@
 extends Control
+const ExplorationTools = preload("res://scripts/scenes/exploration_tools.gd")
+var exploration_tools: ExplorationTools
 
 const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const SEA := Rect2(72, 238, 744, 414)
@@ -98,6 +100,9 @@ func _ready() -> void:
 	note.add_theme_color_override("font_color", Color("#c9e2de"))
 	add_child(note)
 	_start_round()
+	exploration_tools = ExplorationTools.new()
+	exploration_tools.region = "water_activity"
+	add_child(exploration_tools)
 
 func _make_button(text: String, position_value: Vector2, size_value: Vector2, action: Callable) -> Button:
 	var button := Button.new()
@@ -270,6 +275,8 @@ func _refresh_ui() -> void:
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
+	if exploration_tools.is_open():
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * (event as InputEventMouseButton).position
 		if SEA.has_point(point):
@@ -277,6 +284,9 @@ func _input(event: InputEvent) -> void:
 			moving = true
 
 func _process(delta: float) -> void:
+	if exploration_tools.is_open():
+		model.update_movement(Vector2.ZERO, 0)
+		return
 	wave_elapsed += delta
 	_tick_production(delta)
 	debris_elapsed += delta

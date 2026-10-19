@@ -1,13 +1,15 @@
 # Windows 游戏启动器
 
-启动的是已有“灵伴回合冒险 MVP”，不是尚未实施的石化新游戏，也不是独立游戏安装包。
+支持已有“灵伴回合冒险”与新增“福地”动作试玩，共用现有 Godot 工程；不是独立游戏安装包。福地试玩不代表候选石化世界全部玩法已实施。
 
 ## 使用
 
 1. 下载/克隆**完整仓库**，保留 `card-demo/` 和 `launcher/`；不要只下载一个脚本。
 2. Windows 双击根 [Launch.cmd](../Launch.cmd)，进入原生桌面启动器。
 3. 发现已有Godot则检测版本；完整仓库已包含 [4.7.2压缩包](../.setup/Godot/README.md)，没有已有引擎时会校验并解压到 `.local/godot/`，不联网。也可点“选择Godot”手动指定可信的Windows编辑器 `.exe`。
-4. 环境就绪后点“启动游戏”。启动器先在后台执行Godot资源/脚本导入，完成且无错误后才打开游戏；界面会显示准备状态，首次需要等待。需要开发时点“在Godot编辑器打开”。
+4. 在下拉框选择“游戏选择大厅 / 灵伴回合冒险 / 福地”，环境就绪后点“启动游戏”。启动器先在后台执行Godot资源/脚本导入，完成且无错误后才打开选择的游戏；界面会显示准备状态，首次需要等待。需要开发时点“在Godot编辑器打开”。
+
+默认进入游戏选择大厅。原有主城、外缘、水域及福地可用“切换游戏”返回大厅；水域/福地离开前提示当局进度重置。福地使用 WASD 移动、J/K/L 攻击，M 打开地图；点击区域查看物品数量/稀缺程度并前往，按剩余资源分级。灵伴原有存档保留。
 
 打开启动器只需要Windows自带 Windows PowerShell 5.1/.NET/WPF，不需要Python、Node或在线服务。当前仓库随附**Godot 4.7.2 Windows x64压缩包**，首次可自动校验解压；本次不联网下载安装、不导出独立游戏exe、不更改系统永久执行策略。
 
@@ -17,7 +19,7 @@
 
 - 发现顺序：本机已记住路径、`GODOT_EXE` 环境变量、PATH中的godot/godot4，再检查仓库内约定引擎目录（.setup/Godot、Godot、Godot_v4.7.2、vendor/godot、tools/godot、.local/godot）。没有可用路径时尝试校验内置归档并解压本机缓存；不扫整台电脑。
 - 通过 `--version` 验证输出，不符合/低版本/超时会显示原因。请选择你信任的可执行文件；本检测不是软件安全认证。
-- 游戏启动前先执行 `--headless --path <仓库/card-demo> --editor --import`，生成贴图资源和脚本类型缓存；即使退出码0，只要输出含脚本/导入错误或缺缓存也会阻止启动并记录日志。之后游戏参数为 `--path <仓库/card-demo>`；编辑器额外 `--editor`。使用参数转义，支持空格与中文目录，不拼shell命令。
+- 游戏启动前先执行 `--headless --path <仓库/card-demo> --editor --import`，生成贴图资源和脚本类型缓存；即使退出码0，只要输出含脚本/导入错误或缺缓存也会阻止启动并记录日志。之后游戏参数为 `--path <仓库/card-demo>`；指定灵伴/福地时追加 `res://scenes/MainCity.tscn` / `res://scenes/Fudi.tscn`，默认大厅由工程入口决定；编辑器额外 `--editor`。使用参数转义，支持空格与中文目录，不拼shell命令。
 - 同一启动器一次运行一个受监督的游戏/编辑器，避免重复点击；进程退出后显示结果、记录stdout/stderr。关闭启动器不会杀游戏：有受监督进程时会要求先正常退出游戏/编辑器。
 - “共享项目状态”“本机快照”“架构”“个人Agent材料”“讨论页”“日志”均有快捷入口。Markdown/日志用记事本打开，HTML用默认应用打开。
 - 界面图片是仓库已有素材预览，**不是本次游戏实机截图**。
@@ -55,8 +57,11 @@ powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File launcher/Launcher.p
 # 原生参数、设置、失败路径测试（编译假的版本/参数夹具，不代表Godot实测）。
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File tests/launcher.tests.ps1
 
-# 真实冷启动检查：复制无缓存原型、隔离存档，经启动器导入再从实际主场景渲染截图。
+# 真实冷启动检查：复制无缓存原型、隔离存档，经启动器导入再从选择大厅渲染截图。
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File tests/launcher-cold.tests.ps1
+
+# 地图/福地/双游戏切换、旧玩法与存档隔离；真实渲染截图。
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/exploration.tests.ps1 -Render
 
 # 构造真实WPF窗口并渲染本机截图，检查按钮状态和快照；不启动游戏。
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File launcher/Launcher.ps1 -SmokeTest
