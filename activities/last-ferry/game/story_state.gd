@@ -327,6 +327,25 @@ func act(id: String) -> bool:
 			if p != "shelter" or s.phase != "night": return refuse("傍晚仍看得清路。等天暗后再决定怎样摆灯。")
 			if not core() or not flag("consent") or not flag("shade_off") or not flag("tongue_home"): return refuse("你点起黄灯，白罩与缺舌的钟却还未分清各自的位置。周伯说：一边等，一边招手，船还是会误会。")
 			set_flag("yellow_lit")
+			set_flag("closing_light")
+			note("黄灯芯接住火，白罩仍放在旁边。周伯试了试钟绳，没有敲。\n‘棚里听得见，河上不一定。到旧阶去吧——钟我来敲。’\n他提起钟绳另一端的小铜柄，沿棚边走下去。夜晚还没有结束，你可以跟到旧阶，也可以先看看灯。")
+		"closing_ring":
+			if p != "steps" or not flag("closing_light") or flag("closing_rang"): return false
+			set_flag("closing_rang")
+			note("周伯站在干阶上，拉直通往棚里的钟绳。第一下响得短，他松开手，等水面那声回音过去，再敲第二下。\n‘船靠旧阶，活人不登船。’\n船边有人应：‘听见了。’\n有个很轻的声音叫了声爹。周伯抬头，没有举起白灯。黄光只落在岸上的空位，不再替过路人招手。")
+		"closing_speak", "closing_silent":
+			if p != "steps" or not flag("closing_rang"): return false
+			set_flag("closing_answered")
+			if id == "closing_speak":
+				set_flag("closing_spoke")
+				note("你说：‘灯还在。不是让谁上船的灯。’\n周伯嗯了一声：‘我知道。’\n他没有说以后再也不会等，只把钟柄放下。沈渡扶正船边原本朝岸伸出的踏板：‘今夜没有新客。’混在一起的呼唤渐渐分开，不再从街口传来。")
+			else:
+				note("你没有替父女补一句告别的话。周伯的手在钟柄上停了一会儿，然后慢慢放开。\n船边那个声音也没有再催。沈渡把朝岸伸出的踏板收回去：‘今夜没有新客。’\n你们站在各自的位置，听见普通的水声重新露出来。")
+		"closing_watch":
+			if p != "steps" or not flag("closing_rang"): return false
+			note("棚里的黄光隔着水汽摇了一下，并没有熄。周伯把坐惯的矮凳拖到干处，给后来人留出路。\n没有声音宣布一切已经好了。街口有人落下店门的木栓；今夜先到这里。你可以再站一会儿，也可以亲自结束夜晚。")
+		"closing_dawn":
+			if p != "steps" or not flag("closing_rang"): return refuse("先到旧阶，听周伯把钟敲完。不是多找一件东西，是把已经答应的事做完。")
 			finish("light")
 		"restore":
 			if p != "shelter" or s.phase != "night" or not core() or not flag("consent"): return refuse("留灯需要入夜、告示/灯罩/铜钟/旧约证据，以及周伯对恢复边界的同意。")

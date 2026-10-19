@@ -140,7 +140,13 @@ func run() -> void:
 		check(state.save_game() and state.load_game() and state.item("拆下的铜舌"), "in-progress physical repair survives save")
 		check(at("shelter", "install_tongue") and not state.item("拆下的铜舌"), "install consumes carried item")
 		check(not at("shelter", "light_yellow") and state.s.ending == "", "dusk repair does not skip night")
-		check(state.act("night") and at("shelter", "light_yellow") and state.s.ending == "light", "physical three-site repair resolves night")
+		check(state.act("night") and at("shelter", "light_yellow") and state.s.ending == "" and state.s.phase == "night", "lighting keeps player in actual night")
+		check(not at("steps", "closing_dawn"), "cannot summarize away Zhou promise before bell")
+		check(at("steps", "closing_ring") and state.flag("closing_rang"), "Zhou fulfills promise at shore")
+		check(at("steps", "closing_speak" if identity == "he" else "closing_silent"), "player can speak or leave others silence")
+		check(state.save_game() and state.load_game() and state.flag("closing_rang"), "shore climax persists mid-scene")
+		check(at("steps", "closing_watch") and state.s.phase == "night", "watching shore does not auto-end scene")
+		check(at("steps", "closing_dawn") and state.s.ending == "light", "player actively closes night into morning")
 
 	for identity in ["xu", "he"]:
 		state.fresh(identity)

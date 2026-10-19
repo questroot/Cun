@@ -272,7 +272,7 @@ func try_world_click(point: Vector2) -> bool:
 			return true
 		if point.distance_to(Vector2(620, 390)) < 35 and story.flag("consent"):
 			if story.s.phase == "night" and story.flag("shade_off") and story.flag("tongue_home"):
-				confirm("在等候的位置点亮黄灯，让钟声送夜船归岸？这会结束今晚的处理，进入次日；如果还想交谈，可以先取消。", func(): do_action("light_yellow"))
+				confirm("在等候的位置点亮黄灯，让钟声送夜船归岸？这会开始收束当晚的岸边场景，但不会立刻跳到次日；仍可先取消。", func(): do_action("light_yellow"))
 			else: do_action("light_yellow")
 			return true
 		return false
@@ -393,6 +393,7 @@ func update_world() -> void:
 			add_object("steps_gate", "去旧石阶", Vector2(750, 570), "gate")
 		"steps":
 			add_object("mooring", "系缆石", Vector2(460, 295))
+			if story.flag("closing_light"): add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
 			if not story.flag("tool_returned") and not story.item("老葛的工具袋"): add_object("toolbag", "湿阶低处的布袋", Vector2(235, 355))
 			if story.s.phase == "night": add_object("ship", "靠岸夜船", Vector2(700, 295))
 			else: add_object("morning", "河面与普通渡船", Vector2(700, 295))
@@ -444,6 +445,14 @@ func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
 		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize"]:
 			continue_zhou(id)
+		elif conversation_target == "closing_zhou" and id in ["closing_ring", "closing_speak", "closing_silent", "closing_watch"]:
+			var target := conversation_target
+			story.act(id)
+			conversation_response = story.notice
+			modal_open = false
+			nearest = target
+			interact()
+			refresh_ui()
 		elif conversation_target in ["mooring", "voices"] and id in ["listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen", "whistle_short", "whistle_long", "whistle_listen", "whistle_reset"]:
 			continue_river(id)
 		else:
@@ -485,7 +494,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -503,7 +512,7 @@ func interact() -> void:
 		travel(dest)
 		return
 	if target == "back": travel("steps"); return
-	conversation_target = target if target in ["zhou", "mooring", "voices"] else ""
+	conversation_target = target if target in ["zhou", "mooring", "voices", "closing_zhou"] else ""
 	open_modal(object_title(target), conversation_response if not conversation_target.is_empty() and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
 	if story.s.phase == "epilogue":
 		open_modal(object_title(target), "天已经亮了。夜里的处理不会因为你走访而重来；看看人们各自准备做的事，再决定何时离开。")
@@ -517,6 +526,15 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"closing_zhou":
+				if not story.flag("closing_rang"):
+					act_button("站到周伯身旁，等他敲钟", "closing_ring")
+				else:
+					if not story.flag("closing_answered"):
+						act_button("告诉他灯仍在，但不再招呼人登船", "closing_speak")
+						act_button("不替他们补话，安静陪他站着", "closing_silent")
+					act_button("再看看岸和河上各自的动静", "closing_watch")
+					button(modal_body, "今夜到这里，迎接天明", func(): confirm("结束夜晚，进入可自由走访的次日？", func(): do_action("closing_dawn")))
 			"ge":
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
@@ -554,7 +572,7 @@ func interact() -> void:
 					if story.s.identity == "he" and story.item("手提黄灯") and not story.flag("swapped"): act_button("把借来的黄灯安在等候的位置，暂不点亮", "swap")
 					button(modal_body, "等天暗再点灯（现在不结束傍晚）", func(): close_modal(); story.note("灯的位置已经可以安排，火要等暗下来再点。你还可以回街上、看旧屋，或准备好后主动确认入夜；钟和灯不会重置。"); refresh_ui())
 				if target == "inscription" and story.s.phase == "night" and story.flag("consent"):
-					button(modal_body, "将黄灯留在等候的位置，点亮灯芯", func(): confirm("点亮黄灯会完成今晚的处理并进入次日。若还想与夜船上的人交谈，可以先取消。现在点亮？", func(): do_action("light_yellow")))
+					button(modal_body, "将黄灯留在等候的位置，点亮灯芯", func(): confirm("点亮黄灯后仍留在夜里，周伯会到旧阶兑现敲钟的承诺；等你决定才进入次日。现在点亮？", func(): do_action("light_yellow")))
 				if target == "lamp" and story.s.phase == "night" and not story.flag("shade_off"):
 					if story.s.identity == "he" and not story.flag("swapped"): act_button("用手提黄灯换下白罩（需周伯同意）", "swap")
 					button(modal_body, "危险：举白灯回应河声", func():
