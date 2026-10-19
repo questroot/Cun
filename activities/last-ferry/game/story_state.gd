@@ -122,6 +122,8 @@ func act(id: String) -> bool:
 			return true
 		notice = "天已经亮了。可以走访各处，再从街口确认离开。"
 		return false
+	if flag("closing_light") and id in ["light_yellow", "restore", "untie", "danger", "break", "swap", "remove_shade", "retrieve_tongue", "install_tongue", "return", "farewell_consent"]:
+		return refuse("今晚已经点灯恢复边界，周伯在旧阶等着兑现敲钟的承诺。可以继续走动、交谈或保存，不必重做装置或把另一个结局叠在上面。")
 	match id:
 		"ledger":
 			if p != "street" or s.identity != "he": return refuse("这不是你能核对的店内账目。")

@@ -575,7 +575,7 @@ func interact() -> void:
 				if target == "inscription" and story.flag("consent") and story.s.phase == "dusk":
 					if story.s.identity == "he" and story.item("手提黄灯") and not story.flag("swapped"): act_button("把借来的黄灯安在等候的位置，暂不点亮", "swap")
 					button(modal_body, "等天暗再点灯（现在不结束傍晚）", func(): close_modal(); story.note("灯的位置已经可以安排，火要等暗下来再点。你还可以回街上、看旧屋，或准备好后主动确认入夜；钟和灯不会重置。"); refresh_ui())
-				if target == "inscription" and story.s.phase == "night" and story.flag("consent"):
+				if target == "inscription" and story.s.phase == "night" and story.flag("consent") and not story.flag("closing_light"):
 					button(modal_body, "将黄灯留在等候的位置，点亮灯芯", func(): confirm("点亮黄灯后仍留在夜里，周伯会到旧阶兑现敲钟的承诺；等你决定才进入次日。现在点亮？", func(): do_action("light_yellow")))
 				if target == "lamp" and story.s.phase == "night" and not story.flag("shade_off"):
 					if story.s.identity == "he" and not story.flag("swapped"): act_button("用手提黄灯换下白罩（需周伯同意）", "swap")
@@ -611,8 +611,9 @@ func interact() -> void:
 						act_button("听父女谈来年怎样等、怎样过日子", "xiaoman_wait")
 						act_button("明确问她：愿不愿结束这一次渡程？", "xiaoman_ask")
 					act_button("询问沈渡是否愿意结束渡程", "shen")
-					act_button("经本人同意归还旧物（不销毁）", "return")
-					act_button("解缆：让沈渡结束这一程", "untie")
+					if not story.flag("closing_light"):
+						act_button("经本人同意归还旧物（不销毁）", "return")
+						act_button("解缆：让沈渡结束这一程", "untie")
 				else: button(modal_body, "查看旧阶", func(): close_modal(); story.note("普通渡船已走。系缆石上留下年复一年的磨痕。准备好后主动确认入夜。"); refresh_ui())
 			"ship":
 				if story.s.phase == "night" and story.s.identity == "xu": act_button("许宁独有：踏上靠岸侧舷（可随时回岸）", "board")

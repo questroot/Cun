@@ -144,6 +144,9 @@ func run() -> void:
 		check(at("shelter", "install_tongue") and not state.item("拆下的铜舌"), "install consumes carried item")
 		check(not at("shelter", "light_yellow") and state.s.ending == "", "dusk repair does not skip night")
 		check(state.act("night") and at("shelter", "light_yellow") and state.s.ending == "" and state.s.phase == "night", "lighting keeps player in actual night")
+		for blocked in ["light_yellow", "swap", "restore", "untie", "break", "danger", "return"]:
+			check(not at("shelter" if blocked != "untie" and blocked != "return" else "steps", blocked) and state.s.ending == "", "closing cannot replay or mix endings: " + blocked)
+		check(at("steps", "listen_river") and state.s.phase == "night", "closing remains explorable not frozen")
 		check(not at("steps", "closing_dawn"), "cannot summarize away Zhou promise before bell")
 		check(at("steps", "closing_ring") and state.flag("closing_rang"), "Zhou fulfills promise at shore")
 		check(at("steps", "closing_speak" if identity == "he" else "closing_silent"), "player can speak or leave others silence")
