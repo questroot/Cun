@@ -72,6 +72,16 @@ func run() -> void:
 
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
+		check(not at("house", "basin_place"), "cannot place absent basin")
+		check(not at("house", "basin_take"), "observe leak before moving basin")
+		check(at("house", "roof_listen") and at("house", "basin_take"), "observe and carry basin")
+		check(at("house", "basin_wrong") and not state.flag("basin_placed"), "wrong location gives feedback not success")
+		check(state.save_game() and state.load_game() and state.flag("basin_carried"), "save carried basin state")
+		check(at("house", "basin_place") and state.flag("basin_placed") and not state.flag("basin_carried"), "successful mundane intervention changes world")
+		check(state.s.pollution == 0 and state.s.ending == "", "optional domestic act does not gate or resolve main story")
+
+	for identity in ["xu", "he"]:
+		state.fresh(identity)
 		check(not at("shelter", "retrieve_tongue"), "cannot retrieve through closed shade")
 		check(not at("shelter", "install_tongue"), "cannot install absent tongue")
 		investigate()

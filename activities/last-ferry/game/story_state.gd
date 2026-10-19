@@ -104,6 +104,23 @@ func act(id: String) -> bool:
 			if p != "street" or s.identity != "he": return refuse("请在店里以学徒身份向陶婶借灯。")
 			give("手提黄灯")
 			note("陶婶借出手提黄灯：只供等候，不招呼人上船。你答应天亮归还。")
+		"roof_listen":
+			if p != "house": return false
+			set_flag("heard_drip")
+			note("滴水不在盆里响。水从屋梁裂缝斜落，落在旧桌的脚边；盆的位置是照着上一场雨摆的。" + ("许宁记得弟弟小时候总嫌她挪盆太慢。如今屋里只有自己的脚步。" if s.identity == "xu" else "阿禾见许宁盯着旧盆，没催她。屋子不是待人搜完线索就能丢下的地方。"))
+		"basin_take":
+			if p != "house" or flag("basin_placed"): return false
+			if not flag("heard_drip"): return refuse("先停下来听听。盆里没有新水，漏的地方也许变了。")
+			set_flag("basin_carried")
+			note("你端起旧搪瓷盆，盆底冰凉。桌脚边有新湿痕，墙下那圈水印却早干了。")
+		"basin_wrong":
+			if p != "house" or not flag("basin_carried"): return false
+			note("你在旧水印下试放盆。水声仍在桌旁响，盆里没有接到水。没有东西受损，你重新端起来。")
+		"basin_place":
+			if p != "house" or not flag("basin_carried"): return refuse("桌脚边湿着。手里没有能接水的容器。")
+			s.flags.erase("basin_carried")
+			set_flag("basin_placed")
+			note("你把盆挪到桌脚，滴水终于落在盆里。" + ("许宁没有突然释然。她把屋梁的裂缝记在纸背：明天找人来，不再等‘下回’。铜哨在口袋里碰了一下钥匙，像小时候弟弟嫌她磨蹭时敲的两下门。" if s.identity == "xu" else "许宁说：我本来只打算回来签个字。阿禾问要不要找修屋的人，她点了头。你们说了一会儿工钱与瓦片，没有人提河上的声音。"))
 		"paper":
 			if p != "house": return false
 			if s.identity == "xu": learn("invitation")

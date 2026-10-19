@@ -237,7 +237,13 @@ func show_journal() -> void:
 
 func show_items() -> void:
 	if not started: return
-	var text := "携带：" + ("、".join(story.s.items) if not story.s.items.is_empty() else "无") + "\n\n铜哨：在旧阶或船边使用，辨认许澄；不是驱邪物。\n新灯芯：交给棚下周伯。\n手提黄灯：在棚下借由学徒行动安全换灯；天亮归还。\n\n物品的使用按钮只在相应目标附近出现。不会靠打开背包就隔空施加结果。"
+	var text := "携带：" + ("、".join(story.s.items) if not story.s.items.is_empty() else "无")
+	if story.item("铜哨"): text += "\n\n铜哨：半只旧哨，与你随身的钥匙系在一起。它不是驱邪物。"
+	if story.item("新灯芯"): text += "\n\n新灯芯：陶记包好的货，纸上写着周伯的名字。"
+	if story.item("手提黄灯"): text += "\n\n手提黄灯：陶婶借给你的，只照亮等待的人。你答应天亮归还。"
+	if story.item("拆下的铜舌"): text += "\n\n铜片：刚从灯罩里取出来，边缘留着新断口。"
+	if story.flag("basin_carried"): text += "\n\n手上端着旧搪瓷盆。"
+	text += "\n\n物品的使用按钮只在相应目标附近出现。打开背包不会隔空施加结果。"
 	open_modal("物品", text)
 	button(modal_body, "返回探索", close_modal)
 
@@ -321,7 +327,9 @@ func update_world() -> void:
 		"house":
 			solids.append(Rect2(220, 190, 200, 105))
 			add_object("paper", "旧桌·私人物品", Vector2(320, 340))
-			add_object("roof", "接漏雨的搪瓷盆", Vector2(600, 250))
+			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
+			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
+			add_object("watermark", "墙下的旧水印", Vector2(130, 300))
 			if story.s.identity == "he": add_object("xu", "许宁", Vector2(550, 405), "npc")
 			add_object("street_gate", "回杂货铺 / 街口", Vector2(450, 580), "gate")
 		"shelter":
@@ -426,7 +434,15 @@ func interact() -> void:
 				if story.s.identity == "he": act_button("核对周伯两份灯芯的账", "ledger")
 				else: button(modal_body, "不翻别人的账本", close_modal)
 			"paper": act_button("查看旧桌（尊重私人物品）", "paper")
-			"roof": button(modal_body, "查看漏雨的屋顶", func(): close_modal(); story.note("搪瓷盆底留着几圈旧水痕。屋子被人照料过，但还没修好。许宁说：下回，总是下回。"); refresh_ui())
+			"roof":
+				act_button("停下脚步，听屋里的滴水", "roof_listen")
+				if story.flag("heard_drip") and not story.flag("basin_placed"): act_button("端起搪瓷盆", "basin_take")
+			"drip":
+				if story.flag("basin_carried"): act_button("把盆放在新湿痕下", "basin_place")
+				else: button(modal_body, "看一眼桌脚", func(): close_modal(); story.note("桌脚旁泛着水光。先前那些脚印已经干了，这里却是新的。"); refresh_ui())
+			"watermark":
+				if story.flag("basin_carried"): act_button("试把盆放在旧水印下", "basin_wrong")
+				else: button(modal_body, "摸摸墙下的水印", func(): close_modal(); story.note("手指上只沾到墙灰。水印是旧的。"); refresh_ui())
 			"xu":
 				button(modal_body, "闲谈 · 她为什么还在等", func(): close_modal(); story.note("阿禾：周伯说今晚别去河边。你为什么还在等？\n许宁：因为他说别去的时候，没说那里什么都没有。"); refresh_ui())
 				if story.has("lamp") and story.has("bell"): act_button("告诉她棚里的灯罩与缺舌铜钟，问她愿不愿一起查", "exchange")
@@ -499,8 +515,11 @@ func _draw() -> void:
 		"house":
 			draw_rect(Rect2(210, 185, 220, 110), Color("5b5045"))
 			draw_rect(Rect2(40, 175, 780, 12), Color("a29376"))
-			draw_circle(Vector2(600, 250), 24, Color("a5b4b5"))
-			draw_circle(Vector2(600, 250), 17, Color("515f64"))
+			var basin_pos := player + Vector2(15, -8) if story.flag("basin_carried") else (Vector2(450, 340) if story.flag("basin_placed") else Vector2(600, 250))
+			draw_circle(basin_pos, 24, Color("a5b4b5"))
+			draw_circle(basin_pos, 17, Color("515f64"))
+			draw_circle(Vector2(450, 340), 10, Color("5a777b"))
+			draw_line(Vector2(445, 187), Vector2(450, 325), Color(0.7, 0.8, 0.8, 0.45), 1)
 		"shelter":
 			draw_rect(Rect2(350, 285, 100, 70), Color("5f4e3e"))
 			draw_line(Vector2(76, 190), Vector2(770, 190), Color("ad9672"), 10)
