@@ -290,6 +290,7 @@ func run() -> void:
 	scene.travel("street")
 	scene.player = Vector2(620,520)
 	check(scene.try_world_click(Vector2(620,470)) and scene.story.flag("tool_returned") and not scene.story.item("老葛的工具袋"), "direct return consumes actual carried bag")
+	check(scene.play_visible().visible_toolbag.appearance == "老葛长凳边的工具袋", "returned bag remains physically visible beside owner")
 	scene.start_game("he")
 	scene.travel("shelter")
 	scene.player = Vector2(455,520)

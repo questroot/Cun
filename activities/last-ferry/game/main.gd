@@ -52,6 +52,12 @@ func play_visible() -> Dictionary:
 	if story.s.place == "shelter":
 		result["visible_equipment"] = {"outer_shade":("放在灯旁" if story.flag("shade_off") else "扣在灯上"),"bell":("铜片挂在钟内" if story.flag("tongue_home") else "挂孔空着"),"yellow_lamp":("亮着" if story.flag("yellow_lit") else "未点亮")}
 		if story.item("拆下的铜舌"): result["visible_equipment"]["carried"] = "手上铜片"
+	if story.item("老葛的工具袋"):
+		result["visible_toolbag"] = {"x":player.x+20,"y":player.y+8,"appearance":"手提着布袋，袋绳完整"}
+	elif story.flag("tool_returned") and story.s.place == "street":
+		result["visible_toolbag"] = {"x":650,"y":490,"appearance":"老葛长凳边的工具袋"}
+	elif story.s.place == "steps" and not story.flag("tool_returned"):
+		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
 	result["objects"] = targets
 	result["obstacles"] = obstacles
 	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
@@ -776,6 +782,14 @@ func _draw() -> void:
 	draw_rect(Rect2(player - Vector2(10, 3), Vector2(20, 24)), Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
 	draw_circle(player - Vector2(0, 10), 10, Color("ead1ac"))
 	draw_line(player, player + face * 20, Color("f1dbad"), 3)
+	var bag_pos := Vector2.ZERO
+	if story.item("老葛的工具袋"): bag_pos = player + Vector2(20,8)
+	elif story.flag("tool_returned") and story.s.place == "street": bag_pos = Vector2(650,490)
+	elif story.s.place == "steps" and not story.flag("tool_returned"): bag_pos = Vector2(235,355)
+	if bag_pos != Vector2.ZERO:
+		draw_rect(Rect2(bag_pos-Vector2(11,4),Vector2(22,19)),Color("8e7052"))
+		draw_arc(bag_pos-Vector2(0,5),8,PI,TAU,12,Color("cbb28b"),2)
+		draw_line(bag_pos+Vector2(-5,4),bag_pos+Vector2(6,8),Color("c3c2b6"),2)
 	for i in range(4):
 		var r := Rect2(280 + i * 70, 650, 65, 55)
 		draw_rect(r, Color("384c54"))
