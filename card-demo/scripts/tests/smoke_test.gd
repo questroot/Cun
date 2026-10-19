@@ -15,6 +15,8 @@ func run_checks() -> void:
 	var data := root.get_node("DataManager")
 	var game := root.get_node("GameManager")
 	var battle := root.get_node("BattleManager")
+	var saved_hero_skill: String = str(data.save_data["hero_skill"])
+	data.save_data["hero_skill"] = "hero_strike"
 	root.add_child(Node2D.new())
 	current_scene = root.get_child(root.get_child_count() - 1)
 	var formation: Array = data.save_data["formation"]
@@ -28,6 +30,13 @@ func run_checks() -> void:
 	check(formation.has("hero"), "主角在阵")
 	check(data.available_pets().size() == 5 and data.available_pets().has("metal"), "金木水火土五只宠物可选")
 	check(data.valid_team(data.save_data["team"], formation), "旧阵容兼容五人上阵验证")
+	var previous_enemy_level := 0
+	var previous_reward := 0
+	for stage_number in range(1, 11):
+		var stage_data: Dictionary = data.get_entry("stages", "stage_%d" % stage_number)
+		check(stage_data.size() > 0 and (stage_data.get("enemies", []) as Array).size() == 4 and int(stage_data.get("enemy_level", 0)) > previous_enemy_level and int(stage_data.get("reward_exp", 0)) > previous_reward, "第 %d 关敌人等级与奖励逐关递增" % stage_number)
+		previous_enemy_level = int(stage_data.get("enemy_level", 0))
+		previous_reward = int(stage_data.get("reward_exp", 0))
 	var invalid_team: Array = (data.save_data["team"] as Array).duplicate()
 	invalid_team[4] = invalid_team[1]
 	check(not data.valid_team(invalid_team, formation), "重复宠物阵容不可入场")
@@ -152,12 +161,21 @@ func run_checks() -> void:
 	await battle.wait_for_animation(9021, "windup", battle.battle_serial)
 	check(Time.get_ticks_msec() - timeout_started < 4000 and battle.expected_action_id == -1, "缺失演出回执后不永久卡住")
 	battle.running = false
+	battle.start("stage_5")
+	check(battle.enemies.size() == 4 and battle.enemies[0].id == "enemy_stone" and battle.enemies[1].id == "enemy_stone" and battle.enemies[0].skills == ["pebble_ram"] and battle.enemies[1].skills == ["enemy_burst"] and battle.can_cast(battle.enemies[0], "pebble_ram"), "第五关双岩前排与眩晕技能实际入场")
+	battle.running = false
+	battle.start("stage_10")
+	check(battle.enemies.size() == 4 and battle.enemies[0].max_hp == int(data.get_entry("units", str(battle.enemies[0].id)).get("hp", 0)) + 9 * int((data.tables["rules"]["level_growth"] as Dictionary).get("hp", 20)), "第十关实战按等级提升敌人生命")
+	check(battle.enemies[0].skills == ["ember_flare"] and battle.enemies[2].skills == ["mist_arc"] and battle.enemies[3].id == "enemy_flame", "第十关火焰压阵与雾狐削弱技能实际入场")
+	battle.enemies[0].energy = 60
+	check(battle.can_cast(battle.enemies[0], "ember_flare"), "第十关火焰技能蓄能后可施放")
+	battle.running = false
 	game.current_stage = "stage_1"
 	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/MainCity.tscn", "启动直接进入主城")
 	var prior_stage: String = game.current_stage
 	game.select_stage("stage_999")
 	check(game.current_stage == prior_stage and not game.stage_pending, "未解锁副本不能绕过独立关卡页进入战斗")
-	var scene_paths := ["res://scenes/MainMenu.tscn", "res://scenes/MainCity.tscn", "res://scenes/StageSelect.tscn", "res://scenes/Outskirts.tscn", "res://scenes/TeamSelect.tscn", "res://scenes/Battle.tscn"]
+	var scene_paths := ["res://scenes/MainMenu.tscn", "res://scenes/MainCity.tscn", "res://scenes/StageSelect.tscn", "res://scenes/Outskirts.tscn", "res://scenes/WaterActivity.tscn", "res://scenes/TeamSelect.tscn", "res://scenes/Battle.tscn"]
 	for path in scene_paths:
 		var scene: PackedScene = load(path)
 		check(scene != null, "场景可加载: " + path)
@@ -311,14 +329,44 @@ func run_checks() -> void:
 			instance.close_dialogue()
 			check(not instance.dialogue.visible, "取消 NPC 对话保持主城")
 		elif path.ends_with("StageSelect.tscn"):
-			check(instance.stage_buttons.size() == 3, "独立关卡场景包含三关")
+			check(instance.stage_buttons.size() == 10, "独立关卡场景包含十关")
+			check("注意阵容搭配" in instance.stage_buttons[4].text and "注意阵容搭配" in instance.stage_buttons[9].text and "双岩" not in instance.stage_buttons[4].text and "烈焰" not in instance.stage_buttons[9].text, "关键关卡提示搭配且不提前透露敌方阵容")
 			check(instance.get_child(0).texture.resource_path == "res://assets/backgrounds/menu_pet_garden.png", "关卡页使用统一背景")
-			for i in range(3):
+			for i in range(10):
 				check(instance.stage_buttons[i].disabled == (i + 1 > int(data.save_data["unlocked_stage"])), "关卡解锁状态匹配存档 %d" % (i + 1))
 		elif path.ends_with("Outskirts.tscn"):
 			check(instance.model != null and instance.player_foot.distance_to(Vector2(140, 576)) < 2.0, "邻接区域成功加载并显示人物")
 			check(instance.RETURN.has_point(Vector2(84, 570)), "邻接区域包含可返回主城的出口")
 			check(instance.model.texture.resource_path == "res://assets/characters/pet_hero.png", "外缘玩家复用主角美术")
+			check(instance.WATER_PORTAL.has_point(Vector2(1044, 560)), "外缘水门位于可移动区域")
+		elif path.ends_with("WaterActivity.tscn"):
+			check(instance.raft_tiles == 1 and instance.collectors == 0 and instance.orders_completed == 0, "水上经营活动完成初始化")
+			check(not instance._expand_raft() and not instance._build_collector() and not instance._fulfill_order(), "资源不足不能扩建、造站或交付")
+			check(instance.model.texture.resource_path == "res://assets/characters/pet_hero.png" and instance.debris.size() == 5, "水域显示现有精灵及可拾取漂浮物")
+			for point in instance.debris.duplicate():
+				instance.player_foot = point
+				instance._collect_nearby()
+			check(instance.debris.is_empty() and instance.wood == 5 and instance.scrap == 5, "靠近漂浮物自动打捞并获得建造资源")
+			instance._process(6.0)
+			check(instance.debris.size() == 1, "漂浮物定时补充且不可无限点击获取")
+			check(instance._expand_raft() and instance.raft_tiles == 2, "消耗资源扩建浮台")
+			check(instance._build_collector() and instance.collectors == 1 and not instance._build_collector(), "空位建造资源站且不可超建")
+			check(not instance._claim_production() and not instance._upgrade_collector() and not instance._build_workshop(), "未产出或未达委托进度不能提前升级")
+			instance._tick_production(8.0)
+			check(instance.water == 0 and instance.fiber == 0 and instance.pending_water == 2 and instance.pending_fiber == 2, "初级设施产出须手动领取")
+			check(instance._claim_production() and instance.water == 2 and instance.fiber == 2 and not instance._claim_production(), "领取待产物且不能重复领取")
+			check(instance._process_fiber() and instance._process_fiber() and instance.rope == 2 and instance.fiber == 0, "纤维手动加工为绳索")
+			check(instance._fulfill_order() and instance.orders_completed == 1 and instance.wood == 2 and instance.scrap == 2, "首单奖励可升级站点")
+			instance._tick_production(4.0)
+			check(instance._upgrade_collector() and instance.automated_collecting and instance.water == 1 and instance.fiber == 1 and instance.pending_water == 0, "首单解锁自动收取并接收已有待产物")
+			instance._tick_production(4.0)
+			check(instance.water == 2 and instance.fiber == 2 and not instance._claim_production(), "升级后自动入库无需反复领取")
+			check(instance._process_fiber() and instance._process_fiber() and instance._fulfill_order() and instance.orders_completed == 2, "第二单可凭持续产出完成")
+			check(instance._build_workshop() and instance.workshop_built and instance.wood == 0 and instance.scrap == 0, "第二单奖励可解锁自动加工且无需再次拾荒")
+			instance._tick_production(8.0)
+			check(instance.water == 2 and instance.rope == 2 and instance.fiber == 0 and instance._fulfill_order() and instance.orders_completed == 3, "工坊将新产出自动加工并支持后续循环委托")
+			instance._start_round()
+			check(instance.wood == 0 and instance.rope == 0 and instance.raft_tiles == 1 and instance.orders_completed == 0 and not instance.automated_collecting and not instance.workshop_built and instance.pending_water == 0, "水上经营活动重开清空临时成长")
 		elif path.ends_with("TeamSelect.tscn"):
 			check(instance.grid_buttons.size() == 9, "阵容九格可见")
 			var support_in_picker := false
@@ -331,6 +379,14 @@ func run_checks() -> void:
 				if instance.skill_picker.get_item_metadata(option_index) == "hero_cleanse":
 					cleanse_in_picker = true
 			check(cleanse_in_picker, "编队页可装备净化奥义")
+			var initial_skill_id: String = str(instance.skill_picker.get_item_metadata(instance.skill_picker.selected))
+			check(instance.skill_description.text.contains(str(data.get_entry("skills", initial_skill_id).get("name", ""))) and instance.skill_description.text.contains("目标：") and instance.skill_description.text.contains("效果：") and instance.skill_description.text.contains("冷却："), "编队页展示当前主角奥义说明")
+			for option_index in range(instance.skill_picker.item_count):
+				if instance.skill_picker.get_item_metadata(option_index) == "hero_mend":
+					instance.skill_picker.select(option_index)
+					instance.skill_picker.item_selected.emit(option_index)
+					break
+			check(instance.skill_description.text.contains("复苏援护") and instance.skill_description.text.contains("友方单体") and instance.skill_description.text.contains("治疗 36 生命") and instance.skill_description.text.contains("40 能量"), "切换主角奥义时同步展示实际效果与消耗")
 			check(instance.get_child(0).texture.resource_path == "res://assets/backgrounds/menu_pet_garden.png", "编队页使用统一背景")
 			check(not game.stage_pending, "主城直接编队时不会误入旧副本")
 			var before: int = formation.find("hero")
@@ -424,6 +480,84 @@ func run_checks() -> void:
 			var original_actor: BattleUnit = battle.active_unit
 			var original_targeting_energy: int = targeting_hero.energy
 			battle.active_unit = targeting_hero
+			instance.refresh()
+			var equipped_skill: String = instance.active_skill_id(targeting_hero)
+			check(instance.shortcut_hint.visible and instance.shortcut_hint.text.contains("主键盘 / 小键盘 1 普攻") and instance.shortcut_hint.text.contains("2 主动技能") and instance.shortcut_hint.text.contains("选后点目标"), "面板关闭时仍显示主键盘与小键盘快捷键指南")
+			check(instance.summary_toggle.get_parent().get_parent().get_parent() == instance.skill_detail and not instance.summary_toggle.button_pressed and not instance.skill_detail.visible and instance.get_node_or_null("BasicSummary") == null, "简洁说明仅在默认关闭的技能描述面板内")
+			check(instance.skill_detail_text("basic", targeting_hero).contains("消耗：") and instance.skill_summary("basic").contains("威力系数 1.00"), "普攻提供详细与简洁两种描述")
+			check(instance.skill_detail_text("basic", targeting_hero).contains("最前排") and instance.skill_detail_text(equipped_skill, targeting_hero).contains("消耗：") and instance.skill_detail_text("hero_mend", targeting_hero).contains("治疗 36生命"), "详细说明区分目标、效果数值与资源")
+			var key_one := InputEventKey.new()
+			key_one.pressed = true
+			key_one.keycode = KEY_1
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "basic", "快捷键 1 选择普攻")
+			var key_two := InputEventKey.new()
+			key_two.pressed = true
+			key_two.keycode = KEY_2
+			instance._unhandled_key_input(key_two)
+			check(instance.pending_skill_id == equipped_skill, "快捷键 2 选择当前单位主动技能")
+			key_one.keycode = KEY_KP_1
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "basic", "小键盘 1 选择普攻")
+			key_two.keycode = KEY_KP_2
+			instance._unhandled_key_input(key_two)
+			check(instance.pending_skill_id == equipped_skill, "小键盘 2 选择主动技能")
+			instance.pending_skill_id = ""
+			key_one.echo = true
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "", "长按快捷键不会重复选择")
+			key_one.echo = false
+			battle.active_unit = front_enemy
+			instance._unhandled_key_input(key_one)
+			check(instance.pending_skill_id == "", "敌方回合不能使用快捷键选择行动")
+			battle.active_unit = targeting_hero
+			targeting_hero.energy = 0
+			instance.refresh()
+			instance._unhandled_key_input(key_two)
+			check(instance.pending_skill_id == "" and instance.ultimate_button.disabled and instance.skill_detail_text(equipped_skill, targeting_hero).contains("能量不足"), "禁用技能仍可查看详情但快捷键无法绕过资源校验")
+			var hold_press := InputEventMouseButton.new()
+			hold_press.button_index = MOUSE_BUTTON_LEFT
+			hold_press.pressed = true
+			hold_press.position = instance.ultimate_button.get_global_rect().get_center()
+			instance._input(hold_press)
+			check(instance.held_skill_button == instance.ultimate_button and instance.skill_hold_timer.time_left > 0, "禁用按钮仍由全局输入识别长按")
+			instance.skill_hold_timer.stop()
+			instance.detail_skill_id = equipped_skill
+			instance.detail_actor = targeting_hero
+			instance.long_press_consumed = true
+			instance.refresh_skill_detail()
+			instance.skill_detail.show()
+			check(instance.skill_detail_label.text.contains("消耗：") and instance.skill_detail_label.text.contains("能量不足"), "长按默认显示当前技能详细说明")
+			var hold_release := InputEventMouseButton.new()
+			hold_release.button_index = MOUSE_BUTTON_LEFT
+			hold_release.pressed = false
+			instance._input(hold_release)
+			check(instance.skill_detail.visible and instance.held_skill_button == null and instance.pending_skill_id == "", "松开后描述保持可操作且未选择技能")
+			instance.activate_skill_button("ultimate")
+			check(instance.pending_skill_id == "", "长按释放不误触技能按钮")
+			instance.summary_toggle.button_pressed = true
+			check(instance.skill_detail_label.text.contains(str(data.get_entry("skills", equipped_skill).get("name", ""))) and not instance.skill_detail_label.text.contains("消耗："), "面板内切换简洁说明立即更新当前技能")
+			instance.close_skill_detail()
+			instance.detail_skill_id = "basic"
+			instance.detail_actor = targeting_hero
+			instance.refresh_skill_detail()
+			instance.skill_detail.show()
+			check(instance.skill_detail_label.text.contains("威力系数 1.00") and not instance.skill_detail_label.text.contains("冷却："), "简洁模式对随后打开的普攻生效")
+			instance.summary_toggle.button_pressed = false
+			check(instance.skill_detail_label.text.contains("目标：") and instance.skill_detail_label.text.contains("冷却："), "面板内可切回详细模式")
+			instance.skill_detail.get_child(0).get_child(1).get_child(1).emit_signal("pressed")
+			check(not instance.skill_detail.visible, "关闭按钮可关闭描述面板")
+			instance.detail_actor = targeting_hero
+			instance.detail_skill_id = "basic"
+			instance.skill_detail.show()
+			var outside_press := InputEventMouseButton.new()
+			outside_press.button_index = MOUSE_BUTTON_LEFT
+			outside_press.pressed = true
+			outside_press.position = Vector2(700, 300)
+			instance._input(outside_press)
+			check(not instance.skill_detail.visible, "点击面板外部可关闭技能说明")
+			targeting_hero.energy = original_targeting_energy
+			instance.refresh()
 			check(battle.valid_targets(targeting_hero, "basic").has(front_enemy) and not battle.valid_targets(targeting_hero, "basic").has(middle_enemy) and not battle.valid_targets(targeting_hero, "basic").has(back_enemy), "普通攻击仅允许选最前方存活列")
 			check(battle.valid_targets(targeting_hero, "hero_strike").has(front_enemy) and not battle.valid_targets(targeting_hero, "hero_strike").has(back_enemy), "未标记自由选目标的奥义也受前排限制")
 			check(bool(data.get_entry("skills", "hero_wave").get("free_target", false)) and bool(data.get_entry("skills", "mist_arc").get("free_target", false)) and battle.valid_targets(targeting_hero, "hero_wave").has(back_enemy), "明确标记自由目标的技能可跨排选后排")
@@ -488,7 +622,14 @@ func run_checks() -> void:
 			battle.active_unit = pet
 			pet.energy = 100
 			pet.cooldowns.erase(pet_skill)
+			instance.summary_toggle.button_pressed = true
+			instance.detail_skill_id = pet_skill
+			instance.detail_actor = pet
+			instance.refresh_skill_detail()
+			instance.skill_detail.show()
 			instance.refresh()
+			check(instance.summary_toggle.button_pressed and instance.skill_detail_label.text.contains(str(data.get_entry("skills", pet_skill).get("name", ""))) and not instance.skill_detail_label.text.contains(str(data.get_entry("skills", initial_skill).get("name", ""))) and not instance.skill_detail_label.text.contains("消耗："), "切换我方单位时简洁说明持续生效并显示新单位技能")
+			instance.close_skill_detail()
 			check(not instance.basic_button.disabled and not instance.ultimate_button.disabled and instance.basic_button.text.contains(pet.name) and instance.ultimate_button.text.contains(str(data.get_entry("skills", pet_skill).get("name", ""))), "宠物回合可手动选择普通攻击或自身主动技能")
 			pet.energy = 0
 			instance.refresh()
@@ -617,6 +758,33 @@ func run_checks() -> void:
 			root.get_node("UIManager").close_popup()
 		instance.queue_free()
 		await process_frame
+	# 独立战斗场景验证取消与确认逃跑，不干扰原有结算回归。
+	var escape_scene: Control = load("res://scenes/Battle.tscn").instantiate()
+	root.add_child(escape_scene)
+	await process_frame
+	check(escape_scene.escape_button.visible and escape_scene.escape_button.text == "逃跑", "战斗中显示逃跑入口")
+	escape_scene.escape_button.emit_signal("pressed")
+	check(escape_scene.escape_confirmation.visible, "逃跑需要二次确认")
+	escape_scene.escape_confirmation.emit_signal("canceled")
+	escape_scene.escape_confirmation.hide()
+	check(battle.running and not battle.busy and escape_scene.escape_button.visible, "取消逃跑继续战斗")
+	var escape_hero: BattleUnit = battle.allies[0]
+	var escape_enemy: BattleUnit = battle.enemies[0]
+	battle.queue.clear()
+	battle.active_unit = escape_hero
+	var escape_hp: int = escape_enemy.hp
+	var escape_result: String = game.last_result
+	var escape_exp: Dictionary = (data.save_data["exp"] as Dictionary).duplicate(true)
+	battle.player_action("basic", battle.valid_targets(escape_hero, "basic")[0])
+	check(battle.busy, "逃跑前存在等待演出的旧动作")
+	var serial_before_escape: int = battle.battle_serial
+	escape_scene.escape_confirmation.emit_signal("confirmed")
+	check(not battle.running and not battle.busy and battle.battle_serial == serial_before_escape + 1 and battle.active_unit == null and battle.queue.is_empty() and battle.selected_target == null and escape_scene.pending_skill_id == "", "确认逃跑清理战斗与选招状态")
+	for escape_frame in range(5):
+		await process_frame
+	check(escape_enemy.hp == escape_hp and game.last_result == escape_result and (data.save_data["exp"] as Dictionary) == escape_exp and (root.get_node("UIManager").popup == null or not root.get_node("UIManager").popup.visible), "逃跑中断旧协程、不发经验且不出现战败弹窗")
+	check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn", "逃跑返回主城")
+	escape_scene.queue_free()
 	# 在真正的战斗场景中验证支援奥义仅治疗一次，不写入玩家存档。
 	var original_skill: String = str(data.save_data["hero_skill"])
 	data.save_data["hero_skill"] = "hero_mend"
@@ -694,6 +862,21 @@ func run_checks() -> void:
 	check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "踏入东侧传送点实际切换到云庭外缘")
 	if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
 		var outskirts = current_scene
+		outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
+		outskirts._process(0.0)
+		for frame in range(4):
+			await process_frame
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "外缘水门实际进入漂流浮台")
+		if current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn":
+			current_scene.get_node("ReturnButton").pressed.emit()
+			for frame in range(4):
+				await process_frame
+			check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "活动返回按钮实际回到外缘")
+		if current_scene == null or current_scene.scene_file_path != "res://scenes/Outskirts.tscn":
+			data.save_data["hero_skill"] = saved_hero_skill
+			quit(1)
+			return
+		outskirts = current_scene
 		outskirts.player_foot = outskirts.RETURN.get_center()
 		outskirts._process(0.0)
 		for frame in range(4):
@@ -701,6 +884,7 @@ func run_checks() -> void:
 		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn", "外缘左侧传送点实际切换回主城")
 		if current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn":
 			check(current_scene.player_foot.distance_to(Vector2(1900, 729)) < 2.0, "返城到达点位于东侧道路")
+	data.save_data["hero_skill"] = saved_hero_skill
 	print("SMOKE RESULT: %s (%d failed)" % ["PASS" if failures == 0 else "FAIL", failures])
 	quit(0 if failures == 0 else 1)
 

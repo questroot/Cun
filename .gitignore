@@ -17,6 +17,8 @@ Thumbs.db
 /launcher.settings.json
 # Godot-generated editor/import cache is not source.
 **/.godot/
+# Isolated per-activity regression saves are never project content.
+**/.test-output/
 
 # Redistribute the verified compressed engine, not 181MB raw executables.
 /.setup/Godot/*

@@ -62,9 +62,13 @@ func start(stage_id: String) -> void:
 			return
 		allies.append(UnitScript.new(id, "ally", i, cell_index, int(DataManager.save_data["levels"].get(id, 1))))
 	var enemy_ids: Array = stage.get("enemies", [])
+	var enemy_skills: Array = stage.get("enemy_skills", [])
 	var enemy_cells := [0, 3, 4, 8]
 	for i in range(min(4, enemy_ids.size())):
-		enemies.append(UnitScript.new(str(enemy_ids[i]), "enemy", i, enemy_cells[i]))
+		var enemy: BattleUnit = UnitScript.new(str(enemy_ids[i]), "enemy", i, enemy_cells[i], int(stage.get("enemy_level", 1)))
+		if i < enemy_skills.size():
+			enemy.skills = [str(enemy_skills[i])]
+		enemies.append(enemy)
 	if enemies.is_empty():
 		push_error("关卡未配置敌人: " + stage_id)
 		allies.clear()
@@ -461,6 +465,22 @@ func check_end() -> bool:
 		finish(ally_alive)
 		return true
 	return false
+
+func abort() -> void:
+	if not running:
+		return
+	running = false
+	busy = false
+	battle_serial += 1
+	queue.clear()
+	active_unit = null
+	selected_target = null
+	expected_action_id = -1
+	expected_phase = ""
+	acknowledged = false
+	chase_count = 0
+	chase_used.clear()
+	state_changed.emit()
 
 func finish(won: bool) -> void:
 	if not running:
