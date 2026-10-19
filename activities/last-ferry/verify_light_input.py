@@ -36,7 +36,8 @@ def inspect(x,y):
 try:
     s.call('launch',{'project':'last-ferry','headless':not args.render});click('阿禾 ·')
     go(320,385);key('e');click('向陶婶借手提黄灯')
-    go(420,275);key('e');click('这卷先留店里');kept=obs();assert '今晚未交' in json.dumps(kept,ensure_ascii=False)
+    go(420,275);s.call('action',{'kind':'mouse','x':420,'y':235});click('确认');kept=obs();assert '今晚未交' in json.dumps(kept,ensure_ascii=False)
+    assert kept['visible'][0]['visible_wick']['appearance']=='柜台干货格留存的灯芯',kept
     walk('x',750);walk('y',390);key('e')
     go(455,465);key('e');click('亲口说明这卷');explained=obs();assert '你也会自己拿主意了' in json.dumps(explained,ensure_ascii=False);key('escape')
     inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)

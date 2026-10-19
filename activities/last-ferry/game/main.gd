@@ -52,6 +52,10 @@ func play_visible() -> Dictionary:
 	if story.s.place == "shelter":
 		result["visible_equipment"] = {"outer_shade":("放在灯旁" if story.flag("shade_off") else "扣在灯上"),"bell":("铜片挂在钟内" if story.flag("tongue_home") else "挂孔空着"),"yellow_lamp":("亮着" if story.flag("yellow_lit") else "未点亮")}
 		if story.item("拆下的铜舌"): result["visible_equipment"]["carried"] = "手上铜片"
+	if story.item("新灯芯"):
+		result["visible_wick"] = {"x":player.x-18,"y":player.y+7,"appearance":"手边纸包灯芯"}
+	elif story.flag("wick_kept") and story.s.place == "street":
+		result["visible_wick"] = {"x":420,"y":250,"appearance":"柜台干货格留存的灯芯"}
 	if story.item("老葛的工具袋"):
 		result["visible_toolbag"] = {"x":player.x+20,"y":player.y+8,"appearance":"手提着布袋，袋绳完整"}
 	elif story.flag("tool_returned") and story.s.place == "street":
@@ -283,6 +287,9 @@ func show_items() -> void:
 func try_world_click(point: Vector2) -> bool:
 	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if story.s.place == "street" and story.s.identity == "he" and story.item("新灯芯") and point.distance_to(Vector2(420,235)) < 35 and player.distance_to(Vector2(420,235)) < 82:
+		confirm("把这卷尚未送出的灯芯留在陶记干货格，并由你亲口向周伯解释？这不会替他决定今晚怎样等候。", func(): do_action("wick_keep"))
+		return true
 	if story.s.place == "steps" and point.distance_to(Vector2(235,355)) < 35 and player.distance_to(Vector2(235,355)) < 82:
 		if not story.flag("tool_returned") and not story.item("老葛的工具袋"):
 			do_action("tool_retrieve")
@@ -456,6 +463,7 @@ func refresh_ui() -> void:
 	if story.s.phase != "epilogue" and story.flag("ge_met") and not story.flag("tool_returned"):
 		if story.s.place == "steps" and not story.item("老葛的工具袋"): foot_hint.text += "\n老葛说的布袋在湿阶低处；走近后点击，用竹竿挑回，不必涉水（E也可）。"
 		if story.s.place == "street" and story.item("老葛的工具袋"): foot_hint.text += "\n带回了工具袋，走近老葛点击交还，或按E交谈。"
+	if story.s.place == "street" and story.item("新灯芯") and story.s.phase != "epilogue": foot_hint.text += "\n灯芯可送给周伯，或走近账本点击确认留店；决定由阿禾自己解释。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
@@ -782,6 +790,10 @@ func _draw() -> void:
 	draw_rect(Rect2(player - Vector2(10, 3), Vector2(20, 24)), Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
 	draw_circle(player - Vector2(0, 10), 10, Color("ead1ac"))
 	draw_line(player, player + face * 20, Color("f1dbad"), 3)
+	var wick_pos := player+Vector2(-18,7) if story.item("新灯芯") else (Vector2(420,250) if story.flag("wick_kept") and story.s.place == "street" else Vector2.ZERO)
+	if wick_pos != Vector2.ZERO:
+		draw_rect(Rect2(wick_pos-Vector2(12,6),Vector2(24,12)),Color("d7c7a3"))
+		draw_line(wick_pos-Vector2(0,6),wick_pos+Vector2(0,6),Color("8d7450"),2)
 	var bag_pos := Vector2.ZERO
 	if story.item("老葛的工具袋"): bag_pos = player + Vector2(20,8)
 	elif story.flag("tool_returned") and story.s.place == "street": bag_pos = Vector2(650,490)
