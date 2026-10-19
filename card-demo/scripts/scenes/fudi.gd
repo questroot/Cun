@@ -1,4 +1,5 @@
 extends Control
+signal sound_requested(kind: String)
 ## Self-contained action prototype; never writes the spirit game's save.
 const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
@@ -6,6 +7,11 @@ const Tools = preload("res://scripts/scenes/exploration_tools.gd")
 const Hero = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Landscape = preload("res://scripts/scenes/fudi_landscape.gd")
+const Bosses = preload("res://scripts/scenes/fudi_bosses.gd")
+const Loot = preload("res://scripts/scenes/loot_catalog.gd")
+const Equipment = preload("res://scripts/scenes/fudi_equipment.gd")
+const Buildings = preload("res://scripts/scenes/fudi_buildings.gd")
+const Chests = preload("res://scripts/scenes/fudi_chests.gd")
 const ENEMY_ART := preload("res://assets/characters/pet_enemy_stone.png")
 const ARENA := Rect2(24, 212, 1232, 430)
 const SPEED := 260.0
@@ -43,9 +49,13 @@ var dialogue_text: Label
 var journal: PanelContainer
 var journal_text: RichTextLabel
 var continue_button: Button
+var loot_rng := RandomNumberGenerator.new()
+var equipment: Equipment
+var buildings: Buildings
 
 func _ready() -> void:
 	DisplayServer.window_set_title("福地")
+	loot_rng.randomize()
 	for item: String in Catalog.ITEMS:
 		inventory[item] = 0
 	for id: String in Maps.IDS:
@@ -68,8 +78,33 @@ func _ready() -> void:
 	add_child(tools)
 	tools.atlas.can_travel = true
 	tools.atlas.resource_provider = remaining_resources
+	tools.atlas.set_meta("loot_provider", Loot.summary)
 	tools.atlas.travel_requested.connect(enter_region)
+	tools.modal_blocker = func() -> bool: return get_meta("audio_settings_open", false) or dialogue.visible or journal.visible or outcome.visible or (equipment != null and equipment.is_open())
 	enter_region(region)
+	var bosses := Bosses.new()
+	bosses.name = "Bosses"
+	add_child(bosses)
+	equipment = Equipment.new()
+	equipment.name = "Equipment"
+	add_child(equipment)
+	buildings = Buildings.new()
+	buildings.name = "Buildings"
+	add_child(buildings)
+	var chests := Chests.new()
+	chests.name = "Chests"
+	add_child(chests)
+
+func combat_targets() -> Array[Dictionary]:
+	var targets: Array[Dictionary] = []
+	targets.assign(states[region].enemies)
+	var bosses := get_node_or_null("Bosses")
+	if bosses != null:
+		targets.append_array(bosses.targets(region))
+	var chests := get_node_or_null("Chests")
+	if chests != null:
+		targets.append_array(chests.targets(region))
+	return targets
 
 func _create_region(id: String) -> Dictionary:
 	var pickups: Array[Dictionary] = []
@@ -119,7 +154,7 @@ func _build_hud() -> void:
 	layout.add_child(status)
 	bag = UI.label("", 19)
 	layout.add_child(bag)
-	layout.add_child(UI.label("WASD 移动  /  J 斩击  K 灵弹  L 震荡  /  E 调查·休息·通行  /  B 行囊与见闻  /  靠近光点采集", 17))
+	layout.add_child(UI.label("WASD 移动  /  J 斩击  K 灵弹  L 震荡  /  E 调查·休息·通行  /  B 行囊  C 装备  /  靠近光点采集", 17))
 	skills = UI.label("", 19, Color("#b5d9d1"))
 	skills.position = Vector2(350, 169)
 	add_child(skills)
@@ -135,8 +170,12 @@ func _build_hud() -> void:
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(hint)
 	var layer := CanvasLayer.new()
-	layer.layer = 80
+	layer.layer = 100
 	add_child(layer)
+	var modal_shade := ColorRect.new()
+	modal_shade.color = Color(0.01, 0.03, 0.04, 0.65)
+	modal_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(modal_shade)
 	outcome = PanelContainer.new()
 	outcome.position = Vector2(375, 270)
 	outcome.size = Vector2(530, 240)
@@ -148,7 +187,7 @@ func _build_hud() -> void:
 	result = UI.label("", 25, Color("#f4daa0"))
 	result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	end_layout.add_child(result)
-	continue_button = UI.button("继续自由探索", func() -> void: finished = false; outcome.hide())
+	continue_button = UI.button("继续自由探索", resume_exploration)
 	end_layout.add_child(continue_button)
 	end_layout.add_child(UI.button("重新开始一轮", restart))
 	end_layout.add_child(UI.button("返回游戏选择", func() -> void: GameManager.goto_scene("menu")))
@@ -181,6 +220,10 @@ func _build_hud() -> void:
 	book_layout.add_child(journal_text)
 	book_layout.add_child(UI.button("继续探索  B / Esc", func() -> void: journal.hide()))
 	journal.hide()
+	var update_shade := func() -> void: modal_shade.visible = outcome.visible or dialogue.visible or journal.visible
+	for panel: Control in [outcome, dialogue, journal]:
+		panel.visibility_changed.connect(update_shade)
+	update_shade.call()
 
 func remaining_resources(id: String) -> Dictionary:
 	var counts: Dictionary = {}
@@ -189,22 +232,34 @@ func remaining_resources(id: String) -> Dictionary:
 	for item: String in Catalog.REGIONS[id].resources:
 		counts[item] = 0
 	for pickup: Dictionary in states[id].pickups:
-		counts[pickup.item] += 1
+		counts[pickup.item] = int(counts.get(pickup.item, 0)) + 1
 	return counts
 
 func enter_region(id: String, via_gate: bool = false) -> void:
 	if not states.has(id) or finished:
 		return
+	if equipment != null:
+		equipment.effects.clear_transients()
 	var previous := region
 	if world_canvas.size != Vector2.ZERO:
 		states[region].foot = player_foot
 	region = id
 	tools.region = id
+	var chests := get_node_or_null("Chests")
+	if chests != null:
+		chests.enter_region()
+	var bosses := get_node_or_null("Bosses")
+	if bosses != null:
+		bosses.enter_region()
+	var traps := get_node_or_null("Traps")
+	if traps != null and traps.initialized:
+		traps.enter_region(id)
 	player_foot = states[id].foot
 	if via_gate:
 		for exit: Array in Maps.MAPS[id].exits:
 			if exit[0] == previous:
-				player_foot = exit[1] * Maps.MAPS[id].size + Vector2(100 if exit[1].x < 0.5 else -100, 0)
+				var inward: Vector2 = (Vector2(0.5, 0.5) - exit[1]).normalized()
+				player_foot = exit[1] * Maps.MAPS[id].size + inward * 100
 	world_canvas.size = Maps.MAPS[id].size
 	model.position = player_foot
 	model.update_movement(Vector2.ZERO, 0)
@@ -213,10 +268,16 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 	hurt_timer = maxf(hurt_timer, 1.0)
 	_update_camera()
 	_refresh_ui()
+	world_canvas.queue_redraw()
 	queue_redraw()
 
 func restart() -> void:
 	GameManager.goto_scene("fudi")
+
+func resume_exploration() -> void:
+	finished = false
+	outcome.hide()
+	hurt_timer = maxf(hurt_timer, 1.0)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -248,51 +309,117 @@ func attack(kind: String) -> bool:
 	if not ATTACKS.has(kind) or finished or _paused() or float(cooldowns[kind]) > 0:
 		return false
 	var config: Dictionary = ATTACKS[kind]
-	cooldowns[kind] = config.cooldown
+	sound_requested.emit({"j": "slash", "k": "cast", "l": "slam"}[kind])
+	cooldowns[kind] = config.cooldown * (equipment.effects.cooldown_scale() if equipment != null else 1.0)
+	if buildings != null:
+		cooldowns[kind] *= buildings.multiplier("cooldown")
+	var radius := float(config.radius)
+	if equipment != null:
+		radius = equipment.effects.attack_radius(kind, radius)
 	var origin := player_foot - Vector2(0, 30)
 	if kind == "k":
-		projectiles.append({"position": origin + facing * 30, "velocity": facing * 620, "life": 0.85})
+		var angles: Array = [-0.18, 0.0, 0.18] if equipment != null and equipment.effects.weapon() == "w03-prism-saber" else [0.0]
+		for angle: float in angles:
+			projectiles.append({"position": origin + facing * 30, "velocity": facing.rotated(angle) * 620, "life": 0.85})
 	else:
-		for enemy: Dictionary in states[region].enemies:
+		for enemy: Dictionary in combat_targets():
 			var offset: Vector2 = enemy.position - player_foot
-			if offset.length() <= float(config.radius) and (kind == "l" or offset.length() < 25 or offset.normalized().dot(facing) >= 0.15):
-				_damage(enemy, int(config.damage))
-		effects.append({"position": origin, "radius": config.radius, "life": 0.22, "kind": kind, "facing": facing})
+			if offset.length() <= radius and (kind == "l" or offset.length() < 25 or offset.normalized().dot(facing) >= 0.15):
+				_damage(enemy, int(config.damage), kind)
+		effects.append({"position": origin, "radius": radius, "life": 0.22, "kind": kind, "facing": facing})
+	if equipment != null:
+		equipment.effects.after_attack(kind, radius)
 	_remove_dead()
 	_refresh_ui()
 	world_canvas.queue_redraw()
 	return true
 
-func _damage(enemy: Dictionary, amount: int) -> void:
+func _damage(enemy: Dictionary, amount: int, kind: String = "") -> void:
+	if int(enemy.hp) <= 0:
+		return
+	if equipment != null:
+		amount += int(equipment.bonuses().attack)
+		amount = equipment.effects.direct_damage(enemy, amount, kind)
+	if buildings != null:
+		amount = ceili(amount * buildings.multiplier("attack"))
 	enemy.hp = maxi(0, int(enemy.hp) - amount)
+	sound_requested.emit("hit")
 	enemy.flash = 0.14
+	if equipment != null:
+		equipment.effects.after_hit(enemy, kind)
+
+func incoming_damage(amount: int) -> int:
+	if buildings != null:
+		amount = maxi(1, ceili(amount * buildings.multiplier("incoming")))
+	return equipment.effects.incoming_damage(amount) if equipment != null else maxi(1, amount)
 
 func _remove_dead() -> void:
 	var enemies: Array = states[region].enemies
 	for i in range(enemies.size() - 1, -1, -1):
 		if int(enemies[i].hp) <= 0:
+			var item := Loot.roll_monster(region, loot_rng)
+			if not item.is_empty():
+				_spawn_equipment(region, item, enemies[i].position, "monster_drop")
+				if enemies[i].has("drop"):
+					states[region].pickups.append({"item": enemies[i].drop, "position": enemies[i].position, "monster_drop": true})
 			enemies.remove_at(i)
 	var remaining := 0
 	for id: String in states:
 		remaining += states[id].enemies.size()
+	var bosses := get_node_or_null("Bosses")
+	if bosses != null:
+		bosses.collect_defeated()
+		for id: String in bosses.bosses:
+			var boss: Dictionary = bosses.bosses[id]
+			if int(boss.hp) <= 0 and not boss.get("equipment_paid", false):
+				var item := Loot.roll_boss(id, loot_rng)
+				if not item.is_empty():
+					var destination: String = bosses.Catalog.DEFINITIONS[id].region
+					_spawn_equipment(destination, item, boss.position, "boss_drop")
+				boss["equipment_paid"] = true
+		remaining += bosses.remaining()
+	var chests := get_node_or_null("Chests")
+	if chests != null:
+		chests.collect_defeated()
+		remaining += chests.remaining()
 	if remaining == 0 and not round_cleared:
 		round_cleared = true
 		_end_round(true)
+
+func _spawn_equipment(id: String, item: String, origin: Vector2, source: String) -> void:
+	var point := origin
+	for offset: Vector2 in [Vector2(-64, 0), Vector2(64, 0), Vector2(0, 64), Vector2(0, -64)]:
+		if Maps.walkable(id, origin + offset, 28):
+			point = origin + offset
+			break
+	var pickup := {"item": item, "position": point}
+	pickup[source] = true
+	states[id].pickups.append(pickup)
 
 func _collect_nearby() -> void:
 	var pickups: Array = states[region].pickups
 	for i in range(pickups.size() - 1, -1, -1):
 		if player_foot.distance_to(pickups[i].position) <= 32:
 			inventory[pickups[i].item] += 1
+			sound_requested.emit("pickup")
 			pickups.remove_at(i)
 
 func _process(delta: float) -> void:
 	if _paused() or finished:
 		model.update_movement(Vector2.ZERO, 0)
 		return
+	if equipment != null:
+		equipment.effects.tick(delta)
+		if finished:
+			return
 	var direction := Vector2(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))).normalized()
 	var previous := player_foot
-	player_foot = move_world(player_foot, direction * SPEED * minf(delta, 0.1))
+	var traps := get_node_or_null("Traps")
+	var movement_scale: float = traps.movement_scale() if traps != null and traps.initialized else 1.0
+	var move_speed := SPEED + (float(equipment.bonuses().speed) if equipment != null else 0.0)
+	if buildings != null:
+		move_speed *= buildings.multiplier("speed")
+	player_foot = move_world(player_foot, direction * move_speed * movement_scale * minf(delta, 0.1))
 	if direction != Vector2.ZERO:
 		facing = direction
 	model.position = player_foot
@@ -305,9 +432,10 @@ func _process(delta: float) -> void:
 		enemy.flash = maxf(0, float(enemy.flash) - delta)
 		var offset: Vector2 = player_foot - enemy.position
 		if offset.length() > 32 and offset.length() < 380:
-			enemy.position = move_world(enemy.position, offset.normalized() * minf(76.0 * delta, offset.length() - 32))
+			var slow: float = equipment.effects.enemy_speed_scale(enemy) if equipment != null else 1.0
+			enemy.position = move_world(enemy.position, offset.normalized() * minf(float(enemy.get("speed", 76.0)) * slow * delta, offset.length() - 32))
 		elif offset.length() <= 32 and hurt_timer <= 0:
-			health = maxi(0, health - 10)
+			health = maxi(0, health - incoming_damage(int(enemy.get("damage", 10))))
 			hurt_timer = 1.0
 	_tick_projectiles(delta)
 	for i in range(effects.size() - 1, -1, -1):
@@ -327,24 +455,33 @@ func _tick_projectiles(delta: float) -> void:
 		var start: Vector2 = shot.position
 		shot.position += shot.velocity * delta
 		shot.life -= delta
+		# Sweep the whole segment so fast shots cannot cross an obstacle between frames.
+		var blocked := false
+		for sample in range(1, maxi(1, ceili(start.distance_to(shot.position) / 12.0)) + 1):
+			var count := maxi(1, ceili(start.distance_to(shot.position) / 12.0))
+			if not Maps.walkable(region, start.lerp(shot.position, float(sample) / count), 0):
+				shot.position = start.lerp(shot.position, float(sample - 1) / count)
+				blocked = true
+				break
 		var hit: Dictionary = {}
 		var nearest := INF
-		for enemy: Dictionary in states[region].enemies:
-			var center: Vector2 = enemy.position - Vector2(0, 30)
+		for enemy: Dictionary in combat_targets():
+			var center: Vector2 = enemy.position - Vector2(0, float(enemy.get("hit_height", 30)))
 			var closest := Geometry2D.get_closest_point_to_segment(center, start, shot.position)
-			if int(enemy.hp) > 0 and center.distance_to(closest) <= 28 and start.distance_to(closest) < nearest:
+			if int(enemy.hp) > 0 and center.distance_to(closest) <= float(enemy.get("hit_radius", 28)) and start.distance_to(closest) < nearest:
 				hit = enemy
 				nearest = start.distance_to(closest)
 		if not hit.is_empty():
-			_damage(hit, int(ATTACKS.k.damage))
+			_damage(hit, int(ATTACKS.k.damage), "k")
 			shot.life = 0.0
-		if float(shot.life) <= 0 or not Maps.walkable(region, shot.position, 0):
+		if blocked or float(shot.life) <= 0 or not Maps.walkable(region, shot.position, 0):
 			projectiles.remove_at(i)
 	_remove_dead()
 
 func _end_round(won: bool) -> void:
+	sound_requested.emit("victory" if won else "defeat")
 	finished = true
-	result.text = "五域已肃清 · 战斗目标完成\n采集 %d 份，可继续寻找人物线索。" % _inventory_total() if won else "本轮探索结束\n采集物品 %d 份，重开后再试一次。" % _inventory_total()
+	result.text = "十域已肃清 · 战斗目标完成\n采集 %d 份，可继续寻找人物线索。" % _inventory_total() if won else "本轮探索结束\n采集物品 %d 份，重开后再试一次。" % _inventory_total()
 	continue_button.visible = won
 	outcome.show()
 
@@ -364,13 +501,13 @@ func _refresh_ui() -> void:
 	skills.text = "    ".join(parts)
 	var cleared := 0
 	for id: String in states:
-		if states[id].enemies.is_empty():
+		if states[id].enemies.is_empty() and (get_node_or_null("Bosses") == null or get_node("Bosses").targets(id).is_empty()) and (get_node_or_null("Chests") == null or get_node("Chests").targets(id).is_empty()):
 			cleared += 1
 	var target := interaction_target()
 	var prompt := "E " + str(target.name) if not target.is_empty() else "循路探索地标；M 跨区旅行，B 查看行囊与已发现线索。"
-	var next := states[region].visited.find(false)
+	var next: int = states[region].visited.find(false)
 	var objective := "本地人物线索已齐" if next < 0 else "下一线索：" + str(Maps.MAPS[region].sites[next][0])
-	hint.text = "%s   |   %s\n五域肃清 %d / 5  ·  人物见闻 %d / 15  ·  小地图：金色菱形为地标，蓝圈为出口，白点为你。" % [prompt, objective, cleared, _visited_total()]
+	hint.text = "%s   |   %s\n区域肃清 %d / %d  ·  人物见闻 %d / %d  ·  小地图：金色菱形为地标，蓝圈为出口，白点为你。" % [prompt, objective, cleared, Maps.IDS.size(), _visited_total(), Maps.site_total()]
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#0d1c26"))
@@ -397,18 +534,24 @@ func _draw_world() -> void:
 		canvas.draw_arc(point - Vector2(0, 35), 42, 0, TAU, 32, Color("#88cce3"), 5, true)
 		canvas.draw_string(font, point + Vector2(-70, 36), "E → " + str(Catalog.REGIONS[exit[0]].name), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#a2d8e4"))
 	for pickup: Dictionary in states[region].pickups:
+		if pickup.get("weather_growth", false):
+			continue # Renewable plants are drawn by the weather module with growth rings.
 		var color := Color(Catalog.ITEMS[pickup.item].color)
 		canvas.draw_circle(pickup.position, 19, Color(color, 0.16))
-		canvas.draw_circle(pickup.position, 7, color)
+		if Loot.ITEMS.has(pickup.item):
+			canvas.draw_arc(pickup.position, 24, 0, TAU, 32, color, 2, true)
+			canvas.draw_texture_rect(Loot.ITEMS[pickup.item].icon, Rect2(pickup.position - Vector2(22, 24), Vector2(44, 44)), false)
+		else:
+			canvas.draw_circle(pickup.position, 7, color)
 		canvas.draw_string(font, pickup.position + Vector2(-18, 35), Catalog.ITEMS[pickup.item].name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
 	for enemy: Dictionary in states[region].enemies:
 		var point: Vector2 = enemy.position
 		canvas.draw_set_transform(point, 0, Vector2(1, 0.30))
 		canvas.draw_circle(Vector2.ZERO, 29, Color(0.02, 0.04, 0.05, 0.45))
 		canvas.draw_set_transform(Vector2.ZERO)
-		canvas.draw_texture_rect(ENEMY_ART, Rect2(point - Vector2(38, 76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color.WHITE)
+		canvas.draw_texture_rect(ENEMY_ART, Rect2(point - Vector2(38, 76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color(enemy.get("tint", Color.WHITE)))
 		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56, 5)), Color("#18212b"))
-		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56 * float(enemy.hp) / 60.0, 5)), Color("#dc947e"))
+		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56 * float(enemy.hp) / float(enemy.get("max_hp", 60)), 5)), Color("#dc947e"))
 	var origin := player_foot - Vector2(0, 30)
 	canvas.draw_line(origin + facing * 26, origin + facing * 48, Color("#f5d69b"), 3, true)
 	for shot: Dictionary in projectiles:
@@ -421,7 +564,7 @@ func _draw_world() -> void:
 		canvas.draw_arc(effect.position, float(effect.radius), 0 if effect.kind == "l" else angle - 1.4, TAU if effect.kind == "l" else angle + 1.4, 48, color, 7, true)
 
 func _paused() -> bool:
-	return tools.is_open() or dialogue.visible or journal.visible
+	return get_meta("audio_settings_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
 
 func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
 	var point := origin
@@ -437,7 +580,9 @@ func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
 	return point
 
 func _update_camera() -> void:
-	camera_origin = (player_foot - ARENA.size * 0.5).clamp(Vector2.ZERO, Maps.MAPS[region].size - ARENA.size)
+	# Leave headroom for tall boss silhouettes and their health bars.
+	var headroom := buildings.camera_height() if buildings != null else 0.65
+	camera_origin = (player_foot - ARENA.size * Vector2(0.5, headroom)).clamp(Vector2.ZERO, Maps.MAPS[region].size - ARENA.size)
 	world_canvas.position = -camera_origin
 	minimap.queue_redraw()
 
@@ -451,6 +596,9 @@ func interaction_target() -> Dictionary:
 	for exit: Array in data.exits:
 		if player_foot.distance_to(exit[1] * data.size) <= 120:
 			return {"kind": "exit", "destination": exit[0], "name": "前往" + str(Catalog.REGIONS[exit[0]].name)}
+	var chests := get_node_or_null("Chests")
+	if chests != null:
+		return chests.interaction_target()
 	return {}
 
 func interact() -> void:
@@ -459,8 +607,13 @@ func interact() -> void:
 	var target := interaction_target()
 	if target.is_empty():
 		return
+	if target.kind in ["site", "rest"]:
+		sound_requested.emit("discovery")
 	var data: Dictionary = Maps.MAPS[region]
 	match target.kind:
+		"chest":
+			get_node("Chests").interact(target.chest)
+			return
 		"exit":
 			enter_region(target.destination, true)
 			return
@@ -479,7 +632,7 @@ func interact() -> void:
 				dialogue_text.text = "线索尚缺一段。先前往“%s”调查，再回来看这里的记录。" % data.sites[index - 1][0]
 			else:
 				states[region].visited[index] = true
-				dialogue_text.text = "%s · %s\n%s\n\n%s" % [data.npc, data.chapter, data.sites[index][2], "五位人物的见闻已收齐。后续复苏与调查的故事仍待继续。" if _visited_total() == 15 else "已记入见闻。B 可回看。"]
+				dialogue_text.text = "%s · %s\n%s\n\n%s" % [data.npc, data.chapter, data.sites[index][2], "十域人物见闻已收齐。后续复苏与调查的故事仍待继续。" if _visited_total() == Maps.site_total() else "已记入见闻。B 可回看。"]
 	dialogue.show()
 	model.update_movement(Vector2.ZERO, 0)
 	_refresh_ui()
@@ -494,16 +647,56 @@ func _visited_total() -> int:
 	return count
 
 func open_journal() -> void:
-	var lines: Array[String] = ["行囊与见闻  ·  本轮采集 %d 份  ·  人物线索 %d / 15" % [_inventory_total(), _visited_total()], "材料供探索收集，武器合成与升级仍为后续内容。"]
+	journal_text.bbcode_enabled = true
+	var lines: Array[String] = ["行囊与见闻  ·  本轮收集 %d 份  ·  人物线索 %d / %d" % [_inventory_total(), _visited_total(), Maps.site_total()], "C 打开人物装备，可穿戴、替换与卸下；装备数量包含已穿戴物品，本轮有效。"]
+	for item: String in Loot.ITEMS:
+		if int(inventory.get(item, 0)) > 0:
+			lines.append("[img=44x44]%s[/img]  %s × %d" % [Loot.ITEMS[item].icon.resource_path, Loot.ITEMS[item].name, inventory[item]])
 	for item: String in inventory:
-		if inventory[item] > 0:
+		if inventory[item] > 0 and not Loot.ITEMS.has(item):
 			lines.append("%s × %d" % [Catalog.ITEMS[item].name, inventory[item]])
+	var chests := get_node_or_null("Chests")
+	if chests != null:
+		lines.append("\n宝箱 · 金色方块为普通箱，紫色方块为异变箱；靠近按E开启。")
+		for id: String in Maps.IDS:
+			lines.append("%s：%s" % [Catalog.REGIONS[id].name, chests.summary(id)])
+	lines.append("\n掉落规则 · 小怪35%掉落装备，Boss必掉1件；靠近光圈自动拾取。")
+	for id: String in Maps.IDS:
+		lines.append("%s：%s" % [Catalog.REGIONS[id].name, Loot.REGIONS[id].name])
+	for id: String in Loot.BOSSES:
+		var config: Dictionary = Loot.BOSSES[id]
+		var choices: Array[String] = []
+		for item: String in Loot.pool(config):
+			choices.append(Loot.ITEMS[item].name)
+		lines.append("%s必掉1件（等概率）：%s" % [Bosses.Catalog.DEFINITIONS[id].name, "、".join(choices)])
+	var traps := get_node_or_null("Traps")
+	if traps != null and traps.initialized:
+		lines.append("\n环境陷阱 · 黄圈预警后爆发，可用WASD闪避；地图、对话、行囊与结算时暂停。")
+		for id: String in Maps.IDS:
+			lines.append("\n%s：%s" % [Catalog.REGIONS[id].name, traps.summary(id)])
+	var weather := get_node_or_null("Weather")
+	if weather != null and weather.initialized:
+		lines.append("\n天气与生态 · 每75秒轮换；适生药圃18–28秒成熟，可反复采集。")
+		for id: String in Maps.IDS:
+			lines.append("\n%s：%s" % [Catalog.REGIONS[id].name, weather.summary(id)])
+			for item: String in weather.Ecology.CLIMATES[id].plants:
+				lines.append("%s · 适生%s · %.0f秒成熟" % [Catalog.ITEMS[item].name, weather.Ecology.weather_names(weather.Ecology.PLANTS[item].weather), weather.Ecology.PLANTS[item].time])
+	var bosses := get_node_or_null("Bosses")
+	if bosses != null:
+		lines.append("\n首领 · 小地图红菱形；预警圈锁定后可走出躲避。")
+		for id: String in Maps.IDS:
+			lines.append("%s：%s" % [Catalog.REGIONS[id].name, bosses.summary(id)])
 	for id: String in Maps.IDS:
 		var data: Dictionary = Maps.MAPS[id]
 		lines.append("\n%s · %s" % [data.npc, data.chapter])
 		for i in range(data.sites.size()):
 			lines.append("%s：%s" % [data.sites[i][0], data.sites[i][2] if states[id].visited[i] else "尚未调查"])
 	journal_text.text = "\n".join(lines)
+	if buildings != null:
+		journal_text.text += "\n\n大型建筑 · 绿光增益 / 紫光减益；入口光圈触发60秒，同类替换。\n" + buildings.status_text()
+		for id: String in Maps.IDS:
+			journal_text.text += "\n" + Catalog.REGIONS[id].name + "：" + buildings.summary(id)
+	journal_text.scroll_to_line(0)
 	journal.show()
 	model.update_movement(Vector2.ZERO, 0)
 
@@ -527,5 +720,7 @@ func _draw_minimap() -> void:
 		minimap.draw_colored_polygon(PackedVector2Array([point + Vector2(0, -5), point + Vector2(5, 0), point + Vector2(0, 5), point + Vector2(-5, 0)]), color)
 	for exit: Array in Maps.MAPS[region].exits:
 		minimap.draw_arc(rect.position + exit[1] * rect.size, 5, 0, TAU, 12, Color("#8ed6ec"), 2, true)
+	for pickup: Dictionary in states[region].pickups:
+		minimap.draw_circle(rect.position + pickup.position / extent * rect.size, 1.5, Color("#9db88c", 0.65))
 	minimap.draw_rect(Rect2(rect.position + camera_origin / extent * rect.size, ARENA.size / extent * rect.size), Color("#d4e7d2"), false)
 	minimap.draw_circle(rect.position + player_foot / extent * rect.size, 4, Color.WHITE)

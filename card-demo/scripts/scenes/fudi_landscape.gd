@@ -31,11 +31,20 @@ static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 			canvas.draw_style_box(_box(Color("#203e37"), Color("#739276")), rect)
 			for x in range(int(rect.position.x) + 30, int(rect.end.x), 45):
 				canvas.draw_line(Vector2(x, rect.position.y + 20), Vector2(x, rect.end.y - 20), Color("#516d4a"), 12, true)
-		elif data.terrain == "quarry":
+		elif data.terrain == "wetland" or data.terrain == "causeway":
+			canvas.draw_style_box(_box(Color("#1d414f"), Color("#76a6ab")), rect)
+			for n in range(5):
+				var y := rect.position.y + (n + 1) * rect.size.y / 6
+				canvas.draw_line(Vector2(rect.position.x + 15, y), Vector2(rect.end.x - 15, y - 8), Color("#80c7d0", 0.28), 3, true)
+			if data.terrain == "wetland":
+				for n in range(6):
+					var point := rect.position + Vector2(16 + n * rect.size.x / 7, rect.size.y - 8)
+					canvas.draw_line(point, point - Vector2(7, 30), Color("#a5c488"), 3, true)
+		elif data.terrain == "quarry" or data.terrain == "snowridge":
 			canvas.draw_style_box(_box(Color("#55483e"), Color("#ab9068")), rect)
 			for n in range(4):
 				var p := rect.position + rect.size * Vector2((n + 0.5) / 4.0, 0.55)
-				canvas.draw_colored_polygon(PackedVector2Array([p + Vector2(-32, 18), p + Vector2(-20, -34), p + Vector2(22, -45), p + Vector2(44, 10)]), Color("#8a7b65"))
+				canvas.draw_colored_polygon(PackedVector2Array([p + Vector2(-32, 18), p + Vector2(-20, -34), p + Vector2(22, -45), p + Vector2(44, 10)]), Color("#cedcda") if data.terrain == "snowridge" else Color("#8a7b65"))
 		else:
 			building(canvas, rect, Color("#46565a") if data.terrain == "archive" else Color("#746855"), accent)
 	# Small scenery remains outside the clear roads and authored collision volumes.
@@ -51,10 +60,10 @@ static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 		if on_road:
 			continue
 		canvas.draw_circle(point, 27, Color(0.02, 0.04, 0.04, 0.25))
-		if data.terrain in ["garden", "camp"]:
+		if data.terrain in ["garden", "camp", "kilnwood"]:
 			canvas.draw_line(point, point + Vector2(0, -48), Color("#7d6c50"), 8, true)
-			canvas.draw_circle(point + Vector2(0, -57), 36, Color("#365948"))
-			canvas.draw_circle(point + Vector2(-13, -67), 22, Color("#527257"))
+			canvas.draw_circle(point + Vector2(0, -57), 36, Color("#484c36") if data.terrain == "kilnwood" else Color("#365948"))
+			canvas.draw_circle(point + Vector2(-13, -67), 22, Color("#757b47") if data.terrain == "kilnwood" else Color("#527257"))
 		else:
 			canvas.draw_style_box(_box(Color("#65716b"), Color("#8c9a8e")), Rect2(point - Vector2(22, 40), Vector2(44, 40)))
 	# The boundary is visible and shares the exact movement bounds.

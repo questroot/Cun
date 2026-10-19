@@ -5,6 +5,7 @@ var region := "city"
 var atlas: Atlas
 var confirm: Control
 var confirm_ok: Button
+var modal_blocker: Callable
 
 func _ready() -> void:
 	layer = 90
@@ -59,6 +60,8 @@ func switch_game() -> void:
 		GameManager.goto_scene("menu")
 
 func _input(event: InputEvent) -> void:
+	if modal_blocker.is_valid() and modal_blocker.call():
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if confirm.visible:
 			if event.keycode == KEY_ESCAPE:

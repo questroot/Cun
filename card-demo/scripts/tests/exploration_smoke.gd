@@ -27,14 +27,18 @@ func key(code: int, pressed: bool = true) -> void:
 	Input.flush_buffered_events()
 
 func click(button: Control) -> void:
+	await frames()
+	var motion := InputEventMouseMotion.new()
+	motion.position = button.get_global_rect().get_center()
+	button.get_viewport().push_input(motion, true)
 	var event := InputEventMouseButton.new()
 	event.position = button.get_global_rect().get_center()
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = true
-	button.get_viewport().push_input(event)
+	button.get_viewport().push_input(event, true)
 	event = event.duplicate()
 	event.pressed = false
-	button.get_viewport().push_input(event)
+	button.get_viewport().push_input(event, true)
 	await frames()
 
 func capture(label: String) -> void:
@@ -79,7 +83,7 @@ func run_checks() -> void:
 	await frames()
 	game = current_scene
 	game.set_process(false)
-	check(game.name == "Fudi" and game.health == 100 and game.states.size() == 5, "通过实际入口按钮进入福地，初始五域与生命正确")
+	check(game.name == "Fudi" and game.health == 100 and game.states.size() == 10, "通过实际入口按钮进入福地，初始十域与生命正确")
 	for id: String in Maps.IDS:
 		check(game.remaining_resources(id) == Catalog.REGIONS[id].resources, "地图配置与真实采集节点一致: " + id)
 	check(Catalog.scarcity(0) == "已采尽" and Catalog.scarcity(1) == "极稀缺" and Catalog.scarcity(3) == "稀缺" and Catalog.scarcity(6) == "适中" and Catalog.scarcity(8) == "丰富", "稀缺度边界与已采尽正确")
@@ -120,7 +124,7 @@ func run_checks() -> void:
 	await click(game.tools.atlas.region_buttons["quarry"])
 	check(game.tools.atlas.selected_region == "quarry", "鼠标点击矿谷更新物品详情")
 	await capture("atlas_quarry")
-	var travel = game.tools.atlas.detail.get_child(game.tools.atlas.detail.get_child_count() - 1)
+	var travel = game.tools.atlas.travel_button
 	await click(travel)
 	check(game.region == "quarry" and not game.tools.atlas.visible, "地图前往按钮切换实际区域并关闭地图")
 	var pickup: Dictionary = game.states.quarry.pickups[0]
@@ -140,6 +144,8 @@ func run_checks() -> void:
 	key(KEY_ESCAPE)
 	key(KEY_ESCAPE, false)
 	check(not game.tools.atlas.visible, "Esc关闭地图")
+	await verify_large_maps()
+	game.enter_region("quarry")
 	# Controlled combat fixture, with real key events for each skill.
 	game.player_foot = Vector2(600, 460)
 	game.facing = Vector2.RIGHT
@@ -203,9 +209,18 @@ func run_checks() -> void:
 	check(game.health == 100 and game.inventory.wood == 0 and not game.finished and game.remaining_resources("quarry").wood == 2, "重新开始重置生命、资源及本轮状态")
 	for id: String in game.states:
 		game.states[id].enemies.clear()
+	for boss: Dictionary in game.get_node("Bosses").bosses.values():
+		boss.hp = 0
 	game._remove_dead()
-	check(game.finished and game.outcome.visible and game.result.text.contains("五域已肃清"), "清理全部五域显示胜利结算")
+	check(game.finished and game.outcome.visible and game.result.text.contains("十域已肃清"), "清理全部十域显示胜利结算")
 	await capture("victory")
+	await click(game.continue_button)
+	if not is_instance_valid(game):
+		check(false, "继续探索保留当前福地场景")
+		quit(1)
+		return
+	game._process(0.1)
+	check(not game.finished and not game.outcome.visible and game.round_cleared, "胜利后可继续探索，不重复弹出结算")
 	game.tools.switch_game()
 	await frames()
 	await click(game.tools.confirm_ok)
@@ -233,3 +248,192 @@ func run_checks() -> void:
 	check(data.save_data == progress and FileAccess.get_file_as_string(data.SAVE_PATH) == saved, "双游戏、采集、地图及重开不修改灵伴存档")
 	print("EXPLORATION_RESULT: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
+
+func reachable_cells(id: String) -> Dictionary:
+	var seen: Dictionary = {}
+	var start: Vector2i = Vector2i((Maps.MAPS[id].spawn * Maps.MAPS[id].size / 64.0).floor())
+	var frontier: Array[Vector2i] = [start]
+	seen[start] = true
+	var cursor := 0
+	while cursor < frontier.size():
+		var cell := frontier[cursor]
+		cursor += 1
+		for offset: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next := cell + offset
+			if not seen.has(next) and Maps.walkable(id, (Vector2(next) + Vector2(0.5, 0.5)) * 64, 28):
+				seen[next] = true
+				frontier.append(next)
+	return seen
+
+func verify_large_maps() -> void:
+	await verify_connections()
+	for id: String in Maps.IDS:
+		game.enter_region(id)
+		var extent: Vector2 = Maps.MAPS[id].size
+		check(extent.x >= 3600 and extent.y >= 2400, "实际世界尺寸扩大且超过单屏: " + id)
+		var reachable := reachable_cells(id)
+		var targets: Array[Vector2] = []
+		for i in range(3):
+			targets.append(Maps.site_position(id, i))
+		for exit: Array in Maps.MAPS[id].exits:
+			targets.append(exit[1] * extent)
+		for pickup: Dictionary in game.states[id].pickups:
+			targets.append(pickup.position)
+		for enemy: Dictionary in game.states[id].enemies:
+			targets.append(enemy.position)
+		var accessible := true
+		for point: Vector2 in targets:
+			accessible = accessible and Maps.walkable(id, point) and reachable.has(Vector2i((point / 64.0).floor()))
+		check(accessible, "全部地标、出口、资源、敌人从出生点连通: " + id)
+		var roads_clear := true
+		for road: Array in Maps.MAPS[id].roads:
+			for n in range(road.size() - 1):
+				var start: Vector2 = road[n] * extent
+				var end: Vector2 = road[n + 1] * extent
+				var steps := maxi(1, ceili(start.distance_to(end) / 24))
+				for sample in range(steps + 1):
+					roads_clear = roads_clear and Maps.walkable(id, start.lerp(end, float(sample) / steps), 46)
+		check(roads_clear, "整段道路保留通行宽度，路线不穿过障碍: " + id)
+		var obstacle: Rect2 = Maps.obstacles(id)[0]
+		var before := Vector2(obstacle.position.x - 35, obstacle.get_center().y)
+		var stopped: Vector2 = game.move_world(before, Vector2(obstacle.size.x + 100, 0))
+		check(stopped.x < obstacle.position.x - 21, "大步移动不能穿过地形障碍: " + id)
+		game.player_foot = Maps.site_position(id, 2)
+		key(KEY_E)
+		key(KEY_E, false)
+		check(game.dialogue.visible and not game.states[id].visited[2], "后续线索要求先调查前序地标: " + id)
+		key(KEY_ESCAPE)
+		key(KEY_ESCAPE, false)
+		for i in range(3):
+			game.player_foot = Maps.site_position(id, i)
+			game._process(0)
+			key(KEY_E)
+			key(KEY_E, false)
+			check(game.states[id].visited[i] and game.dialogue.visible, "真实E键调查人物线索 %s/%d" % [id, i])
+			var foot: Vector2 = game.player_foot
+			var health: int = game.health
+			key(KEY_D)
+			key(KEY_J)
+			key(KEY_J, false)
+			game._process(1)
+			key(KEY_D, false)
+			check(game.player_foot == foot and game.health == health and not game.attack("k"), "读剧情时暂停移动与战斗: %s/%d" % [id, i])
+			if i == 0:
+				await capture("story_" + id)
+			key(KEY_E)
+			key(KEY_E, false)
+		await capture("map_" + id)
+		game.tools.open_map()
+		await frames()
+		check(game.tools.atlas.travel_button.get_global_rect().end.y < 680, "资源长列表不遮挡固定旅行按钮: " + id)
+		await click(game.tools.atlas.region_buttons["grove"])
+		await click(game.tools.atlas.travel_button)
+		check(game.region == "grove" and not game.tools.atlas.visible and game.states[id].visited == [true, true, true], "跨区旅行保留人物线索与正确返回: " + id)
+	check(game._visited_total() == 30 and Maps.site_total() == 30, "十张地图共30处见闻可以完成")
+	game.enter_region("grove")
+	game.player_foot = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size
+	var before_walk: Vector2 = game.player_foot
+	key(KEY_S)
+	for i in range(45):
+		game._process(0.05)
+	key(KEY_S, false)
+	check(game.player_foot.y - before_walk.y > 500 and game.camera_origin.y > 1000 and game.model.walking, "真实连续WASD走出旧范围，镜头跟随且播放行走")
+	game.player_foot = Maps.MAPS.grove.size - Vector2(30, 30)
+	game._process(0)
+	check(game.camera_origin.is_equal_approx(Maps.MAPS.grove.size - game.ARENA.size), "远端镜头限制在世界边界内")
+	game.player_foot = Maps.MAPS.grove.exits[1][1] * Maps.MAPS.grove.size
+	key(KEY_E)
+	key(KEY_E, false)
+	check(game.region == "post" and Maps.walkable("post", game.player_foot), "真实E键通过地图出口，抵达相邻区域安全位置")
+	game.tools.switch_game()
+	check(game.tools.confirm.visible, "新增邮驿切换游戏保留进度重置提醒")
+	game.tools.confirm.hide()
+	game.enter_region("refuge")
+	game.tools.switch_game()
+	check(game.tools.confirm.visible, "新增救援营切换游戏保留进度重置提醒")
+	game.tools.confirm.hide()
+	game.player_foot = Maps.MAPS.refuge.spawn * Maps.MAPS.refuge.size
+	game.health = 40
+	key(KEY_E)
+	key(KEY_E, false)
+	check(game.health == 100 and game.states.refuge.rested, "休息点按E恢复生命")
+	key(KEY_ESCAPE)
+	key(KEY_ESCAPE, false)
+	game.health = 80
+	key(KEY_E)
+	key(KEY_E, false)
+	check(game.health == 80, "休息物资不能重复领取")
+	key(KEY_ESCAPE)
+	key(KEY_ESCAPE, false)
+	key(KEY_B)
+	key(KEY_B, false)
+	check(game.journal.visible and game.journal_text.get_parsed_text().contains("温砚") and game.journal_text.get_parsed_text().contains("30 / 30"), "B打开完整行囊和十域人物的已发现见闻")
+	var foot: Vector2 = game.player_foot
+	key(KEY_D)
+	game._process(0.1)
+	key(KEY_D, false)
+	check(game.player_foot == foot, "行囊与见闻暂停游戏")
+	await capture("journal")
+	key(KEY_B)
+	key(KEY_B, false)
+	check(not game.journal.visible, "B关闭行囊")
+	game.health = 100
+
+func verify_connections() -> void:
+	var reached := {"grove": true}
+	var pending: Array[String] = ["grove"]
+	var cursor := 0
+	while cursor < pending.size():
+		var id := pending[cursor]
+		cursor += 1
+		for exit: Array in Maps.MAPS[id].exits:
+			if not reached.has(exit[0]):
+				reached[exit[0]] = true
+				pending.append(exit[0])
+	check(reached.size() == 10 and Catalog.FUDI_REGIONS == Maps.IDS, "十地出口图连通，旅行白名单与实际地图一致")
+	for id: String in Maps.IDS:
+		for exit: Array in Maps.MAPS[id].exits:
+			game.enter_region(id)
+			game.player_foot = exit[1] * Maps.MAPS[id].size
+			key(KEY_E)
+			key(KEY_E, false)
+			var safe_arrival := false
+			for reverse: Array in Maps.MAPS[exit[0]].exits:
+				if reverse[0] == id:
+					var gate: Vector2 = reverse[1] * Maps.MAPS[exit[0]].size
+					safe_arrival = Maps.walkable(exit[0], game.player_foot) and is_equal_approx(game.player_foot.distance_to(gate), 100.0)
+			check(game.region == exit[0] and safe_arrival, "实际E键通行及双向安全落点：%s → %s" % [id, exit[0]])
+	game.tools.open_map()
+	await frames()
+	var atlas = game.tools.atlas
+	var buttons: Array = atlas.region_buttons.values()
+	var visible := buttons.size() == 13
+	var separated := true
+	for i in range(buttons.size()):
+		visible = visible and atlas.map_surface.get_global_rect().encloses(buttons[i].get_global_rect())
+		for j in range(i + 1, buttons.size()):
+			if buttons[i].get_global_rect().intersects(buttons[j].get_global_rect()):
+				print("Overlapping atlas buttons: %s %s / %s %s" % [buttons[i].name, buttons[i].get_global_rect(), buttons[j].name, buttons[j].get_global_rect()])
+			separated = separated and not buttons[i].get_global_rect().intersects(buttons[j].get_global_rect())
+	check(visible and separated, "三张灵伴区域与十张福地图标全部可见且不重叠")
+	var center: Vector2 = atlas._ring_center()
+	var outer_radius: float = atlas._outer_radius()
+	var rings_valid := Maps.INNER_RING.size() == 5 and Maps.OUTER_RING.size() == 5
+	for ring: Array in [Maps.INNER_RING, Maps.OUTER_RING]:
+		for i in range(ring.size()):
+			var id: String = ring[i]
+			var node: Button = atlas.region_buttons[id]
+			var distance := (node.position + node.size * 0.5).distance_to(center)
+			var expected := outer_radius * (0.5 if ring == Maps.INNER_RING else 1.0)
+			rings_valid = rings_valid and is_equal_approx(distance, expected)
+			var destinations := []
+			for exit: Array in Maps.MAPS[id].exits:
+				destinations.append(exit[0])
+			var other: Array = Maps.OUTER_RING if ring == Maps.INNER_RING else Maps.INNER_RING
+			rings_valid = rings_valid and destinations.size() == 3 and destinations.has(ring[(i + 1) % 5]) and destinations.has(ring[(i + 4) % 5]) and destinations.has(other[i])
+	check(rings_valid, "内外环同心且大圆半径为小圆两倍，真实出口对应双环与五条辐射通道")
+	for id: String in Maps.IDS:
+		await click(atlas.region_buttons[id])
+		check(atlas.selected_region == id and atlas.travel_button.visible, "同心圆节点可实际点击并显示旅行入口：" + id)
+	await capture("ten_regions")
+	atlas.close()
