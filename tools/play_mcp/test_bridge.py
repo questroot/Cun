@@ -18,7 +18,22 @@ def main():
     (run/'main.tscn').write_text('[gd_scene load_steps=2 format=3]\n[ext_resource type="Script" path="res://main.gd" id="1"]\n[node name="Fixture" type="Control"]\nscript=ExtResource("1")\n',encoding='utf-8')
     (run/'main.gd').write_text('extends Control\nfunc _ready() -> void:\n\tvar shown := Label.new()\n\tshown.text = "Visible text"\n\tadd_child(shown)\n\tvar partial := Label.new()\n\tpartial.text = "SeenSECRET_UNREVEALED"\n\tpartial.visible_characters = 4\n\tpartial.position.y = 30\n\tadd_child(partial)\n\tvar hidden := Label.new()\n\thidden.text = "SECRET_CLUE"\n\thidden.hide()\n\tadd_child(hidden)\n\tvar parent := Control.new()\n\tparent.hide()\n\tadd_child(parent)\n\tvar hidden_button := Button.new()\n\thidden_button.text = "SECRET_BUTTON"\n\tparent.add_child(hidden_button)\n\tvar button := Button.new()\n\tbutton.position = Vector2(50,50)\n\tbutton.size = Vector2(150,50)\n\tbutton.text = "Click me"\n\tbutton.pressed.connect(func(): shown.text = "Clicked via real input")\n\tadd_child(button)\n',encoding='utf-8')
     with (run/'main.gd').open('a',encoding='utf-8') as f:
-        f.write('''	add_to_group("cun_play_visible")
+        f.write('''	var clip := Control.new()
+	clip.position = Vector2(20,200)
+	clip.size = Vector2(200,20)
+	clip.clip_contents = true
+	add_child(clip)
+	var cropped := Button.new()
+	cropped.text = "Partially clipped"
+	cropped.position = Vector2(0,10)
+	cropped.size = Vector2(160,50)
+	cropped.pressed.connect(func(): get_child(0).text = "Clipped button received real click")
+	clip.add_child(cropped)
+	var outside := Button.new()
+	outside.text = "SECRET_CLIPPED"
+	outside.position = Vector2(0,80)
+	clip.add_child(outside)
+	add_to_group("cun_play_visible")
 	var gm := Button.new()
 	gm.text = "GM blocked"
 	gm.position = Vector2(300,100)
@@ -61,7 +76,11 @@ func play_visible() -> Dictionary:
                     time.sleep(.1)
             assert 'SECRET' not in json.dumps(observation)
             assert 'Visible text' in observation['texts']
-            assert len(observation['buttons'])==2
+            assert len(observation['buttons'])==3
+            cropped = next(b for b in observation['buttons'] if b['text']=='Partially clipped')
+            assert cropped['rect']['height'] <= 10.1
+            crop_result = request('action',{'kind':'click','button_id':cropped['id']})
+            assert crop_result['ok'] and 'Clipped button received real click' in crop_result['result']['texts'], crop_result
             assert observation['visible'][0]['description'].startswith('Fixture drawn')
             blocked = next(b for b in observation['buttons'] if b.get('blocked'))
             assert blocked['disabled']
