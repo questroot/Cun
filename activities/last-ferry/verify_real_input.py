@@ -47,6 +47,7 @@ try:
     go(115,565);key('e');go(455,465);key('e');click('转述本人意愿')
     go(750,565);key('e');go(460,335);key('e');click('把两岸的答复')
     started=obs();assert '次日尾声' not in '\n'.join(started['texts'])
+    assert '当面挂回钟腹' in json.dumps(started,ensure_ascii=False),started
     go(590,445);key('e');click('留在干阶上');rung=obs();assert '那边也应了' in json.dumps(rung,ensure_ascii=False)
     key('escape');departed=obs();assert any(o['title']=='已离岸的夜船' for o in departed['visible'][0]['objects']),departed
     click('保存');key('d',8);click('读取');click('确认')
@@ -55,6 +56,7 @@ try:
     key('e');click('船离岸后');click('不必等话');click('确认');dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']) and '结束渡程' in json.dumps(dawn,ensure_ascii=False)
     go(115,565);key('e');go(95,565);key('e');go(100,440);key('e')
     go(320,375);key('e');click('先请人看屋顶');morning=obs();assert '午后可带人来' in json.dumps(morning,ensure_ascii=False)
+    basin=morning['visible'][0]['visible_basin'];assert basin['x']==450 and basin['y']==340 and basin['appearance']=='接住滴水',morning
     go(450,575);key('e');go(450,565);key('e');click('离开这段体验');click('确认')
     left=obs();assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
     out=s.run_dir/'release-evidence.json';out.write_text(json.dumps({'begun':started,'rope_released':rung,'departed_world':departed,'restored_mid_scene':restored,'dawn':dawn,'morning_choice':morning,'formal_departure':left,'method':'normal opening, bounded MCP inputs only; coordinator knows route, not blind play'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
