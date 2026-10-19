@@ -182,6 +182,26 @@ func act(id: String) -> bool:
 			if p != "shelter" or not flag("returned") or flag("forced"): return refuse("先补齐本人意愿与旧物归还；如果强夺伤了信任，请先道歉解释。")
 			set_flag("zhou_farewell")
 			note("你带回两岸的明确答复，说明这是结束渡程，不是让他忘记。周伯愿意敲最后一次钟，解除沈渡的承诺。")
+		"remove_shade":
+			if p != "shelter" or not flag("consent"): return refuse("这不是你的灯。先弄清白罩为何被加上，并与周伯谈妥。")
+			set_flag("shade_off")
+			note("你扶稳旧灯，松开新装白罩的两只卡扣。罩内露出一截用棉线扎住的铜片，河上混杂的呼唤低了下去；钟仍然不响。")
+		"retrieve_tongue":
+			if p != "shelter" or not flag("shade_off"): return refuse("外层灯罩还扣着，先别硬拉接线。")
+			if flag("tongue_home"): return refuse("铜舌已装回钟里。")
+			give("拆下的铜舌")
+			set_flag("tongue_taken")
+			note("你解开棉线，取出铜片。边缘的新断口与钟下的缺口相仿。旧灯还在，但不再兼着一只不该有的钟。")
+		"install_tongue":
+			if p != "shelter" or not item("拆下的铜舌"): return refuse("钟内的挂孔空着。你手里还没有能装回去的东西。")
+			take("拆下的铜舌")
+			set_flag("tongue_home")
+			note("铜片挂回钟腹，你轻推一下，只响了一声。周伯伸手扶住钟沿，没再替河上的声音应答。黄灯还暗着。")
+		"light_yellow":
+			if p != "shelter" or s.phase != "night": return refuse("傍晚仍看得清路。等天暗后再决定怎样摆灯。")
+			if not core() or not flag("consent") or not flag("shade_off") or not flag("tongue_home"): return refuse("你点起黄灯，白罩与缺舌的钟却还未分清各自的位置。周伯说：一边等，一边招手，船还是会误会。")
+			set_flag("yellow_lit")
+			finish("light")
 		"restore":
 			if p != "shelter" or s.phase != "night" or not core() or not flag("consent"): return refuse("留灯需要入夜、告示/灯罩/铜钟/旧约证据，以及周伯对恢复边界的同意。")
 			set_flag("shade_off")
@@ -280,7 +300,7 @@ func valid_save(data: Variant) -> bool:
 	for id in data.evidence:
 		if not id is String or not EVIDENCE.has(id): return false
 	for id in data.items:
-		if not id is String or not id in ["铜哨", "新灯芯", "手提黄灯"]: return false
+		if not id is String or not id in ["铜哨", "新灯芯", "手提黄灯", "拆下的铜舌"]: return false
 	if data.identity == "he" and "铜哨" in data.items: return false
 	for line in data.journal:
 		if not line is String: return false

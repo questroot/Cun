@@ -26,10 +26,29 @@ var sound_enabled := false
 var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
+	add_to_group("cun_play_visible")
 	font = ThemeDB.fallback_font
 	_setup_ui()
 	_setup_sound()
 	show_title()
+
+## Describes only objects and geometry already drawn on this screen.
+func play_visible() -> Dictionary:
+	if not started:
+		return {"location":"身份选择"}
+	var result := {"location":Story.PLACES[story.s.place], "player_screen":{"x":player.x,"y":player.y}, "controls":"WASD/方向键移动，靠近圆环E交互；J记录，I物品，Esc暂停", "modal_open":modal_open}
+	if modal_open:
+		return result
+	var targets: Array = []
+	for obj in scene_objects:
+		targets.append({"title":obj.title,"x":obj.pos.x,"y":obj.pos.y,"kind":obj.kind})
+	var obstacles: Array = []
+	for rect in solids:
+		obstacles.append({"x":rect.position.x,"y":rect.position.y,"width":rect.size.x,"height":rect.size.y})
+	result["objects"] = targets
+	result["obstacles"] = obstacles
+	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
+	return result
 
 func _setup_sound() -> void:
 	# Locally generated quiet, continuous river bed: no samples, network, peaks or scares.
@@ -162,8 +181,8 @@ func confirm(text: String, callback: Callable) -> void:
 
 func show_title() -> void:
 	open_modal("末班渡船", "俯视探索 · 独立活动首版\n\n在回水埠，一个傍晚，两种处境。选择身份后本次固定；你不必重演既定结局。\n\nWASD / 方向键自由走动，靠近发光圆环后按 E 打开交互，也可点击右侧按钮。走到路口，交互前往相邻地点。J 记录，I 物品，Esc 暂停。鼠标可点击场地下方方向按钮移动。\n\n探索、交谈、暂停和读记录都不会增加污染。入夜由你主动确认，没有倒计时。危险动作会再次确认，取消没有惩罚。所有图形与水声由本项目自制，无闪烁、跳吓或截图采集。")
-	button(modal_body, "许宁 · 返乡者｜铜哨辨认弟弟，可登船或留岸", func(): start_game("xu"))
-	button(modal_body, "阿禾 · 学徒｜送灯芯、借黄灯、提前干预举灯", func(): start_game("he"))
+	button(modal_body, "许宁 · 返乡者｜离家多年，回来处理旧屋", func(): start_game("xu"))
+	button(modal_body, "阿禾 · 学徒｜杂货铺帮工，熟悉这条街的人", func(): start_game("he"))
 	button(modal_body, "读取独立活动存档", load_game)
 	button(modal_body, "退出游戏", func(): get_tree().quit())
 	refresh_ui()
@@ -410,10 +429,17 @@ func interact() -> void:
 			"roof": button(modal_body, "查看漏雨的屋顶", func(): close_modal(); story.note("搪瓷盆底留着几圈旧水痕。屋子被人照料过，但还没修好。许宁说：下回，总是下回。"); refresh_ui())
 			"xu":
 				button(modal_body, "闲谈 · 她为什么还在等", func(): close_modal(); story.note("阿禾：周伯说今晚别去河边。你为什么还在等？\n许宁：因为他说别去的时候，没说那里什么都没有。"); refresh_ui())
-				act_button("分享灯罩与铜钟线索，请她自愿协助", "exchange")
+				if story.has("lamp") and story.has("bell"): act_button("告诉她棚里的灯罩与缺舌铜钟，问她愿不愿一起查", "exchange")
 			"timetable", "lamp", "bell", "inscription":
 				act_button("现场检查与记录", target)
-				if target == "bell": act_button("察看钟座背面刻记", "mark")
+				if target == "bell":
+					act_button("察看钟座背面刻记", "mark")
+					if story.item("拆下的铜舌"): act_button("将取出的铜片挂回钟腹", "install_tongue")
+				if target == "lamp" and story.flag("consent"):
+					if not story.flag("shade_off"): act_button("扶稳灯，松开外罩卡扣", "remove_shade")
+					elif not story.flag("tongue_taken"): act_button("解开罩内的棉线，取出铜片", "retrieve_tongue")
+				if target == "inscription" and story.s.phase == "night" and story.flag("consent"):
+					act_button("将黄灯留在等候的位置，点亮灯芯", "light_yellow")
 				if target == "lamp" and story.s.phase == "night":
 					if story.s.identity == "he": act_button("用手提黄灯换下白罩（需周伯同意）", "swap")
 					button(modal_body, "危险：举白灯回应河声", func():
@@ -424,12 +450,12 @@ func interact() -> void:
 			"zhou":
 				button(modal_body, "闲谈 · 明早的渡船", func(): close_modal(); story.note("周伯：最后一班已经走了。明天六点。桥开了，这棚就拆。我还能守几年？她要是回来，看不见灯怎么办？"); refresh_ui())
 				if story.s.identity == "he" and story.item("新灯芯"): act_button("交付新灯芯（物品）", "deliver")
-				act_button("依据黄灯铭文核实旧约", "verify")
-				act_button("说明灯钟因果，征求恢复边界同意", "consent")
-				if not story.flag("consent"): act_button("坚持先止误唤（损伤信任，仍可道歉）", "force")
+				if story.has("inscription"): act_button("问他：黄灯底座写的‘钟声归岸’是什么意思？", "verify")
+				if story.core():
+					act_button("拿出所见的告示、灯罩与钟，问能否把各自位置还原", "consent")
+					if not story.flag("consent"): act_button("不愿再等，坚持先收白灯", "force")
 				if story.flag("forced"): act_button("为强硬干预道歉并重新说明", "apologize")
 				if story.s.phase == "night":
-					act_button("留灯：取下白罩＋归还铜舌＋点亮黄灯", "restore")
 					act_button("转述本人意愿，请周伯敲最后一次钟", "farewell_consent")
 			"mooring":
 				if story.s.phase == "night":

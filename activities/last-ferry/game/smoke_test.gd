@@ -72,6 +72,19 @@ func run() -> void:
 
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
+		check(not at("shelter", "retrieve_tongue"), "cannot retrieve through closed shade")
+		check(not at("shelter", "install_tongue"), "cannot install absent tongue")
+		investigate()
+		check(at("shelter", "consent"), "physical repair begins with consent")
+		check(at("shelter", "remove_shade"), "player removes actual outer shade")
+		check(at("shelter", "retrieve_tongue") and state.item("拆下的铜舌"), "player carries removed tongue")
+		check(state.save_game() and state.load_game() and state.item("拆下的铜舌"), "in-progress physical repair survives save")
+		check(at("shelter", "install_tongue") and not state.item("拆下的铜舌"), "install consumes carried item")
+		check(not at("shelter", "light_yellow") and state.s.ending == "", "dusk repair does not skip night")
+		check(state.act("night") and at("shelter", "light_yellow") and state.s.ending == "light", "physical three-site repair resolves night")
+
+	for identity in ["xu", "he"]:
+		state.fresh(identity)
 		investigate()
 		check(at("shelter", "consent"), "farewell first gains trust")
 		check(state.act("night"), "farewell enters night")
