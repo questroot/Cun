@@ -13,6 +13,7 @@ var moving := false
 var transition_ready := false
 
 func _ready() -> void:
+	add_to_group("cun_play_visible")
 	var landscape := Node2D.new()
 	landscape.set_script(preload("res://scripts/scenes/outskirts_map.gd"))
 	add_child(landscape)
@@ -52,6 +53,9 @@ func _ready() -> void:
 	exploration_tools = ExplorationTools.new()
 	exploration_tools.region = "outskirts"
 	add_child(exploration_tools)
+
+func play_visible() -> Dictionary:
+	return {"location":"云庭外缘", "player_screen":{"x":player_foot.x,"y":player_foot.y}, "water_portal_screen":{"x":WATER_PORTAL.get_center().x,"y":WATER_PORTAL.get_center().y}, "return_gate_screen":{"x":RETURN.get_center().x,"y":RETURN.get_center().y}, "controls":"WASD或点击地面移动；右侧水门进入漂流浮台；左侧返回主城"}
 
 func _enable_transition() -> void:
 	transition_ready = true
