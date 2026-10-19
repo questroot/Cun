@@ -387,13 +387,15 @@ func update_world() -> void:
 			add_object("lamp", "卸下白罩的旧灯" if story.flag("shade_off") else "白罩船灯", Vector2(250, 360))
 			add_object("bell", "铜舌归位的钟" if story.flag("tongue_home") else "缺铜舌的钟", Vector2(550, 240))
 			add_object("inscription", "黄灯底座", Vector2(620, 390))
-			if story.s.phase != "epilogue" or story.s.ending == "light": add_object("zhou", "周伯", Vector2(455, 430), "npc")
+			if story.s.phase == "night" and story.flag("closing_light"):
+				add_object("zhou_absent", "周伯留下的空凳（他去了旧阶）", Vector2(455,430))
+			elif story.s.phase != "epilogue" or story.s.ending == "light": add_object("zhou", "周伯", Vector2(455, 430), "npc")
 			else: add_object("morning", "渡口次日告示", Vector2(455, 430))
 			add_object("street_gate", "回街口", Vector2(95, 570), "gate")
 			add_object("steps_gate", "去旧石阶", Vector2(750, 570), "gate")
 		"steps":
 			add_object("mooring", "系缆石", Vector2(460, 295))
-			if story.flag("closing_light"): add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
+			if story.flag("closing_light") and story.s.phase == "night": add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
 			if not story.flag("tool_returned") and not story.item("老葛的工具袋"): add_object("toolbag", "湿阶低处的布袋", Vector2(235, 355))
 			if story.s.phase == "night": add_object("ship", "靠岸夜船", Vector2(700, 295))
 			else: add_object("morning", "河面与普通渡船", Vector2(700, 295))
@@ -526,6 +528,8 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"zhou_absent":
+				button(modal_body, "看看棚边留下什么", func(): close_modal(); story.note("矮凳空着，通向旧阶的钟绳已经绷直。周伯没有消失，他说过要亲自把钟敲完。旧阶的路就在棚东侧。"); refresh_ui())
 			"closing_zhou":
 				if not story.flag("closing_rang"):
 					act_button("站到周伯身旁，等他敲钟", "closing_ring")
