@@ -269,7 +269,7 @@ func run() -> void:
 	check(not scene.modal_open, "repair manipulation does not open choice menus")
 	scene.start_game("he")
 	scene.travel("shelter")
-	scene.player = Vector2(455,430)
+	scene.player = Vector2(455,520)
 	scene.nearest = "zhou"
 	scene.interact()
 	scene.continue_zhou("zhou_memory")

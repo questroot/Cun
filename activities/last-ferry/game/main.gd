@@ -481,7 +481,7 @@ func continue_river(id: String) -> void:
 	var target := conversation_target
 	if not started or story.s.phase != "night" or not story.s.place in ["steps", "boat"]: return
 	var location := Vector2(460,295) if target == "mooring" else Vector2(570,335)
-	if player.distance_to(location) > 82: return
+	if player.distance_to(location) >= 96: return
 	story.act(id)
 	conversation_response = story.notice
 	modal_open = false
@@ -491,7 +491,13 @@ func continue_river(id: String) -> void:
 
 func continue_zhou(id: String) -> void:
 	# Keep the actual interlocutor nearby; never move or acquire evidence off-screen.
-	if not started or story.s.place != "shelter" or player.distance_to(Vector2(455,430)) > 82: return
+	if not started or story.s.place != "shelter": return
+	if player.distance_to(Vector2(455,430)) >= 96:
+		conversation_response = "隔得有些远，周伯没有听清。先结束谈话，走近一点再说。"
+		modal_open = false
+		nearest = "zhou"
+		interact()
+		return
 	story.act(id)
 	conversation_response = story.notice
 	modal_open = false
