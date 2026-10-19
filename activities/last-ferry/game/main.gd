@@ -413,8 +413,8 @@ func refresh_ui() -> void:
 	summary.text = "侵入 %d / 2　证据 %d 项\n%s" % [story.s.pollution, story.s.evidence.size(), (story.ending_name() if not story.s.ending.is_empty() else "无倒计时 · 调查/普通交谈不增加侵入")]
 	message.text = story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
-	if story.s.place == "house": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
-	if story.s.place == "shelter" and story.flag("consent"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
+	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
+	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue": foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
@@ -506,6 +506,7 @@ func interact() -> void:
 	conversation_target = target if target in ["zhou", "mooring", "voices"] else ""
 	open_modal(object_title(target), conversation_response if not conversation_target.is_empty() and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
 	if story.s.phase == "epilogue":
+		open_modal(object_title(target), "天已经亮了。夜里的处理不会因为你走访而重来；看看人们各自准备做的事，再决定何时离开。")
 		act_button("看看这里今早怎样继续", "epilogue")
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
