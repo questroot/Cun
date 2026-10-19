@@ -21,6 +21,8 @@
 
 运行 `python activities/last-ferry/verify_real_input.py`，或加 `--render` 使用普通窗口（不会截图）。脚本只调用公共PlayService的launch/observe/action/stop，不读剧情状态、不emit信号、不直切场景；从许宁正常开局按已知路线到解缆次日，再回旧屋选择请人看屋顶，最后街口正式离开。普通窗口 `--render` 已实际闭环通过，证据 `.runtime/91b6024082fc4f6c85713f191b1803b0/release-evidence.json`，不使用桌面截图。证据留在忽略的MCP运行目录，自有游戏在finally停止；不会停止独立玩家端点。它是已知路线回归，包含解法，不提供给盲玩会话；不替代人的体验与视听验收。
 
+另有 `python activities/last-ferry/verify_light_input.py`（可加`--render`）：阿禾借灯、订单留店/亲口解释、正常交涉、鼠标拆罩取物归钟、点灯后旧阶敲钟/静默陪站、主动天明、亲手还灯并正式离开。同样是已知解法回归，不能给盲玩会话读作攻略。
+
 ## 新收束实机闭环（协调者知道机制，非盲玩）
 
 - 留灯：从阿禾正常开局，通过现场检查/持续交涉/真实鼠标拆罩取物归钟→点灯后仍夜间→步行旧阶听周伯敲钟→选静默陪站→主动迎天明。MCP有界键鼠，未注入状态；证据 `.runtime/621073e004594a76a606413571dbb41f/shore-evidence.json`。
