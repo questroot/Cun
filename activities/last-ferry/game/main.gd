@@ -24,6 +24,8 @@ var playback: AudioStreamGeneratorPlayback
 var audio_time := 0.0
 var sound_enabled := false
 var rng := RandomNumberGenerator.new()
+var conversation_target := ""
+var conversation_response := ""
 
 func _ready() -> void:
 	add_to_group("cun_play_visible")
@@ -175,6 +177,8 @@ func open_modal(title: String, body: String) -> void:
 func close_modal() -> void:
 	if not started: return
 	modal_open = false
+	conversation_target = ""
+	conversation_response = ""
 	paused = false
 	overlay.hide()
 	refresh_ui()
@@ -437,7 +441,22 @@ func show_spoiler_help() -> void:
 	button(modal_body, "回到探索", close_modal)
 
 func act_button(text: String, id: String) -> void:
-	button(modal_body, text, func(): close_modal(); do_action(id))
+	button(modal_body, text, func():
+		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize"]:
+			continue_zhou(id)
+		else:
+			close_modal()
+			do_action(id))
+
+func continue_zhou(id: String) -> void:
+	# Keep the actual interlocutor nearby; never move or acquire evidence off-screen.
+	if not started or story.s.place != "shelter" or player.distance_to(Vector2(455,430)) > 82: return
+	story.act(id)
+	conversation_response = story.notice
+	modal_open = false
+	nearest = "zhou"
+	interact()
+	refresh_ui()
 
 func travel(place: String) -> void:
 	story.change_place(place)
@@ -470,7 +489,8 @@ func interact() -> void:
 		travel(dest)
 		return
 	if target == "back": travel("steps"); return
-	open_modal(object_title(target), "此处的动作不会因为你阅读选项而自动发生。")
+	conversation_target = target if target == "zhou" else ""
+	open_modal(object_title(target), conversation_response if target == "zhou" and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
 	if story.s.phase == "epilogue":
 		act_button("查看次日生活与后果", "epilogue")
 		if target == "departure":
@@ -531,7 +551,7 @@ func interact() -> void:
 				act_button("问他：小满以前坐渡船是什么样？", "zhou_memory")
 				if story.has("lamp") and story.has("timetable"):
 					act_button("把白罩与通航告示放在一起，讲出自己的猜测", "signal_guess")
-				if story.flag("heard_zhou") and not story.flag("consent"):
+				if (story.flag("heard_zhou") or story.flag("signal_compared")) and not story.flag("consent"):
 					act_button("说以后自己会一直替他守灯", "promise_forever")
 					act_button("提议只把今晚的等候和通航分开，不承诺替任何人守一生", "waiting_plan")
 				if story.core() and not story.flag("consent"): act_button("不愿再等，坚持先收白灯", "force")

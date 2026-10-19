@@ -226,6 +226,18 @@ func run() -> void:
 	scene.player = Vector2(550,280)
 	check(scene.try_world_click(Vector2(550,240)) and scene.story.flag("tongue_home"), "direct install changes equipment")
 	check(not scene.modal_open, "repair manipulation does not open choice menus")
+	scene.start_game("he")
+	scene.travel("shelter")
+	scene.player = Vector2(455,430)
+	scene.nearest = "zhou"
+	scene.interact()
+	scene.continue_zhou("zhou_memory")
+	check(scene.modal_open and scene.conversation_target == "zhou", "listening continues in same conversation")
+	check(scene.conversation_response == scene.story.notice and scene.story.flag("heard_zhou"), "current response retained on screen")
+	scene.continue_zhou("promise_forever")
+	check(scene.modal_open and not scene.story.flag("consent"), "disagreement stays in dialogue not exit loop")
+	scene.close_modal()
+	check(scene.conversation_target == "" and scene.conversation_response == "", "leaving dialogue clears only presentation")
 	for id in ["xu", "he"]:
 		scene.start_game(id)
 		for place in ["street", "house", "shelter", "steps"]:
