@@ -69,6 +69,23 @@ func missing_sources() -> String:
 		if not has(pair[0]): missing.append(pair[1])
 	return "、".join(missing) if not missing.is_empty() else "无；现在可以直接向周伯说明所见。"
 
+func current_questions() -> String:
+	if s.phase == "epilogue": return "天已亮，可以走访当地人，再从街口确认离开。借来的物品仍可亲手归还。"
+	var lines: Array[String] = []
+	if has("covenant") and not core(): lines.append("你已听过旧约，但还没亲眼核对：" + missing_sources())
+	if flag("signal_compared") and not flag("consent"):
+		lines.append("你已提出两种信号的区别。" + ("还没有听周伯为什么放不下这处等候；可以直接问他。" if not flag("heard_zhou") else "可以向周伯提出自己做得到的安排，不必许诺守一辈子。"))
+	if s.phase == "night":
+		lines.append("旧阶系缆石旁是河声传到岸上的位置；不登船也可在那儿听、辨认或传话。")
+		if has("xu_wish") or has("shen_wish") or has("xiaoman_wish"):
+			if not has("xu_wish"): lines.append("许宁还没有明确问过弟弟对这程的意愿。")
+			if not has("xiaoman_wish"): lines.append("周伯还没有在旧阶辨认女儿、听她谈以后并明确询问这次渡程。")
+			if not has("shen_wish"): lines.append("摆渡人的答复尚未确认；阿禾须由许宁明确转述，不能替她读到船上说话。")
+			if has("xu_wish") and has("xiaoman_wish") and has("shen_wish") and not flag("returned"): lines.append("三方已作答，旧物还没有经本人同意归还；可在旧阶谈此事。")
+			if flag("returned") and not flag("zhou_farewell"): lines.append("旧物已归还。周伯还在候船棚，须带回答复，不能替他答应最后敲钟。")
+	if lines.is_empty(): return "你还可以按自己的顺序了解街口、旧屋与候船棚。记录只保存亲眼所见和已经听到的话。"
+	return "\n\n".join(lines)
+
 func farewell_ready() -> bool:
 	return core() and has("xu_wish") and has("xiaoman_wish") and has("shen_wish") and flag("returned") and flag("zhou_farewell")
 

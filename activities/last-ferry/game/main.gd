@@ -394,7 +394,7 @@ func update_world() -> void:
 			add_object("street_gate", "回街口", Vector2(95, 570), "gate")
 			add_object("steps_gate", "去旧石阶", Vector2(750, 570), "gate")
 		"steps":
-			add_object("mooring", "系缆石", Vector2(460, 295))
+			add_object("mooring", "系缆石旁·河声与岸上交谈" if story.s.phase == "night" else "系缆石", Vector2(460, 295))
 			if story.flag("closing_release") and story.s.phase == "night": add_object("release_scene", "正收缆绳的沈渡与岸上的人", Vector2(590,410), "npc")
 			if story.flag("closing_light") and story.s.phase == "night": add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
 			if not story.flag("tool_returned") and not story.item("老葛的工具袋"): add_object("toolbag", "湿阶低处的布袋", Vector2(235, 355))
@@ -447,7 +447,7 @@ func show_help() -> void:
 		open_modal("当晚还没结束", "黄灯已经亮了，装置不必再重做。\n" + ("周伯已在旧阶敲过钟。可以继续在岸上听一会儿、同他说话，再由你选择‘今夜到这里，迎接天明’。没有倒计时。" if story.flag("closing_rang") else "周伯去了旧石阶，等你在干阶上陪他把钟敲完。从候船棚东侧路口过去，走近他再交互；不必登船或再找物品。"))
 		button(modal_body, "回到岸上", close_modal)
 		return
-	open_modal("操作与当前目标", "走近圆环物件或人物，按E或点击交互。用WASD/方向键或按住地图下方方向按钮走动。调查、普通交谈和暂停都不会让侵入升级。\n\n傍晚：了解这里的生活，亲眼看看渡口有什么变化。准备好才确认入夜。\n入夜：你可以介入灯的信号，也可先问清各人的意愿。危险举灯有明确警告与取消。\n次日：走访你改变的生活，再从街口离开本段体验。\n\n记录本只显示已获取证据。需要时可以主动打开带剧透的详细路线。")
+	open_modal("操作与当前目标", "走近圆环物件或人物，按E或点击交互。用WASD/方向键或按住地图下方方向按钮走动。调查、普通交谈和暂停都不会让侵入升级。\n\n傍晚：了解这里的生活，亲眼看看渡口有什么变化。准备好才确认入夜。\n入夜：你可以介入灯的信号，也可先问清各人的意愿。危险举灯有明确警告与取消。\n次日：走访你改变的生活，再从街口离开本段体验。\n\n记录本只显示已获取证据。需要时可以主动打开带剧透的详细路线。\n\n根据你目前已知的事：\n" + story.current_questions())
 	button(modal_body, "需要详细路线（有剧透，不授予证据）", func(): confirm("详细路线会直接说明三个结果的条件，仍要查看？", show_spoiler_help))
 	button(modal_body, "回到探索", close_modal)
 
