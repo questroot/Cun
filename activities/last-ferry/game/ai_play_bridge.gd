@@ -92,8 +92,17 @@ func _blocked_input(node: Node, point: Vector2, keyboard: bool) -> bool:
 			return true
 	return false
 
+func _visible_rect(control: Control) -> Rect2:
+	var rect := control.get_global_rect().intersection(get_viewport().get_visible_rect())
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is Control and ancestor.clip_contents:
+			rect = rect.intersection(ancestor.get_global_rect())
+		ancestor = ancestor.get_parent()
+	return rect
+
 func _walk(node: Node, texts: Array, buttons: Array) -> void:
-	if node is Control and node.is_visible_in_tree() and node.get_global_rect().intersects(get_viewport().get_visible_rect()):
+	if node is Control and node.is_visible_in_tree() and _visible_rect(node).has_area():
 		if node is Label or node is RichTextLabel:
 			var value: String = node.text if node is Label else node.get_parsed_text()
 			if node.visible_characters >= 0:
@@ -103,7 +112,7 @@ func _walk(node: Node, texts: Array, buttons: Array) -> void:
 		if node is BaseButton:
 			var id := str(node.get_instance_id())
 			_buttons[id] = weakref(node)
-			var rect: Rect2 = node.get_global_rect()
+			var rect: Rect2 = _visible_rect(node)
 			buttons.append({"id": id, "text": node.text if node is Button else node.name, "disabled": node.disabled or _blocked(node), "blocked": _blocked(node), "rect": {"x": rect.position.x, "y": rect.position.y, "width": rect.size.x, "height": rect.size.y}})
 	for child in node.get_children():
 		if texts.size() + buttons.size() > 512:
@@ -151,7 +160,11 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 		if not is_instance_valid(button) or not button.is_visible_in_tree() or button.disabled or _blocked(button):
 			_reply(peer, {"ok": false, "error": "button not visible or enabled"})
 			return
-		var center: Vector2 = button.get_global_rect().get_center()
+		var visible_rect := _visible_rect(button)
+		if not visible_rect.has_area():
+			_reply(peer, {"ok": false, "error": "button clipped outside visible UI"})
+			return
+		var center: Vector2 = visible_rect.get_center()
 		down = _mouse(center, MOUSE_BUTTON_LEFT, true)
 		up = _mouse(center, MOUSE_BUTTON_LEFT, false)
 	elif kind == "key":
