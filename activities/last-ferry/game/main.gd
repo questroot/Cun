@@ -439,7 +439,9 @@ func interact() -> void:
 			"ledger":
 				if story.s.identity == "he": act_button("核对周伯两份灯芯的账", "ledger")
 				else: button(modal_body, "不翻别人的账本", close_modal)
-			"paper": act_button("查看旧桌（尊重私人物品）", "paper")
+			"paper":
+				act_button("查看旧桌（尊重私人物品）", "paper")
+				if story.s.identity == "xu": act_button("坐一会儿，试试口袋里那半只旧哨", "whistle_memory")
 			"roof":
 				act_button("停下脚步，听屋里的滴水", "roof_listen")
 				if story.flag("heard_drip") and not story.flag("basin_placed"): act_button("端起搪瓷盆", "basin_take")
@@ -487,7 +489,7 @@ func interact() -> void:
 					act_button("转述本人意愿，请周伯敲最后一次钟", "farewell_consent")
 			"mooring":
 				if story.s.phase == "night":
-					act_button("吹铜哨辨认许澄 / 请许宁核实并回报", "xu_voice")
+					add_river_choices()
 					act_button("请周伯到黄灯旁，让小满自己表达意愿", "xiaoman")
 					act_button("询问沈渡是否愿意结束渡程", "shen")
 					act_button("经本人同意归还旧物（不销毁）", "return")
@@ -497,10 +499,19 @@ func interact() -> void:
 				if story.s.phase == "night" and story.s.identity == "xu": act_button("许宁独有：踏上靠岸侧舷（可随时回岸）", "board")
 				else: button(modal_body, "留在岸上", func(): close_modal(); story.note("夜船不公开卖票。阿禾不能凭身份登船；可以调查灯钟，在岸上恢复边界，或明确请许宁协助传话。"); refresh_ui())
 			"voices":
-				act_button("使用铜哨辨认许澄，谈旧屋与他的意愿", "xu_voice")
+				add_river_choices()
 				act_button("询问沈渡的摆渡约定与意愿", "shen")
 			"departure": button(modal_body, "尚未天亮，继续本段体验", close_modal)
 	button(modal_body, "先不做，回到探索", close_modal)
+
+func add_river_choices() -> void:
+	act_button("先站住，听河上有什么声音", "listen_river")
+	if story.flag("river_heard"):
+		act_button("问那张湿纸到底要带什么", "call_paper")
+		act_button("用旧日的哨声回应，不向船上走", "answer_whistle")
+	if story.flag("xu_identified"):
+		act_button("先谈旧屋漏雨的事，不催着告别", "ask_roof")
+		act_button("问他：你希望这一程结束吗？", "ask_departure")
 
 func _draw() -> void:
 	var night: bool = started and story.s.phase == "night"

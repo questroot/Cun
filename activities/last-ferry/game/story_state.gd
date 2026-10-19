@@ -214,6 +214,33 @@ func act(id: String) -> bool:
 			if p != "steps" or s.phase != "night" or s.identity != "xu": return refuse("阿禾没有登船资格，可以在岸上协作。")
 			change_place("boat")
 			note("许宁踏上仍靠着旧阶的局部船舷。旧物没有姓名。随时可从舷侧返回岸上；登船不自动提供灯钟答案。")
+		"listen_river":
+			if s.phase != "night" or not p in ["steps", "boat"]: return false
+			set_flag("river_heard")
+			note("先是一声‘回家吃饭’，像隔着雨从很远的厨房传来；随后有人急急喊‘把东西带来’。两句之间还有很轻的一声抱怨：‘又慢了。’\n水面没有给每个声音配上名字。你可以只听，不回应，也可以退回岸上。");
+		"whistle_memory":
+			if p != "house" or s.identity != "xu": return refuse("这段往事不是你凭空拥有的。可以向许宁问，而不能替她想起。")
+			set_flag("whistle_rhythm")
+			note("许宁在旧桌边轻吹半哨。小时候她总吹两短一长，叫许澄回来；弟弟嫌她催，偏要回一长两短，再说‘又慢了’。\n这不是一句神奇口令。她怕自己记错，重试了一遍，最后一声仍有点破。")
+		"call_paper":
+			if s.phase != "night" or not p in ["steps", "boat"] or not flag("river_heard"): return false
+			note("你照着湿纸问要带什么。河上好几处一起回答‘过来’，没有一个先叫你的名字。你停住，没有往前走。\n那张没有署名的纸至少不能替任何一个人表达意愿。回应一次普通问话没有增加侵入。")
+		"answer_whistle":
+			if s.phase != "night" or not p in ["steps", "boat"]: return false
+			if s.identity == "he":
+				if not flag("xu_help"): return refuse("你没有许宁的旧约定。若她愿意，可以与她交换亲眼所见，请她自己辨认。")
+			elif not flag("whistle_rhythm"):
+				return refuse("你吹了一下，水面仍有许多回声。她需要的不是更响的声音，而是自己与弟弟真正约定过的回答；旧屋可能还留着回忆的起点。")
+			set_flag("xu_identified")
+			note(("许宁在你身旁吹了两短一长。" if s.identity == "he" else "你吹出两短一长，等着，不再跟河上每一声呼唤说话。") + "\n一长，两短。有人说‘又慢了’。随后是一阵很轻的笑。\n‘我以为你听不出来了。’这一次，声音在回答你们之间的事，没有催人上船。你还可以问他想问的，也可以先离开。")
+		"ask_roof":
+			if not flag("xu_identified") or not p in ["steps", "boat"]: return false
+			set_flag("xu_roof_talk")
+			note("许澄问屋顶还漏不漏。许宁说还漏。\n‘你不是说下回回来就修？’\n‘我知道。’\n他停了一会儿，说小时候下雨，他其实喜欢拿盆接水：不用被催着出门。许宁说现在没人替他倒盆了。\n他没有因为她回来，就把十四年的缺席说成没关系。两个人暂时都没提船什么时候开。")
+		"ask_departure":
+			if not flag("xu_identified") or not p in ["steps", "boat"]: return false
+			# The older direct rule action stays for compatibility tests, never exposed in UI.
+			return act("xu_voice")
 		"xu_voice":
 			if s.phase != "night" or not p in ["steps", "boat"]: return false
 			if s.identity == "xu" and not item("铜哨"): return refuse("没有铜哨，混合呼唤不能被当作许澄。")

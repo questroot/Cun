@@ -87,6 +87,25 @@ func run() -> void:
 
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
+		check(not at("steps", "answer_whistle"), "no river identity confirmed in daylight")
+		check(state.act("night"), "enter river encounter at own pace")
+		check(at("steps", "listen_river") and not state.has("xu_wish"), "hearing voices is not knowing wishes")
+		check(at("steps", "call_paper") and state.s.pollution == 0, "questioning unverified invitation is safe")
+		check(not at("steps", "answer_whistle"), "cannot identify from missing personal context")
+		if identity == "xu":
+			check(at("house", "whistle_memory"), "returnee recalls lived signal")
+		else:
+			check(not at("house", "whistle_memory"), "apprentice cannot own another person's memory")
+			at("shelter", "lamp")
+			at("shelter", "bell")
+			check(at("house", "exchange"), "apprentice gets explicit cooperation")
+		check(at("steps", "answer_whistle") and state.flag("xu_identified") and not state.has("xu_wish"), "identification distinct from deciding wishes")
+		check(at("steps", "ask_roof") and not state.has("xu_wish"), "ordinary conversation not automatic farewell")
+		check(state.save_game() and state.load_game() and state.flag("xu_identified"), "encounter progress survives save")
+		check(at("steps", "ask_departure") and state.has("xu_wish"), "ask person rather than infer desired ending")
+
+	for identity in ["xu", "he"]:
+		state.fresh(identity)
 		check(not at("shelter", "retrieve_tongue"), "cannot retrieve through closed shade")
 		check(not at("shelter", "install_tongue"), "cannot install absent tongue")
 		investigate()
