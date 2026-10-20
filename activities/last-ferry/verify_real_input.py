@@ -67,7 +67,9 @@ try:
     restored=obs();assert restored['visible'][0]['player_screen']==departed['visible'][0]['player_screen'],restored
     assert '次日尾声' not in '\n'.join(restored['texts']) and any(o['title']=='已离岸的夜船' for o in restored['visible'][0]['objects']),restored
     key('e');click('船离岸后');click('不必等话');click('确认');dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']) and '结束渡程' in json.dumps(dawn,ensure_ascii=False)
-    go(115,565);key('e');go(95,565);key('e');go(100,440);key('e')
+    go(115,565);key('e');go(95,565);key('e');street_morning=obs();assert not any(o['title']=='围挡旁补鞋的老葛' for o in street_morning['visible'][0]['objects']),street_morning
+    assert any('按约去许家' in o['title'] for o in street_morning['visible'][0]['objects']),street_morning
+    go(100,440);key('e')
     assert any(o['title']=='门口等你招呼的老葛' for o in obs()['visible'][0]['objects']),obs()
     go(500,510);key('e');click('到门口招呼');assert '钥匙没有交出去' in json.dumps(obs(),ensure_ascii=False),obs()
     assert any(o['title']=='按约来勘看的老葛' for o in obs()['visible'][0]['objects']),obs()

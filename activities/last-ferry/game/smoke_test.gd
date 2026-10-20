@@ -58,8 +58,10 @@ func run() -> void:
 	check(at("house","roof_listen") and at("street","roof_arrange"),"owner can directly ask Ge without Tao checklist")
 	check(state.flag("roof_visit_arranged") and not state.flag("roof_commissioned"),"appointment is not completed roof work")
 	check(not state.act("roof_arrange") and state.act("roof_recall"),"appointment cannot be duplicated but remains reviewable")
+	check(not state.roof_visit_active(),"night appointment does not move visitor early")
 	state.s.phase = "epilogue"
 	state.s.ending = "light"
+	check(state.roof_visit_active(),"safe dawn appointment locates visitor at house")
 	check(not at("house","roof_inspect"),"appointment alone does not authorize entering house")
 	check(at("house","roof_admit") and not state.act("roof_admit"),"owner admits guest once before inspection")
 	check(state.save_game() and state.load_game() and state.flag("roof_guest_admitted"),"admission persists")
@@ -69,6 +71,7 @@ func run() -> void:
 	check(not at("house","roof_inspect"),"inspection cannot be replayed by sweeping buttons")
 	check(at("house","roof_commission") and state.notice.contains("两项工序") and not state.notice.contains("等到老葛路过"),"morning plan acknowledges completed inspection rather than resets encounter")
 	state.s.ending = "flood"
+	check(not state.roof_visit_active(),"flood keeps visitor outside unsafe house")
 	check(not at("house","roof_inspect"),"flood postpones unsafe house inspection")
 	state.fresh("he")
 	check(not at("house", "drawer_open") and not at("house", "handover_read"), "household privacy and closed drawer respected")

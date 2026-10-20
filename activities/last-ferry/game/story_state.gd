@@ -69,6 +69,9 @@ func missing_sources() -> String:
 		if not has(pair[0]): missing.append(pair[1])
 	return "、".join(missing) if not missing.is_empty() else "无；现在可以直接向周伯说明所见。"
 
+func roof_visit_active() -> bool:
+	return s.phase == "epilogue" and s.ending != "flood" and flag("roof_visit_arranged")
+
 func current_questions() -> String:
 	if s.phase == "epilogue": return "天已亮，可以走访当地人，再从街口确认离开。借来的物品仍可亲手归还。"
 	var lines: Array[String] = []

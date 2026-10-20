@@ -494,7 +494,10 @@ func update_world() -> void:
 			if story.s.pollution == 1 and story.s.phase == "night" and not story.flag("stock_dried"): add_object("dry_stock", "柜台边的干台", Vector2(420,300))
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
-			add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
+			if not story.roof_visit_active():
+				add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
+			else:
+				add_object("ge_visit_note", "收起的鞋摊·纸条：按约去许家看漏点", Vector2(620,470))
 			if story.flag("street_evening_seen") and not story.flag("shoe_collected") and story.s.phase == "dusk": add_object("shoe_parcel", "等主人来取的鞋包", Vector2(675,460))
 			add_object("shelter_gate", "去候船棚", Vector2(750, 385), "gate")
 			add_object("house_gate", "去许家旧屋", Vector2(100, 440), "gate")
@@ -508,7 +511,7 @@ func update_world() -> void:
 			if story.flag("drawer_open"): add_object("handover", "旧交接单与今日附记" if story.flag("handover_updated") else "下层抽屉里的折单", Vector2(350,375))
 			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
 			if story.flag("roof_inspected"): add_object("roof_note", "桌边的两项修屋工序纸",Vector2(400,375))
-			if story.s.phase == "epilogue" and story.s.ending != "flood" and story.flag("roof_visit_arranged"):
+			if story.roof_visit_active():
 				if story.flag("roof_guest_admitted") or story.flag("roof_inspected"):
 					add_object("roof_ge", "按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛",Vector2(635,490),"npc")
 				else:
