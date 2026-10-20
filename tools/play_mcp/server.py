@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = Path(__file__).resolve().parent / '.runtime'
 MAX_BYTES = 65536
 VERSIONS = ('2024-11-05', '2025-03-26')
-KEYS = ['up','down','left','right','enter','escape','space','tab','w','a','s','d','e','j','k','l','i','1','2','3','4']
+KEYS = ['up','down','left','right','enter','escape','space','tab','w','a','s','d','e','j','k','l','i','m','b','c','1','2','3','4']
 
 def schema(props=None, required=None):
     return {'type':'object','properties':props or {},'required':required or [],'additionalProperties':False}

@@ -168,7 +168,7 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 		down = _mouse(center, MOUSE_BUTTON_LEFT, true)
 		up = _mouse(center, MOUSE_BUTTON_LEFT, false)
 	elif kind == "key":
-		var keys := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "enter": KEY_ENTER, "escape": KEY_ESCAPE, "space": KEY_SPACE, "tab": KEY_TAB, "w": KEY_W, "a": KEY_A, "s": KEY_S, "d": KEY_D, "e": KEY_E, "j": KEY_J, "k": KEY_K, "l": KEY_L, "i": KEY_I, "1": KEY_1, "2": KEY_2, "3": KEY_3, "4": KEY_4}
+		var keys := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "enter": KEY_ENTER, "escape": KEY_ESCAPE, "space": KEY_SPACE, "tab": KEY_TAB, "w": KEY_W, "a": KEY_A, "s": KEY_S, "d": KEY_D, "e": KEY_E, "j": KEY_J, "k": KEY_K, "l": KEY_L, "i": KEY_I, "m": KEY_M, "b": KEY_B, "c": KEY_C, "1": KEY_1, "2": KEY_2, "3": KEY_3, "4": KEY_4}
 		if not keys.has(args.get("key", "")):
 			_reply(peer, {"ok": false, "error": "key not allowed"})
 			return
