@@ -23,9 +23,9 @@ try:
     go(450,575);key('e');go(750,390);key('e');go(750,565);key('e')
     for x,y,label in [(165,485,'沿树根'),(330,510,'数矮阶'),(485,445,'蹲下看')]:
         go(x,y);mouse(x,y-40);assert not obs()['visible'][0]['modal_open'],obs()
-    go(460,335);key('e');click('照片里的灯');wrong=obs();assert '对不上' in json.dumps(wrong,ensure_ascii=False)
-    click('先对柳根');right=obs();assert '旧照片拍摄的岸上' in json.dumps(right,ensure_ascii=False)
-    click('先不做');go(115,565);key('e');go(455,465);key('e');click('告诉他亲眼核对');zhou=obs()
+    go(460,335);key('e');click('拿照片到现场');mouse(460,295);wrong=obs();assert '缆绳槽' in json.dumps(wrong,ensure_ascii=False)
+    go(485,445);mouse(485,405);right=obs();assert '旧照片拍摄的岸上' in json.dumps(right,ensure_ascii=False) and not right['visible'][0]['modal_open'],right
+    go(115,565);key('e');go(455,465);key('e');click('告诉他亲眼核对');zhou=obs()
     assert '新棚是我跟人一起挪的' in json.dumps(zhou,ensure_ascii=False) and '不能替她说' in json.dumps(zhou,ensure_ascii=False),zhou
     assert any(b['text'].startswith('问他：小满以前') for b in zhou['buttons']),zhou
     out=s.run_dir/'photo-evidence.json';out.write_text(json.dumps({'photo':photo,'wrong':wrong,'comparison':right,'zhou_response':zhou,'method':'normal opening actual key and mouse controls only'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))

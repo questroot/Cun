@@ -26,6 +26,7 @@ var sound_enabled := false
 var rng := RandomNumberGenerator.new()
 var conversation_target := ""
 var conversation_response := ""
+var comparing_photo := false
 
 func _ready() -> void:
 	add_to_group("cun_play_visible")
@@ -287,6 +288,13 @@ func show_items() -> void:
 func try_world_click(point: Vector2) -> bool:
 	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if comparing_photo and story.s.place == "steps":
+		if point.distance_to(Vector2(460,295)) < 30 and player.distance_to(Vector2(460,295)) < 82:
+			story.note("这块石上磨的是缆绳槽，没有挂灯木柱的方形底脚。系船的位置能帮你定位河边，却还不能指出照片里的灯原来在哪。"); refresh_ui(); return true
+		if point.distance_to(Vector2(485,405)) < 30 and player.distance_to(Vector2(485,405)) < 82:
+			do_action("socket_view")
+			if story.act("photo_shift"): comparing_photo = false
+			refresh_ui(); return true
 	if story.s.place == "steps":
 		for mark in [{"pos":Vector2(165,445),"action":"root_view"},{"pos":Vector2(330,470),"action":"stairs_view"},{"pos":Vector2(485,405),"action":"socket_view"}]:
 			if point.distance_to(mark.pos) < 30 and player.distance_to(mark.pos) < 82:
@@ -498,6 +506,9 @@ func refresh_ui() -> void:
 			button(action_box, "铜哨 · 长音 [2]", func(): river_in_place("whistle_long"))
 			button(action_box, "停下听回应 [3]", func(): river_in_place("whistle_listen"))
 			button(action_box, "放下重来 [4]", func(): river_in_place("whistle_reset"))
+	if comparing_photo:
+		button(action_box, "收起照片，暂不比较", func(): comparing_photo = false; story.note("你把照片收好，观察仍记着，不必这次就下结论。"); refresh_ui())
+		foot_hint.text += "\n照片在手边：走近后点击自己选的参照位置。"
 	button(action_box, "当前目标 / 操作提示", show_help)
 
 func object_title(id: String) -> String:
@@ -574,6 +585,7 @@ func continue_zhou(id: String) -> void:
 	refresh_ui()
 
 func travel(place: String) -> void:
+	comparing_photo = false
 	story.change_place(place)
 	player = Vector2(story.s.x, story.s.y)
 	last_place = ""
@@ -709,8 +721,7 @@ func interact() -> void:
 					act_button("转述本人意愿，请周伯敲最后一次钟", "farewell_consent")
 			"mooring":
 				if story.flag("photo_seen") and not story.flag("photo_compared"):
-					act_button("照片里的灯就是新棚：先按灯的位置对照", "photo_same")
-					act_button("先对柳根与三道矮阶，再看灯柱旧址", "photo_shift")
+					button(modal_body, "拿照片到现场，自己选参照位置", func(): close_modal(); comparing_photo = true; story.note("照片拿在手边。走近你要对照的位置，点击现场物件；可先看柳根或矮阶，也可以试别的参照。没有时间限制。"); refresh_ui())
 				if story.s.phase == "night" and story.flag("released"):
 					act_button("回身看看仍留在岸上的人", "release_watch")
 				elif story.s.phase == "night":
