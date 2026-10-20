@@ -90,6 +90,7 @@ func play_visible() -> Dictionary:
 	if story.item("旧渡牌"):
 		result["visible_ferry_tag"] = {"x":player.x+18,"y":player.y+8,"appearance":"手上携带的木渡牌"}
 	if story.s.place == "lane":
+		if story.s.ending == "flood": result["visible_dry_lane"] = {"x":95,"y":510,"width":660,"height":60,"appearance":"浅色干路带，西向桥头接应，东向许家门内"}
 		var cart := cart_position()
 		result["visible_cart"] = {"x":cart.x,"y":cart.y,"width":64,"height":60,"appearance":"空车木板车身，两侧车轮，左侧伸出车把"}
 		result["visible_barrier"] = {"x":390,"y":280,"width":80,"height":220,"appearance":"石料围挡中段缺口已通，南侧也可绕行" if story.flag("lane_cart_moved") else "修桥石料围挡，空车堵中段缺口，南侧可绕行"}
@@ -782,7 +783,11 @@ func travel(place: String) -> void:
 	if place == "lane":
 		story.s.x = 690.0 if previous_place == "house" else 150.0
 		story.s.y = 540.0
-		story.note("巷中修桥的石料挡住直路。围挡南端留着人行通道，许家门口在另一侧。脚步落在散砂上，行李轮能绕过去。")
+		if story.s.ending == "flood":
+			if not story.flag("flood_dry_lane_seen"):
+				story.set_flag("flood_dry_lane_seen")
+				story.note("旧阶方向已经封住。这里石料南侧的浅色人行带仍干，向西通桥头接应点，向东可回许家门内。通道不要求先挪空车。")
+		else: story.note("巷中修桥的石料挡住直路。围挡南端留着人行通道，许家门口在另一侧。脚步落在散砂上，行李轮能绕过去。")
 	if place == "street" and story.s.phase == "dusk" and not story.flag("street_evening_seen"):
 		story.set_flag("street_evening_seen")
 		story.note("你回到街口时，老葛正把补好的鞋并排放在凳上。\n陶婶从门内问：‘明早量桥，先吃了再去？’\n‘带两个馒头就行。鞋等晾干，让他自己来拿，别又替他送到家。’\n她把一张包货纸压在秤下，没喊你停步。")
@@ -1075,6 +1080,9 @@ func _draw() -> void:
 	draw_string(font, Vector2(32, 130), "道路范围：石色地面　圆环：可交互　门形：地点连接", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("bac5c3"))
 	match story.s.place:
 		"lane":
+			if story.s.ending == "flood":
+				draw_rect(Rect2(95,510,660,60),Color("9b977c"))
+				draw_string(font,Vector2(270,560),"← 桥头接应　　干路　　许家 →",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("353c35"))
 			draw_rect(Rect2(390,280,80,80),Color("736f65"))
 			draw_rect(Rect2(390,440,80,60),Color("736f65"))
 			draw_rect(Rect2(180,200,40,100),Color("676f70"))
