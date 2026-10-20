@@ -648,6 +648,7 @@ func interact() -> void:
 	if story.s.phase == "epilogue":
 		open_modal(object_title(target), "天已经亮了。夜里的处理不会因为你走访而重来；看看人们各自准备做的事，再决定何时离开。")
 		act_button("看看这里今早怎样继续", "epilogue")
+		if target == "handover" and story.flag("handover_discussed") and not story.flag("handover_updated"): act_button("另附今日处理记录，不改旧单", "handover_update")
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
 		if target == "wet_stock": act_button("看看昨晚浸湿的货物怎么处理", "stock_morning")
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
@@ -696,7 +697,9 @@ func interact() -> void:
 					act_button("核对周伯两份灯芯的账", "ledger")
 					if story.item("新灯芯"): act_button("这卷先留店里，亲自向周伯说明未送", "wick_keep")
 				else: button(modal_body, "不翻别人的账本", close_modal)
-			"handover": act_button("展开公用物件交接单，看两栏记的什么", "handover_read")
+			"handover":
+				act_button("展开公用物件交接单，看两栏记的什么", "handover_read")
+				if story.flag("handover_discussed") and not story.flag("handover_updated"): act_button("另附今日处理记录，不改旧单", "handover_update")
 			"paper":
 				if not story.flag("drawer_open"): act_button("托住底板，拉开下层抽屉", "drawer_open")
 				act_button("查看旧桌（尊重私人物品）", "paper")

@@ -110,6 +110,13 @@ func act(id: String) -> bool:
 	if s.left:
 		notice = "本段体验已结束。可读取离开前的存档，或重新选择身份。"
 		return false
+	if id == "handover_update":
+		if p != "house" or not flag("handover_discussed") or not flag("drawer_open"): return false
+		if not flag("tongue_home") or not flag("shade_off"): return refuse("还不能记成完成：须亲眼完成铜舌归钟、取下通航白罩。问清经过不等于修好。")
+		if flag("handover_updated"): return refuse("今日附记已经留好，不改写旧单。")
+		set_flag("handover_updated")
+		note("你另取一小张纸，写下今日亲手确认的两件事：铜舌归钟，白罩取下。没有替当年的残姓补名字，也没划掉原单上的‘待修’。\n" + ("许宁把自己的名字写在今日附记下，将两张纸并放。旧屋留下的不再只有一件拖着没做的事。" if s.identity == "xu" else "阿禾把附记递给许宁；她看过后自己放进下层抽屉。获准查看旧单，不等于替屋主改写它。") + "\n这不是给谁结清一生的账，只让下次打开抽屉的人知道，今天做到了哪一步。")
+		return true
 	if s.phase == "epilogue":
 		if id == "leave" and p == "street":
 			s.left = true
