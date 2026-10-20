@@ -84,6 +84,8 @@ func play_visible() -> Dictionary:
 	if chests != null:
 		result["visible_chests"] = chests.play_visible()
 		result["chest_encounter_view"] = chests.play_visible_encounters()
+	var weather := get_node_or_null("Weather")
+	if weather != null: result["visible_gardens"] = weather.play_visible()
 	return result
 
 func _visible_target(targets: Array, point: Vector2, title: String, kind: String, _radius: float) -> void:
