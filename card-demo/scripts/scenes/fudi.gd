@@ -75,6 +75,8 @@ func play_visible() -> Dictionary:
 	var point := ARENA.position+player_foot-camera_origin
 	result["player_screen"] = {"x":point.x,"y":point.y}
 	result["objects"] = targets
+	var bosses := get_node_or_null("Bosses")
+	if bosses != null: result["boss_view"] = bosses.play_visible()
 	return result
 
 func _visible_target(targets: Array, point: Vector2, title: String, kind: String, _radius: float) -> void:

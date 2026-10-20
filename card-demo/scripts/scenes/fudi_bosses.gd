@@ -15,6 +15,21 @@ func enter_region() -> void:
 		boss.cooldown = maxf(1.8, float(boss.cooldown))
 	refresh()
 
+func play_visible() -> Dictionary:
+	if game == null or game._paused() or game.finished: return {}
+	var visible: Array = []
+	var warnings: Array = []
+	for boss: Dictionary in targets(game.region):
+		var config: Dictionary = Catalog.DEFINITIONS[boss.id]
+		var point: Vector2 = game.ARENA.position+boss.position-game.camera_origin
+		if game.ARENA.has_point(point): visible.append({"title":str(config.name),"x":point.x,"y":point.y,"kind":"boss"})
+		if float(boss.windup) > 0:
+			var center: Vector2 = game.ARENA.position+boss.target-game.camera_origin
+			var radius := float(config.radius)
+			var clipped: Rect2 = game.ARENA.intersection(Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2))
+			if clipped.has_area(): warnings.append({"appearance":"红色攻击预警圈","visible_bounds":{"x":clipped.position.x,"y":clipped.position.y,"width":clipped.size.x,"height":clipped.size.y}})
+	return {"visible_bosses":visible,"visible_warnings":warnings}
+
 func _ready() -> void:
 	game = get_parent()
 	for id: String in Catalog.DEFINITIONS:
