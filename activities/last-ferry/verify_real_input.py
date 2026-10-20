@@ -38,11 +38,20 @@ def click(prefix):
     assert b,(prefix,o)
     return s.call('action',{'kind':'click','button_id':b['id']})
 def walk(axis,target):
-    for _ in range(16):
+    speed=200.0
+    cap_ms=400
+    previous_delta=None
+    for _ in range(24):
         p=obs()['visible'][0]['player_screen'];d=target-p[axis]
         if abs(d)<10:return
-        key((('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w')),min(100,max(2,int(abs(d)/2))))
-    raise AssertionError(('blocked',axis,target,p))
+        if previous_delta is not None and d*previous_delta<0:cap_ms=max(30,cap_ms//2)
+        duration=min(cap_ms,max(20,int(abs(d)/speed*800)))
+        direction=(('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w'))
+        s.call('action',{'kind':'key','key':direction,'duration_ms':duration})
+        after=obs()['visible'][0]['player_screen'];distance=abs(after[axis]-p[axis])
+        if distance>1:speed=max(80.0,min(800.0,distance/(duration/1000)))
+        previous_delta=d
+    raise AssertionError(('walk did not converge',axis,target,after))
 def go(x,y):walk('y',400);walk('x',x);walk('y',y)
 def inspect(x,y):go(x,y);key('e');click('现场检查')
 try:
@@ -76,8 +85,8 @@ try:
         click('保存');click('读取');click('确认');assert any('挂回的旧渡牌' in o['title'] for o in obs()['visible'][0]['objects']),obs()
         go(750,565);key('e')
     if args.boat_approach:
-        go(165,460);key('e');click('留在柳根');assert '岸后巷子也有人喊同一句' in '\n'.join(obs()['texts']),obs()
-        go(330,500);key('e');click('留在最高干阶');assert '热的留着呢' in '\n'.join(obs()['texts']),obs()
+        go(165,460);assert not obs()['visible'][0]['modal_open'],obs();assert '岸后巷子也有人喊同一句' in '\n'.join(obs()['texts']),obs()
+        go(330,500);assert not obs()['visible'][0]['modal_open'],obs();assert '热的留着呢' in obs()['visible'][0]['visible_shore_heard']['text'] and '岸后也喊' in obs()['visible'][0]['visible_shore_heard']['text'],obs()
         click('保存');click('读取');click('确认');key('e');assert not any(b['text'].startswith('留在最高干阶') for b in obs()['buttons']),obs();key('esc')
         click('记录');heard='\n'.join(obs()['texts']);assert heard.count('热的留着呢')==1 and heard.count('岸后巷子也有人喊同一句')==1,heard;key('esc')
     go(460,335);click('先站在干阶听河声');key('1');key('1');key('2');key('3')

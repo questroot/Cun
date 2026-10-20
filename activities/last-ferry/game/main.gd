@@ -100,6 +100,8 @@ func play_visible() -> Dictionary:
 		result["carried_stock"] = {"x":player.x+15,"y":player.y+10,"appearance":"托着湿货箱"}
 	if comparing_photo and story.s.place == "steps":
 		result["held_photo"] = {"description":"新棚启用前的旧照：水面在上，三道矮阶靠岸，斜柳朝水，木柱上的灯在矮阶左上；照片不含新棚或桥围挡。", "screen_rect":{"x":50,"y":510,"width":210,"height":110}}
+	if story.s.place == "steps" and story.s.phase == "night" and not shore_heard_excerpt().is_empty():
+		result["visible_shore_heard"] = {"x":55,"y":185,"width":520,"height":62,"text":shore_heard_excerpt()}
 	result["objects"] = targets
 	result["obstacles"] = obstacles
 	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
@@ -480,6 +482,12 @@ func _process(delta: float) -> void:
 			story.s.x = player.x
 			story.s.y = player.y
 			if story.act("shelter_dry_stand"): refresh_ui()
+	if story.s.place == "steps" and story.s.phase == "night" and not story.flag("released"):
+		for listening in [{"id":"river_willow_listen","at":Vector2(165,445)},{"id":"river_stair_listen","at":Vector2(330,470)}]:
+			if not story.flag(listening.id) and player.distance_to(listening.at) < 55:
+				story.s.x = player.x
+				story.s.y = player.y
+				if story.act(listening.id): refresh_ui()
 	var movement := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): movement.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): movement.y += 1
@@ -947,10 +955,8 @@ func interact() -> void:
 				if story.flag("stock_carried"): act_button("把手中的货箱放到干台", "move_wet_stock")
 			"old_root":
 				act_button("沿树根看它原来朝哪边生长", "root_view")
-				if story.s.phase == "night" and not story.flag("released") and not story.flag("river_willow_listen"): act_button("留在柳根背风处，听两边的声音", "river_willow_listen")
 			"old_stairs":
 				act_button("数矮阶，对照旁边后来加高的岸", "stairs_view")
-				if story.s.phase == "night" and not story.flag("released") and not story.flag("river_stair_listen"): act_button("留在最高干阶，听船侧的日常话", "river_stair_listen")
 			"post_socket": act_button("蹲下看方槽边的旧铁锈", "socket_view")
 			"old_photo": act_button("翻看照片正反面，记下岸的位置", "photo_view")
 			"toolbag": act_button("站在干阶上，用竹竿挑起布袋", "tool_retrieve")
@@ -1072,6 +1078,12 @@ func add_river_choices() -> void:
 	if story.flag("xu_identified"):
 		act_button("先谈旧屋漏雨的事，不催着告别", "ask_roof")
 		act_button("问他：你希望这一程结束吗？", "ask_departure")
+
+func shore_heard_excerpt() -> String:
+	var lines: Array[String] = []
+	if story.flag("river_willow_listen"): lines.append("柳根处已听：岸后也喊回家吃饭，碗沿轻碰。")
+	if story.flag("river_stair_listen"): lines.append("干阶处已听：又慢了；热的留着呢。")
+	return "\n".join(lines)
 
 func _draw() -> void:
 	var night: bool = started and story.s.phase == "night"
@@ -1246,6 +1258,10 @@ func _draw() -> void:
 		draw_rect(Rect2(bag_pos-Vector2(11,4),Vector2(22,19)),Color("8e7052"))
 		draw_arc(bag_pos-Vector2(0,5),8,PI,TAU,12,Color("cbb28b"),2)
 		draw_line(bag_pos+Vector2(-5,4),bag_pos+Vector2(6,8),Color("c3c2b6"),2)
+	if story.s.place == "steps" and story.s.phase == "night" and not shore_heard_excerpt().is_empty():
+		draw_rect(Rect2(55,185,520,62),Color("25363c"))
+		var heard_lines := shore_heard_excerpt().split("\n")
+		for i in range(heard_lines.size()): draw_string(font,Vector2(65,209+i*24),heard_lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("dccfaf"))
 	if comparing_photo and story.s.place == "steps":
 		draw_rect(Rect2(50,510,210,110),Color("d4c9a7"))
 		draw_rect(Rect2(60,520,190,29),Color("72827f"))
