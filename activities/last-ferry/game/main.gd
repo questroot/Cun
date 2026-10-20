@@ -777,6 +777,8 @@ func interact() -> void:
 						act_button("经本人同意归还旧物（不销毁）", "return")
 						if not story.flag("closing_release"): act_button("把两岸的答复带给沈渡，请他自己解缆", "begin_release")
 				else: button(modal_body, "查看旧阶", func(): close_modal(); story.note("普通渡船已走。系缆石上留下年复一年的磨痕。准备好后主动确认入夜。"); refresh_ui())
+			"morning":
+				button(modal_body, "看看已经收班的日渡", func(): close_modal(); story.note("日渡的踏板已经收起，座板倒扣在船篷下。棚里写着明早六点开班，此刻没有待登船的乘客。\n河面还有光，不必等一条看不见的任务出现。你可以继续在岸上走走，入夜由你自己决定。"); refresh_ui())
 			"ship":
 				if story.flag("released"):
 					button(modal_body, "目送，不再登船", func(): close_modal(); story.note("缆绳已不在岸上。船灯远了一些，踏板没有再伸回来。可以回身陪岸上的人，不必追到所有话都说完。"); refresh_ui())
