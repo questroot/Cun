@@ -19,6 +19,7 @@ def go(x,y):
 try:
     s.call('launch',{'project':'last-ferry','headless':True});click('许宁到埠前段')
     assert not any(b['text'].startswith('准备好了') for b in obs()['buttons']),obs()
+    go(570,370);key('e');click('请他指');assert '桥修好以后' in json.dumps(obs(),ensure_ascii=False),obs()
     click('保存');click('读取');click('确认');assert obs()['visible'][0]['location']=='桥头落客点',obs()
     go(745,540);key('e');assert any(b['text'].startswith('准备好了') for b in obs()['buttons']),obs()
     go(100,550);key('e');assert obs()['visible'][0]['location']=='桥头落客点',obs()

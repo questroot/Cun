@@ -228,7 +228,7 @@ func show_title() -> void:
 	open_modal("末班渡船", "俯视探索 · 独立活动首版\n\n在回水埠，一个傍晚，两种处境。选择身份后本次固定；你不必重演既定结局。\n\nWASD / 方向键自由走动，靠近发光圆环后按 E 打开交互，也可点击右侧按钮。走到路口，交互前往相邻地点。J 记录，I 物品，Esc 暂停。鼠标可点击场地下方方向按钮移动。\n\n探索、交谈、暂停和读记录都不会增加污染。入夜由你主动确认，没有倒计时。危险动作会再次确认，取消没有惩罚。所有图形与水声由本项目自制，无闪烁、跳吓或截图采集。")
 	button(modal_body, "许宁 · 返乡者｜离家多年，回来处理旧屋", func(): start_game("xu"))
 	button(modal_body, "阿禾 · 学徒｜杂货铺帮工，熟悉这条街的人", func(): start_game("he"))
-	button(modal_body, "许宁到埠前段 · 从桥头走回旧屋", func(): start_game("xu"); story.set_flag("arrival_started"); story.change_place("arrival"); player = Vector2(450,440); story.note("班车在桥头放下你和一只行李箱。司机问要不要替你送到门口，你说先自己走走。旧屋钥匙在自己口袋里，不必找人证明你有权回来。"); last_place = ""; update_world(); refresh_ui())
+	button(modal_body, "许宁到埠前段 · 从桥头走回旧屋", func(): start_game("xu"); story.set_flag("arrival_started"); story.change_place("arrival"); player = Vector2(450,440); story.note("班车在桥头放下你和一只行李箱。司机还在栏边收好行李舱的搭扣，抬头问：‘这几年巷口改过，要指一下路吗？’旧屋钥匙在你的口袋里。"); last_place = ""; update_world(); refresh_ui())
 	button(modal_body, "读取独立活动存档", load_game)
 	button(modal_body, "退出游戏", func(): get_tree().quit())
 	refresh_ui()
@@ -453,6 +453,7 @@ func update_world() -> void:
 	solids.clear()
 	match story.s.place:
 		"arrival":
+			add_object("driver", "收行李舱搭扣的班车司机",Vector2(570,330),"npc")
 			add_object("luggage", "桥栏边自己的行李箱" if not story.flag("luggage_taken") else "桥栏边的空位", Vector2(305,360))
 			add_object("house_gate", "沿巷走回许家旧屋", Vector2(745,500), "gate")
 		"street":
@@ -702,6 +703,9 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"driver":
+				button(modal_body, "请他指一指如今的巷口", func(): close_modal(); story.note("司机指着栏杆尽头：‘沿这头进巷，许家旧屋在里面。桥修好以后，车就不停这边了。’\n他没问你回来住几天，蹲下确认搭扣扣牢，把这条路留给你自己走。"); refresh_ui())
+				button(modal_body, "谢过他，自己慢慢走", func(): close_modal(); story.note("许宁说自己认得屋子，想慢慢走。司机点头：‘行，箱轮那儿有碎石，留点神。’\n他转身收车里的空水瓶，没有再替她安排去处。"); refresh_ui())
 			"luggage_place":
 				if story.flag("luggage_placed"):
 					button(modal_body, "行李已经安放好，留在干处", close_modal)
