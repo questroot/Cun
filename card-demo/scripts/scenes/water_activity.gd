@@ -19,6 +19,20 @@ const UPGRADE_WOOD := 2
 const UPGRADE_SCRAP := 2
 const WORKSHOP_WOOD := 2
 const WORKSHOP_SCRAP := 2
+const TIDE_WOOD := 3
+const TIDE_SCRAP := 3
+
+var resident := false
+var resident_working := false
+var partner := false
+var blueprint := false
+var tide_table := false
+var delegated := false
+var neighbor_surveyed := false
+var sailing := false
+var sail_hp := 0
+var enemy_hp := 0
+var braced := false
 
 var wood := 0
 var scrap := 0
@@ -41,6 +55,7 @@ var target := Vector2.ZERO
 var moving := false
 var model: HeroWalkScript
 var processing_flash := 0.0
+var initial_state: Dictionary = {}
 var button_hints: Array[Label] = []
 
 var status_label: Label
@@ -53,6 +68,17 @@ var upgrade_button: Button
 var workshop_button: Button
 var process_button: Button
 var order_button: Button
+var resident_button: Button
+var job_button: Button
+var partner_button: Button
+var sail_button: Button
+var attack_button: Button
+var brace_button: Button
+var tide_button: Button
+var delegate_button: Button
+var survey_button: Button
+var sea_panel: Label
+var reset_dialog: ConfirmationDialog
 
 func _ready() -> void:
 	model = HeroWalkScript.new()
@@ -85,7 +111,11 @@ func _ready() -> void:
 	result_label.add_theme_font_size_override("font_size", 17)
 	result_label.add_theme_color_override("font_color", Color("#d7f1f0"))
 	add_child(result_label)
-	_make_button("重新开始", Vector2(938, 23), Vector2(118, 43), _start_round)
+	_make_button("重开海上档", Vector2(930, 23), Vector2(126, 43), func() -> void: reset_dialog.popup_centered())
+	reset_dialog = ConfirmationDialog.new()
+	reset_dialog.dialog_text = "只清除海上首章进度（包括蓝图）；灵伴存档与十关完全不变。确定重开？"
+	reset_dialog.confirmed.connect(_start_round)
+	add_child(reset_dialog)
 	var back := _make_button("返回外缘", Vector2(1070, 23), Vector2(138, 43), func() -> void: GameManager.goto_scene("outskirts"))
 	back.name = "ReturnButton"
 	expand_button = _make_button("扩建浮台  -3木料  -2废料", Vector2(858, 263), Vector2(345, 32), _expand_raft)
@@ -103,32 +133,60 @@ func _ready() -> void:
 		add_child(hint)
 		button_hints.append(hint)
 	var note := Label.new()
-	note.text = "建站后每4秒产出清水、纤维各1；升级前请手动领取。\n委托奖励木料、废料各2；第二单后解锁工坊自动搓绳。\n漂浮物每6秒补充，最多5份；离开再进入保留进度，重开清空；关闭游戏不保留。"
+	note.text = "建站后每4秒产出清水、纤维各1；升级前请手动领取。\n委托奖励木料、废料各2；第二单后解锁工坊自动搓绳。\n漂浮物每6秒补充，最多5份；海上进度自动保存，航战退出返港。"
 	note.position = Vector2(862, 615)
 	note.add_theme_font_size_override("font_size", 16)
 	note.add_theme_color_override("font_color", Color("#c9e2de"))
 	add_child(note)
+	sea_panel = Label.new()
+	sea_panel.position = Vector2(860, 88)
+	sea_panel.add_theme_font_size_override("font_size", 17)
+	sea_panel.add_theme_color_override("font_color", Color("#ffe5a0"))
+	add_child(sea_panel)
+	resident_button = _make_button("接纳居民阿汐  -1清水", Vector2(72, 665), Vector2(207, 38), _accept_resident)
+	job_button = _make_button("安排阿汐集水岗位", Vector2(282, 665), Vector2(195, 38), _assign_resident)
+	partner_button = _make_button("信标：邀请伙伴岚", Vector2(480, 665), Vector2(188, 38), _recruit_partner)
+	sail_button = _make_button("首航 / 重试", Vector2(670, 665), Vector2(144, 38), _begin_sail)
+	attack_button = _make_button("攻击浮礁", Vector2(862, 665), Vector2(106, 38), _sail_attack)
+	brace_button = _make_button("防御整备", Vector2(971, 665), Vector2(106, 38), _sail_brace)
+	tide_button = _make_button("建潮测台 -3木 -3废", Vector2(860, 172), Vector2(240, 32), _build_tide_table)
+	delegate_button = _make_button("委任 / 撤任岚", Vector2(1104, 172), Vector2(110, 32), _toggle_delegate)
+	survey_button = _make_button("调查邻区（未开放）", Vector2(860, 215), Vector2(354, 32), _survey_neighbor)
 	if GameManager.water_activity_state.is_empty():
 		_start_round()
 	else:
 		_restore_round(GameManager.water_activity_state)
+		initial_state = GameManager.water_activity_state.duplicate(true)
 	exploration_tools = ExplorationTools.new()
 	exploration_tools.region = "water_activity"
 	add_child(exploration_tools)
 
 func _exit_tree() -> void:
-	if model != null:
-		_cache_round()
+	pass
 
-func _cache_round() -> void:
-	GameManager.water_activity_state = {
+func _round_state() -> Dictionary:
+	return {
 		"wood": wood, "scrap": scrap, "water": water, "fiber": fiber, "rope": rope,
 		"raft_tiles": raft_tiles, "collectors": collectors, "orders_completed": orders_completed,
 		"pending_water": pending_water, "pending_fiber": pending_fiber,
 		"automated_collecting": automated_collecting, "workshop_built": workshop_built,
 		"production_elapsed": production_elapsed, "debris_elapsed": debris_elapsed,
-		"player_foot": player_foot, "debris": debris.duplicate(), "result": result_label.text
+		"player_foot": [player_foot.x, player_foot.y], "debris": debris.map(func(point: Vector2) -> Array: return [point.x, point.y]), "result": result_label.text,
+		"resident": resident, "resident_working": resident_working, "partner": partner,
+		"blueprint": blueprint, "tide_table": tide_table, "delegated": delegated, "neighbor_surveyed": neighbor_surveyed
 	}
+
+func _cache_round() -> bool:
+	var old := GameManager.water_activity_state.duplicate(true)
+	var state := _round_state()
+	if initial_state.is_empty():
+		initial_state = state.duplicate(true)
+	if GameManager.save_sea_state(state):
+		return true
+	var error: String = GameManager.sea_save_error
+	_restore_round(old if not old.is_empty() else initial_state)
+	result_label.text = error
+	return false
 
 func _restore_round(state: Dictionary) -> void:
 	wood = state["wood"]
@@ -145,10 +203,20 @@ func _restore_round(state: Dictionary) -> void:
 	workshop_built = state["workshop_built"]
 	production_elapsed = state["production_elapsed"]
 	debris_elapsed = state["debris_elapsed"]
-	player_foot = state["player_foot"]
-	debris = state["debris"].duplicate()
+	player_foot = Vector2(state.player_foot[0], state.player_foot[1])
+	debris.clear()
+	for point in state.debris:
+		debris.append(Vector2(point[0], point[1]))
+	resident = state.resident
+	resident_working = state.resident_working
+	partner = state.partner
+	blueprint = state.blueprint
+	tide_table = state.tide_table
+	delegated = state.delegated
+	neighbor_surveyed = state.neighbor_surveyed
+	sailing = false
 	model.position = player_foot
-	result_label.text = state["result"]
+	result_label.text = GameManager.sea_save_error if GameManager.sea_save_error != "" else state["result"]
 	_refresh_ui()
 
 func _make_button(text: String, position_value: Vector2, size_value: Vector2, action: Callable) -> Button:
@@ -161,6 +229,14 @@ func _make_button(text: String, position_value: Vector2, size_value: Vector2, ac
 	return button
 
 func _start_round() -> void:
+	resident = false
+	resident_working = false
+	partner = false
+	blueprint = false
+	tide_table = false
+	delegated = false
+	neighbor_surveyed = false
+	sailing = false
 	wood = 0
 	scrap = 0
 	water = 0
@@ -184,19 +260,120 @@ func _start_round() -> void:
 	processing_flash = 0.0
 	result_label.text = "走近水面漂浮物自动打捞；收集五份可扩建浮台并建造第一座站。"
 	_refresh_ui()
+	if GameManager.water_activity_state.is_empty():
+		initial_state = _round_state()
 	_cache_round()
 
-func _collect_debris() -> void:
-	wood += 1
-	scrap += 1
-	result_label.text = "打捞成功：获得1木料、1废料。"
+func _accept_resident() -> bool:
+	if resident or collectors == 0 or water < 1:
+		return false
+	water -= 1
+	resident = true
+	result_label.text = "阿汐入住：基础需求清水1已满足；可安排集水岗位。"
 	_refresh_ui()
+	return _cache_round()
+
+func _assign_resident() -> bool:
+	if not resident or resident_working or collectors == 0:
+		return false
+	resident_working = true
+	result_label.text = "阿汐在岗：每批集水额外+1（纤维不变）。"
+	_refresh_ui()
+	return _cache_round()
+
+func _recruit_partner() -> bool:
+	if partner or not resident_working or orders_completed < 1:
+		return false
+	partner = true
+	result_label.text = "修好信标，剧情伙伴岚加入；首航可出发。"
+	_refresh_ui()
+	return _cache_round()
+
+func _begin_sail() -> bool:
+	if sailing or not partner or not resident_working or water < 1 or rope < 1:
+		return false
+	water -= 1
+	rope -= 1
+	sailing = true
+	sail_hp = 9
+	enemy_hp = 9
+	braced = false
+	result_label.text = "首航交付清水与绳索各1；选择攻击或防御。敌浮礁每回合反击4，防御减至1。"
+	_refresh_ui()
+	if not _cache_round():
+		sailing = false
+		return false
+	return true
+
+func _sail_attack() -> bool:
+	if not sailing:
+		return false
+	enemy_hp = maxi(0, enemy_hp - 3)
+	if enemy_hp == 0:
+		sailing = false
+		var first := not blueprint
+		blueprint = true
+		result_label.text = "首航胜利！" + ("首次取得潮测台蓝图，可返港建造。" if first else "蓝图已领过，本次无重复奖励。")
+		_refresh_ui()
+		return _cache_round()
+	_sail_retaliate()
+	return true
+
+func _sail_brace() -> bool:
+	if not sailing:
+		return false
+	braced = true
+	result_label.text = "岚掩护防御；敌浮礁来袭，伤害减为1。"
+	_sail_retaliate()
+	return true
+
+func _sail_retaliate() -> void:
+	var damage := 1 if braced else 4
+	sail_hp = maxi(0, sail_hp - damage)
+	braced = false
+	if sail_hp == 0:
+		sailing = false
+		result_label.text = "首航失利，返回港口。可重新拾荒、生产补给后重试；蓝图不会丢失。"
+	else:
+		result_label.text += " 浮礁反击%d；船体%d/9，浮礁%d/9。" % [damage, sail_hp, enemy_hp]
+	_refresh_ui()
+
+func _build_tide_table() -> bool:
+	if not blueprint or tide_table or wood < TIDE_WOOD or scrap < TIDE_SCRAP:
+		return false
+	wood -= TIDE_WOOD
+	scrap -= TIDE_SCRAP
+	tide_table = true
+	result_label.text = "潮测台建成；可委任岚，并调查邻区（本章不开放航行）。"
+	_refresh_ui()
+	return _cache_round()
+
+func _toggle_delegate() -> bool:
+	if not tide_table or not partner or sailing:
+		return false
+	delegated = not delegated
+	result_label.text = "岚已委任：每批额外+1清水。" if delegated else "岚已撤任：恢复基础产能。"
+	_refresh_ui()
+	return _cache_round()
+
+func _survey_neighbor() -> bool:
+	if not tide_table or neighbor_surveyed:
+		return false
+	neighbor_surveyed = true
+	result_label.text = "邻区已标注为可调查；航路尚未开放，首章到此结束。"
+	_refresh_ui()
+	return _cache_round()
 
 func _collect_nearby() -> void:
 	for i in range(debris.size() - 1, -1, -1):
 		if player_foot.distance_to(debris[i]) <= PICKUP_RADIUS:
 			debris.remove_at(i)
-			_collect_debris()
+			wood += 1
+			scrap += 1
+			result_label.text = "打捞成功：获得1木料、1废料。"
+			_refresh_ui()
+			if not _cache_round():
+				break
 
 func _expand_raft() -> bool:
 	if wood < EXPAND_WOOD or scrap < EXPAND_SCRAP:
@@ -206,7 +383,7 @@ func _expand_raft() -> bool:
 	raft_tiles += 1
 	result_label.text = "浮台扩建完成，可以在空位建造设施。"
 	_refresh_ui()
-	return true
+	return _cache_round()
 
 func _build_collector() -> bool:
 	if collectors >= raft_tiles - 1 or wood < COLLECTOR_WOOD or scrap < COLLECTOR_SCRAP:
@@ -216,7 +393,7 @@ func _build_collector() -> bool:
 	collectors += 1
 	result_label.text = "集水打捞站建成，开始定时产出。请点击领取产出。"
 	_refresh_ui()
-	return true
+	return _cache_round()
 
 func _tick_production(delta: float) -> void:
 	if collectors == 0:
@@ -225,18 +402,20 @@ func _tick_production(delta: float) -> void:
 	var cycles := int(production_elapsed / PRODUCTION_INTERVAL)
 	if cycles > 0:
 		production_elapsed -= cycles * PRODUCTION_INTERVAL
+		var water_gain := cycles * (collectors + int(resident_working) + int(delegated))
 		if automated_collecting:
-			water += cycles * collectors
+			water += water_gain
 			if workshop_built:
 				rope += cycles * collectors
 				processing_flash = 1.0
 			else:
 				fiber += cycles * collectors
 		else:
-			pending_water += cycles * collectors
+			pending_water += water_gain
 			pending_fiber += cycles * collectors
 		result_label.text = "设施已产出 %d 批%s。" % [cycles * collectors, "，自动收取并加工" if workshop_built else ("，自动收取" if automated_collecting else "，等待领取")]
 		_refresh_ui()
+		_cache_round()
 
 func _claim_production() -> bool:
 	if automated_collecting or pending_water == 0 and pending_fiber == 0:
@@ -247,7 +426,7 @@ func _claim_production() -> bool:
 	pending_water = 0
 	pending_fiber = 0
 	_refresh_ui()
-	return true
+	return _cache_round()
 
 func _upgrade_collector() -> bool:
 	if collectors == 0 or automated_collecting or orders_completed < 1 or wood < UPGRADE_WOOD or scrap < UPGRADE_SCRAP:
@@ -261,7 +440,7 @@ func _upgrade_collector() -> bool:
 	pending_fiber = 0
 	result_label.text = "站点升级完成：已有待领产出一并领取，此后自动收取。"
 	_refresh_ui()
-	return true
+	return _cache_round()
 
 func _build_workshop() -> bool:
 	if not automated_collecting or workshop_built or orders_completed < 2 or wood < WORKSHOP_WOOD or scrap < WORKSHOP_SCRAP:
@@ -274,7 +453,7 @@ func _build_workshop() -> bool:
 	fiber = 0
 	result_label.text = "简易工坊建成：现有纤维已加工，此后产出自动制成绳索。"
 	_refresh_ui()
-	return true
+	return _cache_round()
 
 func _process_fiber() -> bool:
 	if fiber < 1:
@@ -283,7 +462,7 @@ func _process_fiber() -> bool:
 	rope += 1
 	result_label.text = "加工完成：1纤维制成1绳索。"
 	_refresh_ui()
-	return true
+	return _cache_round()
 
 func _fulfill_order() -> bool:
 	if water < ORDER_WATER or rope < ORDER_ROPE:
@@ -300,7 +479,7 @@ func _fulfill_order() -> bool:
 	else:
 		result_label.text = "委托完成！获得2木料、2废料，可以继续经营。"
 	_refresh_ui()
-	return true
+	return _cache_round()
 
 func _refresh_ui() -> void:
 	status_label.text = "木料 %d    废料 %d    清水 %d    纤维 %d    绳索 %d    待领清水/纤维 %d/%d" % [wood, scrap, water, fiber, rope, pending_water, pending_fiber]
@@ -330,6 +509,29 @@ func _refresh_ui() -> void:
 	button_hints[4].text = "先升级站点" if not automated_collecting else ("完成第二单解锁" if orders_completed < 2 else ("已建造" if workshop_built else ("缺木料 %d、废料 %d" % [maxi(0, WORKSHOP_WOOD - wood), maxi(0, WORKSHOP_SCRAP - scrap)] if workshop_button.disabled else "可建造")))
 	button_hints[5].text = "缺纤维 %d（建站产出后领取）" % maxi(0, 1 - fiber) if process_button.disabled else "可加工"
 	button_hints[6].text = "缺清水 %d、绳索 %d" % [maxi(0, ORDER_WATER - water), maxi(0, ORDER_ROPE - rope)] if order_button.disabled else "可交付"
+	resident_button.disabled = resident or collectors == 0 or water < 1 or sailing
+	job_button.disabled = not resident or resident_working or sailing
+	partner_button.disabled = partner or not resident_working or orders_completed < 1 or sailing
+	sail_button.disabled = sailing or not partner or not resident_working or water < 1 or rope < 1
+	attack_button.disabled = not sailing
+	brace_button.disabled = not sailing
+	tide_button.disabled = not blueprint or tide_table or wood < TIDE_WOOD or scrap < TIDE_SCRAP or sailing
+	delegate_button.disabled = not tide_table or not partner or sailing
+	survey_button.disabled = not tide_table or neighbor_surveyed or sailing
+	if sailing:
+		sea_panel.text = "首航进行中：船体%d/9  浮礁%d/9\n攻击造成3伤；敌反击4，防御时1。" % [sail_hp, enemy_hp]
+	elif not resident:
+		sea_panel.text = "下一目标：建站领水，接纳阿汐（清水1）\n居民岗位：未安排 | 伙伴：未加入"
+	elif not resident_working:
+		sea_panel.text = "下一目标：安排阿汐集水岗位\n居民需求已供清水1；在岗每批+1清水"
+	elif not partner:
+		sea_panel.text = "下一目标：完成首单，邀请保底伙伴岚\n阿汐在岗：每批+1清水"
+	elif not blueprint:
+		sea_panel.text = "下一目标：准备清水和绳索各1，首航取蓝图\n失败可返港补给并重试"
+	elif not tide_table:
+		sea_panel.text = "蓝图已入册：潮测台缺木%d、废%d\n近岸打捞可重复获取材料" % [maxi(0, TIDE_WOOD - wood), maxi(0, TIDE_SCRAP - scrap)]
+	else:
+		sea_panel.text = "潮测台已建 | 岚委任：%s（每批清水+1）\n邻区：%s，仅可调查，航路未开放" % ["是" if delegated else "否", "已调查" if neighbor_surveyed else "待调查"]
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
