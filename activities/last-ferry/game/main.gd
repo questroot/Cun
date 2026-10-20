@@ -445,6 +445,7 @@ func update_world() -> void:
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
 			add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
+			if story.flag("street_evening_seen") and story.s.phase == "dusk": add_object("shoe_parcel", "等主人来取的鞋包", Vector2(675,460))
 			add_object("shelter_gate", "去候船棚", Vector2(750, 385), "gate")
 			add_object("house_gate", "去许家旧屋", Vector2(100, 440), "gate")
 			add_object("departure", "街口·离开体验", Vector2(450, 570), "gate")
@@ -697,6 +698,8 @@ func interact() -> void:
 			"ge":
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
+			"shoe_parcel":
+				button(modal_body, "看看纸包，不替主人取走", func(): close_modal(); story.note("鞋头露出纸包一角，新缝的线还绷着。包上只写了一个取鞋的姓，不是给旅人的物品。\n老葛把包往棚檐下推了推：‘他认得我的摊，会自己来。’你不必替这条街把每件小事都做完。"); refresh_ui())
 			"wet_stock":
 				if story.flag("stock_carried"): act_button("把箱子放回门边", "stock_put_back")
 				elif not story.flag("stock_dried"): act_button("托住箱底，拿起湿货箱", "stock_take")
@@ -846,6 +849,9 @@ func _draw() -> void:
 			draw_rect(Rect2(130, 175, 265, 120), Color("554b44"))
 			draw_rect(Rect2(138, 165, 250, 25), Color("4e645d"))
 			draw_string(font, Vector2(175, 228), "陶记杂货", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e1cfa6"))
+			if story.flag("street_evening_seen") and story.s.phase == "dusk":
+				draw_rect(Rect2(657,449,36,22),Color("b5a17a"))
+				draw_line(Vector2(675,449),Vector2(675,471),Color("71634c"),2)
 			if story.s.ending == "flood":
 				draw_rect(Rect2(695, 315, 18, 160), Color("b68a59"))
 				draw_string(font, Vector2(550, 180), "渡口停航 · 安全撤离", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("e3c29f"))

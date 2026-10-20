@@ -21,6 +21,8 @@ try:
     s.call('launch',{'project':'last-ferry','headless':True});click('许宁 ·')
     go(695,270);key('e');click('翻看照片');photo=obs();assert '新棚启用前' in json.dumps(photo,ensure_ascii=False)
     go(450,575);key('e');ambient=obs();assert '没喊你停步' in json.dumps(ambient,ensure_ascii=False) and not ambient['visible'][0]['modal_open'],ambient
+    assert any(o['title']=='等主人来取的鞋包' for o in ambient['visible'][0]['objects']),ambient
+    go(675,500);key('e');click('看看纸包');assert '会自己来' in json.dumps(obs(),ensure_ascii=False),obs()
     go(750,390);key('e');go(750,565);key('e')
     for x,y,label in [(165,485,'沿树根'),(330,510,'数矮阶'),(485,445,'蹲下看')]:
         go(x,y);mouse(x,y-40);assert not obs()['visible'][0]['modal_open'],obs()
