@@ -115,6 +115,13 @@ func change_place(place: String) -> void:
 ## Each consequential action still checks its own location, phase and prerequisites.
 func act(id: String) -> bool:
 	var p: String = s.place
+	if not s.left and id == "lane_level_revisit" and p == "lane" and Vector2(s.x,s.y).distance_to(Vector2(650,300)) < 48:
+		var stage := 2 if s.ending == "flood" or s.pollution >= 2 else (1 if s.pollution == 1 else 0)
+		var observed_flag := "lane_level_seen_%d" % stage
+		if stage == 0 or flag(observed_flag): return false
+		set_flag(observed_flag)
+		note("回访施工水尺：" + lane_water_description() + "。这是此刻站在尺旁看见的新水线，记录本保留先前的见闻。")
+		return true
 	if s.left:
 		notice = "本段体验已结束。可读取离开前的存档，或重新选择身份。"
 		return false

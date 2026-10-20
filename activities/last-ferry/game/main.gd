@@ -445,6 +445,8 @@ func _process(delta: float) -> void:
 		if not observed_level.is_empty():
 			story.act(observed_level)
 			refresh_ui()
+		elif player.distance_to(Vector2(650,300)) < 48:
+			if story.act("lane_level_revisit"): refresh_ui()
 	var movement := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): movement.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): movement.y += 1

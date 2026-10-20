@@ -52,8 +52,15 @@ func run() -> void:
 	check(state.lane_water_description().contains("低处"),"initial gauge is low")
 	state.s.pollution = 1
 	check(state.lane_water_description().contains("中格"),"first intrusion visibly raises gauge")
+	check(state.act("lane_level_revisit") and not state.act("lane_level_revisit"),"middle gauge recorded once only on actual revisit")
 	state.s.pollution = 2
 	check(state.lane_water_description().contains("上格"),"flood gauge exceeds upper mark")
+	check(state.act("lane_level_revisit") and state.flag("lane_level_seen_1") and state.flag("lane_level_seen_2"),"upper revisit preserves earlier middle record")
+	state.finish("flood")
+	state.change_place("lane")
+	state.s.x = 650.0
+	state.s.y = 320.0
+	check(state.save_game() and state.load_game() and not state.act("lane_level_revisit"),"revisit records persist without repeat after loading")
 	state.fresh("xu")
 	check(state.valid_save(state.s),"legacy save without cart position remains valid")
 	state.set_flag("lane_cart_moved")
