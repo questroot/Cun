@@ -436,6 +436,9 @@ func update_world() -> void:
 			add_object("street_gate", "回街口", Vector2(95, 570), "gate")
 			add_object("steps_gate", "去旧石阶", Vector2(750, 570), "gate")
 		"steps":
+			add_object("old_root", "斜柳老根", Vector2(165,445))
+			add_object("old_stairs", "三道矮阶", Vector2(330,470))
+			add_object("post_socket", "石缝里的方槽", Vector2(485,405))
 			add_object("mooring", "系缆石旁·河声与岸上交谈" if story.s.phase == "night" else "系缆石", Vector2(460, 295))
 			if story.flag("closing_release") and story.s.phase == "night": add_object("release_scene", "正收缆绳的沈渡与岸上的人", Vector2(590,410), "npc")
 			if story.flag("closing_light") and story.s.phase == "night": add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
@@ -538,7 +541,8 @@ func act_button(text: String, id: String) -> void:
 
 func continue_river(id: String) -> void:
 	var target := conversation_target
-	if not started or story.s.phase != "night" or not story.s.place in ["steps", "boat"]: return
+	if not started or not story.s.place in ["steps", "boat"]: return
+	if story.s.phase != "night" and not id in ["photo_same", "photo_shift"]: return
 	var location := Vector2(460,295) if target == "mooring" else Vector2(570,335)
 	if player.distance_to(location) >= 96: return
 	story.act(id)
@@ -629,6 +633,9 @@ func interact() -> void:
 			"ge":
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
+			"old_root": act_button("沿树根看它原来朝哪边生长", "root_view")
+			"old_stairs": act_button("数矮阶，对照旁边后来加高的岸", "stairs_view")
+			"post_socket": act_button("蹲下看方槽边的旧铁锈", "socket_view")
 			"old_photo": act_button("翻看照片正反面，记下岸的位置", "photo_view")
 			"toolbag": act_button("站在干阶上，用竹竿挑起布袋", "tool_retrieve")
 			"tao":
@@ -788,6 +795,11 @@ func _draw() -> void:
 			for i in range(7):
 				draw_line(Vector2(55, 188 + i * 16), Vector2(805, 188 + i * 16), Color("36505b"), 2)
 			for i in range(4): draw_line(Vector2(60, 310 + i * 34), Vector2(810, 310 + i * 34), Color("a3a69b"), 3)
+			draw_line(Vector2(135,417),Vector2(178,450),Color("89785a"),10)
+			draw_line(Vector2(157,438),Vector2(192,429),Color("89785a"),5)
+			for step in range(3): draw_rect(Rect2(282,447+step*10,94,7),Color("81867d"))
+			draw_rect(Rect2(475,395,20,20),Color("141f23"))
+			draw_rect(Rect2(475,395,20,20),Color("ac9977"),false,2)
 			if story.s.phase == "night":
 				var drift := Vector2(0,-60) if story.flag("released") else Vector2.ZERO
 				draw_colored_polygon(PackedVector2Array([Vector2(565,230)+drift,Vector2(810,230)+drift,Vector2(777,300)+drift,Vector2(605,300)+drift]), Color("332e2b"))

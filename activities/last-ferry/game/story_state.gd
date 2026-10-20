@@ -162,6 +162,11 @@ func act(id: String) -> bool:
 			if p != "street" or s.identity != "he": return refuse("请在店里以学徒身份向陶婶借灯。")
 			give("手提黄灯")
 			note("陶婶借出手提黄灯：只供等候，不招呼人上船。你答应天亮归还。")
+		"root_view", "stairs_view", "socket_view":
+			if p != "steps": return false
+			set_flag(id)
+			var descriptions := {"root_view":"柳树上半截已经锯掉，老根仍从干阶斜向河面。你顺着根走到背面，再回头看：人的左右会变，树根朝水生长的方向没有变。", "stairs_view":"新岸沿高高压在旧岸后面，下面三道窄阶只容半只脚。石面上水磨出的弧线连着，不是新棚前那段后来浇出的宽台。你没有为数阶踏进湿苔。", "socket_view":"方槽里没有宝物，只有方木留下的压痕和两枚锈钉。槽口朝旧阶开，离如今系缆石很近。曾有一根柱子在这里站过；现灯在上游，并不能把这段石头也搬过去。"}
+			note(descriptions[id])
 		"photo_view":
 			if p != "house": return false
 			set_flag("photo_seen")
