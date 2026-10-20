@@ -16,14 +16,23 @@ def go(x,y):
             if abs(d)<10:break
             key((('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w')),min(100,max(2,int(abs(d)/2))))
         else:raise AssertionError(('blocked',axis,target,p))
+lane_visits=0
+cart_moved=False
 def lane_to(dest):
+    global lane_visits,cart_moved
+    lane_visits+=1
     assert obs()['visible'][0]['location']=='修桥绕行巷',obs()
     click('保存');click('读取');click('确认')
     assert not any(b['text'].startswith('准备好了') for b in obs()['buttons']),obs()
     barrier=obs()['visible'][0]['visible_barrier'];assert barrier['x']==390 and barrier['height']==220,barrier
-    if dest=='house':
+    if dest=='house' and not cart_moved:
         key('w',100);key('d',120);key('d',120)
         blocked=obs()['visible'][0]['player_screen'];assert blocked['x']<390 and 280<blocked['y']<500,blocked
+        if lane_visits>1:
+            key('e');click('握住车把');cart_moved=True
+            click('保存');click('读取');click('确认')
+            assert '缺口已通' in obs()['visible'][0]['visible_barrier']['appearance'],obs()
+            key('d',100);assert obs()['visible'][0]['player_screen']['x']>480,obs()
     x,y=(745,350) if dest=='house' else (100,540)
     for axis,target in [('y',540),('x',x),('y',y)]:
         for _ in range(30):

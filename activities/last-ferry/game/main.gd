@@ -65,7 +65,8 @@ func play_visible() -> Dictionary:
 		result["visible_toolbag"] = {"x":650,"y":490,"appearance":"老葛长凳边的工具袋"}
 	elif story.s.place == "steps" and not story.flag("tool_returned"):
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
-	if story.s.place == "lane": result["visible_barrier"] = {"x":390,"y":280,"width":80,"height":220,"appearance":"修桥石料围挡，南侧人行通道可绕行"}
+	if story.s.place == "lane":
+		result["visible_barrier"] = {"x":390,"y":280,"width":80,"height":220,"appearance":"石料围挡中段缺口已通，南侧也可绕行" if story.flag("lane_cart_moved") else "修桥石料围挡，空车堵中段缺口，南侧可绕行"}
 	if story.flag("luggage_taken") and not story.flag("luggage_placed"):
 		result["carried_luggage"] = {"x":player.x+20,"y":player.y+5,"appearance":"自己提着的棕色行李箱"}
 	if story.flag("stock_carried"):
@@ -459,7 +460,11 @@ func update_world() -> void:
 			add_object("luggage", "桥栏边自己的行李箱" if not story.flag("luggage_taken") else "桥栏边的空位", Vector2(305,360))
 			add_object("lane_gate", "沿修桥绕行巷去旧屋", Vector2(745,500), "gate")
 		"lane":
-			solids.append(Rect2(390,280,80,220))
+			solids.append(Rect2(390,280,80,80))
+			solids.append(Rect2(390,440,80,60))
+			if not story.flag("lane_cart_moved"): solids.append(Rect2(390,360,80,80))
+			else: solids.append(Rect2(488,230,64,60))
+			add_object("lane_cart", "墙边停稳的空手推车" if story.flag("lane_cart_moved") else "卡在围挡缺口的空手推车",Vector2(520,260) if story.flag("lane_cart_moved") else Vector2(350,400))
 			add_object("arrival_gate", "返回桥头落客点",Vector2(100,510),"gate")
 			add_object("house_gate", "许家旧屋门口",Vector2(745,320),"gate")
 		"street":
@@ -714,6 +719,11 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"lane_cart":
+				if story.flag("lane_cart_moved"):
+					button(modal_body,"空车已靠墙停稳，缺口可通行",close_modal)
+				else:
+					button(modal_body,"握住车把，把空车推到墙边",func(): close_modal(); story.set_flag("lane_cart_moved"); story.note("车轮从卡住的碎石上退下来。你把空车推到墙边，横过车把抵稳；围挡中段露出容一人拖箱经过的缺口。"); last_place=""; update_world(); refresh_ui())
 			"driver":
 				button(modal_body, "请他指一指如今的巷口", func(): close_modal(); story.note("司机指着栏杆尽头：‘沿这头进巷，许家旧屋在里面。桥修好以后，车就不停这边了。’\n他没问你回来住几天，蹲下确认搭扣扣牢，把这条路留给你自己走。"); refresh_ui())
 				button(modal_body, "谢过他，自己慢慢走", func(): close_modal(); story.note("许宁说自己认得屋子，想慢慢走。司机点头：‘行，箱轮那儿有碎石，留点神。’\n他转身收车里的空水瓶，没有再替她安排去处。"); refresh_ui())
@@ -891,8 +901,13 @@ func _draw() -> void:
 	draw_string(font, Vector2(32, 130), "道路范围：石色地面　圆环：可交互　门形：地点连接", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("bac5c3"))
 	match story.s.place:
 		"lane":
-			draw_rect(Rect2(390,280,80,220),Color("736f65"))
-			for y in range(290,490,30): draw_line(Vector2(395,y),Vector2(465,y+15),Color("b49c68"),5)
+			draw_rect(Rect2(390,280,80,80),Color("736f65"))
+			draw_rect(Rect2(390,440,80,60),Color("736f65"))
+			var cart := Vector2(520,260) if story.flag("lane_cart_moved") else Vector2(430,400)
+			draw_rect(Rect2(cart-Vector2(32,30),Vector2(64,60)),Color("927b58"))
+			draw_circle(cart+Vector2(-28,28),8,Color("333d40"))
+			draw_circle(cart+Vector2(28,28),8,Color("333d40"))
+			draw_line(cart-Vector2(32,0),cart-Vector2(80,0),Color("b1a18a"),5)
 			draw_string(font,Vector2(280,255),"修桥备料 · 南侧绕行",HORIZONTAL_ALIGNMENT_LEFT,-1,20,Color("ddcca5"))
 			draw_line(Vector2(100,550),Vector2(740,550),Color("9b947f"),3)
 		"arrival":
