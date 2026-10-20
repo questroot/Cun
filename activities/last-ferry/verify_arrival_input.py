@@ -18,7 +18,10 @@ def go(x,y):
         else:raise AssertionError(('blocked',axis,target,p))
 try:
     s.call('launch',{'project':'last-ferry','headless':True});click('许宁到埠前段')
-    go(745,540);key('e');go(100,550);key('e');assert obs()['visible'][0]['location']=='桥头落客点',obs()
+    assert not any(b['text'].startswith('准备好了') for b in obs()['buttons']),obs()
+    click('保存');click('读取');click('确认');assert obs()['visible'][0]['location']=='桥头落客点',obs()
+    go(745,540);key('e');assert any(b['text'].startswith('准备好了') for b in obs()['buttons']),obs()
+    go(100,550);key('e');assert obs()['visible'][0]['location']=='桥头落客点',obs()
     go(305,400);key('e');click('提起自己的行李');assert 'carried_luggage' in obs()['visible'][0],obs()
     go(745,540);key('e');go(590,550);key('e');click('把自己的行李');placed=obs();assert 'carried_luggage' not in placed['visible'][0],placed
     click('保存');click('读取');click('确认');loaded=obs();assert any(o['title']=='门内自己的行李箱' for o in loaded['visible'][0]['objects']),loaded

@@ -538,7 +538,7 @@ func refresh_ui() -> void:
 		return
 	if not nearest.is_empty():
 		button(action_box, "[E] 交互：" + object_title(nearest), interact)
-	if story.s.phase == "dusk":
+	if story.s.phase == "dusk" and story.s.place != "arrival":
 		button(action_box, "准备好了 · 进入入夜", func(): confirm("进入入夜？人物将开始赴约；必要线索和工具仍可补查。没有自动倒计时。", func(): do_action("night")))
 	if story.s.phase == "night" and story.s.place == "steps" and nearest == "mooring" and not story.flag("released"):
 		if not story.flag("river_heard"):
