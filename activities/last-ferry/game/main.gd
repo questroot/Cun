@@ -445,7 +445,7 @@ func update_world() -> void:
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
 			add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
-			if story.flag("street_evening_seen") and story.s.phase == "dusk": add_object("shoe_parcel", "等主人来取的鞋包", Vector2(675,460))
+			if story.flag("street_evening_seen") and not story.flag("shoe_collected") and story.s.phase == "dusk": add_object("shoe_parcel", "等主人来取的鞋包", Vector2(675,460))
 			add_object("shelter_gate", "去候船棚", Vector2(750, 385), "gate")
 			add_object("house_gate", "去许家旧屋", Vector2(100, 440), "gate")
 			add_object("departure", "街口·离开体验", Vector2(450, 570), "gate")
@@ -625,6 +625,9 @@ func travel(place: String) -> void:
 	if place == "street" and story.s.phase == "dusk" and not story.flag("street_evening_seen"):
 		story.set_flag("street_evening_seen")
 		story.note("你回到街口时，老葛正把补好的鞋并排放在凳上。\n陶婶从门内问：‘明早量桥，先吃了再去？’\n‘带两个馒头就行。鞋等晾干，让他自己来拿，别又替他送到家。’\n她把一张包货纸压在秤下，没喊你停步。街上还有各人的小事，你可以继续走。")
+	elif place == "street" and story.s.phase == "dusk" and story.flag("street_evening_seen") and not story.flag("shoe_collected"):
+		story.set_flag("shoe_collected")
+		story.note("你再回街口，鞋主正把修好的鞋拎走。他把旧鞋踩在脚下试了两步，跟老葛争一句‘这回别再开线’，两人都笑了一下。\n老葛把空纸折平，凳子往檐下收。陶婶喊的馒头还没凉，没人请你替他们把这件事做完。")
 	player = Vector2(story.s.x, story.s.y)
 	last_place = ""
 	close_modal()
@@ -849,7 +852,7 @@ func _draw() -> void:
 			draw_rect(Rect2(130, 175, 265, 120), Color("554b44"))
 			draw_rect(Rect2(138, 165, 250, 25), Color("4e645d"))
 			draw_string(font, Vector2(175, 228), "陶记杂货", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e1cfa6"))
-			if story.flag("street_evening_seen") and story.s.phase == "dusk":
+			if story.flag("street_evening_seen") and not story.flag("shoe_collected") and story.s.phase == "dusk":
 				draw_rect(Rect2(657,449,36,22),Color("b5a17a"))
 				draw_line(Vector2(675,449),Vector2(675,471),Color("71634c"),2)
 			if story.s.ending == "flood":

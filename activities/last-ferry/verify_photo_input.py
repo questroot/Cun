@@ -23,6 +23,9 @@ try:
     go(450,575);key('e');ambient=obs();assert '没喊你停步' in json.dumps(ambient,ensure_ascii=False) and not ambient['visible'][0]['modal_open'],ambient
     assert any(o['title']=='等主人来取的鞋包' for o in ambient['visible'][0]['objects']),ambient
     go(675,500);key('e');click('看看纸包');assert '会自己来' in json.dumps(obs(),ensure_ascii=False),obs()
+    go(750,390);key('e');go(95,565);key('e');collected=obs()
+    assert '鞋主正把修好的鞋拎走' in json.dumps(collected,ensure_ascii=False) and not collected['visible'][0]['modal_open'],collected
+    assert not any(o['title']=='等主人来取的鞋包' for o in collected['visible'][0]['objects']),collected
     go(750,390);key('e');go(750,565);key('e')
     for x,y,label in [(165,485,'沿树根'),(330,510,'数矮阶'),(485,445,'蹲下看')]:
         go(x,y);mouse(x,y-40);assert not obs()['visible'][0]['modal_open'],obs()
