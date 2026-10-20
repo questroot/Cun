@@ -35,6 +35,21 @@ func run() -> void:
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
 	state.fresh("xu")
+	check(not at("house","lane_old_level"),"water marks cannot be observed from other scenes")
+	state.change_place("lane")
+	state.s.x = 400.0
+	state.s.y = 540.0
+	check(not state.act("lane_old_level") and not state.act("lane_today_level"),"distant marks not awarded")
+	state.s.x = 200.0
+	state.s.y = 320.0
+	var evidence_before: int = state.s.evidence.size()
+	check(state.act("lane_old_level") and not state.act("lane_today_level"),"near old trace does not award today's gauge")
+	var journal_after: int = state.s.journal.size()
+	check(not state.act("lane_old_level") and state.s.journal.size()==journal_after,"repeat visits do not duplicate observation")
+	state.s.x = 650.0
+	check(state.act("lane_today_level") and state.s.evidence.size()==evidence_before and state.s.pollution==0,"today gauge is local knowledge not core evidence or intrusion")
+	check(state.save_game() and state.load_game() and state.flag("lane_old_level") and state.flag("lane_today_level"),"both independent water observations persist")
+	state.fresh("xu")
 	check(state.valid_save(state.s),"legacy save without cart position remains valid")
 	state.set_flag("lane_cart_moved")
 	check(state.valid_save(state.s),"legacy cleared cart save remains valid without new field")

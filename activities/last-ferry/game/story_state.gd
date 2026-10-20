@@ -215,6 +215,14 @@ func act(id: String) -> bool:
 	if flag("released") and flag("closing_release") and id in ["board", "xu_voice", "answer_whistle", "listen_river", "ask_departure", "ask_roof", "xiaoman", "xiaoman_recognize", "xiaoman_wait", "xiaoman_ask", "shen", "whistle_short", "whistle_long", "whistle_listen"]:
 		return refuse("船已离岸。不能隔着已经结束的渡程继续索要回答；仍可陪岸上的人站一会儿，再迎接天明。")
 	match id:
+		"lane_old_level":
+			if p != "lane" or flag("lane_old_level") or Vector2(s.x,s.y).distance_to(Vector2(200,300)) >= 48: return false
+			set_flag("lane_old_level")
+			note("桥墩旧洪痕：一道褐色横线已经干裂，旁边刻着旧年份。它记的是过去涨到这里的水，不是今天正在上涨的水位。")
+		"lane_today_level":
+			if p != "lane" or flag("lane_today_level") or Vector2(s.x,s.y).distance_to(Vector2(650,300)) >= 48: return false
+			set_flag("lane_today_level")
+			note("施工水尺：今天的蓝色粉笔日期在低处，湿线贴着下格。修桥的人把今天的读数另记，没有拿桥墩的旧洪痕代替。岸边高度变了，不能只凭旧照片猜现在的水深。")
 		"ledger":
 			if p != "street" or s.identity != "he": return refuse("这不是你能核对的店内账目。")
 			learn("purchases")

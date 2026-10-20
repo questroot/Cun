@@ -438,6 +438,13 @@ func _process(delta: float) -> void:
 				story.act("roof_show")
 		last_place = ""
 		update_world()
+	if story.s.place == "lane":
+		var observed_level := ""
+		if player.distance_to(Vector2(200,300)) < 48 and not story.flag("lane_old_level"): observed_level = "lane_old_level"
+		elif player.distance_to(Vector2(650,300)) < 48 and not story.flag("lane_today_level"): observed_level = "lane_today_level"
+		if not observed_level.is_empty():
+			story.act(observed_level)
+			refresh_ui()
 	var movement := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): movement.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): movement.y += 1
@@ -511,6 +518,8 @@ func update_world() -> void:
 			solids.append(Rect2(390,440,80,60))
 			var cart := cart_position()
 			solids.append(Rect2(cart-Vector2(32,30),Vector2(64,60)))
+			add_object("old_level", "桥墩：旧年份的干褐洪痕",Vector2(200,300))
+			add_object("today_level", "施工水尺：蓝字今日日期与低处湿线",Vector2(650,300))
 			add_object("lane_cart", "缺口外停住的空手推车" if story.flag("lane_cart_moved") else "卡在围挡缺口的空手推车",cart-Vector2(80,0))
 			add_object("arrival_gate", "返回桥头落客点",Vector2(100,510),"gate")
 			add_object("house_gate", "许家旧屋门口",Vector2(745,320),"gate")
@@ -982,6 +991,13 @@ func _draw() -> void:
 		"lane":
 			draw_rect(Rect2(390,280,80,80),Color("736f65"))
 			draw_rect(Rect2(390,440,80,60),Color("736f65"))
+			draw_rect(Rect2(180,200,40,100),Color("676f70"))
+			draw_line(Vector2(180,240),Vector2(220,240),Color("9f7351"),5)
+			draw_string(font,Vector2(150,220),"旧年洪痕",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c8a883"))
+			draw_line(Vector2(650,220),Vector2(650,305),Color("d2d2b9"),7)
+			for tick in range(5): draw_line(Vector2(642,230+tick*15),Vector2(660,230+tick*15),Color("8ea4a7"),2)
+			draw_line(Vector2(638,290),Vector2(664,290),Color("4a96bb"),4)
+			draw_string(font,Vector2(600,210),"今日 · 低格",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("82bcdd"))
 			var cart := cart_position()
 			draw_rect(Rect2(cart-Vector2(32,30),Vector2(64,60)),Color("927b58"))
 			draw_circle(cart+Vector2(-28,28),8,Color("333d40"))
