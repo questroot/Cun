@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = Path(__file__).resolve().parent / '.runtime'
 MAX_BYTES = 65536
 VERSIONS = ('2024-11-05', '2025-03-26')
-KEYS = ['up','down','left','right','enter','escape','space','tab','w','a','s','d','e','j','k','l','i','m','b','c','1','2','3','4']
+KEYS = ['up','down','left','right','enter','escape','esc','space','tab','w','a','s','d','e','j','k','l','i','m','b','c','1','2','3','4']
 # Explicit repository-owned projects only; no caller supplied filesystem paths.
 PROJECTS = {
     'card-demo': ('card-demo', '灵伴回合冒险 MVP', 'scripts/ai_play_bridge.gd'),

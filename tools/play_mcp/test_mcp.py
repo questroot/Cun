@@ -36,6 +36,17 @@ class Protocol(unittest.TestCase):
             with self.assertRaises(ValueError): self.service.validate_action(args)
         for args in ({'kind':'key','key':'enter','frames':120},{'kind':'click','button_id':'123'}, {'kind':'mouse','x':10,'y':20}):
             self.service.validate_action(args)
+    def test_escape_alias(self):
+        for key in ('esc','escape'):
+            self.service.validate_action({'kind':'key','key':key,'frames':1})
+            self.service.validate_action({'kind':'key','key':key,'duration_ms':100})
+        self.handshake()
+        variants=next(t for t in self.rpc('tools/list')['result']['tools'] if t['name']=='action')['inputSchema']['oneOf']
+        for variant in variants:
+            if 'key' in variant['properties']:
+                self.assertIn('esc',variant['properties']['key']['enum'])
+                self.assertIn('escape',variant['properties']['key']['enum'])
+        with self.assertRaises(ValueError):self.service.validate_action({'kind':'key','key':'escape-anything','frames':1})
     def test_duration_contract(self):
         for duration in (1,100,1000):
             self.service.validate_action({'kind':'key','key':'a','duration_ms':duration})
