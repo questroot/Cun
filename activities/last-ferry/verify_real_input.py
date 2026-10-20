@@ -72,6 +72,10 @@ try:
     go(100,440);key('e')
     assert any(o['title']=='门口等你招呼的老葛' for o in obs()['visible'][0]['objects']),obs()
     go(500,510);key('e');click('到门口招呼');assert '钥匙没有交出去' in json.dumps(obs(),ensure_ascii=False),obs()
+    entering=next(o for o in obs()['visible'][0]['objects'] if '走向屋内' in o['title']);assert entering['x']<635,entering
+    s.call('action',{'kind':'key','key':'d','duration_ms':300});progress=next(o for o in obs()['visible'][0]['objects'] if '老葛' in o['title']);assert entering['x']<progress['x']<635,(entering,progress)
+    click('保存');click('读取');click('确认')
+    resumed=next(o for o in obs()['visible'][0]['objects'] if '老葛' in o['title']);assert resumed['title']=='按约来勘看的老葛' and resumed['x']==635 and resumed['y']==490,resumed
     assert any(o['title']=='按约来勘看的老葛' for o in obs()['visible'][0]['objects']),obs()
     go(635,450);key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
     click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()
