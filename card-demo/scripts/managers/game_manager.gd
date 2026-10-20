@@ -5,6 +5,7 @@ var current_stage := "stage_1"
 var stage_pending := false
 var city_spawn := Vector2(334, 558)
 var last_result := ""
+var water_activity_state: Dictionary = {}
 
 ## 统一切换场景，避免 UI 模块直接依赖关卡实现。
 func goto_scene(scene_name: String) -> void:
