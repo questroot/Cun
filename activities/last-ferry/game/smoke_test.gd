@@ -44,6 +44,11 @@ func run() -> void:
 		state.s["cart_x"] = invalid_cart
 		check(not state.valid_save(state.s),"invalid cart position rejected")
 	state.fresh("xu")
+	check(at("house","roof_listen") and state.act("basin_take") and state.act("basin_place"),"prepare basin catching water")
+	check(state.act("basin_take") and state.flag("basin_carried") and not state.flag("basin_placed"),"lifting catching basin stops catching rather than duplicating it")
+	check(state.save_game() and state.load_game() and state.flag("basin_carried") and not state.flag("basin_placed"),"carried lifted basin persists")
+	check(state.act("basin_place") and state.flag("basin_placed") and not state.flag("basin_carried"),"replace lifted basin restores catching")
+	state.fresh("xu")
 	check(not at("street","roof_arrange"),"roof arrangement requires an observed leak")
 	check(at("house","roof_listen") and at("street","roof_arrange"),"owner can directly ask Ge without Tao checklist")
 	check(state.flag("roof_visit_arranged") and not state.flag("roof_commissioned"),"appointment is not completed roof work")

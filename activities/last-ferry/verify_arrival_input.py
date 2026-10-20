@@ -90,6 +90,8 @@ try:
     go(745,540);key('e');lane_to('house');go(590,550);call('action',{'kind':'mouse','x':590,'y':510});assert 'carried_luggage' not in obs()['visible'][0],obs()
     go(600,290);key('e');click('停下脚步');key('e');click('端起搪瓷盆')
     go(450,380);key('e');click('把盆放在新湿痕');basin=obs();assert basin['visible'][0]['visible_basin']['appearance']=='接住滴水',basin
+    key('e');click('重新端起接水');assert obs()['visible'][0]['visible_basin']['appearance']=='端在手上',obs()
+    key('e');click('把盆放在新湿痕');assert obs()['visible'][0]['visible_basin']['appearance']=='接住滴水',obs()
     go(450,550);key('e');go(260,370);key('e');click('旧屋还在漏水');assert '老葛' in json.dumps(obs(),ensure_ascii=False),obs()
     go(620,430);key('e');click('说说旧屋漏点');assert '没有报价' in json.dumps(obs(),ensure_ascii=False),obs()
     key('e');assert not any(b['text'].startswith('说说旧屋漏点') for b in obs()['buttons']),obs();click('已约明早');assert '记着呢' in json.dumps(obs(),ensure_ascii=False),obs()

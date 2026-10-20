@@ -269,16 +269,19 @@ func act(id: String) -> bool:
 			note("你说清水从梁缝斜落到桌脚，旧水印已经干了。老葛在包鞋纸背记下许家门牌。\n‘明早量桥前，我从门口叫你。先看瓦，梁要是朽了得另请人。今晚别自己上去。’\n他把纸压在针线盒下，接着收最后一段鞋线。没有报价，也还没有动屋顶。")
 		"roof_arrangement":
 			if p != "house" or not flag("roof_visit_arranged"): return false
-			note("裂缝旁添着一行自己的字：明早等老葛来门口叫，先看瓦，再定工。盆仍在接水，梁缝没有变小。钥匙留在自己手里。")
+			note("裂缝旁添着一行自己的字：明早等老葛来门口叫，先看瓦，再定工。" + ("盆仍在接水。" if flag("basin_placed") else "滴水仍落在桌脚，盆没有在漏点下。") + "梁缝没有变小。钥匙留在自己手里。")
 		"roof_listen":
 			if p != "house": return false
 			set_flag("heard_drip")
 			note("滴水不在盆里响。水从屋梁裂缝斜落，落在旧桌的脚边；盆的位置是照着上一场雨摆的。" + ("许宁记得弟弟小时候总嫌她挪盆太慢。如今屋里只有自己的脚步。" if s.identity == "xu" else "阿禾见许宁盯着旧盆，没催她。屋子不是待人搜完线索就能丢下的地方。"))
 		"basin_take":
-			if p != "house" or flag("basin_placed"): return false
+			if p != "house" or flag("basin_carried"): return false
+			if s.phase == "epilogue": return refuse("先让盆留在滴水处；屋顶还没有修好。")
 			if not flag("heard_drip"): return refuse("先停下来听听。盆里没有新水，漏的地方也许变了。")
+			var was_catching := flag("basin_placed")
+			s.flags.erase("basin_placed")
 			set_flag("basin_carried")
-			note("你端起旧搪瓷盆，盆底冰凉。桌脚边有新湿痕，墙下那圈水印却早干了。")
+			note("你重新端起接水的盆。滴水又落在桌脚边，盆暂时没有接住。" if was_catching else "你端起旧搪瓷盆，盆底冰凉。桌脚边有新湿痕，墙下那圈水印却早干了。")
 		"basin_wrong":
 			if p != "house" or not flag("basin_carried"): return false
 			note("你在旧水印下试放盆。水声仍在桌旁响，盆里没有接到水。没有东西受损，你重新端起来。")

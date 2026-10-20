@@ -379,7 +379,7 @@ func try_world_click(point: Vector2) -> bool:
 		if point.distance_to(Vector2(130, 300)) < 35:
 			do_action("basin_wrong")
 			return true
-	elif not story.flag("basin_placed") and player.distance_to(Vector2(600, 250)) < 82 and point.distance_to(Vector2(600, 250)) < 35:
+	elif player.distance_to(Vector2(450,340) if story.flag("basin_placed") else Vector2(600,250)) < 82 and point.distance_to(Vector2(450,340) if story.flag("basin_placed") else Vector2(600,250)) < 35:
 		if not story.flag("heard_drip"): story.act("roof_listen")
 		do_action("basin_take")
 		return true
@@ -826,6 +826,7 @@ func interact() -> void:
 				if story.flag("heard_drip") and not story.flag("basin_placed"): act_button("端起搪瓷盆", "basin_take")
 			"drip":
 				if story.flag("basin_carried"): act_button("把盆放在新湿痕下", "basin_place")
+				elif story.flag("basin_placed"): act_button("重新端起接水的盆", "basin_take")
 				else: button(modal_body, "看一眼桌脚", func(): close_modal(); story.note("桌脚旁泛着水光。先前那些脚印已经干了，这里却是新的。"); refresh_ui())
 			"watermark":
 				if story.flag("basin_carried"): act_button("试把盆放在旧水印下", "basin_wrong")
