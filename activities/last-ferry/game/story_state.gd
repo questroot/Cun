@@ -75,6 +75,12 @@ func current_questions() -> String:
 	if has("covenant") and not core(): lines.append("你已听过旧约，但还没亲眼核对：" + missing_sources())
 	if flag("signal_compared") and not flag("consent"):
 		lines.append("你已提出两种信号的区别。" + ("还没有听周伯为什么放不下这处等候；可以直接问他。" if not flag("heard_zhou") else "可以向周伯提出自己做得到的安排，不必许诺守一辈子。"))
+	if flag("handover_seen") and not flag("handover_matched"):
+		lines.append("交接单把灯与钟分在两处，又留了一笔‘暂夹铜件待修’。纸没说夹的是什么；现场还留没留痕迹？")
+	elif flag("handover_matched") and not flag("handover_discussed"):
+		lines.append("夹痕与钟架能对上，只能支持物件曾相连。谁借来、后来为什么没还，仍是没问过的经过。")
+	elif flag("handover_discussed"):
+		lines.append("周伯承认自己借铜舌、拖延归还并举起白罩。这是经管人的说明，不是声音身份的证明，也不是今夜意愿。")
 	if s.phase == "night":
 		lines.append("旧阶系缆石旁是河声传到岸上的位置；不登船也可在那儿听、辨认或传话。")
 		if has("xu_wish") or has("shen_wish") or has("xiaoman_wish"):
@@ -264,7 +270,7 @@ func act(id: String) -> bool:
 			if p != "shelter" or not flag("handover_seen"): return false
 			if not has("lamp") or not has("bell"): return refuse("折单只说暂夹铜件。还没亲眼看过灯罩的夹痕与钟架缺口，不能把两个空白直接连成一件事。")
 			set_flag("handover_matched")
-			note("你把记下的两栏分别对着现场看：白罩内缘有一条夹压的亮痕，钟架缺口宽度相近。它们支持‘钟的部件被借来固定灯罩’，还不是谁在何时做的证明。\n单上的待修没有划掉。临时用一下，后来一直没还——这个经过需要问亲手经管过的人。")
+			note("你把记下的两栏分别对着现场看：白罩内缘留着夹压亮痕，" + ("归位铜舌的薄边与它相合。" if flag("tongue_home") else "钟架挂孔宽度与它相近。") + "它们支持‘钟的部件被借来固定灯罩’，还不是谁在何时做的证明。\n单上的待修没有划掉。临时用一下，后来一直没还——这个经过需要问亲手经管过的人。")
 		"handover_zhou":
 			if p != "shelter" or not flag("handover_matched"): return false
 			set_flag("handover_discussed")

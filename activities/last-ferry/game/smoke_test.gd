@@ -38,6 +38,7 @@ func run() -> void:
 	check(not at("house", "drawer_open") and not at("house", "handover_read"), "household privacy and closed drawer respected")
 	check(at("house", "drawer_permission") and at("house", "drawer_open") and at("house", "handover_read"), "permission reveals bounded shared handover document")
 	check(state.flag("handover_seen") and not state.flag("consent_zhou") and not state.flag("heard_zhou") and state.s.pollution == 0, "historical receipt is not consent identity or intrusion")
+	check(state.current_questions().contains("纸没说夹的是什么"), "handover notes retain uncertainty rather than solution")
 	check(not at("shelter", "handover_compare") and not state.act("handover_zhou"), "document alone cannot establish physical link")
 	check(state.act("lamp") and state.act("bell") and state.act("handover_compare") and state.act("handover_zhou"), "physical checks precede testimony about temporary repair")
 	check(not state.flag("consent") and not state.flag("heard_zhou") and state.s.pollution == 0, "repair testimony does not replace memory or agreement")
