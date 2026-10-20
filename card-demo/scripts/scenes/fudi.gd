@@ -683,6 +683,15 @@ func _visited_total() -> int:
 func open_journal() -> void:
 	journal_text.bbcode_enabled = true
 	var lines: Array[String] = ["行囊与见闻  ·  本轮收集 %d 份  ·  人物线索 %d / %d" % [_inventory_total(), _visited_total(), Maps.site_total()], "C 打开人物装备，可穿戴、替换与卸下；装备数量包含已穿戴物品，本轮有效。"]
+	lines.append("\n此地已读见闻 · " + str(Catalog.REGIONS[region].name))
+	var local_data: Dictionary = Maps.MAPS[region]
+	var has_local_record := false
+	for i in range(local_data.sites.size()):
+		if states[region].visited[i]:
+			has_local_record = true
+			lines.append("%s：%s" % [local_data.sites[i][0], local_data.sites[i][2]])
+	if not has_local_record: lines.append("还没有调查记录；靠近地标按 E。")
+	lines.append("\n行囊与规则")
 	for item: String in Loot.ITEMS:
 		if int(inventory.get(item, 0)) > 0:
 			lines.append("[img=44x44]%s[/img]  %s × %d" % [Loot.ITEMS[item].icon.resource_path, Loot.ITEMS[item].name, inventory[item]])
