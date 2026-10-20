@@ -53,6 +53,8 @@ func run() -> void:
 	check(not state.act("evac_pack_deliver"),"handover requires receiver proximity")
 	state.s.x = 570.0
 	state.s.y = 350.0
+	check(not state.act("evac_pack_deliver") and state.flag("evac_pack_carried"),"handover requires reading actual cloth tag")
+	check(state.act("evac_pack_read_tag") and not state.act("evac_pack_wrong_desk") and state.flag("evac_pack_carried"),"wrong desk preserves parcel and allows recovery")
 	check(state.act("evac_pack_deliver") and not state.flag("evac_pack_carried") and not state.act("evac_pack_deliver"),"handover settles parcel once")
 	check(state.valid_save(state.s),"delivered bedding save is valid")
 	state.set_flag("evac_pack_carried")

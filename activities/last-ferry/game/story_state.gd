@@ -149,6 +149,14 @@ func act(id: String) -> bool:
 		set_flag("ferry_tag_returned")
 		note("你把渡牌挂回告示旁的空钩，刻字朝外。木牌碰了两下棚柱，晃动停了。交班物回到岸上，不表示你已替船上的人答应结束，也不改变灯和钟的状态。")
 		return true
+	if id == "evac_pack_read_tag":
+		if s.left or s.ending != "flood" or not flag("evac_pack_carried"): return false
+		set_flag("evac_pack_tag_read")
+		note("你托住包底，翻开包角的布签：‘河街十二号 · 陈家 · 被褥一包’。粗线没有缝住姓名那一行。桥头有分户接收，不能只凭包的颜色往一堆里放。")
+		return true
+	if id == "evac_pack_wrong_desk":
+		if s.left or p != "arrival" or s.ending != "flood" or not flag("evac_pack_carried") or Vector2(s.x,s.y).distance_to(Vector2(570,330)) >= 96: return false
+		return refuse("接应者指着登记牌：‘这边是六码头商铺工具，不收住户被褥。先看清包角门牌，再找住户接收台；包先托稳，不用急着交。’")
 	if id in ["evac_pack_take","evac_pack_drop","evac_pack_deliver"]:
 		if s.left or s.ending != "flood" or flag("evac_pack_delivered"): return false
 		if id == "evac_pack_take":
@@ -161,6 +169,7 @@ func act(id: String) -> bool:
 			note("你把包放回老葛身边，说明这趟不能送。‘知道了，我另找人。’被褥没有被丢在路上，邻居的撤离也不是只等你一人。")
 		else:
 			if p != "arrival" or not flag("evac_pack_carried") or Vector2(s.x,s.y).distance_to(Vector2(570,330)) >= 96: return false
+			if not flag("evac_pack_tag_read"): return refuse("包角的门牌还没看清，先托稳包读一下布签，再决定交给哪张接收登记。")
 			s.flags["evac_pack_carried"] = false
 			set_flag("evac_pack_delivered")
 			note("桥头接应的人核对包角缝着的门牌，把被褥放到干台上。‘人先在桥那头歇着，包到了我带过去。’你只交接了这件物品，没有替他们承诺何时回家。回望巷口，老葛还能继续给下一只包扎线。")

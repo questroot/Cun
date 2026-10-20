@@ -81,9 +81,10 @@ func play_visible() -> Dictionary:
 		if story.flag("awning_tied") and story.s.ending != "flood":
 			result["visible_dry_patch"] = {"x":590,"y":365,"width":135,"height":75,"appearance":"地面勾线标出的棚下干处；仅避棚布滴水，不防漫水"}
 	if story.s.place == "arrival" and story.s.ending == "flood":
-		result["visible_receiver_table"] = {"x":580,"y":372,"width":110,"height":12,"appearance":"桥头接应干台，两脚支起"}
+		result["visible_receiver_table"] = {"x":580,"y":372,"width":110,"height":12,"appearance":"桥头接应干台，两脚支起","sign":"河街住户：被褥｜六码头商铺：工具"}
 	if story.flag("evac_pack_carried"):
 		result["visible_evac_pack"] = {"x":player.x+8,"y":player.y,"width":34,"height":26,"appearance":"托着扎紧的被褥包"}
+		if story.flag("evac_pack_tag_read"): result["visible_evac_pack"]["cloth_tag"] = "河街十二号 · 陈家 · 被褥一包"
 	elif story.s.ending == "flood" and story.s.place == "arrival" and story.flag("evac_pack_delivered"):
 		result["visible_evac_pack"] = {"x":590,"y":350,"width":34,"height":26,"appearance":"干台上已交接的被褥包"}
 	if story.item("旧渡牌"):
@@ -855,7 +856,10 @@ func interact() -> void:
 		if target == "evac_pack":
 			if story.flag("morning_ge_seen"): act_button("接过扎好的被褥包，沿干路送桥头", "evac_pack_take")
 			else: button(modal_body,"先问老葛包要送往哪里",close_modal)
-		if target == "evac_receiver" and story.flag("evac_pack_carried"): act_button("核对门牌，把邻居的被褥交给接应者", "evac_pack_deliver")
+		if target == "evac_receiver" and story.flag("evac_pack_carried"):
+			act_button("托住包，翻看包角布签", "evac_pack_read_tag")
+			act_button("按登记交给河街住户被褥接收", "evac_pack_deliver")
+			act_button("按登记交给六码头商铺工具接收", "evac_pack_wrong_desk")
 		if target == "drip" and story.flag("basin_carried") and story.s.ending != "flood": act_button("把端着的盆放回漏点", "basin_place")
 		if target == "roof_note": act_button("展开工序纸，核对还没做的事", "roof_note_read")
 		if target == "ferry_tag_hook" and story.item("旧渡牌"): act_button("把交班渡牌挂回岸棚木钩", "ferry_tag_return")
@@ -1092,6 +1096,7 @@ func _draw() -> void:
 			draw_rect(Rect2(40,175,780,100),Color("3b5057"))
 			draw_line(Vector2(80,290),Vector2(790,290),Color("a9a18e"),8)
 			if story.s.ending == "flood":
+				draw_string(font,Vector2(490,305),"河街住户：被褥　｜　六码头商铺：工具",HORIZONTAL_ALIGNMENT_LEFT,-1,15,Color("e3d4ad"))
 				draw_rect(Rect2(580,372,110,12),Color("887659"))
 				draw_line(Vector2(590,384),Vector2(590,405),Color("71644f"),6)
 				draw_line(Vector2(680,384),Vector2(680,405),Color("71644f"),6)
@@ -1195,7 +1200,12 @@ func _draw() -> void:
 		draw_string(font, pos + Vector2(-64, 59), obj.title, HORIZONTAL_ALIGNMENT_LEFT, 175, 17, Color("ebe5d0"))
 	if story.flag("luggage_taken") and not story.flag("luggage_placed"): draw_rect(Rect2(player+Vector2(12,0),Vector2(24,25)),Color("785c49"))
 	elif story.flag("luggage_placed") and story.s.place == "house": draw_rect(Rect2(578,498,24,25),Color("785c49"))
-	if story.flag("evac_pack_carried"): draw_rect(Rect2(player+Vector2(8,0),Vector2(34,26)),Color("929581"))
+	if story.flag("evac_pack_carried"):
+		draw_rect(Rect2(player+Vector2(8,0),Vector2(34,26)),Color("929581"))
+		if story.flag("evac_pack_tag_read"):
+			var tag_pos := Vector2(clampf(player.x-85,45,590),clampf(player.y+35,180,590))
+			draw_rect(Rect2(tag_pos,Vector2(225,23)),Color("ded4b8"))
+			draw_string(font,tag_pos+Vector2(4,17),"河街十二号 · 陈家 · 被褥一包",HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("343c39"))
 	elif story.s.ending == "flood" and ((story.s.place == "street" and not story.flag("evac_pack_delivered")) or (story.s.place == "arrival" and story.flag("evac_pack_delivered"))): draw_rect(Rect2(Vector2(635,455) if story.s.place == "street" else Vector2(590,350),Vector2(34,26)),Color("929581"))
 	if story.item("旧渡牌"): draw_rect(Rect2(player+Vector2(12,-3),Vector2(14,22)),Color("b19a70"))
 	if story.s.place == "boat" and not story.flag("ferry_tag_taken"): draw_rect(Rect2(678,405,14,22),Color("b19a70"))
