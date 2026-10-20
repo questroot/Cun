@@ -11,6 +11,21 @@ var rng := RandomNumberGenerator.new()
 var regions: Dictionary = {}
 var initialized := false
 
+func play_visible() -> Array:
+	var result: Array = []
+	if not initialized or game._paused() or game.finished: return result
+	for chest: Dictionary in regions[game.region]:
+		var point: Vector2 = game.ARENA.position+chest.position-game.camera_origin
+		if not game.ARENA.has_point(point): continue
+		var label := "异变宝箱" if chest.mutated else "普通宝箱"
+		match chest.state:
+			"guarding": label += " · 守卫中"
+			"cleared": label += " · E领奖"
+			"opened": label += " · 已领取"
+			_: label += " · E开启"
+		result.append({"title":label,"x":point.x,"y":point.y,"kind":"chest"})
+	return result
+
 func _ready() -> void:
 	game = get_parent()
 	rng.randomize()
