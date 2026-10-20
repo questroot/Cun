@@ -536,7 +536,7 @@ func refresh_ui() -> void:
 		summary.text += "\n" + ("船已离岸；可再陪站，或确认迎天明。" if story.flag("released") else "答复已带回；在旧阶看沈渡自己解缆。")
 	if story.flag("closing_light") and story.s.phase == "night":
 		summary.text += "\n" + ("周伯已敲钟；可再陪站，或由你确认迎接天明。" if story.flag("closing_rang") else "黄灯已亮；周伯在旧阶等你，一起把钟敲完。")
-	message.text = story.notice
+	message.text = "最近经历（不是持续现场对白）\n" + story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
 	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
 	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light") and not story.flag("closing_release"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
@@ -645,10 +645,10 @@ func travel(place: String) -> void:
 	story.change_place(place)
 	if place == "street" and story.s.phase == "dusk" and not story.flag("street_evening_seen"):
 		story.set_flag("street_evening_seen")
-		story.note("你回到街口时，老葛正把补好的鞋并排放在凳上。\n陶婶从门内问：‘明早量桥，先吃了再去？’\n‘带两个馒头就行。鞋等晾干，让他自己来拿，别又替他送到家。’\n她把一张包货纸压在秤下，没喊你停步。街上还有各人的小事，你可以继续走。")
+		story.note("你回到街口时，老葛正把补好的鞋并排放在凳上。\n陶婶从门内问：‘明早量桥，先吃了再去？’\n‘带两个馒头就行。鞋等晾干，让他自己来拿，别又替他送到家。’\n她把一张包货纸压在秤下，没喊你停步。")
 	elif place == "street" and story.s.phase == "dusk" and story.flag("street_evening_seen") and not story.flag("shoe_collected"):
 		story.set_flag("shoe_collected")
-		story.note("你再回街口，鞋主正把修好的鞋拎走。他把旧鞋踩在脚下试了两步，跟老葛争一句‘这回别再开线’，两人都笑了一下。\n老葛把空纸折平，凳子往檐下收。陶婶喊的馒头还没凉，没人请你替他们把这件事做完。")
+		story.note("你再回街口，鞋主正把修好的鞋拎走。他把旧鞋踩在脚下试了两步，跟老葛争一句‘这回别再开线’，两人都笑了一下。\n老葛把空纸折平，凳子往檐下收。陶婶喊的馒头还没凉。")
 	player = Vector2(story.s.x, story.s.y)
 	last_place = ""
 	close_modal()
