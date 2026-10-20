@@ -75,8 +75,13 @@ try:
     go(450,380);key('e');click('把盆放在新湿痕');basin=obs();assert basin['visible'][0]['visible_basin']['appearance']=='接住滴水',basin
     go(450,550);key('e');go(260,370);key('e');click('旧屋还在漏水');assert '老葛' in json.dumps(obs(),ensure_ascii=False),obs()
     go(620,430);key('e');click('说说旧屋漏点');assert '没有报价' in json.dumps(obs(),ensure_ascii=False),obs()
+    key('e');assert not any(b['text'].startswith('说说旧屋漏点') for b in obs()['buttons']),obs();click('已约明早');assert '记着呢' in json.dumps(obs(),ensure_ascii=False),obs()
     click('保存');click('读取');click('确认');go(100,440);key('e');go(600,290);key('e');click('看看记下');assert '梁缝没有变小' in json.dumps(obs(),ensure_ascii=False),obs()
     go(695,270);key('e');click('翻看照片');photo=obs();assert '新棚启用前' in json.dumps(photo,ensure_ascii=False),photo
     go(100,550);key('e');lane_to('arrival');go(305,400);key('e');assert any(b['text']=='行李已留在旧屋门内' for b in obs()['buttons']),obs()
+    key('escape');go(745,540);key('e');lane_to('house');go(450,550);key('e');go(620,430)
+    click('准备好了');click('确认');click('保存');click('读取');click('确认');key('e')
+    assert not any(b['text'].startswith('说说旧屋漏点') for b in obs()['buttons']),obs()
+    click('已约明早');assert '记着呢' in json.dumps(obs(),ensure_ascii=False),obs()
     out=s.run_dir/'arrival-evidence.json';out.write_text(json.dumps({'placed':placed,'loaded':loaded,'basin':basin,'photo':photo},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
 finally:call('stop',{})

@@ -38,6 +38,7 @@ func run() -> void:
 	check(not at("street","roof_arrange"),"roof arrangement requires an observed leak")
 	check(at("house","roof_listen") and at("street","roof_arrange"),"owner can directly ask Ge without Tao checklist")
 	check(state.flag("roof_visit_arranged") and not state.flag("roof_commissioned"),"appointment is not completed roof work")
+	check(not state.act("roof_arrange") and state.act("roof_recall"),"appointment cannot be duplicated but remains reviewable")
 	state.s.phase = "epilogue"
 	state.s.ending = "light"
 	check(at("house","roof_inspect") and state.flag("roof_inspected"),"safe morning appointment can receive inspection")

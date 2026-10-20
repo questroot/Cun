@@ -761,7 +761,8 @@ func interact() -> void:
 					act_button("再看看岸和河上各自的动静", "closing_watch")
 					button(modal_body, "今夜到这里，迎接天明", func(): confirm("结束夜晚，进入可自由走访的次日？", func(): do_action("closing_dawn")))
 			"ge":
-				if story.flag("heard_drip"): act_button("说说旧屋漏点，约明早先看瓦", "roof_arrange")
+				if story.flag("roof_visit_arranged"): act_button("已约明早看瓦 · 核对安排", "roof_recall")
+				elif story.flag("heard_drip"): act_button("说说旧屋漏点，约明早先看瓦", "roof_arrange")
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
 			"shoe_parcel":

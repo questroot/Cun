@@ -259,8 +259,12 @@ func act(id: String) -> bool:
 			if p != "street" or not flag("heard_drip"): return false
 			set_flag("roof_help_asked")
 			note("陶婶放下杯子：‘先别往梁上爬。老葛会看瓦，他明早量桥前还能走一趟。你把漏在哪儿告诉他，别只说屋顶坏了。’\n她指了指檐下补鞋的人，没有替他应下工钱。")
+		"roof_recall":
+			if p != "street" or not flag("roof_visit_arranged"): return false
+			note("老葛敲了敲针线盒下的门牌纸：‘记着呢，明早量桥前，先在门口叫你。只看漏点，不是已经开工。今晚先让盆接着。’")
 		"roof_arrange":
 			if p != "street" or not flag("heard_drip"): return false
+			if flag("roof_visit_arranged"): return refuse("明早看瓦已经约好，可以核对安排，不必再记一次门牌。")
 			set_flag("roof_visit_arranged")
 			note("你说清水从梁缝斜落到桌脚，旧水印已经干了。老葛在包鞋纸背记下许家门牌。\n‘明早量桥前，我从门口叫你。先看瓦，梁要是朽了得另请人。今晚别自己上去。’\n他把纸压在针线盒下，接着收最后一段鞋线。没有报价，也还没有动屋顶。")
 		"roof_arrangement":
