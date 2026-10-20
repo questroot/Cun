@@ -44,7 +44,11 @@ def lane_to(dest):
         blocked=obs()['visible'][0]['player_screen'];assert blocked['x']<390 and 280<blocked['y']<500,blocked
         if lane_visits==1:key('a',35)
         if lane_visits>1:
-            key('e');click('握住车把');assert '正握住车把' in json.dumps(obs(),ensure_ascii=False),obs();call('action',{'kind':'key','key':'a','duration_ms':150});key('e')
+            key('e');click('握住车把');assert '正握住车把' in json.dumps(obs(),ensure_ascii=False),obs()
+            grip=obs()['visible'][0];call('action',{'kind':'key','key':'a','duration_ms':150});pulled=obs()['visible'][0]
+            assert pulled['player_screen']['x']<grip['player_screen']['x'] and abs(pulled['player_screen']['y']-grip['player_screen']['y'])<0.01,(grip,pulled)
+            assert abs((pulled['visible_cart']['x']-grip['visible_cart']['x'])-(pulled['player_screen']['x']-grip['player_screen']['x']))<0.1,(grip,pulled)
+            key('e')
             partial=obs();cart=next(o for o in partial['visible'][0]['objects'] if '空手推车' in o['title']);partial_x=cart['x'];assert 260<partial_x<350,partial;assert abs(partial['visible'][0]['visible_cart']['x']-partial_x-80)<0.1,partial;assert '正握住车把' not in json.dumps(partial,ensure_ascii=False),partial
             click('保存');click('读取');click('确认')
             assert next(o for o in obs()['visible'][0]['objects'] if '空手推车' in o['title'])['x']==partial_x,obs()

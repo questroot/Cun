@@ -441,8 +441,10 @@ func _process(delta: float) -> void:
 func move_player(offset: Vector2) -> void:
 	if pulling_cart and story.s.place == "lane":
 		var x := clampf(cart_position().x + minf(offset.x,0.0)*0.5,250,430)
+		var displacement := x-cart_position().x
+		if not walkable(player + Vector2(displacement,0)): return
 		story.s["cart_x"] = x
-		player = Vector2(x-80,400)
+		player.x += displacement
 		if x <= 340: story.set_flag("lane_cart_moved")
 		story.s.x = player.x
 		story.s.y = player.y
