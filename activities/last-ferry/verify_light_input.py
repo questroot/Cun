@@ -10,7 +10,9 @@ from server import PlayService
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--render',action='store_true')
 parser.add_argument('--recover-mistake',action='store_true',help='Raise white light once, move wet stock, then repair without erasing intrusion')
+parser.add_argument('--leave-stock',action='store_true',help='With --recover-mistake, leave wet stock for Tao to handle')
 args=parser.parse_args()
+if args.leave_stock and not args.recover_mistake: parser.error('--leave-stock requires --recover-mistake')
 s=PlayService()
 def obs():return s.call('observe',{})
 def key(k,n=1):return s.call('action',{'kind':'key','key':k,'frames':n})
@@ -45,8 +47,12 @@ try:
     if args.recover_mistake:
         click('准备好了');click('确认');go(250,395);key('e');click('危险：举白灯');click('确认')
         invaded=obs();assert '侵入 1 / 2' in '\n'.join(invaded['texts']),invaded
-        go(365,410);key('e');click('托住箱底');mistake=obs()
-        assert '侵入 1 / 2' in '\n'.join(mistake['texts']) and any(o['title']=='干台上的湿货箱' for o in mistake['visible'][0]['objects']),mistake
+        if not args.leave_stock:
+            go(365,410);key('e');click('托住箱底');mistake=obs()
+            assert '侵入 1 / 2' in '\n'.join(mistake['texts']) and any(o['title']=='干台上的湿货箱' for o in mistake['visible'][0]['objects']),mistake
+        else:
+            mistake=invaded
+            assert any(o['title']=='门边被水浸到的货箱' for o in mistake['visible'][0]['objects']),mistake
         go(750,390);key('e')
     inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)
     go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('提议只把今晚');key('escape')
@@ -66,7 +72,8 @@ try:
     returned=obs();assert '没烫着吧' in json.dumps(returned,ensure_ascii=False),returned
     key('i');assert '手提黄灯：' not in '\n'.join(obs()['texts']);key('escape')
     if args.recover_mistake:
-        go(365,320);key('e');click('看看昨晚浸湿');assert '不会因此自动变干' in json.dumps(obs(),ensure_ascii=False),obs()
+        go(365,320);key('e');click('看看昨晚浸湿');stock_morning=obs();assert '不会因此自动变干' in json.dumps(stock_morning,ensure_ascii=False),stock_morning
+        assert ('陶婶后半夜自己搬上' if args.leave_stock else '你昨晚搬上干台') in json.dumps(stock_morning,ensure_ascii=False),stock_morning
     go(450,565);key('e');click('离开这段体验');click('确认');left=obs()
     assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
     out=s.run_dir/'shore-evidence.json';out.write_text(json.dumps({'mistake_consequence':mistake,'order_kept':kept,'order_explained':explained,'lit_still_night':lit,'rung':rung,'silence':silent,'dawn':dawn,'lamp_returned':returned,'formal_departure':left,'method':'normal opening, real visible button/key/mouse inputs only'},ensure_ascii=False,indent=2),encoding='utf-8')
