@@ -101,10 +101,33 @@ func _visible_rect(control: Control) -> Rect2:
 		ancestor = ancestor.get_parent()
 	return rect
 
+# Return only complete laid-out lines inside the clipped scrolling text viewport.
+# Complex tables/custom effects need a dedicated provider; never fall back to full text.
+func _rich_visible_text(label: RichTextLabel) -> String:
+	if not label.is_finished(): return ""
+	if label.bbcode_enabled and ("[table" in label.text or "[img" in label.text): return ""
+	var value := label.get_parsed_text()
+	if label.visible_characters >= 0: value = value.left(label.visible_characters)
+	var clip := _visible_rect(label)
+	var style := label.get_theme_stylebox("normal")
+	var origin := label.global_position+Vector2(style.get_content_margin(SIDE_LEFT),style.get_content_margin(SIDE_TOP))
+	var scroll := label.get_v_scroll_bar().value
+	var lines: PackedStringArray = []
+	for i in range(label.get_line_count()):
+		var y := origin.y+label.get_line_offset(i)-scroll
+		var height := label.get_line_height(i)
+		var width := label.get_line_width(i)
+		if y < clip.position.y or y+height > clip.end.y: continue
+		if origin.x < clip.position.x or origin.x+width > clip.end.x: continue
+		var span := label.get_line_range(i)
+		if span.x >= value.length(): continue
+		lines.append(value.substr(span.x,mini(span.y,value.length())-span.x))
+	return "".join(lines).left(4096)
+
 func _walk(node: Node, texts: Array, buttons: Array) -> void:
 	if node is Control and node.is_visible_in_tree() and _visible_rect(node).has_area():
 		if node is Label or node is RichTextLabel:
-			var value: String = node.text if node is Label else node.get_parsed_text()
+			var value: String = node.text if node is Label else _rich_visible_text(node)
 			if node.visible_characters >= 0:
 				value = value.left(node.visible_characters)
 			if not value.is_empty():
@@ -187,10 +210,11 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 			_reply(peer, {"ok": false, "error": "invalid coordinates"})
 			return
 		var position := Vector2(float(x), float(y))
-		if not get_viewport().get_visible_rect().has_point(position) or args.get("button", "left") not in ["left", "right"]:
+		if not get_viewport().get_visible_rect().has_point(position) or args.get("button", "left") not in ["left", "right", "wheel_up", "wheel_down"]:
 			_reply(peer, {"ok": false, "error": "mouse outside viewport or invalid button"})
 			return
-		var index := MOUSE_BUTTON_LEFT if args.get("button", "left") == "left" else MOUSE_BUTTON_RIGHT
+		var indices := {"left":MOUSE_BUTTON_LEFT,"right":MOUSE_BUTTON_RIGHT,"wheel_up":MOUSE_BUTTON_WHEEL_UP,"wheel_down":MOUSE_BUTTON_WHEEL_DOWN}
+		var index: int = indices[args.get("button", "left")]
 		down = _mouse(position, index, true)
 		up = _mouse(position, index, false)
 	else:

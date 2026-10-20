@@ -36,7 +36,7 @@ TOOLS = [
     {'name':'action','description':'Send visible button click or bounded physical input; no game-manager APIs.','inputSchema':{'oneOf':[
         schema({'kind':{'const':'click'},'button_id':{'type':'string'}},['kind','button_id']),
         schema({'kind':{'const':'key'},'key':{'type':'string','enum':KEYS},'frames':{'type':'integer','minimum':1,'maximum':120}},['kind','key']),
-        schema({'kind':{'const':'mouse'},'x':{'type':'number','minimum':0},'y':{'type':'number','minimum':0},'button':{'enum':['left','right']},'frames':{'type':'integer','minimum':1,'maximum':120}},['kind','x','y'])], 'type':'object'}},
+        schema({'kind':{'const':'mouse'},'x':{'type':'number','minimum':0},'y':{'type':'number','minimum':0},'button':{'enum':['left','right','wheel_up','wheel_down']},'frames':{'type':'integer','minimum':1,'maximum':120}},['kind','x','y'])], 'type':'object'}},
     {'name':'stop','description':'Stop only the subprocess launched by this server, preserving isolated evidence.','inputSchema':schema()},
 ]
 
@@ -81,7 +81,7 @@ class PlayService:
         if kind == 'click' and (not isinstance(args.get('button_id'),str) or len(args['button_id']) > 64):
             raise ValueError('invalid button_id')
         if kind == 'mouse':
-            if args.get('button','left') not in ('left','right'):
+            if args.get('button','left') not in ('left','right','wheel_up','wheel_down'):
                 raise ValueError('invalid mouse button')
             for axis in ('x','y'):
                 value = args.get(axis)
