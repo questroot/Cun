@@ -6,6 +6,7 @@ from server import PlayService
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--identity',choices=['he','xu'],default='he')
 parser.add_argument('--late-gauge',action='store_true',help='Xu first inspects gauge only after flooding')
+parser.add_argument('--tie-awning',action='store_true',help='Tie shelter awning through real movement before dangerous signals')
 args=parser.parse_args()
 if args.late_gauge and args.identity!='xu':parser.error('--late-gauge requires --identity xu')
 s=PlayService()
@@ -59,7 +60,12 @@ try:
     else: go(320,385);key('e');click('向陶婶借手提黄灯')
     click('准备好了');click('确认')
     for _ in range(2):
-        go(750,390);key('e');go(250,395);key('e');click('危险：举白灯');click('确认')
+        go(750,390);key('e')
+        if args.tie_awning and _==0:
+            go(690,350);key('e');click('握住绳端')
+            s.call('action',{'kind':'key','key':'s','duration_ms':600});key('e')
+            assert '棚绳系在木桩，棚下干处' in obs()['visible'][0]['visible_awning']['appearance'],obs()
+        go(250,395);key('e');click('危险：举白灯');click('确认')
         if args.identity=='xu' and _==0 and not args.late_gauge:
             go(95,565);key('e');go(100,440);key('e');gauge_visit('中格')
     flooded=obs();assert '次日尾声' in '\n'.join(flooded['texts']) and '侵入 2 / 2' in '\n'.join(flooded['texts']),flooded
@@ -73,6 +79,10 @@ try:
     go(750,390);key('e');shelter=obs();titles=[o['title'] for o in shelter['visible'][0]['objects']]
     click('保存');click('读取');click('确认');shelter=obs()
     assert any(o['x']==705 and o['y']==522 for o in shelter['visible'][0]['obstacles']),shelter
+    if args.tie_awning:
+        awning=shelter['visible'][0]['visible_awning']
+        assert awning['rope_end_y']==440 and '下面已漫水，不能避水' in awning['appearance'],awning
+        assert not any('棚绳' in o['title'] for o in shelter['visible'][0]['objects']),shelter
     assert 'sealed_equipment' in shelter['visible'][0] and 'visible_equipment' not in shelter['visible'][0],shelter
     assert '撤离后封起的灯钟与停航告示' in titles and not any(t in titles for t in ['白罩船灯','去旧石阶','周伯']),titles
     go(750,495);key('s',80);assert obs()['visible'][0]['player_screen']['y']<522,obs()
