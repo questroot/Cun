@@ -7,6 +7,7 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--identity',choices=['he','xu'],default='he')
 parser.add_argument('--late-gauge',action='store_true',help='Xu first inspects gauge only after flooding')
 parser.add_argument('--tie-awning',action='store_true',help='Tie shelter awning through real movement before dangerous signals')
+parser.add_argument('--evac-pack',action='store_true',help='Carry neighbour bedding through dry lane to bridgehead')
 args=parser.parse_args()
 if args.late_gauge and args.identity!='xu':parser.error('--late-gauge requires --identity xu')
 s=PlayService()
@@ -76,6 +77,15 @@ try:
     else:
         go(320,385);key('e');click('擦干提柄');assert '领人过桥' in json.dumps(obs(),ensure_ascii=False),obs()
     go(620,510);key('e');click('问老葛今早');ge=obs();assert '撤离包' in json.dumps(ge,ensure_ascii=False),ge
+    if args.evac_pack:
+        key('e');click('接过扎好的');assert 'visible_evac_pack' in obs()['visible'][0],obs()
+        key('e');click('这趟不能送');assert 'visible_evac_pack' not in obs()['visible'][0],obs()
+        key('e');click('接过扎好的');click('保存');click('读取');click('确认');assert 'visible_evac_pack' in obs()['visible'][0],obs()
+        go(100,440);key('e');go(100,550);key('e');lane_go(100,540);key('e')
+        bridge=obs();assert not any(('班车司机' in o['title'] or '自己的行李箱' in o['title']) for o in bridge['visible'][0]['objects']),bridge
+        go(570,370);key('e');click('核对门牌');delivered=obs();assert '已交接' in delivered['visible'][0]['visible_evac_pack']['appearance'],delivered
+        click('保存');click('读取');click('确认');assert '已交接' in obs()['visible'][0]['visible_evac_pack']['appearance'],obs()
+        go(745,540);key('e');lane_go(745,350);key('e');go(450,575);key('e');assert not any(o['title']=='老葛扎好的邻居被褥包' for o in obs()['visible'][0]['objects']),obs()
     go(750,390);key('e');shelter=obs();titles=[o['title'] for o in shelter['visible'][0]['objects']]
     click('保存');click('读取');click('确认');shelter=obs()
     assert any(o['x']==705 and o['y']==522 for o in shelter['visible'][0]['obstacles']),shelter

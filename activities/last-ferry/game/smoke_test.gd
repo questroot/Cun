@@ -34,7 +34,27 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(test_dir)
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
+	state.fresh("he")
+	state.change_place("street")
+	state.s.x = 650.0
+	state.s.y = 470.0
+	check(not state.act("evac_pack_take"),"bedding not offered before flood")
+	state.finish("flood")
+	state.change_place("street")
+	state.s.x = 650.0
+	state.s.y = 470.0
+	check(not state.act("evac_pack_take"),"ask purpose before taking neighbour belongings")
+	state.set_flag("morning_ge_seen")
+	check(state.act("evac_pack_take") and not state.act("evac_pack_take"),"take one bedding parcel only")
+	check(state.act("evac_pack_drop") and state.act("evac_pack_take"),"parcel can be returned then accepted again")
+	state.change_place("arrival")
+	state.s.x = 100.0
+	check(not state.act("evac_pack_deliver"),"handover requires receiver proximity")
+	state.s.x = 570.0
+	state.s.y = 350.0
+	check(state.act("evac_pack_deliver") and not state.flag("evac_pack_carried") and not state.act("evac_pack_deliver"),"handover settles parcel once")
 	state.fresh("xu")
+	check(not state.flag("evac_pack_carried") and not state.flag("evac_pack_delivered"),"missing legacy parcel flags default false")
 	check(not at("house","lane_old_level"),"water marks cannot be observed from other scenes")
 	state.change_place("lane")
 	state.s.x = 400.0
