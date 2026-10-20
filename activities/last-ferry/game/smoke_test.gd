@@ -42,6 +42,8 @@ func run() -> void:
 	state.s.ending = "light"
 	check(at("house","roof_inspect") and state.flag("roof_inspected"),"safe morning appointment can receive inspection")
 	check(state.save_game() and state.load_game() and state.flag("roof_inspected"),"inspection persists in isolated test save")
+	check(not at("house","roof_inspect"),"inspection cannot be replayed by sweeping buttons")
+	check(at("house","roof_commission") and state.notice.contains("两项工序") and not state.notice.contains("等到老葛路过"),"morning plan acknowledges completed inspection rather than resets encounter")
 	state.s.ending = "flood"
 	check(not at("house","roof_inspect"),"flood postpones unsafe house inspection")
 	state.fresh("he")
