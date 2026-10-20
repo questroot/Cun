@@ -13,6 +13,24 @@ var garden: Control
 var weather_label: Label
 var initialized := false
 
+func play_visible() -> Array:
+	var result: Array = []
+	if not initialized or game._paused() or game.finished: return result
+	for plot: Dictionary in plots[game.region]:
+		var point: Vector2 = game.ARENA.position+plot.position-game.camera_origin
+		if not game.ARENA.has_point(point): continue
+		var entry := {"x":point.x,"y":point.y,"appearance":"圆形药圃与生长弧"}
+		# Match the draw-time proximity rule and require the complete label to fit.
+		if game.player_foot.distance_to(plot.position)<200:
+			var progress := float(plot.growth)/float(Ecology.PLANTS[plot.item].time)
+			var stage := "成熟 · 靠近采集" if plot.ripe else ("生长 %d%%" % int(progress*100) if Ecology.compatible(plot.item,climates[game.region]) else "待候 %d%%" % int(progress*100))
+			var label := "%s · %s" % [Catalog.ITEMS[plot.item].name,stage]
+			var font := ThemeDB.fallback_font
+			var label_bounds := Rect2(point+Vector2(-50,42-font.get_ascent(16)),font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,16))
+			if game.ARENA.encloses(label_bounds): entry["visible_label"] = label
+		result.append(entry)
+	return result
+
 func _ready() -> void:
 	process_priority = 10 # Run after collection/combat, so harvest and kill events are visible.
 	call_deferred("initialize")
