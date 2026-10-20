@@ -666,8 +666,10 @@ func interact() -> void:
 		if target == "wet_stock": act_button("看看昨晚浸湿的货物怎么处理", "stock_morning")
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
 		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
-			act_button("先请人看屋顶，不急着决定卖不卖房", "roof_commission")
-			act_button("今天还不能留下，先给陶婶写联络方式", "leave_contact")
+			if story.s.ending == "flood": act_button("留联络方式，等安全后再回来处理旧屋", "leave_contact")
+			else:
+				act_button("先请人看屋顶，不急着决定卖不卖房", "roof_commission")
+				act_button("今天还不能留下，先给陶婶写联络方式", "leave_contact")
 		if target == "departure":
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:

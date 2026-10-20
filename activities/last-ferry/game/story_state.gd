@@ -133,11 +133,18 @@ func act(id: String) -> bool:
 			if not item("手提黄灯"): return refuse("借来的灯已经还了，不必再交一次。")
 			take("手提黄灯")
 			set_flag("lamp_returned")
+			if s.ending == "flood":
+				note("阿禾把借来的黄灯递还陶婶。她擦掉提柄上的泥，把它交给领人过桥的邻居。\n‘先照脚下，别朝河上举。’她没结灯油的账，收好铺门钥匙，等街坊都走到干处再走。")
+				return true
 			note("阿禾把灯放回柜台，擦干提柄上的水。陶婶先看灯，再看他的手：‘没烫着吧？’\n她没有问河上到底来了谁。阿禾说灯芯用了些，账记自己名下。\n陶婶拿起笔，又放下：‘先吃饭，账晚点再算。’")
 			return true
 		if id in ["roof_commission", "leave_contact"] and p == "house" and s.identity == "xu":
 			if flag("morning_decided"): return refuse("许宁已留下今早的安排。不必为了穷尽选项，把刚作的决定反复改写。")
 			set_flag("morning_decided")
+			if s.ending == "flood":
+				set_flag("contact_left")
+				note("许宁把联络方式交给陶婶，说明屋里的家信还在上层抽屉，等能安全回来时自己收拾。\n老葛没答应午后就带师傅来：路和水势要先确认。她把修屋写成日后的安排，不让任何人为今天进屋冒险。")
+				return true
 			if id == "roof_commission":
 				set_flag("roof_commissioned")
 				s.flags.erase("basin_carried")
