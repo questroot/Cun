@@ -296,9 +296,21 @@ func show_items() -> void:
 	button(modal_body, "返回探索", close_modal)
 
 ## Direct manipulation uses the same location-checked rules as keyboard accessibility.
+func handle_luggage(put_down: bool) -> void:
+	close_modal()
+	story.set_flag("luggage_placed" if put_down else "luggage_taken")
+	story.note("许宁把箱子竖放在门内干处。文件留在箱里，钥匙还在自己口袋。" if put_down else "许宁抠掉箱轮里的碎石，拎起自己的行李。箱里是换洗衣服和处理旧屋的文件。")
+	last_place = ""
+	update_world()
+	refresh_ui()
+
 func try_world_click(point: Vector2) -> bool:
 	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if story.s.place == "arrival" and not story.flag("luggage_taken") and point.distance_to(Vector2(305,360)) < 28 and player.distance_to(Vector2(305,360)) < 82:
+		handle_luggage(false); return true
+	if story.s.place == "house" and story.flag("luggage_taken") and not story.flag("luggage_placed") and point.distance_to(Vector2(590,510)) < 28 and player.distance_to(Vector2(590,510)) < 82:
+		handle_luggage(true); return true
 	if story.s.place == "house":
 		if story.flag("drawer_open") and point.distance_to(Vector2(350,375)) < 24 and player.distance_to(Vector2(350,375)) < 82:
 			do_action("handover_revisit" if story.flag("handover_updated") else "handover_read"); return true
@@ -694,12 +706,12 @@ func interact() -> void:
 				if story.flag("luggage_placed"):
 					button(modal_body, "行李已经安放好，留在干处", close_modal)
 					return
-				button(modal_body, "把自己的行李留在门内", func(): close_modal(); story.set_flag("luggage_placed"); story.note("许宁把箱子竖放在门内干处。纸张留在里面，钥匙还在自己口袋。出去走一圈，不等于又要搬走，也不等于已经决定长住。"); last_place = ""; update_world(); refresh_ui())
+				button(modal_body, "把自己的行李留在门内", func(): handle_luggage(true))
 			"luggage":
 				if story.flag("luggage_taken"):
 					button(modal_body, "行李已留在旧屋门内" if story.flag("luggage_placed") else "行李已经提在自己手上", close_modal)
 					return
-				button(modal_body, "提起自己的行李", func(): close_modal(); story.set_flag("luggage_taken"); story.note("箱轮卡着一粒桥上的碎石。许宁把它抠掉，拎起箱子。里面是换洗衣服和处理旧屋的文件，不是要交给河上的旧物。"); last_place = ""; update_world(); refresh_ui())
+				button(modal_body, "提起自己的行李", func(): handle_luggage(false))
 			"zhou_absent":
 				button(modal_body, "看看棚边留下什么", func(): close_modal(); story.note("矮凳空着，通向旧阶的钟绳已经绷直。周伯没有消失，他说过要亲自把钟敲完。旧阶的路就在棚东侧。"); refresh_ui())
 			"release_scene":

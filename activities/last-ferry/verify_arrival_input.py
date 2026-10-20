@@ -22,8 +22,9 @@ try:
     click('保存');click('读取');click('确认');assert obs()['visible'][0]['location']=='桥头落客点',obs()
     go(745,540);key('e');assert any(b['text'].startswith('准备好了') for b in obs()['buttons']),obs()
     go(100,550);key('e');assert obs()['visible'][0]['location']=='桥头落客点',obs()
-    go(305,400);key('e');click('提起自己的行李');assert 'carried_luggage' in obs()['visible'][0],obs()
-    go(745,540);key('e');go(590,550);key('e');click('把自己的行李');placed=obs();assert 'carried_luggage' not in placed['visible'][0],placed
+    s.call('action',{'kind':'mouse','x':305,'y':360});assert 'carried_luggage' not in obs()['visible'][0],obs()
+    go(305,400);s.call('action',{'kind':'mouse','x':305,'y':360});assert 'carried_luggage' in obs()['visible'][0],obs()
+    go(745,540);key('e');go(590,550);s.call('action',{'kind':'mouse','x':590,'y':510});placed=obs();assert 'carried_luggage' not in placed['visible'][0],placed
     click('保存');click('读取');click('确认');loaded=obs();assert any(o['title']=='门内自己的行李箱' for o in loaded['visible'][0]['objects']),loaded
     key('e');assert not any(b['text'].startswith('把自己的行李') for b in obs()['buttons']),obs();key('escape')
     go(600,290);key('e');click('停下脚步');key('e');click('端起搪瓷盆')
