@@ -229,6 +229,11 @@ func act(id: String) -> bool:
 	if flag("released") and flag("closing_release") and id in ["board", "xu_voice", "answer_whistle", "listen_river", "ask_departure", "ask_roof", "xiaoman", "xiaoman_recognize", "xiaoman_wait", "xiaoman_ask", "shen", "whistle_short", "whistle_long", "whistle_listen"]:
 		return refuse("船已离岸。不能隔着已经结束的渡程继续索要回答；仍可陪岸上的人站一会儿，再迎接天明。")
 	match id:
+		"awning_tie":
+			if p != "shelter" or flag("awning_tied") or Vector2(s.x,s.y).distance_to(Vector2(690,350+float(s.get("awning_pull",0.0)))) > 100: return false
+			if float(s.get("awning_pull",0.0)) < 85: return refuse("绳端还没拉到木桩旁，你暂时松手；棚布仍低垂，可以再握住继续拉。")
+			set_flag("awning_tied")
+			note("你把拉紧的绳绕在木桩上，低垂的棚布抬起，积水从外侧落下。棚下多出一块可站的干处。周伯挪了挪凳脚：‘这边不滴了。你歇脚就站这里。’灯与钟仍是原来的样子。")
 		"lane_old_level":
 			if p != "lane" or flag("lane_old_level") or Vector2(s.x,s.y).distance_to(Vector2(200,300)) >= 48: return false
 			set_flag("lane_old_level")
@@ -704,6 +709,8 @@ func valid_save(data: Variant) -> bool:
 	if data.identity == "he" and "铜哨" in data.items: return false
 	for line in data.journal:
 		if not line is String: return false
+	if data.has("awning_pull"):
+		if not (data.awning_pull is float or data.awning_pull is int) or not is_finite(float(data.awning_pull)) or data.awning_pull < 0 or data.awning_pull > 90: return false
 	if data.has("cart_x"):
 		if not (data.cart_x is float or data.cart_x is int) or not is_finite(float(data.cart_x)) or data.cart_x < 250 or data.cart_x > 430: return false
 	for key in data.flags:

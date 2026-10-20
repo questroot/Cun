@@ -71,6 +71,19 @@ func run() -> void:
 	check(not state.flag("lane_level_seen_1") and not state.flag("lane_level_seen_0"),"late arrival does not invent unseen earlier levels")
 	check(not state.act("lane_level_revisit"),"first late observation does not repeat each frame")
 	state.fresh("xu")
+	check(not at("shelter","awning_tie"),"slack rope cannot be tied as completed")
+	state.s["awning_pull"] = 35.0
+	check(state.save_game() and state.load_game() and state.s.awning_pull == 35.0,"partial awning pull persists")
+	check(not state.act("awning_tie"),"partial rope still needs pulling")
+	state.s.awning_pull = 90.0
+	state.s.x = 690.0
+	state.s.y = 440.0
+	check(state.act("awning_tie") and state.flag("awning_tied"),"fully pulled rope can be tied")
+	check(not state.act("awning_tie"),"tied rope not replayed")
+	for bad_pull in [-1,91,"30",INF,NAN]:
+		state.s.awning_pull = bad_pull
+		check(not state.valid_save(state.s),"reject invalid awning pull field")
+	state.fresh("xu")
 	check(state.valid_save(state.s),"legacy save without cart position remains valid")
 	state.set_flag("lane_cart_moved")
 	check(state.valid_save(state.s),"legacy cleared cart save remains valid without new field")

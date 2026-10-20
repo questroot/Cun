@@ -28,6 +28,7 @@ var conversation_target := ""
 var conversation_response := ""
 var comparing_photo := false
 var pulling_cart := false
+var pulling_awning := false
 # Transient walk presentation. Reload/travel resumes the already admitted visit at its destination.
 var roof_guest_position := Vector2(635,490)
 var roof_guest_walking := false
@@ -73,6 +74,8 @@ func play_visible() -> Dictionary:
 		result["visible_toolbag"] = {"x":650,"y":490,"appearance":"老葛长凳边的工具袋"}
 	elif story.s.place == "steps" and not story.flag("tool_returned"):
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
+	if story.s.place == "shelter":
+		result["visible_awning"] = {"x":575,"y":195,"width":160,"lower_edge_y":280-float(story.s.get("awning_pull",0.0))/2.0,"rope_end_y":350+float(story.s.get("awning_pull",0.0)),"appearance":("棚布与系绳仍在，下面已漫水，不能避水" if story.s.ending == "flood" else ("棚绳系在木桩，棚下干处" if story.flag("awning_tied") else ("棚布低边滴水，松绳可向下拉" if story.s.phase != "epilogue" else "低垂棚布与未系绳端")))}
 	if story.s.place == "lane":
 		var cart := cart_position()
 		result["visible_cart"] = {"x":cart.x,"y":cart.y,"width":64,"height":60,"appearance":"空车木板车身，两侧车轮，左侧伸出车把"}
@@ -266,6 +269,7 @@ func load_game() -> void:
 	roof_guest_walking = false
 	roof_guest_position = Vector2(635,490)
 	pulling_cart = false
+	pulling_awning = false
 	if story.load_game():
 		if story.flag("roof_leak_shown"): roof_guest_position = Vector2(565,395)
 		comparing_photo = false
@@ -475,6 +479,17 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func move_player(offset: Vector2) -> void:
+	if pulling_awning and story.s.place == "shelter":
+		var amount := clampf(float(story.s.get("awning_pull",0.0))+maxf(offset.y,0.0),0,90)
+		var displacement := amount-float(story.s.get("awning_pull",0.0))
+		if not walkable(player+Vector2(0,displacement)): return
+		story.s["awning_pull"] = amount
+		player.y += displacement
+		story.s.x = player.x
+		story.s.y = player.y
+		last_place = ""
+		update_world()
+		return
 	if pulling_cart and story.s.place == "lane":
 		var x := clampf(cart_position().x + minf(offset.x,0.0)*0.5,250,430)
 		var displacement := x-cart_position().x
@@ -561,6 +576,7 @@ func update_world() -> void:
 			add_object("old_photo", "窗边的旧渡口照片", Vector2(695,230))
 			add_object("street_gate", "回杂货铺 / 街口", Vector2(450, 580), "gate")
 		"shelter":
+			if story.s.phase != "epilogue": add_object("awning_rope","系稳后不再滴水的棚绳" if story.flag("awning_tied") else "松棚绳·握住后向下退拉紧，E系住",Vector2(690,350+float(story.s.get("awning_pull",0.0))))
 			solids.append(Rect2(350, 285, 100, 70))
 			add_object("timetable", "旧通航告示", Vector2(125, 250))
 			add_object("lamp", "卸下白罩的旧灯" if story.flag("shade_off") else "白罩船灯", Vector2(250, 360))
@@ -721,6 +737,7 @@ func continue_zhou(id: String) -> void:
 
 func travel(place: String) -> void:
 	pulling_cart = false
+	pulling_awning = false
 	if story.flag("stock_carried"):
 		story.act("stock_put_back")
 	comparing_photo = false
@@ -757,6 +774,15 @@ func do_action(id: String) -> void:
 	refresh_ui()
 
 func interact() -> void:
+	if pulling_awning:
+		pulling_awning = false
+		story.s.x = player.x
+		story.s.y = player.y
+		story.act("awning_tie")
+		last_place = ""
+		update_world()
+		refresh_ui()
+		return
 	if pulling_cart:
 		pulling_cart = false
 		story.note("你松开车把，车停在脚边。" + ("中段缺口已经让开。" if story.flag("lane_cart_moved") else "车身仍占着缺口，可以继续拉，也可从南侧绕行。"))
@@ -804,6 +830,9 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"awning_rope":
+				if story.flag("awning_tied"): button(modal_body,"棚绳已系稳，下面留出一块干处",close_modal)
+				else: button(modal_body,"握住绳端，向下退拉棚布；E系住或松手",func(): close_modal(); pulling_awning=true; story.note("你握住棚绳。向下后退，绳端与棚布会跟着移动；拉到木桩旁按E系住，不够长则只是松手。没有倒计时。" );refresh_ui())
 			"lane_cart":
 				if story.flag("lane_cart_moved"):
 					button(modal_body,"空车已靠墙停稳，缺口可通行",close_modal)
@@ -1047,6 +1076,13 @@ func _draw() -> void:
 			draw_circle(Vector2(450, 340), 10, Color("5a777b"))
 			draw_line(Vector2(445, 187), Vector2(450, 325), Color(0.7, 0.8, 0.8, 0.45), 1)
 		"shelter":
+			var tension := float(story.s.get("awning_pull",0.0))/90.0
+			draw_colored_polygon(PackedVector2Array([Vector2(575,195),Vector2(735,195),Vector2(735,270-tension*45),Vector2(575,280-tension*45)]),Color("526b70"))
+			draw_line(Vector2(690,245-tension*40),Vector2(690,350+tension*90),Color("b8a279"),3)
+			draw_line(Vector2(700,420),Vector2(700,455),Color("8d7250"),7)
+			if story.flag("awning_tied") and story.s.ending != "flood": draw_rect(Rect2(590,365,135,75),Color("77745c"),false,2)
+			elif not story.flag("awning_tied"):
+				for drop in range(3): draw_line(Vector2(610+drop*32,285-tension*40),Vector2(610+drop*32,305-tension*40),Color("75a5bb"),2)
 			draw_rect(Rect2(350, 285, 100, 70), Color("5f4e3e"))
 			draw_line(Vector2(76, 190), Vector2(770, 190), Color("ad9672"), 10)
 			for x in [80, 770]: draw_line(Vector2(x, 190), Vector2(x, 450), Color("6b5a46"), 12)
