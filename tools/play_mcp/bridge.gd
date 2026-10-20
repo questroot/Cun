@@ -170,6 +170,10 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 		return
 	var args: Dictionary = request.params
 	var kind = args.get("kind")
+	var duration = args.get("duration_ms", 0)
+	if args.has("duration_ms") and (kind != "key" or args.has("frames") or not (duration is int or duration is float) or duration != int(duration) or duration < 1 or duration > 1000):
+		_reply(peer, {"ok":false,"error":"duration_ms requires key, integer 1..1000 and no frames"})
+		return
 	var frames = args.get("frames", 1)
 	if not (frames is int or frames is float) or frames != int(frames) or frames < 1 or frames > 120:
 		_reply(peer, {"ok": false, "error": "frames must be integer 1..120"})
@@ -236,8 +240,15 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 	else:
 		Input.parse_input_event(down)
 	var held_started := Time.get_ticks_usec()
-	for _i in range(int(frames)):
-		await get_tree().process_frame
+	var held_frames := 0
+	if args.has("duration_ms"):
+		while Time.get_ticks_usec()-held_started < int(duration)*1000:
+			await get_tree().process_frame
+			held_frames += 1
+	else:
+		for _i in range(int(frames)):
+			await get_tree().process_frame
+			held_frames += 1
 	var held_usec := Time.get_ticks_usec() - held_started
 	if up is InputEventMouseButton:
 		get_viewport().push_input(up, true)
@@ -247,7 +258,7 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 	await get_tree().process_frame
 	_active = false
 	var observation := _observe()
-	observation["input_timing"] = {"held_process_frames":int(frames),"held_wall_ms":float(held_usec)/1000.0,"clock":"process_frame; not fixed physics ticks or a guaranteed displacement"}
+	observation["input_timing"] = {"held_process_frames":held_frames,"held_wall_ms":float(held_usec)/1000.0,"clock":"process_frame; not fixed physics ticks or a guaranteed displacement"}
 	_reply(peer, {"ok": true, "result": observation})
 
 func _mouse(position: Vector2, index: MouseButton, pressed: bool) -> InputEventMouseButton:

@@ -36,6 +36,7 @@ TOOLS = [
     {'name':'action','description':'Send visible button click or bounded physical input; no game-manager APIs.','inputSchema':{'oneOf':[
         schema({'kind':{'const':'click'},'button_id':{'type':'string'}},['kind','button_id']),
         schema({'kind':{'const':'key'},'key':{'type':'string','enum':KEYS},'frames':{'type':'integer','minimum':1,'maximum':120}},['kind','key']),
+        schema({'kind':{'const':'key'},'key':{'type':'string','enum':KEYS},'duration_ms':{'type':'integer','minimum':1,'maximum':1000}},['kind','key','duration_ms']),
         schema({'kind':{'const':'mouse'},'x':{'type':'number','minimum':0},'y':{'type':'number','minimum':0},'button':{'enum':['left','right','wheel_up','wheel_down']},'frames':{'type':'integer','minimum':1,'maximum':120}},['kind','x','y'])], 'type':'object'}},
     {'name':'stop','description':'Stop only the subprocess launched by this server, preserving isolated evidence.','inputSchema':schema()},
 ]
@@ -53,7 +54,7 @@ class PlayService:
     def call(self, name, args):
         if not isinstance(args, dict):
             raise ValueError('arguments must be object')
-        allowed = {'catalog':set(), 'launch':{'project','headless'}, 'observe':set(), 'stop':set(), 'action':{'kind','button_id','key','frames','x','y','button'}}
+        allowed = {'catalog':set(), 'launch':{'project','headless'}, 'observe':set(), 'stop':set(), 'action':{'kind','button_id','key','frames','duration_ms','x','y','button'}}
         if not isinstance(name,str) or name not in allowed or set(args) - allowed[name]:
             raise ValueError('unknown tool or argument')
         with self.lock:
@@ -70,9 +71,12 @@ class PlayService:
     @staticmethod
     def validate_action(args):
         kind = args.get('kind')
-        fields = {'click':{'kind','button_id'}, 'key':{'kind','key','frames'}, 'mouse':{'kind','x','y','button','frames'}}
+        fields = {'click':{'kind','button_id'}, 'key':{'kind','key','frames','duration_ms'}, 'mouse':{'kind','x','y','button','frames'}}
         if not isinstance(kind, str) or kind not in fields or set(args)-fields[kind]:
             raise ValueError('unsupported action or fields')
+        if 'duration_ms' in args:
+            if kind != 'key' or 'frames' in args or type(args['duration_ms']) is not int or not 1 <= args['duration_ms'] <= 1000:
+                raise ValueError('duration_ms requires key, integer 1..1000 and no frames')
         frames = args.get('frames',1)
         if type(frames) is not int or not 1 <= frames <= 120:
             raise ValueError('frames must be integer 1..120')
