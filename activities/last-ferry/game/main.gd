@@ -287,6 +287,11 @@ func show_items() -> void:
 func try_world_click(point: Vector2) -> bool:
 	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if story.s.place == "steps":
+		for mark in [{"pos":Vector2(165,445),"action":"root_view"},{"pos":Vector2(330,470),"action":"stairs_view"},{"pos":Vector2(485,405),"action":"socket_view"}]:
+			if point.distance_to(mark.pos) < 30 and player.distance_to(mark.pos) < 82:
+				do_action(mark.action)
+				return true
 	if story.s.place == "street" and story.s.identity == "he" and story.item("新灯芯") and point.distance_to(Vector2(420,235)) < 35 and player.distance_to(Vector2(420,235)) < 82:
 		confirm("把这卷尚未送出的灯芯留在陶记干货格，并由你亲口向周伯解释？这不会替他决定今晚怎样等候。", func(): do_action("wick_keep"))
 		return true
