@@ -9,6 +9,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools/play_mcp'))
 from server import PlayService
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--render',action='store_true')
+parser.add_argument('--recover-mistake',action='store_true',help='Raise white light once, move wet stock, then repair without erasing intrusion')
 args=parser.parse_args()
 s=PlayService()
 def obs():return s.call('observe',{})
@@ -40,12 +41,20 @@ try:
     assert kept['visible'][0]['visible_wick']['appearance']=='柜台干货格留存的灯芯',kept
     walk('x',750);walk('y',390);key('e')
     go(455,465);key('e');click('亲口说明这卷');explained=obs();assert '你也会自己拿主意了' in json.dumps(explained,ensure_ascii=False);key('escape')
+    mistake=None
+    if args.recover_mistake:
+        click('准备好了');click('确认');go(250,395);key('e');click('危险：举白灯');click('确认')
+        invaded=obs();assert '侵入 1 / 2' in '\n'.join(invaded['texts']),invaded
+        go(365,410);key('e');click('托住箱底');mistake=obs()
+        assert '侵入 1 / 2' in '\n'.join(mistake['texts']) and any(o['title']=='干台上的湿货箱' for o in mistake['visible'][0]['objects']),mistake
+        go(750,390);key('e')
     inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)
     go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('提议只把今晚');key('escape')
     go(250,395)
     s.call('action',{'kind':'mouse','x':250,'y':360});s.call('action',{'kind':'mouse','x':250,'y':360})
     go(550,275);s.call('action',{'kind':'mouse','x':550,'y':240})
-    click('准备好了');click('确认');go(620,425)
+    if not args.recover_mistake: click('准备好了');click('确认')
+    go(620,425)
     s.call('action',{'kind':'mouse','x':620,'y':390});click('确认')
     lit=obs();assert '入夜' in '\n'.join(lit['texts']) and '次日尾声' not in '\n'.join(lit['texts']),lit
     go(750,565);key('e');go(590,445);key('e');click('站到周伯身旁')
@@ -58,6 +67,6 @@ try:
     key('i');assert '手提黄灯：' not in '\n'.join(obs()['texts']);key('escape')
     go(450,565);key('e');click('离开这段体验');click('确认');left=obs()
     assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
-    out=s.run_dir/'shore-evidence.json';out.write_text(json.dumps({'order_kept':kept,'order_explained':explained,'lit_still_night':lit,'rung':rung,'silence':silent,'dawn':dawn,'lamp_returned':returned,'formal_departure':left,'method':'normal opening, real visible button/key/mouse inputs only'},ensure_ascii=False,indent=2),encoding='utf-8')
+    out=s.run_dir/'shore-evidence.json';out.write_text(json.dumps({'mistake_consequence':mistake,'order_kept':kept,'order_explained':explained,'lit_still_night':lit,'rung':rung,'silence':silent,'dawn':dawn,'lamp_returned':returned,'formal_departure':left,'method':'normal opening, real visible button/key/mouse inputs only'},ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
 finally:s.stop()
