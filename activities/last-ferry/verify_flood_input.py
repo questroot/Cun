@@ -7,6 +7,14 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--identity',choices=['he','xu'],default='he')
 args=parser.parse_args()
 s=PlayService()
+receipts=[]
+original_call=s.call
+def recorded_call(name,arguments):
+    try:
+        result=original_call(name,arguments);receipts.append({'name':name,'arguments':arguments,'result':result});return result
+    except Exception as error:
+        receipts.append({'name':name,'arguments':arguments,'error':str(error)});raise
+s.call=recorded_call
 def obs():return s.call('observe',{})
 def key(k,n=1):return s.call('action',{'kind':'key','key':k,'frames':n})
 def click(t):
@@ -19,16 +27,33 @@ def go(x,y):
             if abs(d)<10:break
             key((('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w')),min(100,max(2,int(abs(d)/2))))
         else:raise AssertionError(('blocked',axis,target,p))
+def lane_go(x,y):
+    for tx,ty in [(player_x(),540),(x,540),(x,y)]:
+        for axis,target in [('x',tx),('y',ty)]:
+            for _ in range(35):
+                p=obs()['visible'][0]['player_screen'];d=target-p[axis]
+                if abs(d)<10:break
+                key((('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w')),min(80,max(2,int(abs(d)/2))))
+            else:raise AssertionError(('lane blocked',p))
+def player_x():return obs()['visible'][0]['player_screen']['x']
+def gauge_visit(expected):
+    go(100,550);key('e');lane_go(650,320)
+    o=obs();assert any(expected in t['title'] for t in o['visible'][0]['objects']),o
+    lane_go(745,350);key('e');go(450,575);key('e')
 try:
-    s.call('launch',{'project':'last-ferry','headless':True});click('许宁 ·' if args.identity=='xu' else '阿禾 ·')
-    if args.identity=='xu': go(450,575);key('e')
+    s.call('launch',{'project':'last-ferry','headless':True});click('许宁到埠前段' if args.identity=='xu' else '阿禾 ·')
+    if args.identity=='xu':
+        go(745,540);key('e');lane_go(650,320);assert any('低处湿线' in t['title'] for t in obs()['visible'][0]['objects']),obs()
+        lane_go(745,350);key('e');go(450,575);key('e')
     else: go(320,385);key('e');click('向陶婶借手提黄灯')
     click('准备好了');click('确认')
     for _ in range(2):
         go(750,390);key('e');go(250,395);key('e');click('危险：举白灯');click('确认')
+        if args.identity=='xu' and _==0:
+            go(95,565);key('e');go(100,440);key('e');gauge_visit('中格')
     flooded=obs();assert '次日尾声' in '\n'.join(flooded['texts']) and '侵入 2 / 2' in '\n'.join(flooded['texts']),flooded
     if args.identity=='xu':
-        go(100,480);key('e');go(320,380);key('e');click('留联络方式')
+        go(100,480);key('e');gauge_visit('上格');go(100,480);key('e');go(320,380);key('e');click('留联络方式')
         assert '路和水势要先确认' in json.dumps(obs(),ensure_ascii=False),obs()
         go(450,575);key('e')
     else:
@@ -43,4 +68,8 @@ try:
     go(455,470);key('e');click('看看这里今早');notice=obs();assert '普通渡船停航' in json.dumps(notice,ensure_ascii=False),notice
     go(95,565);key('e');go(450,565);key('e');click('离开这段体验');click('确认');left=obs();assert '旅途记录' in json.dumps(left,ensure_ascii=False),left
     out=s.run_dir/'flood-evidence.json';out.write_text(json.dumps({'flood':flooded,'ge':ge,'shelter':shelter,'notice':notice,'departure':left,'method':'two explicitly confirmed signals, no injected state'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
-finally:s.stop()
+finally:
+    try:s.call('stop',{})
+    finally:
+        s.stop()
+        if s.run_dir:(s.run_dir/'flood-input-receipts.json').write_text(json.dumps(receipts,ensure_ascii=False,indent=2),encoding='utf-8')

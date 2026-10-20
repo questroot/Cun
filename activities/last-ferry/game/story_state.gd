@@ -69,6 +69,11 @@ func missing_sources() -> String:
 		if not has(pair[0]): missing.append(pair[1])
 	return "、".join(missing) if not missing.is_empty() else "无；现在可以直接向周伯说明所见。"
 
+func lane_water_description() -> String:
+	if s.ending == "flood" or s.pollution >= 2: return "水线越过上格，旧蓝字已被淹湿"
+	if s.pollution == 1: return "新水线升到中格，傍晚低格的蓝记仍在"
+	return "蓝字今日日期与低处湿线"
+
 func roof_visit_active() -> bool:
 	return s.phase == "epilogue" and s.ending != "flood" and flag("roof_visit_arranged")
 
@@ -222,7 +227,7 @@ func act(id: String) -> bool:
 		"lane_today_level":
 			if p != "lane" or flag("lane_today_level") or Vector2(s.x,s.y).distance_to(Vector2(650,300)) >= 48: return false
 			set_flag("lane_today_level")
-			note("施工水尺：今天的蓝色粉笔日期在低处，湿线贴着下格。修桥的人把今天的读数另记，没有拿桥墩的旧洪痕代替。岸边高度变了，不能只凭旧照片猜现在的水深。")
+			note("施工水尺：" + lane_water_description() + "。傍晚读数的蓝记和此刻水线分开留着，不能拿桥墩旧洪痕代替今天的读数；也不能只凭旧照片猜现在的水深。")
 		"ledger":
 			if p != "street" or s.identity != "he": return refuse("这不是你能核对的店内账目。")
 			learn("purchases")

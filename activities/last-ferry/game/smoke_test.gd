@@ -49,6 +49,11 @@ func run() -> void:
 	state.s.x = 650.0
 	check(state.act("lane_today_level") and state.s.evidence.size()==evidence_before and state.s.pollution==0,"today gauge is local knowledge not core evidence or intrusion")
 	check(state.save_game() and state.load_game() and state.flag("lane_old_level") and state.flag("lane_today_level"),"both independent water observations persist")
+	check(state.lane_water_description().contains("低处"),"initial gauge is low")
+	state.s.pollution = 1
+	check(state.lane_water_description().contains("中格"),"first intrusion visibly raises gauge")
+	state.s.pollution = 2
+	check(state.lane_water_description().contains("上格"),"flood gauge exceeds upper mark")
 	state.fresh("xu")
 	check(state.valid_save(state.s),"legacy save without cart position remains valid")
 	state.set_flag("lane_cart_moved")
