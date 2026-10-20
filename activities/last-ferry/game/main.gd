@@ -71,6 +71,8 @@ func play_visible() -> Dictionary:
 	elif story.s.place == "steps" and not story.flag("tool_returned"):
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
 	if story.s.place == "lane":
+		var cart := cart_position()
+		result["visible_cart"] = {"x":cart.x,"y":cart.y,"width":64,"height":60,"appearance":"空车木板车身，两侧车轮，左侧伸出车把"}
 		result["visible_barrier"] = {"x":390,"y":280,"width":80,"height":220,"appearance":"石料围挡中段缺口已通，南侧也可绕行" if story.flag("lane_cart_moved") else "修桥石料围挡，空车堵中段缺口，南侧可绕行"}
 	if story.flag("luggage_taken") and not story.flag("luggage_placed"):
 		result["carried_luggage"] = {"x":player.x+20,"y":player.y+5,"appearance":"自己提着的棕色行李箱"}
@@ -569,6 +571,7 @@ func refresh_ui() -> void:
 		summary.text += "\n" + ("周伯已敲钟；可再陪站，或由你确认迎接天明。" if story.flag("closing_rang") else "黄灯已亮；周伯在旧阶等你，一起把钟敲完。")
 	message.text = "最近经历（不是持续现场对白）\n" + story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
+	if pulling_cart and story.s.place == "lane": foot_hint.text = "正握住车把 · 左方向键逐步拉出 · E或右侧交互松手\n车停在哪就在哪挡路；松手后可自由走动。"
 	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
 	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light") and not story.flag("closing_release"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
 	if story.s.phase != "epilogue" and story.flag("ge_met") and not story.flag("tool_returned"):
