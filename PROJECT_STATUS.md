@@ -254,7 +254,7 @@
 - 步长对照补证：真窗口/headless各10/30处理帧输入约12–14/40–42px，回执约.094/.234秒，当前两模式相近，未复现玩家约6px/帧；通信耗时非精确按住时长，不归因或称已修。TESTING明确短步observe而非固定px/帧保证，公共合同未改。
 - 低FPS对照完成：仅隔离进程加max-fps30/120，10处理帧实际64.94/66.67与16.66/16.67px，帧时变化足以解释同量级步长差异；原玩家当时FPS未采，不能断言其精确根因/已修，未动游戏速度或正式启动合同。TESTING补证，进程均stop。
 - 公共福地缺口启动：独立main工作树.local/public-fudi-visible、fix/fudi-visible-world，新增屏内相机裁剪固定provider（调查/休息/出口/普通守卫掉落）；4.7.2导入无错误。真实MCP正常进福地/移动d81cd5dd、保守中心裁剪与地图遮挡d5996be7通过，公共已推main808c017；首次推送因伙伴海域章节ce1faa0先到而拒绝，fetch核仅海域/管理器/测试/状态后无冲突rebase保留，未强推。个人分支已无冲突merge main808c017（含伙伴海域ce1faa0），末班渡船Verify通过、实际MCP card-demo进福地/屏内目标591d0f1c通过；不将个人活动带入公共分支，仍有Boss/建筑天气描述缺口。
-- 公共Boss预警描述本地接入中：main独立树由Fudi provider聚合Bosses屏内首领/可见红圈bounds，非CanvasItem的Bosses不直接入桥group，不输冷却锁定等；真实Godot导入无错误，真实Godot边界7项通过，正常MCP菜单进福地聚合/地图遮挡9b3ab460通过；已先推main04f6d1e，未真实战斗避圈验收，个人待同步。夹具不提交、一次Python路径错误已纠正，不算游戏故障。公共改动仍先main再个人同步。
+- 公共Boss预警描述本地接入中：main独立树由Fudi provider聚合Bosses屏内首领/可见红圈bounds，非CanvasItem的Bosses不直接入桥group，不输冷却锁定等；真实Godot导入无错误，真实Godot边界7项通过，正常MCP菜单进福地聚合/地图遮挡9b3ab460通过；已先推main04f6d1e，未真实战斗避圈验收，个人已无冲突merge04f6d1e，MCP五组与末班渡船真实引擎Verify通过。夹具不提交、一次Python路径错误已纠正，不算游戏故障。公共改动仍先main再个人同步。
 - 下一步：根据用户及玩家反馈扩展完整章节与交互，不用增加点击文本或等待时长冒充电影级体验。公共入口活动列表和在线NPC不在本轮扩展重点。
 
 
