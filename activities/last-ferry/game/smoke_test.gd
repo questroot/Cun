@@ -127,6 +127,8 @@ func run() -> void:
 	check(not at("steps", "photo_shift"), "cannot compare unseen photograph")
 	check(at("house", "photo_view") and state.flag("photo_seen"), "photo records observable older shoreline")
 	check(at("steps", "photo_same") and not state.flag("photo_compared") and state.s.pollution == 0, "wrong spatial reading yields safe counterevidence")
+	check(not at("steps", "photo_shift") and not state.flag("photo_compared"), "guessing correct interpretation cannot invent observations")
+	check(at("steps", "root_view") and at("steps", "stairs_view") and at("steps", "socket_view"), "physical comparison requires personally inspecting marks")
 	check(at("steps", "photo_shift") and state.flag("photo_compared") and not state.flag("consent"), "historical comparison is not consent or supernatural proof")
 	state.fresh("he")
 	check(at("street", "wick_keep") and not state.item("新灯芯"), "apprentice can honestly retain undelivered goods")

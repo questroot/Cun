@@ -176,6 +176,12 @@ func act(id: String) -> bool:
 			if id == "photo_same":
 				note("你先把照片里的灯对准如今棚内的亮处。可照片里柳树在台阶右侧，眼前同一段老根却在左后方；顺着新棚方向看，三道矮阶也对不上。\n你换一个站位再看。灯可以挪，岸边留下的石缝未必跟着挪。这个猜测没让河上多来什么，也不用向任何人道歉。")
 			else:
+				if not flag("root_view") or not flag("stairs_view") or not flag("socket_view"):
+					var gaps: Array[String] = []
+					if not flag("root_view"): gaps.append("柳根的朝向是否与你站的位置有关")
+					if not flag("stairs_view"): gaps.append("照片里三道矮阶是否真在新岸下面")
+					if not flag("socket_view"): gaps.append("旧柱究竟留下了什么痕迹")
+					return refuse("这个想法可以先留着，但还没有亲眼核对：" + "、".join(gaps) + "。\n照片不是一张答案纸；先在干阶边看清，再回来比较。夜里也能补查，不必赶时间。")
 				set_flag("photo_compared")
 				note("你不追着灯找位置，先沿老柳根向下数三道矮阶，再转身。照片里的木柱原来立在现在的系缆石旁。\n新棚移到了上游的干地，旧等候的位置却留在这里。周伯所说‘回来找不到岸’不只是怕看不见亮光，也可能是在怕认得的地方被换走。\n这不能替他表达意愿，更不能证明船上的每个声音都可信；你只是终于站在了旧照片拍摄的岸上。")
 		"ge_talk":
