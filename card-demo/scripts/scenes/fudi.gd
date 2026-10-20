@@ -69,7 +69,11 @@ func play_visible() -> Dictionary:
 	for exit: Array in data.exits:
 		_visible_target(targets,exit[1]*data.size,"E → "+str(Catalog.REGIONS[exit[0]].name),"exit",80)
 	for enemy: Dictionary in states[region].enemies:
+		var center := ARENA.position+Vector2(enemy.position)-camera_origin
 		_visible_target(targets,enemy.position-Vector2(0,38),"守卫","enemy",46)
+		var bar := Rect2(center-Vector2(28,84),Vector2(56,5))
+		if ARENA.encloses(bar) and not targets.is_empty() and targets[-1].kind == "enemy" and ARENA.has_point(center-Vector2(0,38)):
+			targets[-1]["visible_health_bar"] = {"fill_ratio":clampf(float(enemy.hp)/float(enemy.get("max_hp",60)),0.0,1.0),"x":bar.position.x,"y":bar.position.y,"width":bar.size.x,"height":bar.size.y}
 	for pickup: Dictionary in states[region].pickups:
 		if not pickup.get("weather_growth",false): _visible_target(targets,pickup.position,str(Catalog.ITEMS[pickup.item].name),"pickup",30)
 	var point := ARENA.position+player_foot-camera_origin
