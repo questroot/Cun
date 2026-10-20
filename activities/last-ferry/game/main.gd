@@ -80,6 +80,8 @@ func play_visible() -> Dictionary:
 		result["visible_awning_post"] = {"x":700,"y":420,"width":7,"height":35,"appearance":"系棚绳的木桩，拉绳端到桩旁再系"}
 		if story.flag("awning_tied") and story.s.ending != "flood":
 			result["visible_dry_patch"] = {"x":590,"y":365,"width":135,"height":75,"appearance":"地面勾线标出的棚下干处；仅避棚布滴水，不防漫水"}
+	if story.s.place == "arrival" and story.s.ending == "flood":
+		result["visible_receiver_table"] = {"x":580,"y":372,"width":110,"height":12,"appearance":"桥头接应干台，两脚支起"}
 	if story.flag("evac_pack_carried"):
 		result["visible_evac_pack"] = {"x":player.x+8,"y":player.y,"width":34,"height":26,"appearance":"托着扎紧的被褥包"}
 	elif story.s.ending == "flood" and story.s.place == "arrival" and story.flag("evac_pack_delivered"):
@@ -1089,7 +1091,12 @@ func _draw() -> void:
 		"arrival":
 			draw_rect(Rect2(40,175,780,100),Color("3b5057"))
 			draw_line(Vector2(80,290),Vector2(790,290),Color("a9a18e"),8)
-			if not story.flag("luggage_taken"): draw_rect(Rect2(290,345,30,28),Color("785c49"))
+			if story.s.ending == "flood":
+				draw_rect(Rect2(580,372,110,12),Color("887659"))
+				draw_line(Vector2(590,384),Vector2(590,405),Color("71644f"),6)
+				draw_line(Vector2(680,384),Vector2(680,405),Color("71644f"),6)
+			else:
+				if not story.flag("luggage_taken"): draw_rect(Rect2(290,345,30,28),Color("785c49"))
 		"street":
 			if story.s.pollution == 1:
 				var stock_pos := player+Vector2(15,10) if story.flag("stock_carried") else (Vector2(420,300) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))

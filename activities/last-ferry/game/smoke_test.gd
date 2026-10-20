@@ -55,6 +55,11 @@ func run() -> void:
 	check(state.act("evac_pack_deliver") and not state.flag("evac_pack_carried") and not state.act("evac_pack_deliver"),"handover settles parcel once")
 	state.fresh("xu")
 	check(not state.flag("evac_pack_carried") and not state.flag("evac_pack_delivered"),"missing legacy parcel flags default false")
+	state.s.flags.erase("evac_pack_carried")
+	state.s.flags.erase("evac_pack_delivered")
+	check(state.save_game(),"save legacy-shaped journey without evacuation flags")
+	state.set_flag("evac_pack_carried")
+	check(state.load_game() and not state.flag("evac_pack_carried") and not state.flag("evac_pack_delivered"),"legacy-shaped journey reload retains absent flags")
 	check(not at("house","lane_old_level"),"water marks cannot be observed from other scenes")
 	state.change_place("lane")
 	state.s.x = 400.0
