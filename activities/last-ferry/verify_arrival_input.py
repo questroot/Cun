@@ -26,5 +26,6 @@ try:
     go(600,290);key('e');click('停下脚步');key('e');click('端起搪瓷盆')
     go(450,380);key('e');click('把盆放在新湿痕');basin=obs();assert basin['visible'][0]['visible_basin']['appearance']=='接住滴水',basin
     go(695,270);key('e');click('翻看照片');photo=obs();assert '新棚启用前' in json.dumps(photo,ensure_ascii=False),photo
+    go(100,550);key('e');go(305,400);key('e');assert any(b['text']=='行李已留在旧屋门内' for b in obs()['buttons']),obs()
     out=s.run_dir/'arrival-evidence.json';out.write_text(json.dumps({'placed':placed,'loaded':loaded,'basin':basin,'photo':photo},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
 finally:s.stop()

@@ -697,7 +697,7 @@ func interact() -> void:
 				button(modal_body, "把自己的行李留在门内", func(): close_modal(); story.set_flag("luggage_placed"); story.note("许宁把箱子竖放在门内干处。纸张留在里面，钥匙还在自己口袋。出去走一圈，不等于又要搬走，也不等于已经决定长住。"); last_place = ""; update_world(); refresh_ui())
 			"luggage":
 				if story.flag("luggage_taken"):
-					button(modal_body, "行李已经提在自己手上", close_modal)
+					button(modal_body, "行李已留在旧屋门内" if story.flag("luggage_placed") else "行李已经提在自己手上", close_modal)
 					return
 				button(modal_body, "提起自己的行李", func(): close_modal(); story.set_flag("luggage_taken"); story.note("箱轮卡着一粒桥上的碎石。许宁把它抠掉，拎起箱子。里面是换洗衣服和处理旧屋的文件，不是要交给河上的旧物。"); last_place = ""; update_world(); refresh_ui())
 			"zhou_absent":
