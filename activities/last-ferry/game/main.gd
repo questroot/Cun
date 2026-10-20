@@ -65,6 +65,8 @@ func play_visible() -> Dictionary:
 		result["visible_toolbag"] = {"x":650,"y":490,"appearance":"老葛长凳边的工具袋"}
 	elif story.s.place == "steps" and not story.flag("tool_returned"):
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
+	if story.flag("luggage_taken") and not story.flag("luggage_placed"):
+		result["carried_luggage"] = {"x":player.x+20,"y":player.y+5,"appearance":"自己提着的棕色行李箱"}
 	if story.flag("stock_carried"):
 		result["carried_stock"] = {"x":player.x+15,"y":player.y+10,"appearance":"托着湿货箱"}
 	if comparing_photo and story.s.place == "steps":
@@ -226,7 +228,7 @@ func show_title() -> void:
 	open_modal("末班渡船", "俯视探索 · 独立活动首版\n\n在回水埠，一个傍晚，两种处境。选择身份后本次固定；你不必重演既定结局。\n\nWASD / 方向键自由走动，靠近发光圆环后按 E 打开交互，也可点击右侧按钮。走到路口，交互前往相邻地点。J 记录，I 物品，Esc 暂停。鼠标可点击场地下方方向按钮移动。\n\n探索、交谈、暂停和读记录都不会增加污染。入夜由你主动确认，没有倒计时。危险动作会再次确认，取消没有惩罚。所有图形与水声由本项目自制，无闪烁、跳吓或截图采集。")
 	button(modal_body, "许宁 · 返乡者｜离家多年，回来处理旧屋", func(): start_game("xu"))
 	button(modal_body, "阿禾 · 学徒｜杂货铺帮工，熟悉这条街的人", func(): start_game("he"))
-	button(modal_body, "许宁到埠前段 · 从桥头走回旧屋", func(): start_game("xu"); story.change_place("arrival"); player = Vector2(450,440); story.note("班车在桥头放下你和一只行李箱。司机问要不要替你送到门口，你说先自己走走。旧屋钥匙在自己口袋里，不必找人证明你有权回来。"); last_place = ""; update_world(); refresh_ui())
+	button(modal_body, "许宁到埠前段 · 从桥头走回旧屋", func(): start_game("xu"); story.set_flag("arrival_started"); story.change_place("arrival"); player = Vector2(450,440); story.note("班车在桥头放下你和一只行李箱。司机问要不要替你送到门口，你说先自己走走。旧屋钥匙在自己口袋里，不必找人证明你有权回来。"); last_place = ""; update_world(); refresh_ui())
 	button(modal_body, "读取独立活动存档", load_game)
 	button(modal_body, "退出游戏", func(): get_tree().quit())
 	refresh_ui()
@@ -455,6 +457,9 @@ func update_world() -> void:
 			add_object("departure", "街口·离开体验", Vector2(450, 570), "gate")
 		"house":
 			solids.append(Rect2(220, 190, 200, 105))
+			if story.flag("arrival_started"):
+				add_object("arrival_gate", "沿巷返回桥头落客点", Vector2(100,510), "gate")
+				if story.flag("luggage_taken"): add_object("luggage_place", "门内放自己行李的位置" if not story.flag("luggage_placed") else "门内自己的行李箱",Vector2(590,510))
 			add_object("paper", "旧桌·私人物品", Vector2(320, 340))
 			if story.flag("drawer_open"): add_object("handover", "旧交接单与今日附记" if story.flag("handover_updated") else "下层抽屉里的折单", Vector2(350,375))
 			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
@@ -685,6 +690,8 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"luggage_place":
+				button(modal_body, "把自己的行李留在门内", func(): close_modal(); story.set_flag("luggage_placed"); story.note("许宁把箱子竖放在门内干处。纸张留在里面，钥匙还在自己口袋。出去走一圈，不等于又要搬走，也不等于已经决定长住。"); last_place = ""; update_world(); refresh_ui())
 			"luggage":
 				if story.flag("luggage_taken"):
 					button(modal_body, "行李已经提在自己手上", close_modal)
@@ -944,6 +951,8 @@ func _draw() -> void:
 		draw_arc(pos, 33, 0, TAU, 32, Color(color, 0.6), 1.5)
 		if obj.id == nearest: draw_arc(pos, 40, 0, TAU, 32, Color("f2d68b"), 3)
 		draw_string(font, pos + Vector2(-64, 59), obj.title, HORIZONTAL_ALIGNMENT_LEFT, 175, 17, Color("ebe5d0"))
+	if story.flag("luggage_taken") and not story.flag("luggage_placed"): draw_rect(Rect2(player+Vector2(12,0),Vector2(24,25)),Color("785c49"))
+	elif story.flag("luggage_placed") and story.s.place == "house": draw_rect(Rect2(578,498,24,25),Color("785c49"))
 	draw_circle(player + Vector2(0, 14), 18, Color(0, 0, 0, 0.2))
 	draw_rect(Rect2(player - Vector2(10, 3), Vector2(20, 24)), Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
 	draw_circle(player - Vector2(0, 10), 10, Color("ead1ac"))
