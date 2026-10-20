@@ -80,6 +80,8 @@ func play_visible() -> Dictionary:
 	if buildings != null: result["building_view"] = buildings.play_visible()
 	var traps := get_node_or_null("Traps")
 	if traps != null: result["visible_hazards"] = traps.play_visible()
+	var chests := get_node_or_null("Chests")
+	if chests != null: result["visible_chests"] = chests.play_visible()
 	return result
 
 func _visible_target(targets: Array, point: Vector2, title: String, kind: String, _radius: float) -> void:
