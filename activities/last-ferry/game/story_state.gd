@@ -122,6 +122,11 @@ func act(id: String) -> bool:
 		note("你另取一小张纸，写下今日亲手确认的两件事：铜舌归钟，白罩取下。没有替当年的残姓补名字，也没划掉原单上的‘待修’。\n" + ("许宁把自己的名字写在今日附记下，将两张纸并放。旧屋留下的不再只有一件拖着没做的事。" if s.identity == "xu" else "阿禾把附记递给许宁；她看过后自己放进下层抽屉。获准查看旧单，不等于替屋主改写它。") + "\n这不是给谁结清一生的账，只让下次打开抽屉的人知道，今天做到了哪一步。")
 		return true
 	if s.phase == "epilogue":
+		if id == "basin_place" and p == "house" and flag("basin_carried") and s.ending != "flood":
+			s.flags.erase("basin_carried")
+			set_flag("basin_placed")
+			note("你把端着的盆放回桌脚漏点。滴水重新落进盆里，瓦片和梁还没有修好。")
+			return true
 		if id == "leave" and p == "street":
 			s.left = true
 			note("旅途记录：%s。保留经历，不带走当地人的财物与身份。许宁与阿禾仍会继续自己的生活。" % ending_name())
@@ -170,10 +175,10 @@ func act(id: String) -> bool:
 		if id == "roof_inspect" and p == "house" and flag("roof_visit_arranged") and s.ending != "flood":
 			if flag("roof_inspected"): return refuse("工序纸已经留在桌边。瓦片和梁仍待分项处理，不必重演一遍勘看。")
 			set_flag("roof_inspected")
-			note("老葛在门口叫过你，才进屋。他站在干地上顺着水痕看梁，用竹竿指了指错开的两片瓦，没有往朽梁上搭梯。\n‘这边瓦能先补，梁得叫木工看过。午后我带补瓦的人来，你人在就一起看；不在得另约，钥匙别随便塞门缝。’\n他把门牌纸翻过来写下两项工序，留在旧桌边。盆还要留着接水，修屋不是已经完成。")
+			note("老葛在门口叫过你，才进屋。他站在干地上顺着水痕看梁，用竹竿指了指错开的两片瓦，没有往朽梁上搭梯。\n‘这边瓦能先补，梁得叫木工看过。午后我带补瓦的人来，你人在就一起看；不在得另约，钥匙别随便塞门缝。’\n他把门牌纸翻过来写下两项工序，留在旧桌边。" + ("盆还要留着接水。" if flag("basin_placed") else "他指着桌脚滴水：先把盆放回漏点，别让水一直落在地上。") + "修屋不是已经完成。")
 			return true
 		if id == "roof_note_read" and p == "house" and flag("roof_inspected"):
-			note("门牌纸背面分着两栏：\n一、错开的瓦片，午后先由补瓦师傅看，人在再商量开工。\n二、梁缝与朽处，另请木工判断，不能把补瓦当换梁。\n两栏都没有完工勾记。纸留在桌边，盆继续接水。")
+			note("门牌纸背面分着两栏：\n一、错开的瓦片，午后先由补瓦师傅看，人在再商量开工。\n二、梁缝与朽处，另请木工判断，不能把补瓦当换梁。\n两栏都没有完工勾记。纸留在桌边。" + ("盆继续接水。" if flag("basin_placed") else "滴水仍落在桌脚，盆还没有放回漏点。"))
 			return true
 		if id == "epilogue":
 			var lines := {

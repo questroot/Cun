@@ -13,6 +13,14 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--render', action='store_true', help='Use an ordinary game window; no screenshot capture.')
 args = parser.parse_args()
 s=PlayService()
+receipts=[]
+original_call=s.call
+def recorded_call(name,arguments):
+    try:
+        result=original_call(name,arguments);receipts.append({'name':name,'arguments':arguments,'result':result});return result
+    except Exception as error:
+        receipts.append({'name':name,'arguments':arguments,'error':str(error)});raise
+s.call=recorded_call
 def obs():return s.call('observe',{})
 def key(k,n=1):return s.call('action',{'kind':'key','key':k,'frames':n})
 def click(prefix):
@@ -36,6 +44,7 @@ def inspect(x,y):go(x,y);key('e');click('现场检查')
 try:
     s.call('launch',{'project':'last-ferry','headless':not args.render});click('许宁 ·')
     go(600,290);key('e');click('停下脚步')
+    key('e');click('端起搪瓷盆');go(450,380);key('e');click('把盆放在新湿痕');key('e');click('重新端起接水');assert obs()['visible'][0]['visible_basin']['appearance']=='端在手上',obs()
     go(320,375);key('e');click('坐一会儿');go(450,575);key('e')
     go(620,430);key('e');click('说说旧屋漏点');assert '明早量桥前' in json.dumps(obs(),ensure_ascii=False),obs()
     go(750,390);key('e')
@@ -64,9 +73,15 @@ try:
     click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()
     assert any(o['title']=='桌边的两项修屋工序纸' for o in obs()['visible'][0]['objects']),obs()
     go(400,410);key('e');click('展开工序纸');work_note=obs();assert '没有完工勾记' in json.dumps(work_note,ensure_ascii=False),work_note
+    assert obs()['visible'][0]['visible_basin']['appearance']=='端在手上',obs();assert '盆还没有放回漏点' in json.dumps(work_note,ensure_ascii=False),work_note
+    go(480,365);key('e');click('把端着的盆放回');assert obs()['visible'][0]['visible_basin']['appearance']=='接住滴水',obs()
     go(320,375);key('e');click('先请人看屋顶');morning=obs();assert '两项工序' in json.dumps(morning,ensure_ascii=False)
     basin=morning['visible'][0]['visible_basin'];assert basin['x']==450 and basin['y']==340 and basin['appearance']=='接住滴水',morning
     go(450,575);key('e');go(450,565);key('e');click('离开这段体验');click('确认')
     left=obs();assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
     out=s.run_dir/'release-evidence.json';out.write_text(json.dumps({'begun':started,'rope_released':rung,'departed_world':departed,'restored_mid_scene':restored,'dawn':dawn,'morning_choice':morning,'formal_departure':left,'method':'normal opening, bounded MCP inputs only; coordinator knows route, not blind play'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
-finally:s.stop()
+finally:
+    try:s.call('stop',{})
+    finally:
+        s.stop()
+        if s.run_dir:(s.run_dir/'release-input-receipts.json').write_text(json.dumps(receipts,ensure_ascii=False,indent=2),encoding='utf-8')

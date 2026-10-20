@@ -740,6 +740,7 @@ func interact() -> void:
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
 		if target == "wet_stock": act_button("看看昨晚浸湿的货物怎么处理", "stock_morning")
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
+		if target == "drip" and story.flag("basin_carried") and story.s.ending != "flood": act_button("把端着的盆放回漏点", "basin_place")
 		if target == "roof_note": act_button("展开工序纸，核对还没做的事", "roof_note_read")
 		if target == "roof_ge": act_button("请他从干处看漏点，商量分项安排", "roof_inspect")
 		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
