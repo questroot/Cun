@@ -147,6 +147,10 @@ func act(id: String) -> bool:
 				set_flag("contact_left")
 				note("许宁还不能答应自己会留下。她写了电话号码，压在陶婶以前给的糖纸下面，请有屋顶消息就联系她。\n没写‘永不再走’，也没把房子交给河上的声音。关门时，她回头确认窗扣上了。")
 			return true
+		if id == "morning_ge" and p == "street" and s.ending == "flood":
+			note("老葛把鞋摊收进木箱，用补鞋的粗线替邻居扎紧撤离包。渡口今天不营业，他也没说河里的人会替活人收拾。\n‘先上桥那头借一晚屋。等水退了，少什么，再回来一件件认。’他留着回来的打算，不把停航说成一切都结束。")
+			set_flag("morning_ge_seen")
+			return true
 		if id == "morning_ge" and p == "street":
 			note(("老葛接过昨晚归还的工具袋，翻出锥子继续补鞋：‘等鞋干了，我去桥上看看。’" if flag("tool_returned") else "老葛把缺了工具的位置空在脚边，先用借来的锥子补鞋：‘袋子晚些再找，今天也得开张。’") + "\n他母亲从巷里喊他吃饭。他应了一声，回头问你要不要加双鞋垫。昨晚听到的声音没有替今早过日子。")
 			set_flag("morning_ge_seen")

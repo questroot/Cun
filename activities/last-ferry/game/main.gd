@@ -483,6 +483,15 @@ func update_world() -> void:
 			solids.append(Rect2(260, 195, 240, 80))
 			add_object("voices", "旧物与河声", Vector2(570, 335))
 			add_object("back", "返回旧石阶（安全）", Vector2(450, 570), "gate")
+	if story.s.ending == "flood":
+		if story.s.place == "shelter":
+			scene_objects.clear()
+			add_object("evacuation", "撤离后封起的灯钟与停航告示", Vector2(455,430))
+			add_object("street_gate", "沿干路回街口", Vector2(95,570), "gate")
+		elif story.s.place == "street":
+			for obj in scene_objects:
+				if obj.id == "ge": obj.title = "帮邻居扎撤离包的老葛"
+				if obj.id == "tao": obj.title = "收存受潮账货的陶婶"
 	queue_redraw()
 
 func river_in_place(id: String) -> void:
