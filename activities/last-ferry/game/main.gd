@@ -421,6 +421,7 @@ func update_world() -> void:
 			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
 			add_object("watermark", "墙下的旧水印", Vector2(130, 300))
 			if story.s.identity == "he": add_object("xu", "许宁", Vector2(550, 405), "npc")
+			add_object("old_photo", "窗边的旧渡口照片", Vector2(695,230))
 			add_object("street_gate", "回杂货铺 / 街口", Vector2(450, 580), "gate")
 		"shelter":
 			solids.append(Rect2(350, 285, 100, 70))
@@ -529,7 +530,7 @@ func act_button(text: String, id: String) -> void:
 			nearest = target
 			interact()
 			refresh_ui()
-		elif conversation_target in ["mooring", "voices"] and id in ["listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen", "whistle_short", "whistle_long", "whistle_listen", "whistle_reset", "xiaoman_recognize", "xiaoman_wait", "xiaoman_ask"]:
+		elif conversation_target in ["mooring", "voices"] and id in ["photo_same", "photo_shift", "listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen", "whistle_short", "whistle_long", "whistle_listen", "whistle_reset", "xiaoman_recognize", "xiaoman_wait", "xiaoman_ask"]:
 			continue_river(id)
 		else:
 			close_modal()
@@ -628,6 +629,7 @@ func interact() -> void:
 			"ge":
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
+			"old_photo": act_button("翻看照片正反面，记下岸的位置", "photo_view")
 			"toolbag": act_button("站在干阶上，用竹竿挑起布袋", "tool_retrieve")
 			"tao":
 				button(modal_body, "闲谈 · 门口那只杯子", func(): close_modal(); story.note("陶婶：门口那只杯子别收，接漏水的。喝水用柜子上那只。\n" + ("许宁想起从前赊账的橘子糖。陶婶说还卖，不过现在得自己付钱。" if story.s.identity == "xu" else "阿禾说杯沿缺了一角，明天换个盆吧。陶婶看了看天：盆接铺子里头那处漏，门口先用这个。")); refresh_ui())
@@ -693,6 +695,9 @@ func interact() -> void:
 				if story.s.phase == "night":
 					act_button("转述本人意愿，请周伯敲最后一次钟", "farewell_consent")
 			"mooring":
+				if story.flag("photo_seen"):
+					act_button("照片里的灯就是新棚：先按灯的位置对照", "photo_same")
+					act_button("先对柳根与三道矮阶，再看灯柱旧址", "photo_shift")
 				if story.s.phase == "night" and story.flag("released"):
 					act_button("回身看看仍留在岸上的人", "release_watch")
 				elif story.s.phase == "night":
@@ -755,6 +760,9 @@ func _draw() -> void:
 				draw_rect(Rect2(695, 315, 18, 160), Color("b68a59"))
 				draw_string(font, Vector2(550, 180), "渡口停航 · 安全撤离", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("e3c29f"))
 		"house":
+			draw_rect(Rect2(675,215,40,30),Color("d4c9a7"))
+			draw_line(Vector2(680,238),Vector2(709,238),Color("6a746b"),2)
+			draw_line(Vector2(687,218),Vector2(687,236),Color("72614a"),2)
 			draw_rect(Rect2(210, 185, 220, 110), Color("5b5045"))
 			draw_rect(Rect2(40, 175, 780, 12), Color("a29376"))
 			var basin_pos := player + Vector2(15, -8) if story.flag("basin_carried") else (Vector2(450, 340) if story.flag("basin_placed") else Vector2(600, 250))

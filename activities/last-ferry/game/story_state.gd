@@ -162,6 +162,17 @@ func act(id: String) -> bool:
 			if p != "street" or s.identity != "he": return refuse("请在店里以学徒身份向陶婶借灯。")
 			give("手提黄灯")
 			note("陶婶借出手提黄灯：只供等候，不招呼人上船。你答应天亮归还。")
+		"photo_view":
+			if p != "house": return false
+			set_flag("photo_seen")
+			note("窗边旧照片边角粘着修屋时的灰。照片上有三道矮阶，一棵向河面斜生的柳树；灯挂在最上一级靠左的木柱上。\n照片背面写着‘新棚启用前，最后一班日渡’。远处没有如今桥梁的围挡。人脸已褪了，不足以凭相貌认出谁；你记下的是岸的位置。")
+		"photo_same", "photo_shift":
+			if p != "steps" or not flag("photo_seen"): return refuse("手边还没有可对照的旧照片。")
+			if id == "photo_same":
+				note("你先把照片里的灯对准如今棚内的亮处。可照片里柳树在台阶右侧，眼前同一段老根却在左后方；顺着新棚方向看，三道矮阶也对不上。\n你换一个站位再看。灯可以挪，岸边留下的石缝未必跟着挪。这个猜测没让河上多来什么，也不用向任何人道歉。")
+			else:
+				set_flag("photo_compared")
+				note("你不追着灯找位置，先沿老柳根向下数三道矮阶，再转身。照片里的木柱原来立在现在的系缆石旁。\n新棚移到了上游的干地，旧等候的位置却留在这里。周伯所说‘回来找不到岸’不只是怕看不见亮光，也可能是在怕认得的地方被换走。\n这不能替他表达意愿，更不能证明船上的每个声音都可信；你只是终于站在了旧照片拍摄的岸上。")
 		"ge_talk":
 			if p != "street": return false
 			set_flag("ge_met")
