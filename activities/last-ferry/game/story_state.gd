@@ -162,7 +162,7 @@ func act(id: String) -> bool:
 		if id == "evac_pack_take":
 			if p != "street" or not flag("morning_ge_seen") or flag("evac_pack_carried") or Vector2(s.x,s.y).distance_to(Vector2(650,470)) >= 96: return false
 			set_flag("evac_pack_carried")
-			note("老葛指着扎好的包：‘邻居的被褥，桥头接应的人收。别走旧阶，沿许家门内西侧绕行巷过去，石料南边留着干路。’你托起包；不想继续可先送回这里，不必替邻居决定以后住哪。")
+			note("老葛指着扎好的包：‘邻居的被褥，桥头接应的人收。别走旧阶，从街口西南的公共干路进绕行巷，石料南边留着干路。’你托起包；不想继续可先送回这里，不必替邻居决定以后住哪。")
 		elif id == "evac_pack_drop":
 			if p != "street" or not flag("evac_pack_carried") or Vector2(s.x,s.y).distance_to(Vector2(650,470)) >= 96: return false
 			s.flags["evac_pack_carried"] = false

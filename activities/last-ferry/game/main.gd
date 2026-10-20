@@ -574,6 +574,7 @@ func update_world() -> void:
 			add_object("lane_cart", "缺口外停住的空手推车" if story.flag("lane_cart_moved") else "卡在围挡缺口的空手推车",cart-Vector2(80,0))
 			add_object("arrival_gate", "返回桥头落客点",Vector2(100,510),"gate")
 			add_object("house_gate", "许家旧屋门口",Vector2(745,320),"gate")
+			if story.s.ending == "flood": add_object("street_gate","公共干路回街口",Vector2(745,550),"gate")
 		"street":
 			if story.s.ending == "flood" and not story.flag("evac_pack_carried") and not story.flag("evac_pack_delivered"): add_object("evac_pack","老葛扎好的邻居被褥包",Vector2(650,470))
 			solids.append(Rect2(145, 190, 235, 95))
@@ -589,6 +590,7 @@ func update_world() -> void:
 			if story.flag("street_evening_seen") and not story.flag("shoe_collected") and story.s.phase == "dusk": add_object("shoe_parcel", "等主人来取的鞋包", Vector2(675,460))
 			add_object("shelter_gate", "去候船棚", Vector2(750, 385), "gate")
 			add_object("house_gate", "去许家旧屋", Vector2(100, 440), "gate")
+			if story.s.ending == "flood": add_object("lane_gate","沿公共干路去桥头接应",Vector2(100,550),"gate")
 			add_object("departure", "街口·离开体验", Vector2(450, 570), "gate")
 		"house":
 			solids.append(Rect2(220, 190, 200, 105))
@@ -781,13 +783,16 @@ func travel(place: String) -> void:
 	var previous_place: String = story.s.place
 	story.change_place(place)
 	if place == "lane":
-		story.s.x = 690.0 if previous_place == "house" else 150.0
+		story.s.x = 690.0 if previous_place in ["house","street"] else 150.0
 		story.s.y = 540.0
 		if story.s.ending == "flood":
 			if not story.flag("flood_dry_lane_seen"):
 				story.set_flag("flood_dry_lane_seen")
 				story.note("旧阶方向已经封住。这里石料南侧的浅色人行带仍干，向西通桥头接应点，向东可回许家门内。通道不要求先挪空车。")
 		else: story.note("巷中修桥的石料挡住直路。围挡南端留着人行通道，许家门口在另一侧。脚步落在散砂上，行李轮能绕过去。")
+	if place == "street" and previous_place == "lane":
+		story.s.x = 150.0
+		story.s.y = 540.0
 	if place == "street" and story.s.phase == "dusk" and not story.flag("street_evening_seen"):
 		story.set_flag("street_evening_seen")
 		story.note("你回到街口时，老葛正把补好的鞋并排放在凳上。\n陶婶从门内问：‘明早量桥，先吃了再去？’\n‘带两个馒头就行。鞋等晾干，让他自己来拿，别又替他送到家。’\n她把一张包货纸压在秤下，没喊你停步。")
