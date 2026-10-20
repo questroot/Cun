@@ -441,7 +441,7 @@ func _process(delta: float) -> void:
 	if story.s.place == "lane":
 		var observed_level := ""
 		if player.distance_to(Vector2(200,300)) < 48 and not story.flag("lane_old_level"): observed_level = "lane_old_level"
-		elif player.distance_to(Vector2(650,300)) < 48 and not story.flag("lane_today_level"): observed_level = "lane_today_level"
+		elif player.distance_to(Vector2(650,300)) < 48 and not story.flag("lane_today_level"): observed_level = "lane_level_revisit"
 		if not observed_level.is_empty():
 			story.act(observed_level)
 			refresh_ui()

@@ -62,6 +62,15 @@ func run() -> void:
 	state.s.y = 320.0
 	check(state.save_game() and state.load_game() and not state.act("lane_level_revisit"),"revisit records persist without repeat after loading")
 	state.fresh("xu")
+	state.s.pollution = 2
+	state.finish("flood")
+	state.change_place("lane")
+	state.s.x = 650.0
+	state.s.y = 320.0
+	check(state.act("lane_level_revisit") and state.notice.contains("首次") and state.flag("lane_today_level"),"first flooded visit records first observation in epilogue")
+	check(not state.flag("lane_level_seen_1") and not state.flag("lane_level_seen_0"),"late arrival does not invent unseen earlier levels")
+	check(not state.act("lane_level_revisit"),"first late observation does not repeat each frame")
+	state.fresh("xu")
 	check(state.valid_save(state.s),"legacy save without cart position remains valid")
 	state.set_flag("lane_cart_moved")
 	check(state.valid_save(state.s),"legacy cleared cart save remains valid without new field")
