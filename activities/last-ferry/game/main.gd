@@ -342,6 +342,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			KEY_E: interact()
 			KEY_J: show_journal()
 			KEY_I: show_items()
+			KEY_1: river_in_place("whistle_short")
+			KEY_2: river_in_place("whistle_long")
+			KEY_3: river_in_place("whistle_listen")
+			KEY_4: river_in_place("whistle_reset")
 
 func _process(delta: float) -> void:
 	if sound_enabled and playback != null:
@@ -444,6 +448,11 @@ func update_world() -> void:
 			add_object("back", "返回旧石阶（安全）", Vector2(450, 570), "gate")
 	queue_redraw()
 
+func river_in_place(id: String) -> void:
+	if not started or modal_open or paused or story.s.phase != "night" or story.s.place != "steps": return
+	if player.distance_to(Vector2(460,295)) >= 96 or story.flag("released"): return
+	do_action(id)
+
 func refresh_ui() -> void:
 	clear_children(action_box)
 	if not started:
@@ -472,6 +481,14 @@ func refresh_ui() -> void:
 		button(action_box, "[E] 交互：" + object_title(nearest), interact)
 	if story.s.phase == "dusk":
 		button(action_box, "准备好了 · 进入入夜", func(): confirm("进入入夜？人物将开始赴约；必要线索和工具仍可补查。没有自动倒计时。", func(): do_action("night")))
+	if story.s.phase == "night" and story.s.place == "steps" and nearest == "mooring" and not story.flag("released"):
+		if not story.flag("river_heard"):
+			button(action_box, "先站在干阶听河声", func(): river_in_place("listen_river"))
+		elif story.s.identity == "xu" and story.item("铜哨") and not story.flag("xu_identified"):
+			button(action_box, "铜哨 · 短音 [1]", func(): river_in_place("whistle_short"))
+			button(action_box, "铜哨 · 长音 [2]", func(): river_in_place("whistle_long"))
+			button(action_box, "停下听回应 [3]", func(): river_in_place("whistle_listen"))
+			button(action_box, "放下重来 [4]", func(): river_in_place("whistle_reset"))
 	button(action_box, "当前目标 / 操作提示", show_help)
 
 func object_title(id: String) -> String:

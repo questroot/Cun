@@ -42,7 +42,9 @@ try:
     agreed=obs();assert '收的是这个' in json.dumps(agreed,ensure_ascii=False),agreed
     click('先不做');assert not obs()['visible'][0]['modal_open'],obs()
     click('准备好了');click('确认');go(750,565);key('e')
-    go(460,335);key('e');click('先站住');click('吹一声短音');click('吹一声短音');click('吹一声长音');click('停下，听听');click('问他：你希望')
+    go(460,335);click('先站在干阶听河声');key('1');key('1');key('2');key('3')
+    river=obs();assert not river['visible'][0]['modal_open'] and '我以为你听不出来了' in json.dumps(river,ensure_ascii=False),river
+    key('e');click('问他：你希望')
     click('请周伯先辨认');click('听父女谈');click('明确问她');click('询问沈渡');click('经本人同意')
     go(115,565);key('e');go(455,465);key('e');click('转述本人意愿')
     go(750,565);key('e');go(460,335);key('e');click('把两岸的答复')
