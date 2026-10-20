@@ -60,6 +60,9 @@ func run() -> void:
 	check(not state.act("roof_arrange") and state.act("roof_recall"),"appointment cannot be duplicated but remains reviewable")
 	state.s.phase = "epilogue"
 	state.s.ending = "light"
+	check(not at("house","roof_inspect"),"appointment alone does not authorize entering house")
+	check(at("house","roof_admit") and not state.act("roof_admit"),"owner admits guest once before inspection")
+	check(state.save_game() and state.load_game() and state.flag("roof_guest_admitted"),"admission persists")
 	check(at("house","roof_inspect") and state.flag("roof_inspected"),"safe morning appointment can receive inspection")
 	check(state.save_game() and state.load_game() and state.flag("roof_inspected"),"inspection persists in isolated test save")
 	check(at("house","roof_note_read") and state.notice.contains("没有完工勾记"),"physical work note records outstanding work rather than a completed repair")

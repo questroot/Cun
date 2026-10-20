@@ -68,6 +68,8 @@ try:
     assert '次日尾声' not in '\n'.join(restored['texts']) and any(o['title']=='已离岸的夜船' for o in restored['visible'][0]['objects']),restored
     key('e');click('船离岸后');click('不必等话');click('确认');dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']) and '结束渡程' in json.dumps(dawn,ensure_ascii=False)
     go(115,565);key('e');go(95,565);key('e');go(100,440);key('e')
+    assert any(o['title']=='门口等你招呼的老葛' for o in obs()['visible'][0]['objects']),obs()
+    go(500,510);key('e');click('到门口招呼');assert '钥匙没有交出去' in json.dumps(obs(),ensure_ascii=False),obs()
     assert any(o['title']=='按约来勘看的老葛' for o in obs()['visible'][0]['objects']),obs()
     go(635,450);key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
     click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()

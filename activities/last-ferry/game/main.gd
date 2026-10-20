@@ -509,7 +509,10 @@ func update_world() -> void:
 			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
 			if story.flag("roof_inspected"): add_object("roof_note", "桌边的两项修屋工序纸",Vector2(400,375))
 			if story.s.phase == "epilogue" and story.s.ending != "flood" and story.flag("roof_visit_arranged"):
-				add_object("roof_ge", "按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛",Vector2(635,490),"npc")
+				if story.flag("roof_guest_admitted") or story.flag("roof_inspected"):
+					add_object("roof_ge", "按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛",Vector2(635,490),"npc")
+				else:
+					add_object("roof_ge_door", "门口等你招呼的老葛",Vector2(500,550),"npc")
 			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
 			add_object("watermark", "墙下的旧水印", Vector2(130, 300))
 			if story.s.identity == "he": add_object("xu", "许宁", Vector2(550, 405), "npc")
@@ -702,7 +705,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_admit", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -742,6 +745,7 @@ func interact() -> void:
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
 		if target == "drip" and story.flag("basin_carried") and story.s.ending != "flood": act_button("把端着的盆放回漏点", "basin_place")
 		if target == "roof_note": act_button("展开工序纸，核对还没做的事", "roof_note_read")
+		if target == "roof_ge_door": act_button("到门口招呼他进屋看漏点", "roof_admit")
 		if target == "roof_ge": act_button("请他从干处看漏点，商量分项安排", "roof_inspect")
 		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
 			if story.s.ending == "flood": act_button("留联络方式，等安全后再回来处理旧屋", "leave_contact")
