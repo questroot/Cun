@@ -180,9 +180,18 @@ func act(id: String) -> bool:
 			set_flag("roof_guest_admitted")
 			note("你走到门口，老葛收起量桥的绳尺：‘现在方便？’你点头让开门。他擦掉鞋底的泥才进来，停在干地上，等你指漏点。钥匙没有交出去。")
 			return true
+		if id == "roof_guide" and p == "house" and roof_visit_active() and flag("roof_guest_admitted") and not flag("roof_inspected"):
+			set_flag("roof_guiding")
+			note("老葛握着竹竿等你带路：‘你先站到桌脚湿痕旁的干处，我跟过去。不踩水，也别站到梁正下。’")
+			return true
+		if id == "roof_show" and p == "house" and flag("roof_guiding") and roof_visit_active():
+			if Vector2(s.x,s.y).distance_to(Vector2(510,370)) > 75: return false
+			set_flag("roof_leak_shown")
+			return true
 		if id == "roof_inspect" and p == "house" and flag("roof_visit_arranged") and s.ending != "flood":
 			if not flag("roof_guest_admitted") and not flag("roof_inspected"): return refuse("老葛还在门口等，先去招呼他，不能替屋主开门。")
 			if flag("roof_inspected"): return refuse("工序纸已经留在桌边。瓦片和梁仍待分项处理，不必重演一遍勘看。")
+			if not flag("roof_leak_shown"): return refuse("先带老葛到桌脚湿痕旁的干处，指清这次的漏点。")
 			set_flag("roof_inspected")
 			note("老葛在门口叫过你，才进屋。他站在干地上顺着水痕看梁，用竹竿指了指错开的两片瓦，没有往朽梁上搭梯。\n‘这边瓦能先补，梁得叫木工看过。午后我带补瓦的人来，你人在就一起看；不在得另约，钥匙别随便塞门缝。’\n他把门牌纸翻过来写下两项工序，留在旧桌边。" + ("盆还要留着接水。" if flag("basin_placed") else "他指着桌脚滴水：先把盆放回漏点，别让水一直落在地上。") + "修屋不是已经完成。")
 			return true

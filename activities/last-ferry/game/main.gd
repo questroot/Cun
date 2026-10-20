@@ -267,6 +267,7 @@ func load_game() -> void:
 	roof_guest_position = Vector2(635,490)
 	pulling_cart = false
 	if story.load_game():
+		if story.flag("roof_leak_shown") and not story.flag("roof_inspected"): roof_guest_position = Vector2(565,395)
 		comparing_photo = false
 		started = true
 		last_place = ""
@@ -425,6 +426,18 @@ func _process(delta: float) -> void:
 			if roof_guest_position.distance_to(Vector2(635,490)) < 0.1: roof_guest_walking = false
 			last_place = ""
 			update_world()
+	if story.s.place == "house" and story.flag("roof_guiding") and not story.flag("roof_inspected"):
+		if not story.flag("roof_leak_shown"):
+			var guest_next := roof_guest_position.move_toward(player+Vector2(55,25),minf(delta,0.05)*110.0)
+			if walkable(guest_next): roof_guest_position = guest_next
+			elif walkable(Vector2(guest_next.x,roof_guest_position.y)): roof_guest_position.x = guest_next.x
+			elif walkable(Vector2(roof_guest_position.x,guest_next.y)): roof_guest_position.y = guest_next.y
+			if player.distance_to(Vector2(510,370)) < 65 and roof_guest_position.distance_to(player) < 95:
+				story.s.x = player.x
+				story.s.y = player.y
+				story.act("roof_show")
+		last_place = ""
+		update_world()
 	var movement := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): movement.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): movement.y += 1
@@ -527,9 +540,10 @@ func update_world() -> void:
 			if story.flag("roof_inspected"): add_object("roof_note", "桌边的两项修屋工序纸",Vector2(400,375))
 			if story.roof_visit_active():
 				if story.flag("roof_guest_admitted") or story.flag("roof_inspected"):
-					add_object("roof_ge", "正擦净鞋底走向屋内干处的老葛" if roof_guest_walking else ("按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛"),roof_guest_position if roof_guest_walking else Vector2(635,490),"npc")
+					add_object("roof_ge", "正擦净鞋底走向屋内干处的老葛" if roof_guest_walking else ("跟你查看桌脚漏点的老葛" if story.flag("roof_guiding") and not story.flag("roof_inspected") else ("按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛")),roof_guest_position if roof_guest_walking or (story.flag("roof_guiding") and not story.flag("roof_inspected")) else Vector2(635,490),"npc")
 				else:
 					add_object("roof_ge_door", "门口等你招呼的老葛",Vector2(500,550),"npc")
+			if story.flag("roof_guiding") and not story.flag("roof_leak_shown") and not story.flag("roof_inspected"): add_object("roof_guide_spot","带老葛查看漏点的桌脚干处",Vector2(510,370))
 			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
 			add_object("watermark", "墙下的旧水印", Vector2(130, 300))
 			if story.s.identity == "he": add_object("xu", "许宁", Vector2(550, 405), "npc")
@@ -766,7 +780,10 @@ func interact() -> void:
 		if target == "drip" and story.flag("basin_carried") and story.s.ending != "flood": act_button("把端着的盆放回漏点", "basin_place")
 		if target == "roof_note": act_button("展开工序纸，核对还没做的事", "roof_note_read")
 		if target == "roof_ge_door": act_button("到门口招呼他进屋看漏点", "roof_admit")
-		if target == "roof_ge" and not roof_guest_walking: act_button("请他从干处看漏点，商量分项安排", "roof_inspect")
+		if target == "roof_ge" and not roof_guest_walking:
+			if not story.flag("roof_guiding") and not story.flag("roof_inspected"): act_button("请他跟自己去桌脚，指清漏点", "roof_guide")
+			elif story.flag("roof_leak_shown") or story.flag("roof_inspected"): act_button("请他从干处看漏点，商量分项安排", "roof_inspect")
+		if target == "roof_guide_spot": button(modal_body,"回到探索，带他走到桌脚干处",close_modal)
 		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
 			if story.s.ending == "flood": act_button("留联络方式，等安全后再回来处理旧屋", "leave_contact")
 			else:

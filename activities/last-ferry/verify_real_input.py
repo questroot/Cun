@@ -77,7 +77,12 @@ try:
     click('保存');click('读取');click('确认')
     resumed=next(o for o in obs()['visible'][0]['objects'] if '老葛' in o['title']);assert resumed['title']=='按约来勘看的老葛' and resumed['x']==635 and resumed['y']==490,resumed
     assert any(o['title']=='按约来勘看的老葛' for o in obs()['visible'][0]['objects']),obs()
-    go(635,450);key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
+    go(635,450);key('e');click('请他跟自己');go(510,395)
+    s.call('action',{'kind':'key','key':'d','duration_ms':300});s.call('action',{'kind':'key','key':'a','duration_ms':300})
+    click('保存');click('读取');click('确认')
+    guide=next(o for o in obs()['visible'][0]['objects'] if '跟你查看' in o['title']);assert guide['x']==565 and guide['y']==395,guide
+    go(guide['x'],guide['y'])
+    key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
     click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()
     assert any(o['title']=='桌边的两项修屋工序纸' for o in obs()['visible'][0]['objects']),obs()
     go(400,410);key('e');click('展开工序纸');work_note=obs();assert '没有完工勾记' in json.dumps(work_note,ensure_ascii=False),work_note
