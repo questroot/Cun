@@ -172,6 +172,9 @@ func act(id: String) -> bool:
 			set_flag("roof_inspected")
 			note("老葛在门口叫过你，才进屋。他站在干地上顺着水痕看梁，用竹竿指了指错开的两片瓦，没有往朽梁上搭梯。\n‘这边瓦能先补，梁得叫木工看过。午后我带补瓦的人来，你人在就一起看；不在得另约，钥匙别随便塞门缝。’\n他把门牌纸翻过来写下两项工序，留在旧桌边。盆还要留着接水，修屋不是已经完成。")
 			return true
+		if id == "roof_note_read" and p == "house" and flag("roof_inspected"):
+			note("门牌纸背面分着两栏：\n一、错开的瓦片，午后先由补瓦师傅看，人在再商量开工。\n二、梁缝与朽处，另请木工判断，不能把补瓦当换梁。\n两栏都没有完工勾记。纸留在桌边，盆继续接水。")
+			return true
 		if id == "epilogue":
 			var lines := {
 				"street":"陶婶仍在盘点。" + ("她把停航告示钉在门外，暂不再借渡口的工具。" if s.ending == "flood" else "她说今年的灯芯她来买，不是替谁承诺一生。阿禾还要清点货物。" + ("他把昨晚留店的那卷重新包好，是否送货的决定也写在自己账下。" if flag("wick_kept") else "")),

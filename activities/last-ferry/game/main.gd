@@ -487,6 +487,7 @@ func update_world() -> void:
 			add_object("paper", "旧桌·私人物品", Vector2(320, 340))
 			if story.flag("drawer_open"): add_object("handover", "旧交接单与今日附记" if story.flag("handover_updated") else "下层抽屉里的折单", Vector2(350,375))
 			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
+			if story.flag("roof_inspected"): add_object("roof_note", "桌边的两项修屋工序纸",Vector2(400,375))
 			if story.s.phase == "epilogue" and story.s.ending != "flood" and story.flag("roof_visit_arranged"):
 				add_object("roof_ge", "按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛",Vector2(635,490),"npc")
 			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
@@ -712,6 +713,7 @@ func interact() -> void:
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
 		if target == "wet_stock": act_button("看看昨晚浸湿的货物怎么处理", "stock_morning")
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
+		if target == "roof_note": act_button("展开工序纸，核对还没做的事", "roof_note_read")
 		if target == "roof_ge": act_button("请他从干处看漏点，商量分项安排", "roof_inspect")
 		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
 			if story.s.ending == "flood": act_button("留联络方式，等安全后再回来处理旧屋", "leave_contact")

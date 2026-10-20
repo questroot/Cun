@@ -62,7 +62,9 @@ try:
     assert any(o['title']=='按约来勘看的老葛' for o in obs()['visible'][0]['objects']),obs()
     go(635,450);key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
     click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()
-    go(320,375);key('e');click('先请人看屋顶');morning=obs();assert '午后可带人来' in json.dumps(morning,ensure_ascii=False)
+    assert any(o['title']=='桌边的两项修屋工序纸' for o in obs()['visible'][0]['objects']),obs()
+    go(400,410);key('e');click('展开工序纸');work_note=obs();assert '没有完工勾记' in json.dumps(work_note,ensure_ascii=False),work_note
+    go(320,375);key('e');click('先请人看屋顶');morning=obs();assert '两项工序' in json.dumps(morning,ensure_ascii=False)
     basin=morning['visible'][0]['visible_basin'];assert basin['x']==450 and basin['y']==340 and basin['appearance']=='接住滴水',morning
     go(450,575);key('e');go(450,565);key('e');click('离开这段体验');click('确认')
     left=obs();assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
