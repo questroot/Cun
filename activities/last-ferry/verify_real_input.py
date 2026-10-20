@@ -11,6 +11,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools/play_mcp'))
 from server import PlayService
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--render', action='store_true', help='Use an ordinary game window; no screenshot capture.')
+parser.add_argument('--boat-approach',action='store_true',help='Observe initial approach and reload before arrival')
 parser.add_argument('--awning-after-closing',action='store_true',help='Tie awning after Zhou moves to old steps')
 args = parser.parse_args()
 s=PlayService()
@@ -54,6 +55,11 @@ try:
     agreed=obs();assert '收的是这个' in json.dumps(agreed,ensure_ascii=False),agreed
     click('先不做');assert not obs()['visible'][0]['modal_open'],obs()
     click('准备好了');click('确认');go(750,565);key('e')
+    if args.boat_approach:
+        approaching=next(o for o in obs()['visible'][0]['objects'] if '正靠近' in o['title']);assert approaching['y']<295,approaching
+        s.call('action',{'kind':'key','key':'d','duration_ms':250});moving=next(o for o in obs()['visible'][0]['objects'] if '夜船' in o['title']);assert approaching['y']<moving['y']<295,(approaching,moving)
+        click('保存');click('读取');click('确认');assert any('正靠近' in o['title'] for o in obs()['visible'][0]['objects']),obs()
+        s.call('action',{'kind':'key','key':'a','duration_ms':1000});s.call('action',{'kind':'key','key':'d','duration_ms':300});assert any(o['title']=='靠岸夜船' and o['y']==295 for o in obs()['visible'][0]['objects']),obs()
     go(460,335);click('先站在干阶听河声');key('1');key('1');key('2');key('3')
     river=obs();assert not river['visible'][0]['modal_open'] and '我以为你听不出来了' in json.dumps(river,ensure_ascii=False),river
     key('e');click('问他：你希望')

@@ -440,6 +440,7 @@ func act(id: String) -> bool:
 		"night":
 			if s.phase != "dusk": return false
 			s.phase = "night"
+			set_flag("boat_arrival_pending")
 			note("你确认结束傍晚。风向变了，夜船靠近旧阶。人物可能移动；遗漏的核心线索和工具仍可补查，没有倒计时。")
 		"swap":
 			if p != "shelter" or s.identity != "he" or not item("手提黄灯") or not flag("consent"): return refuse(("黄灯已备，但周伯还没有同意。要解释信号冲突，先分别看过通航告示、灯罩、缺舌铜钟与黄灯底座，再与他谈；你现在还没查看：" + missing_sources()) if item("手提黄灯") else "你手里没有借来的黄灯，可先回陶记询问。")
@@ -447,6 +448,7 @@ func act(id: String) -> bool:
 			set_flag("shade_off")
 			note("阿禾把借来的黄灯安在等候的位置，白罩放在灯旁；周伯不再举白灯。" + ("铜舌已挂回钟里。黄灯尚未点亮，可以在底座旁等到入夜再点。" if flag("tongue_home") else "灯内的铜片还需取出，挂回铜钟。"))
 		"board":
+			if flag("boat_arrival_pending"): return refuse("船还在靠近，侧舷与干阶之间尚有水隙。先留在岸上，不必抢着跨过去。")
 			if p != "steps" or s.phase != "night" or s.identity != "xu": return refuse("阿禾没有登船资格，可以在岸上协作。")
 			change_place("boat")
 			note("许宁踏上仍靠着旧阶的局部船舷。旧物没有姓名。随时可从舷侧返回岸上；登船不自动提供灯钟答案。")
@@ -594,6 +596,7 @@ func act(id: String) -> bool:
 			note(repair + "你把最后的答复带到干阶上。周伯没有举灯，而是把红绳剩下的线头收进衣袋。\n‘这次不是谁没接到。’他说。\n沈渡听完，低头看了一眼系缆石：‘那就由我解。你们留在岸上。’\n他没有把绳索递给你。你可以看着他做完，也可以先和岸上的人站一会儿。")
 		"release_rope":
 			if p != "steps" or not flag("closing_release") or flag("released"): return false
+			s.flags["boat_arrival_pending"] = false
 			set_flag("released")
 			set_flag("tongue_home")
 			note("周伯敲钟。沈渡把缆绳从石上绕回来，慢慢解开被水泡紧的结；中间卡了一下，他换了只手。\n‘这边已到齐。’岸上传过去。\n‘那边也应了。’他回答。\n船离开半尺，没再把踏板伸出来。不是水面突然变得空白，而是那盏旧船灯终于有了离岸的方向。")
@@ -606,6 +609,7 @@ func act(id: String) -> bool:
 		"untie":
 			if p != "steps" or s.phase != "night" or not farewell_ready(): return refuse("解缆未完成：须了解灯钟因果、询问三方意愿、归还旧物，再征得周伯最后敲钟的同意。")
 			set_flag("tongue_home")
+			s.flags["boat_arrival_pending"] = false
 			set_flag("released")
 			finish("untie")
 		"stock_take":
@@ -649,6 +653,7 @@ func refuse(text: String) -> bool:
 
 func finish(result: String) -> void:
 	if not s.ending.is_empty(): return
+	s.flags["boat_arrival_pending"] = false
 	s.ending = result
 	s.phase = "epilogue"
 	# The mark is physically seen while handling the bell, or on the exposed base during retreat.

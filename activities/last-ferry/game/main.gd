@@ -29,6 +29,7 @@ var conversation_response := ""
 var comparing_photo := false
 var pulling_cart := false
 var pulling_awning := false
+var boat_approach_offset := 0.0
 # Transient walk presentation. Reload/travel resumes the already admitted visit at its destination.
 var roof_guest_position := Vector2(635,490)
 var roof_guest_walking := false
@@ -269,6 +270,7 @@ func save_game() -> void:
 	refresh_ui()
 
 func load_game() -> void:
+	boat_approach_offset = 0.0
 	roof_guest_walking = false
 	roof_guest_position = Vector2(635,490)
 	pulling_cart = false
@@ -424,6 +426,15 @@ func _process(delta: float) -> void:
 			var wave := sin(audio_time * 130.0) * 0.05 + sin(audio_time * 173.0) * 0.025 + rng.randf_range(-0.018, 0.018)
 			playback.push_frame(Vector2(wave, wave))
 	if not started or modal_open or paused or story.s.left: return
+	if story.s.place == "steps" and story.s.phase == "night" and story.flag("boat_arrival_pending") and not story.flag("released"):
+		if boat_approach_offset <= 0: boat_approach_offset = 75.0
+		boat_approach_offset = maxf(0.0,boat_approach_offset-minf(delta,0.05)*65)
+		if boat_approach_offset <= 0:
+			story.s.flags["boat_arrival_pending"] = false
+			story.note("船身挨近石阶，系缆绳落在岸侧。你仍站在干地，船上的人没有替你决定是否靠近。")
+		last_place = ""
+		update_world()
+		if boat_approach_offset <= 0: refresh_ui()
 	if roof_guest_walking:
 		if story.s.place != "house":
 			roof_guest_walking = false
@@ -604,7 +615,7 @@ func update_world() -> void:
 			if story.flag("closing_release") and story.s.phase == "night": add_object("release_scene", "正收缆绳的沈渡与岸上的人", Vector2(590,410), "npc")
 			if story.flag("closing_light") and story.s.phase == "night": add_object("closing_zhou", "提着钟柄等你的周伯", Vector2(590, 410), "npc")
 			if not story.flag("tool_returned") and not story.item("老葛的工具袋"): add_object("toolbag", "湿阶低处的布袋", Vector2(235, 355))
-			if story.s.phase == "night": add_object("ship", "已离岸的夜船" if story.flag("released") else "靠岸夜船", Vector2(700, 245) if story.flag("released") else Vector2(700,295))
+			if story.s.phase == "night": add_object("ship", "已离岸的夜船" if story.flag("released") else ("正靠近旧阶的夜船" if story.flag("boat_arrival_pending") else "靠岸夜船"), Vector2(700, 245) if story.flag("released") else Vector2(700,295-boat_approach_offset))
 			else: add_object("morning", "河面与普通渡船", Vector2(700, 295))
 			add_object("shelter_gate", "回候船棚", Vector2(115, 565), "gate")
 		"boat":
@@ -989,6 +1000,7 @@ func interact() -> void:
 			"ship":
 				if story.flag("released"):
 					button(modal_body, "目送，不再登船", func(): close_modal(); story.note("缆绳已不在岸上。船灯远了一些，踏板没有再伸回来。可以回身陪岸上的人，不必追到所有话都说完。"); refresh_ui())
+				elif story.flag("boat_arrival_pending"): button(modal_body,"船还没贴岸，回到干阶看它靠近",close_modal)
 				elif story.s.phase == "night" and story.s.identity == "xu": act_button("许宁独有：踏上靠岸侧舷（可随时回岸）", "board")
 				else: button(modal_body, "留在岸上", func(): close_modal(); story.note("夜船不公开卖票。阿禾不能凭身份登船；可以调查灯钟，在岸上恢复边界，或明确请许宁协助传话。"); refresh_ui())
 			"voices":
@@ -1124,9 +1136,9 @@ func _draw() -> void:
 			draw_rect(Rect2(475,395,20,20),Color("141f23"))
 			draw_rect(Rect2(475,395,20,20),Color("ac9977"),false,2)
 			if story.s.phase == "night":
-				var drift := Vector2(0,-60) if story.flag("released") else Vector2.ZERO
+				var drift := Vector2(0,-60) if story.flag("released") else Vector2(0,-boat_approach_offset)
 				draw_colored_polygon(PackedVector2Array([Vector2(565,230)+drift,Vector2(810,230)+drift,Vector2(777,300)+drift,Vector2(605,300)+drift]), Color("332e2b"))
-				if not story.flag("released"): draw_line(Vector2(460, 295), Vector2(625, 275), Color("baab87"), 3)
+				if not story.flag("released") and not story.flag("boat_arrival_pending"): draw_line(Vector2(460, 295), Vector2(625, 275), Color("baab87"), 3)
 		"boat":
 			draw_rect(Rect2(40, 175, 780, 445), Color("403d37"))
 			for i in range(10): draw_line(Vector2(55 + i * 80, 180), Vector2(55 + i * 80, 610), Color("746957"), 2)

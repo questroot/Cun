@@ -182,6 +182,8 @@ func run() -> void:
 			check(at("shelter", "swap"), "unique borrowed yellow lamp prevents white signal")
 			check(not at("shelter", "danger"), "safe lamp state has actual effect")
 		else:
+			check(not at("steps", "board"),"returnee cannot cross water gap while boat approaches")
+			state.s.flags["boat_arrival_pending"] = false
 			check(at("steps", "board"), "returnee boards local side deck")
 			check(state.s.place == "boat", "boat local location entered")
 			state.change_place("steps")
