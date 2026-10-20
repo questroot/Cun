@@ -1,8 +1,11 @@
 """Known-route deliberate warned failure and safe aftermath; public real inputs only."""
-import sys,json
+import sys,json,argparse
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools/play_mcp'))
 from server import PlayService
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--identity',choices=['he','xu'],default='he')
+args=parser.parse_args()
 s=PlayService()
 def obs():return s.call('observe',{})
 def key(k,n=1):return s.call('action',{'kind':'key','key':k,'frames':n})
@@ -17,11 +20,19 @@ def go(x,y):
             key((('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w')),min(100,max(2,int(abs(d)/2))))
         else:raise AssertionError(('blocked',axis,target,p))
 try:
-    s.call('launch',{'project':'last-ferry','headless':True});click('阿禾 ·');go(320,385);key('e');click('向陶婶借手提黄灯');click('准备好了');click('确认')
+    s.call('launch',{'project':'last-ferry','headless':True});click('许宁 ·' if args.identity=='xu' else '阿禾 ·')
+    if args.identity=='xu': go(450,575);key('e')
+    else: go(320,385);key('e');click('向陶婶借手提黄灯')
+    click('准备好了');click('确认')
     for _ in range(2):
         go(750,390);key('e');go(250,395);key('e');click('危险：举白灯');click('确认')
     flooded=obs();assert '次日尾声' in '\n'.join(flooded['texts']) and '侵入 2 / 2' in '\n'.join(flooded['texts']),flooded
-    go(320,385);key('e');click('擦干提柄');assert '领人过桥' in json.dumps(obs(),ensure_ascii=False),obs()
+    if args.identity=='xu':
+        go(100,480);key('e');go(320,380);key('e');click('留联络方式')
+        assert '路和水势要先确认' in json.dumps(obs(),ensure_ascii=False),obs()
+        go(450,575);key('e')
+    else:
+        go(320,385);key('e');click('擦干提柄');assert '领人过桥' in json.dumps(obs(),ensure_ascii=False),obs()
     go(620,510);key('e');click('问老葛今早');ge=obs();assert '撤离包' in json.dumps(ge,ensure_ascii=False),ge
     go(750,390);key('e');shelter=obs();titles=[o['title'] for o in shelter['visible'][0]['objects']]
     click('保存');click('读取');click('确认');shelter=obs()
