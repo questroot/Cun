@@ -9,6 +9,7 @@ parser.add_argument('--late-gauge',action='store_true',help='Xu first inspects g
 parser.add_argument('--tie-awning',action='store_true',help='Tie shelter awning through real movement before dangerous signals')
 parser.add_argument('--evac-pack',action='store_true',help='Carry neighbour bedding through dry lane to bridgehead')
 parser.add_argument('--bridge-exit',action='store_true',help='Cancel then confirm safe departure at bridgehead after delivery')
+parser.add_argument('--decline-help-exit',action='store_true',help='Leave at bridgehead without accepting any evacuation parcel')
 args=parser.parse_args()
 if args.bridge_exit and not args.evac_pack:parser.error('--bridge-exit requires --evac-pack')
 if args.late_gauge and args.identity!='xu':parser.error('--late-gauge requires --identity xu')
@@ -79,6 +80,12 @@ try:
     else:
         go(320,385);key('e');click('擦干提柄');assert '领人过桥' in json.dumps(obs(),ensure_ascii=False),obs()
     go(620,510);key('e');click('问老葛今早');ge=obs();assert '撤离包' in json.dumps(ge,ensure_ascii=False),ge
+    if args.decline_help_exit:
+        assert 'visible_evac_pack' not in obs()['visible'][0],obs()
+        go(100,440);key('e');go(100,550);key('e');lane_go(100,540);key('e');go(300,510);key('e');click('离开这段体验');click('取消')
+        assert '旅途记录' not in '\n'.join(obs()['texts']),obs()
+        key('e');click('离开这段体验');click('确认');assert '旅途记录' in '\n'.join(obs()['texts']),obs()
+        print(json.dumps({'ok':True,'declined_help':True,'runtime':str(s.run_dir)},ensure_ascii=False));sys.exit(0)
     if args.evac_pack:
         key('e');click('接过扎好的');assert 'visible_evac_pack' in obs()['visible'][0],obs()
         key('e');click('这趟不能送');assert 'visible_evac_pack' not in obs()['visible'][0],obs()
