@@ -10,6 +10,7 @@ parser.add_argument('--tie-awning',action='store_true',help='Tie shelter awning 
 parser.add_argument('--evac-pack',action='store_true',help='Carry neighbour bedding through dry lane to bridgehead')
 parser.add_argument('--bridge-exit',action='store_true',help='Cancel then confirm safe departure at bridgehead after delivery')
 parser.add_argument('--decline-help-exit',action='store_true',help='Leave at bridgehead without accepting any evacuation parcel')
+parser.add_argument('--first-step-water',action='store_true',help='Visit stone steps and reload visible first-intrusion water before second warning')
 args=parser.parse_args()
 if args.bridge_exit and not args.evac_pack:parser.error('--bridge-exit requires --evac-pack')
 if args.late_gauge and args.identity!='xu':parser.error('--late-gauge requires --identity xu')
@@ -70,6 +71,10 @@ try:
             s.call('action',{'kind':'key','key':'s','duration_ms':600});key('e')
             assert '棚绳系在木桩，棚下干处' in obs()['visible'][0]['visible_awning']['appearance'],obs()
         go(250,395);key('e');click('危险：举白灯');click('确认')
+        if args.first_step_water and _==0:
+            go(750,390);key('e');go(750,565);key('e');water=obs()['visible'][0]['visible_step_water'];assert water['y']==310 and water['height']==34,water
+            click('保存');click('读取');click('确认');assert obs()['visible'][0]['visible_step_water']==water,obs()
+            go(115,565);key('e');go(95,565);key('e')
         if args.identity=='xu' and _==0 and not args.late_gauge:
             go(95,565);key('e');go(100,440);key('e');gauge_visit('中格')
     flooded=obs();assert '次日尾声' in '\n'.join(flooded['texts']) and '侵入 2 / 2' in '\n'.join(flooded['texts']),flooded

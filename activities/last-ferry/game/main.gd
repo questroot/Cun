@@ -100,6 +100,8 @@ func play_visible() -> Dictionary:
 		result["carried_stock"] = {"x":player.x+15,"y":player.y+10,"appearance":"托着湿货箱"}
 	if comparing_photo and story.s.place == "steps":
 		result["held_photo"] = {"description":"新棚启用前的旧照：水面在上，三道矮阶靠岸，斜柳朝水，木柱上的灯在矮阶左上；照片不含新棚或桥围挡。", "screen_rect":{"x":50,"y":510,"width":210,"height":110}}
+	if story.s.place == "steps" and story.s.pollution == 1:
+		result["visible_step_water"] = {"x":40,"y":310,"width":780,"height":34,"appearance":"水越过最低一层阶，上一层仍露出；湿面不代表可登船"}
 	if story.s.place == "steps" and story.s.phase == "night" and not shore_heard_excerpt().is_empty():
 		result["visible_shore_heard"] = {"x":55,"y":185,"width":520,"height":62,"text":shore_heard_excerpt()}
 	result["objects"] = targets
@@ -1200,6 +1202,9 @@ func _draw() -> void:
 			for i in range(7):
 				draw_line(Vector2(55, 188 + i * 16), Vector2(805, 188 + i * 16), Color("36505b"), 2)
 			for i in range(4): draw_line(Vector2(60, 310 + i * 34), Vector2(810, 310 + i * 34), Color("a3a69b"), 3)
+			if story.s.pollution == 1:
+				draw_rect(Rect2(40,310,780,34),Color("365864"))
+				draw_string(font,Vector2(75,335),"水已越最低阶 · 上一层仍露出",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("ccdee0"))
 			draw_line(Vector2(135,417),Vector2(178,450),Color("89785a"),10)
 			draw_line(Vector2(157,438),Vector2(192,429),Color("89785a"),5)
 			for step in range(3): draw_rect(Rect2(282,447+step*10,94,7),Color("81867d"))

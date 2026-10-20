@@ -76,6 +76,10 @@ try:
     lit=obs();assert '入夜' in '\n'.join(lit['texts']) and '次日尾声' not in '\n'.join(lit['texts']),lit
     go(750,565);key('e');go(590,445);key('e');click('站到周伯身旁')
     rung=obs();assert '听见了' in json.dumps(rung,ensure_ascii=False),rung
+    if args.recover_mistake:
+        key('escape');repaired_water=obs();assert repaired_water['visible'][0]['visible_step_water']['height']==34 and '侵入 1 / 2' in '\n'.join(repaired_water['texts']),repaired_water
+        click('保存');click('读取');click('确认');assert obs()['visible'][0]['visible_step_water']==repaired_water['visible'][0]['visible_step_water'],obs()
+        key('e')
     click('不替他们补话');silent=obs();assert '今夜没有新客' in json.dumps(silent,ensure_ascii=False)
     click('再看看岸');click('今夜到这里');click('确认')
     dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']),dawn
