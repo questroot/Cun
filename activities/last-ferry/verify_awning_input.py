@@ -30,6 +30,9 @@ try:
     key('e');click('握住绳端');key('s',500);key('e');tied=obs();assert '棚绳系在木桩' in tied['visible'][0]['visible_awning']['appearance'],tied
     click('保存');click('读取');click('确认');assert '棚绳系在木桩' in obs()['visible'][0]['visible_awning']['appearance']
     dry=obs()['visible'][0]['visible_dry_patch'];go(dry['x']+dry['width']/2,dry['y']+dry['height']/2);p=obs()['visible'][0]['player_screen'];assert dry['x']<=p['x']<=dry['x']+dry['width'] and dry['y']<=p['y']<=dry['y']+dry['height'],p
+    assert '肩头终于不再' in '\n'.join(obs()['texts']),obs()
+    click('保存');click('读取');click('确认');click('记录');journal='\n'.join(obs()['texts']);assert journal.count('肩头终于不再')==1,journal
+    key('esc')
     out=s.run_dir/'awning-evidence.json';out.write_text(json.dumps({'before':before,'partial':partial,'loaded':loaded,'tied':tied},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
 finally:
     try:call('stop')

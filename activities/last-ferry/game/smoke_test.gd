@@ -80,6 +80,11 @@ func run() -> void:
 	state.s.y = 440.0
 	check(state.act("awning_tie") and state.flag("awning_tied"),"fully pulled rope can be tied")
 	check(not state.act("awning_tie"),"tied rope not replayed")
+	state.s.x = 500.0
+	check(not state.act("shelter_dry_stand"),"dry standing requires actual area entry")
+	state.s.x = 650.0
+	state.s.y = 400.0
+	check(state.act("shelter_dry_stand") and not state.act("shelter_dry_stand"),"actual dry patch entry recorded once")
 	for bad_pull in [-1,91,"30",INF,NAN]:
 		state.s.awning_pull = bad_pull
 		check(not state.valid_save(state.s),"reject invalid awning pull field")

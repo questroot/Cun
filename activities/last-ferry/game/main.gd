@@ -454,6 +454,11 @@ func _process(delta: float) -> void:
 			refresh_ui()
 		elif player.distance_to(Vector2(650,300)) < 48:
 			if story.act("lane_level_revisit"): refresh_ui()
+	if story.s.place == "shelter" and story.flag("awning_tied") and not story.flag("shelter_dry_stood") and not pulling_awning:
+		if Rect2(590,365,135,75).has_point(player):
+			story.s.x = player.x
+			story.s.y = player.y
+			if story.act("shelter_dry_stand"): refresh_ui()
 	var movement := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): movement.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): movement.y += 1
@@ -579,7 +584,7 @@ func update_world() -> void:
 			add_object("old_photo", "窗边的旧渡口照片", Vector2(695,230))
 			add_object("street_gate", "回杂货铺 / 街口", Vector2(450, 580), "gate")
 		"shelter":
-			if story.s.phase != "epilogue": add_object("awning_rope","系稳后不再滴水的棚绳" if story.flag("awning_tied") else "松棚绳·握住后向下退拉紧，E系住",Vector2(690,350+float(story.s.get("awning_pull",0.0))))
+			if story.s.phase != "epilogue": add_object("awning_rope","系稳后不再滴水的棚绳" if story.flag("awning_tied") else "滴水棚布垂下的松绳",Vector2(690,350+float(story.s.get("awning_pull",0.0))))
 			solids.append(Rect2(350, 285, 100, 70))
 			add_object("timetable", "旧通航告示", Vector2(125, 250))
 			add_object("lamp", "卸下白罩的旧灯" if story.flag("shade_off") else "白罩船灯", Vector2(250, 360))

@@ -115,6 +115,11 @@ func change_place(place: String) -> void:
 ## Each consequential action still checks its own location, phase and prerequisites.
 func act(id: String) -> bool:
 	var p: String = s.place
+	if id == "shelter_dry_stand":
+		if s.left or p != "shelter" or s.ending == "flood" or not flag("awning_tied") or flag("shelter_dry_stood") or not Rect2(590,365,135,75).has_point(Vector2(s.x,s.y)): return false
+		set_flag("shelter_dry_stood")
+		note("你走进拉起的棚布下，肩头终于不再挨那几股滴水。绳端还系在木桩上，积水落在外侧；你在这块干地站了站，再走也不必找人批准。河声仍听得见，没有谁催你立刻去问灯的事。这只是避开棚布滴水，不是能挡住涨水的地方。")
+		return true
 	if not s.left and id == "lane_level_revisit" and p == "lane" and Vector2(s.x,s.y).distance_to(Vector2(650,300)) < 48:
 		var stage := 2 if s.ending == "flood" or s.pollution >= 2 else (1 if s.pollution == 1 else 0)
 		var observed_flag := "lane_level_seen_%d" % stage
