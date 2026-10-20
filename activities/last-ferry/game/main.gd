@@ -691,6 +691,9 @@ func interact() -> void:
 	else:
 		match target:
 			"luggage_place":
+				if story.flag("luggage_placed"):
+					button(modal_body, "行李已经安放好，留在干处", close_modal)
+					return
 				button(modal_body, "把自己的行李留在门内", func(): close_modal(); story.set_flag("luggage_placed"); story.note("许宁把箱子竖放在门内干处。纸张留在里面，钥匙还在自己口袋。出去走一圈，不等于又要搬走，也不等于已经决定长住。"); last_place = ""; update_world(); refresh_ui())
 			"luggage":
 				if story.flag("luggage_taken"):
