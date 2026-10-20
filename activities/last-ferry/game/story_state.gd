@@ -263,6 +263,10 @@ func act(id: String) -> bool:
 			if p != "shelter" or not has("lamp") or not has("timetable"): return refuse("先看过白罩和通航告示，猜测才有亲眼所见的依据。")
 			set_flag("signal_compared")
 			note("你指着告示：‘白灯说可以上船，黄灯说有人在等。如果船看见的是白罩，它会不会以为岸上还有人要走？’\n周伯没有立刻让开：‘我只是想让她看清。你说得像有道理，可你还得告诉我，收了白灯以后，留下什么。’")
+		"photo_zhou":
+			if p != "shelter" or not flag("photo_compared"): return refuse("还没有亲眼核对旧岸，不能替照片补一个结论。")
+			set_flag("photo_discussed")
+			note("你说了老柳根、三道窄阶和柱槽的位置，没有把相片里的人脸当作证据。\n周伯把手掌摊在膝上：‘新棚是我跟人一起挪的。那年水上来，旧阶湿得站不住。我以为只要灯还在，她就知道往哪儿回。’\n" + ("许宁说旧屋东西没怎么动，回来却也有不认识的地方。她没有借这句话替他决定搬走。" if s.identity == "xu" else "阿禾想起陶记柜台换过位置，熟客还会伸手去够原来的糖罐。熟悉不是把一切钉死，搬动也不等于谁都马上认得。") + "\n周伯说：‘你能替我指出老地方，不能替她说要站在哪儿。’他愿意继续谈，但恢复信号与问本人意愿仍是后面的事。")
 		"promise_forever":
 			if p != "shelter": return false
 			set_flag("promised_forever")

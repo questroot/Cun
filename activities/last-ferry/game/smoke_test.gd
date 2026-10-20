@@ -130,6 +130,7 @@ func run() -> void:
 	check(not at("steps", "photo_shift") and not state.flag("photo_compared"), "guessing correct interpretation cannot invent observations")
 	check(at("steps", "root_view") and at("steps", "stairs_view") and at("steps", "socket_view"), "physical comparison requires personally inspecting marks")
 	check(at("steps", "photo_shift") and state.flag("photo_compared") and not state.flag("consent"), "historical comparison is not consent or supernatural proof")
+	check(at("shelter", "photo_zhou") and state.flag("photo_discussed") and not state.flag("consent") and not state.flag("heard_zhou"), "sharing old shore does not replace listening or permission")
 	state.fresh("he")
 	check(at("street", "wick_keep") and not state.item("新灯芯"), "apprentice can honestly retain undelivered goods")
 	check(not at("shelter", "deliver") and not state.flag("consent"), "retained order is neither duplicate delivery nor ending consent")

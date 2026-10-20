@@ -525,7 +525,7 @@ func show_spoiler_help() -> void:
 
 func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
-		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize", "hypothesis_voices", "hypothesis_brightness", "hypothesis_signals", "wick_explain"]:
+		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize", "hypothesis_voices", "hypothesis_brightness", "hypothesis_signals", "wick_explain", "photo_zhou"]:
 			continue_zhou(id)
 		elif conversation_target in ["closing_zhou", "release_scene"] and id in ["closing_ring", "closing_speak", "closing_silent", "closing_watch", "release_rope", "release_watch"]:
 			var target := conversation_target
@@ -693,6 +693,7 @@ func interact() -> void:
 				if story.has("inscription"): act_button("问他：黄灯底座写的‘钟声归岸’是什么意思？", "verify")
 				if not story.core() and story.has("covenant"):
 					button(modal_body, "把目前查到的事告诉周伯", func(): close_modal(); story.note("周伯听完，摇摇头：你说这些都是一回事，可我想知道你在哪儿看见的。\n仍可去现场查看：" + story.missing_sources()); refresh_ui())
+				if story.flag("photo_compared") and not story.flag("photo_discussed"): act_button("告诉他亲眼核对的旧灯柱位置，不替小满回答", "photo_zhou")
 				act_button("问他：小满以前坐渡船是什么样？", "zhou_memory")
 				act_button("提出解释：河上的声音都不可信，最好一概不听", "hypothesis_voices")
 				if story.has("lamp"):
