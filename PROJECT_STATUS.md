@@ -68,7 +68,7 @@
 | 原型 | 2.5D主城、向导、外缘、十关、主角＋四宠九宫格、手动回合战斗、状态/追打、经验存档；编队/战斗技能说明、快捷键及确认逃跑 | [配置](card-demo/project.godot)、[战斗管理](card-demo/scripts/managers/battle_manager.gd) |
 | 内容 | 五只可选宠物；十关敌方等级/经验递增，第5关双岩与眩晕、第10关火焰压制与雾狐削弱 | [单位](card-demo/data/units.json)、[关卡](card-demo/data/stages.json) |
 | GM工具 | 主城/背包入口；单只或全部已拥有宠物升至目标等级（1–999），保留经验且不降级；指定关卡解锁并跳至编队，操作即时存档 | [面板](card-demo/scripts/scenes/gm_panel.gd)、[升级接口](card-demo/scripts/managers/data_manager.gd)、[跳关接口](card-demo/scripts/managers/game_manager.gd) |
-| 水门活动 | 外缘水门进入漂流浮台，打捞/扩建、手领产出、手工搓绳、订单升级自动收取与工坊加工；独立工作树首章初稿另接入居民阿汐供水/岗位、保底伙伴岚、按钮式攻击/防御简化首航（失败返港重试）、胜利蓝图仅首次获得、潮测台建造/委任增产及邻区仅调查预告，不开放邻区航路。进度写入独立版本化 `user://sea_chapter_v1.json` 与 `.bak`，离开/重进可读取，确认重开只重置海上章；航战中途不持久化、退出返港。旧灵伴存档和十关未接入。首章在独立 `codex/sea-chapter-one` 开发，已获用户授权交付 main；实际合入状态以 Git 历史为准 | [活动](card-demo/scripts/scenes/water_activity.gd)、[运行状态/存档](card-demo/scripts/managers/game_manager.gd)、[入口](card-demo/scripts/scenes/outskirts.gd) |
+| 水门活动 | 外缘水门进入漂流浮台，打捞/扩建、手领产出、手工搓绳、订单升级自动收取与工坊加工；独立工作树首章初稿另接入居民阿汐供水/岗位、保底伙伴岚、按钮式攻击/防御简化首航（失败返港重试）、胜利蓝图仅首次获得、潮测台建造/委任增产及邻区仅调查预告，不开放邻区航路。进度写入独立版本化 `user://sea_chapter_v1.json` 与 `.bak`，离开/重进可读取，确认重开只重置海上章；航战中途不持久化、退出返港。旧灵伴存档和十关未接入。首章曾在独立工作树开发，已通过 PR #2 合入 main（`ce1faa0`）；后续在原目录 main 工作 | [活动](card-demo/scripts/scenes/water_activity.gd)、[运行状态/存档](card-demo/scripts/managers/game_manager.gd)、[入口](card-demo/scripts/scenes/outskirts.gd) |
 | 地图与资源 | 主城/外缘/水域/福地有地图按钮及M键；共13个区域显示物品种类、福地实时剩余份数与稀缺程度；十张福地按五内五外同心圆排列，外环半径为内环两倍，五条辐射线对应跨环出口；暖色边框/菱形及悬停名标出首领驻地，长资源列表可滚动，旅行按钮固定可见 | [地图](card-demo/scripts/scenes/world_atlas.gd)、[共用资源配置](card-demo/scripts/scenes/exploration_catalog.gd) |
 | 福地十域探索 | 原五地加雨灯湿地/断桥驿路/松烟炭林/镜沙档案馆/霜脊瞭望岭，3600×2400至5200×3400世界坐标、跟随镜头、碰撞、道路、小地图；两个五地环路加五条跨环双向连接，共30个方向出口、安全抵达；五位NPC对应30处按序人物线索、E交互/一次休息、B行囊与见闻；WASD/JKL动作保留，十地60名初始守卫及原六只首领肃清后可继续探索；跨区保留采集、战斗、最后位置和调查状态，重开/离开重置；所有模态界面暂停 | [地图说明](docs/fudi-maps.md)、[地图定义](card-demo/scripts/scenes/fudi_maps.gd)、[玩法](card-demo/scripts/scenes/fudi.gd) |
 | 公共AI游玩MCP | 标准stdio协议、白名单工程隔离副本/存档、可见UI及主城/外缘可见角色描述、真实玩家输入；AI模式拒绝GM，不自动接入个人活动 | [工具与限制](tools/play_mcp/README.md)、[历史验证](tools/play_mcp/VERIFICATION.md) |
@@ -161,7 +161,7 @@
 - 福地当局：跨十域保留资源/守卫、最后位置、休息、人物调查、装备与建筑效果等进度，重开或离开游戏后重置；切换前提示。当前没有福地持久存档、装备强化成长或完整石化世界远征结算。
 - 公共MCP边界：按键白名单现含福地J/K/L（及活动常用J/I），真实Godot夹具逐键按4帧核对物理输入已通过；福地尚无专门可见角色描述；本次仅合并现有能力，不声称AI可完整试玩福地。MCP只操作玩家能看到/能做的事，不用GM或直接写内部状态冒充通关；独立玩家会话交付仍待原负责人确认。
 - 本轮同步：此前合并已随 `958ed7e` 进入main，五域基础已在 `e8504e7`；本次集中交付其后的福地系统、素材和文档，交付分支为main，提交与远端一致性由完成GitHub Desktop操作后的Git查询核对。
-- 海上首章下一步：在独立 `codex/sea-chapter-one` 开发、基于 main `c7cfbab`；交付以远端 main 实际 Git 历史核验，不以主工作区状态推断。需人工试玩简化首航与按钮布局/经营手感，并补断电阶段故障注入；邻区航路仅预告，不视为已开放。
+- 海上首章下一步：已通过 PR #2 合入 main；原 `Cun` 工作目录已快进至远端 main `04f6d1e`。原 `manao` 的四处未提交旧水门改动已保存为本地 Git stash（`Preserve manao water edits before main workspace switch 2026-10-20`），未叠加到较新的首章代码；原目录的未跟踪策划文件仍保留；两个附加工作树及 `.local/sea-acceptance` 验收工作树因包含未跟踪或忽略的本机文件暂未删除；空闲且干净的 `.local/main-revert-worktree` 已移除。后续从原目录 main 开发。需人工试玩简化首航与按钮布局/经营手感，并补断电阶段故障注入；邻区航路仅预告，不视为已开放。
 - 下一步只按用户新要求执行。若要试玩，先通过启动器运行一条真实闭环并记录环境与问题；新方向个人讨论保持独立。
 
 ## 下次维护时填什么
