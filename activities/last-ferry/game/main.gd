@@ -80,6 +80,8 @@ func play_visible() -> Dictionary:
 		result["visible_awning_post"] = {"x":700,"y":420,"width":7,"height":35,"appearance":"系棚绳的木桩，拉绳端到桩旁再系"}
 		if story.flag("awning_tied") and story.s.ending != "flood":
 			result["visible_dry_patch"] = {"x":590,"y":365,"width":135,"height":75,"appearance":"地面勾线标出的棚下干处；仅避棚布滴水，不防漫水"}
+	if story.item("旧渡牌"):
+		result["visible_ferry_tag"] = {"x":player.x+18,"y":player.y+8,"appearance":"手上携带的木渡牌"}
 	if story.s.place == "lane":
 		var cart := cart_position()
 		result["visible_cart"] = {"x":cart.x,"y":cart.y,"width":64,"height":60,"appearance":"空车木板车身，两侧车轮，左侧伸出车把"}
@@ -595,6 +597,7 @@ func update_world() -> void:
 			add_object("old_photo", "窗边的旧渡口照片", Vector2(695,230))
 			add_object("street_gate", "回杂货铺 / 街口", Vector2(450, 580), "gate")
 		"shelter":
+			add_object("ferry_tag_hook","告示旁挂回的旧渡牌" if story.flag("ferry_tag_returned") else "告示旁的空木钩",Vector2(175,320))
 			if story.s.phase != "epilogue": add_object("awning_rope","系稳后不再滴水的棚绳" if story.flag("awning_tied") else "滴水棚布垂下的松绳",Vector2(690,350+float(story.s.get("awning_pull",0.0))))
 			solids.append(Rect2(350, 285, 100, 70))
 			add_object("timetable", "旧通航告示", Vector2(125, 250))
@@ -619,6 +622,7 @@ func update_world() -> void:
 			else: add_object("morning", "河面与普通渡船", Vector2(700, 295))
 			add_object("shelter_gate", "回候船棚", Vector2(115, 565), "gate")
 		"boat":
+			if not story.flag("ferry_tag_taken"): add_object("ferry_tag","舷边刻着字的木渡牌",Vector2(685,420))
 			solids.append(Rect2(260, 195, 240, 80))
 			add_object("voices", "旧物与河声", Vector2(570, 335))
 			add_object("back", "返回旧石阶（安全）", Vector2(450, 570), "gate")
@@ -786,7 +790,7 @@ func do_action(id: String) -> void:
 	if id == "roof_admit" and acted:
 		roof_guest_position = Vector2(500,550)
 		roof_guest_walking = true
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_admit", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_admit", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update", "ferry_tag_take", "ferry_tag_return"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -835,6 +839,7 @@ func interact() -> void:
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
 		if target == "drip" and story.flag("basin_carried") and story.s.ending != "flood": act_button("把端着的盆放回漏点", "basin_place")
 		if target == "roof_note": act_button("展开工序纸，核对还没做的事", "roof_note_read")
+		if target == "ferry_tag_hook" and story.item("旧渡牌"): act_button("把交班渡牌挂回岸棚木钩", "ferry_tag_return")
 		if target == "roof_ge_door": act_button("到门口招呼他进屋看漏点", "roof_admit")
 		if target == "roof_ge" and not roof_guest_walking:
 			if not story.flag("roof_guiding") and not story.flag("roof_inspected"): act_button("请他跟自己去桌脚，指清漏点", "roof_guide")
@@ -849,6 +854,11 @@ func interact() -> void:
 			button(modal_body, "离开这段体验", func(): confirm("离开前可先保存。保留旅途经历，不带走当地财物与身份。本活动首版到此，没有尚未制作的第二地区。确认离开？", func(): do_action("leave")))
 	else:
 		match target:
+			"ferry_tag":
+				act_button("听沈渡说明这块木牌，接过他递来的牌", "ferry_tag_take")
+			"ferry_tag_hook":
+				if story.item("旧渡牌"): act_button("把交班渡牌挂回岸棚木钩", "ferry_tag_return")
+				else: button(modal_body,"看看木钩",func(): close_modal();story.note("木钩钉在旧告示旁，外侧有一圈磨亮的痕迹。" );refresh_ui())
 			"awning_rope":
 				if story.flag("awning_tied"): button(modal_body,"棚绳已系稳，下面留出一块干处",close_modal)
 				else: button(modal_body,"握住绳端，向下退拉棚布；E系住或松手",func(): close_modal(); pulling_awning=true; story.note("你握住棚绳。向下后退，绳端与棚布会跟着移动；拉到木桩旁按E系住，不够长则只是松手。没有倒计时。" );refresh_ui())
@@ -1160,6 +1170,11 @@ func _draw() -> void:
 		draw_string(font, pos + Vector2(-64, 59), obj.title, HORIZONTAL_ALIGNMENT_LEFT, 175, 17, Color("ebe5d0"))
 	if story.flag("luggage_taken") and not story.flag("luggage_placed"): draw_rect(Rect2(player+Vector2(12,0),Vector2(24,25)),Color("785c49"))
 	elif story.flag("luggage_placed") and story.s.place == "house": draw_rect(Rect2(578,498,24,25),Color("785c49"))
+	if story.item("旧渡牌"): draw_rect(Rect2(player+Vector2(12,-3),Vector2(14,22)),Color("b19a70"))
+	if story.s.place == "boat" and not story.flag("ferry_tag_taken"): draw_rect(Rect2(678,405,14,22),Color("b19a70"))
+	if story.s.place == "shelter":
+		draw_arc(Vector2(175,320),6,0,PI,10,Color("aa9573"),3)
+		if story.flag("ferry_tag_returned"): draw_rect(Rect2(168,322,14,22),Color("b19a70"))
 	draw_circle(player + Vector2(0, 14), 18, Color(0, 0, 0, 0.2))
 	draw_rect(Rect2(player - Vector2(10, 3), Vector2(20, 24)), Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
 	draw_circle(player - Vector2(0, 10), 10, Color("ead1ac"))

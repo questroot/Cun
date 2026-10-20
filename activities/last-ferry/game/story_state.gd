@@ -143,6 +143,12 @@ func act(id: String) -> bool:
 		set_flag("handover_updated")
 		note("你另取一小张纸，写下今日亲手确认的两件事：铜舌归钟，白罩取下。没有替当年的残姓补名字，也没划掉原单上的‘待修’。\n" + ("许宁把自己的名字写在今日附记下，将两张纸并放。旧屋留下的不再只有一件拖着没做的事。" if s.identity == "xu" else "阿禾把附记递给许宁；她看过后自己放进下层抽屉。获准查看旧单，不等于替屋主改写它。") + "\n这不是给谁结清一生的账，只让下次打开抽屉的人知道，今天做到了哪一步。")
 		return true
+	if id == "ferry_tag_return":
+		if s.left or p != "shelter" or not item("旧渡牌") or flag("ferry_tag_returned") or Vector2(s.x,s.y).distance_to(Vector2(175,320)) >= 96: return false
+		take("旧渡牌")
+		set_flag("ferry_tag_returned")
+		note("你把渡牌挂回告示旁的空钩，刻字朝外。木牌碰了两下棚柱，晃动停了。交班物回到岸上，不表示你已替船上的人答应结束，也不改变灯和钟的状态。")
+		return true
 	if s.phase == "epilogue":
 		if id == "basin_place" and p == "house" and flag("basin_carried") and s.ending != "flood":
 			s.flags.erase("basin_carried")
@@ -447,6 +453,11 @@ func act(id: String) -> bool:
 			set_flag("swapped")
 			set_flag("shade_off")
 			note("阿禾把借来的黄灯安在等候的位置，白罩放在灯旁；周伯不再举白灯。" + ("铜舌已挂回钟里。黄灯尚未点亮，可以在底座旁等到入夜再点。" if flag("tongue_home") else "灯内的铜片还需取出，挂回铜钟。"))
+		"ferry_tag_take":
+			if p != "boat" or s.identity != "xu" or flag("released") or flag("ferry_tag_taken") or Vector2(s.x,s.y).distance_to(Vector2(685,420)) >= 96: return false
+			set_flag("ferry_tag_taken")
+			give("旧渡牌")
+			note("沈渡把舷边一块木牌翻过来，背面刻着‘末班交回岸棚’。‘这块不是谁的遗物，是交班的。岸上的空钩还在，就帮我挂回去；不在也别往水里扔。’你接过他递来的牌，边角摸得发亮。")
 		"board":
 			if flag("boat_arrival_pending"): return refuse("船还在靠近，侧舷与干阶之间尚有水隙。先留在岸上，不必抢着跨过去。")
 			if p != "steps" or s.phase != "night" or s.identity != "xu": return refuse("阿禾没有登船资格，可以在岸上协作。")
@@ -715,7 +726,7 @@ func valid_save(data: Variant) -> bool:
 	for id in data.evidence:
 		if not id is String or not EVIDENCE.has(id): return false
 	for id in data.items:
-		if not id is String or not id in ["铜哨", "新灯芯", "手提黄灯", "拆下的铜舌", "老葛的工具袋"]: return false
+		if not id is String or not id in ["铜哨", "新灯芯", "手提黄灯", "拆下的铜舌", "老葛的工具袋", "旧渡牌"]: return false
 	if data.identity == "he" and "铜哨" in data.items: return false
 	for line in data.journal:
 		if not line is String: return false

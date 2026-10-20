@@ -13,7 +13,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--render', action='store_true', help='Use an ordinary game window; no screenshot capture.')
 parser.add_argument('--boat-approach',action='store_true',help='Observe initial approach and reload before arrival')
 parser.add_argument('--awning-after-closing',action='store_true',help='Tie awning after Zhou moves to old steps')
+parser.add_argument('--tag-at-dawn',action='store_true',help='Carry ferry tag through departure and return it next morning; requires boat approach')
 args = parser.parse_args()
+if args.tag_at_dawn and not args.boat_approach: parser.error('--tag-at-dawn requires --boat-approach')
 s=PlayService()
 receipts=[]
 original_call=s.call
@@ -62,9 +64,14 @@ try:
         s.call('action',{'kind':'key','key':'a','duration_ms':1000});s.call('action',{'kind':'key','key':'d','duration_ms':300});assert any(o['title']=='靠岸夜船' and o['y']==295 for o in obs()['visible'][0]['objects']),obs()
     if args.boat_approach:
         go(700,330);key('e');click('许宁独有：踏上');deck=obs();assert deck['visible'][0]['location']=='夜船·靠岸侧舷',deck
-        click('保存');click('读取');click('确认');assert obs()['visible'][0]['location']=='夜船·靠岸侧舷',obs()
+        go(685,440);key('e');click('听沈渡说明');assert 'visible_ferry_tag' in obs()['visible'][0],obs()
+        click('保存');click('读取');click('确认');assert obs()['visible'][0]['location']=='夜船·靠岸侧舷' and 'visible_ferry_tag' in obs()['visible'][0],obs()
         go(450,540);key('e');back_on_bank=obs();assert back_on_bank['visible'][0]['location']=='旧石阶' and any(o['title']=='靠岸夜船' for o in back_on_bank['visible'][0]['objects']),back_on_bank
         assert '次日尾声' not in '\n'.join(back_on_bank['texts']) and '侵入 0 / 2' in '\n'.join(back_on_bank['texts']),back_on_bank
+    if args.boat_approach and not args.tag_at_dawn:
+        go(115,565);key('e');go(175,355);key('e');click('把交班渡牌');returned_tag=obs();assert 'visible_ferry_tag' not in returned_tag['visible'][0] and any('挂回的旧渡牌' in o['title'] for o in returned_tag['visible'][0]['objects']),returned_tag
+        click('保存');click('读取');click('确认');assert any('挂回的旧渡牌' in o['title'] for o in obs()['visible'][0]['objects']),obs()
+        go(750,565);key('e')
     go(460,335);click('先站在干阶听河声');key('1');key('1');key('2');key('3')
     river=obs();assert not river['visible'][0]['modal_open'] and '我以为你听不出来了' in json.dumps(river,ensure_ascii=False),river
     key('e');click('问他：你希望')
@@ -85,7 +92,12 @@ try:
     restored=obs();assert restored['visible'][0]['player_screen']==departed['visible'][0]['player_screen'],restored
     assert '次日尾声' not in '\n'.join(restored['texts']) and any(o['title']=='已离岸的夜船' for o in restored['visible'][0]['objects']),restored
     key('e');click('船离岸后');click('不必等话');click('确认');dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']) and '结束渡程' in json.dumps(dawn,ensure_ascii=False)
-    go(115,565);key('e');go(95,565);key('e');street_morning=obs();assert not any(o['title']=='围挡旁补鞋的老葛' for o in street_morning['visible'][0]['objects']),street_morning
+    go(115,565);key('e')
+    if args.tag_at_dawn:
+        assert 'visible_ferry_tag' in obs()['visible'][0],obs()
+        go(175,355);key('e');click('把交班渡牌');assert 'visible_ferry_tag' not in obs()['visible'][0],obs()
+        click('保存');click('读取');click('确认');assert any('挂回的旧渡牌' in o['title'] for o in obs()['visible'][0]['objects']),obs()
+    go(95,565);key('e');street_morning=obs();assert not any(o['title']=='围挡旁补鞋的老葛' for o in street_morning['visible'][0]['objects']),street_morning
     assert any('按约去许家' in o['title'] for o in street_morning['visible'][0]['objects']),street_morning
     go(100,440);key('e')
     assert any(o['title']=='门口等你招呼的老葛' for o in obs()['visible'][0]['objects']),obs()
