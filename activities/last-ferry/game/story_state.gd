@@ -1,7 +1,7 @@
 extends RefCounted
 ## All facts here are obtained by actions, never by reading author-only story text.
 const VERSION := 1
-const PLACES := {"arrival":"桥头落客点", "street":"杂货铺 / 街口", "shelter":"候船棚", "house":"许家旧屋", "steps":"旧石阶", "boat":"夜船·靠岸侧舷"}
+const PLACES := {"lane":"修桥绕行巷", "arrival":"桥头落客点", "street":"杂货铺 / 街口", "shelter":"候船棚", "house":"许家旧屋", "steps":"旧石阶", "boat":"夜船·靠岸侧舷"}
 const EVIDENCE := {
 	"timetable":"旧通航告示：白灯招呼登船；夜间停航，应收白灯。",
 	"lamp":"亲眼所见：白色外罩内有未干透的蓝漆，两根新接线绕着一只旧灯；罩内下缘挂着一截铜片。白罩与内灯不是一同做成的。",

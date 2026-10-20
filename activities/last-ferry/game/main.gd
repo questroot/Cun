@@ -65,6 +65,7 @@ func play_visible() -> Dictionary:
 		result["visible_toolbag"] = {"x":650,"y":490,"appearance":"老葛长凳边的工具袋"}
 	elif story.s.place == "steps" and not story.flag("tool_returned"):
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
+	if story.s.place == "lane": result["visible_barrier"] = {"x":390,"y":280,"width":80,"height":220,"appearance":"修桥石料围挡，南侧人行通道可绕行"}
 	if story.flag("luggage_taken") and not story.flag("luggage_placed"):
 		result["carried_luggage"] = {"x":player.x+20,"y":player.y+5,"appearance":"自己提着的棕色行李箱"}
 	if story.flag("stock_carried"):
@@ -456,7 +457,11 @@ func update_world() -> void:
 		"arrival":
 			add_object("driver", "收行李舱搭扣的班车司机",Vector2(570,330),"npc")
 			add_object("luggage", "桥栏边自己的行李箱" if not story.flag("luggage_taken") else "桥栏边的空位", Vector2(305,360))
-			add_object("house_gate", "沿巷走回许家旧屋", Vector2(745,500), "gate")
+			add_object("lane_gate", "沿修桥绕行巷去旧屋", Vector2(745,500), "gate")
+		"lane":
+			solids.append(Rect2(390,280,80,220))
+			add_object("arrival_gate", "返回桥头落客点",Vector2(100,510),"gate")
+			add_object("house_gate", "许家旧屋门口",Vector2(745,320),"gate")
 		"street":
 			solids.append(Rect2(145, 190, 235, 95))
 			if story.s.pollution == 1:
@@ -472,7 +477,7 @@ func update_world() -> void:
 		"house":
 			solids.append(Rect2(220, 190, 200, 105))
 			if story.flag("arrival_started"):
-				add_object("arrival_gate", "沿巷返回桥头落客点", Vector2(100,510), "gate")
+				add_object("lane_gate", "沿绕行巷返回桥头", Vector2(100,510), "gate")
 				if story.flag("luggage_taken"): add_object("luggage_place", "门内放自己行李的位置" if not story.flag("luggage_placed") else "门内自己的行李箱",Vector2(590,510))
 			add_object("paper", "旧桌·私人物品", Vector2(320, 340))
 			if story.flag("drawer_open"): add_object("handover", "旧交接单与今日附记" if story.flag("handover_updated") else "下层抽屉里的折单", Vector2(350,375))
@@ -552,7 +557,7 @@ func refresh_ui() -> void:
 		return
 	if not nearest.is_empty():
 		button(action_box, "[E] 交互：" + object_title(nearest), interact)
-	if story.s.phase == "dusk" and story.s.place != "arrival":
+	if story.s.phase == "dusk" and story.s.place not in ["arrival", "lane"]:
 		button(action_box, "准备好了 · 进入入夜", func(): confirm("进入入夜？人物将开始赴约；必要线索和工具仍可补查。没有自动倒计时。", func(): do_action("night")))
 	if story.s.phase == "night" and story.s.place == "steps" and nearest == "mooring" and not story.flag("released"):
 		if not story.flag("river_heard"):
@@ -644,7 +649,12 @@ func travel(place: String) -> void:
 	if story.flag("stock_carried"):
 		story.act("stock_put_back")
 	comparing_photo = false
+	var previous_place: String = story.s.place
 	story.change_place(place)
+	if place == "lane":
+		story.s.x = 690.0 if previous_place == "house" else 150.0
+		story.s.y = 540.0
+		story.note("巷中修桥的石料挡住直路。围挡南端留着人行通道，许家门口在另一侧。脚步落在散砂上，行李轮能绕过去。")
 	if place == "street" and story.s.phase == "dusk" and not story.flag("street_evening_seen"):
 		story.set_flag("street_evening_seen")
 		story.note("你回到街口时，老葛正把补好的鞋并排放在凳上。\n陶婶从门内问：‘明早量桥，先吃了再去？’\n‘带两个馒头就行。鞋等晾干，让他自己来拿，别又替他送到家。’\n她把一张包货纸压在秤下，没喊你停步。")
@@ -880,6 +890,11 @@ func _draw() -> void:
 	draw_string(font, Vector2(32, 95), Story.PLACES[story.s.place], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e0d5b4"))
 	draw_string(font, Vector2(32, 130), "道路范围：石色地面　圆环：可交互　门形：地点连接", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("bac5c3"))
 	match story.s.place:
+		"lane":
+			draw_rect(Rect2(390,280,80,220),Color("736f65"))
+			for y in range(290,490,30): draw_line(Vector2(395,y),Vector2(465,y+15),Color("b49c68"),5)
+			draw_string(font,Vector2(280,255),"修桥备料 · 南侧绕行",HORIZONTAL_ALIGNMENT_LEFT,-1,20,Color("ddcca5"))
+			draw_line(Vector2(100,550),Vector2(740,550),Color("9b947f"),3)
 		"arrival":
 			draw_rect(Rect2(40,175,780,100),Color("3b5057"))
 			draw_line(Vector2(80,290),Vector2(790,290),Color("a9a18e"),8)
