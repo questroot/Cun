@@ -91,6 +91,8 @@ func play_visible() -> Dictionary:
             assert not request('action',{'kind':'mouse','x':310,'y':110})['ok']
             key_result = request('action',{'kind':'key','key':'w','frames':6})
             assert key_result['ok'], key_result
+            timing = key_result['result']['input_timing']
+            assert timing['held_process_frames'] == 6 and timing['held_wall_ms'] > 0, timing
             physical = key_result['result']['visible'][0]
             assert 1 <= physical['physical_frames'] <= 7 and physical['released'], physical
             for attack in ['j','k','l']:
