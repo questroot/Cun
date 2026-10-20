@@ -11,8 +11,10 @@ Python 标准库实现，默认使用 **标准 MCP stdio（逐行 UTF-8 JSON-RPC
 | `observe` | `{}` | 标题、当前场景名、可见 Label/RichTextLabel 文本、可见按钮（id/text/disabled/rect）、viewport |
 | `action` | `{"kind":"click","button_id":"…"}` | 实际鼠标输入后 observation；按钮必须仍可见且启用 |
 | `action` | `{"kind":"key","key":"enter","frames":2}` | 实际 InputEventKey 按住 1–120 帧后释放 |
-| `action` | `{"kind":"mouse","x":100,"y":200,"button":"left","frames":1}` | viewport 范围内实际鼠标输入，left/right |
+| `action` | `{"kind":"mouse","x":100,"y":200,"button":"left","frames":1}` | viewport 范围内实际鼠标输入，left/right/wheel_up/wheel_down；滚轮一次一格，可逐次观察后继续 |
 | `stop` | `{}` | 仅结束当前服务器创建的游戏子进程；重复调用安全 |
+
+RichText观察仅包含当前滚动窗口与祖先裁剪内的完整布局行，边缘残行暂省略；不再输出整篇前4096字。未完成排版、table/img等复杂富文本保守省略，需要专用可见provider；不承诺所有自定义文本效果。滚轮是实际鼠标事件，不是直接设置滚动值。
 
 键白名单：up/down/left/right/enter/escape/space/tab/w/a/s/d/e/1/2/3/4。工具输入额外字段拒绝；无路径、脚本、eval、GM、任意文件或隐藏状态接口。按钮 id 是当前存活 UI 节点的临时不透明 id，不跨启动保存。点击走真实 Godot 输入和 UI 命中检测，不直接 emit pressed，因此被遮挡按钮不会绕过上层 UI。observe 过滤 visible_in_tree、viewport 范围，并按 visible_characters 截断尚未打字显示的内容；它是 UI 树可见性而非像素OCR，不能证明文本未被其他窗口/控件遮挡或滚动容器精确裁切。标签可能由游戏自身写出内部信息，内容责任仍属游戏 UI；桥不扫描任意属性。
 
