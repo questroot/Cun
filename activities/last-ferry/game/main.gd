@@ -708,7 +708,7 @@ func interact() -> void:
 				if story.s.phase == "night":
 					act_button("转述本人意愿，请周伯敲最后一次钟", "farewell_consent")
 			"mooring":
-				if story.flag("photo_seen"):
+				if story.flag("photo_seen") and not story.flag("photo_compared"):
 					act_button("照片里的灯就是新棚：先按灯的位置对照", "photo_same")
 					act_button("先对柳根与三道矮阶，再看灯柱旧址", "photo_shift")
 				if story.s.phase == "night" and story.flag("released"):
