@@ -23,6 +23,7 @@ try:
     flooded=obs();assert '次日尾声' in '\n'.join(flooded['texts']) and '侵入 2 / 2' in '\n'.join(flooded['texts']),flooded
     go(620,510);key('e');click('问老葛今早');ge=obs();assert '撤离包' in json.dumps(ge,ensure_ascii=False),ge
     go(750,390);key('e');shelter=obs();titles=[o['title'] for o in shelter['visible'][0]['objects']]
+    assert 'sealed_equipment' in shelter['visible'][0] and 'visible_equipment' not in shelter['visible'][0],shelter
     assert '撤离后封起的灯钟与停航告示' in titles and not any(t in titles for t in ['白罩船灯','去旧石阶','周伯']),titles
     go(455,470);key('e');click('看看这里今早');notice=obs();assert '普通渡船停航' in json.dumps(notice,ensure_ascii=False),notice
     go(95,565);key('e');go(450,565);key('e');click('离开这段体验');click('确认');left=obs();assert '旅途记录' in json.dumps(left,ensure_ascii=False),left

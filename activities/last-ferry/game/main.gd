@@ -50,7 +50,9 @@ func play_visible() -> Dictionary:
 		obstacles.append({"x":rect.position.x,"y":rect.position.y,"width":rect.size.x,"height":rect.size.y})
 	if story.s.place == "house":
 		result["visible_basin"] = {"x":(player.x + 15 if story.flag("basin_carried") else (450.0 if story.flag("basin_placed") else 600.0)),"y":(player.y - 8 if story.flag("basin_carried") else (340.0 if story.flag("basin_placed") else 250.0)),"appearance":("端在手上" if story.flag("basin_carried") else ("接住滴水" if story.flag("basin_placed") else "空盆"))}
-	if story.s.place == "shelter":
+	if story.s.place == "shelter" and story.s.ending == "flood":
+		result["sealed_equipment"] = "灯钟盖着防水布，绳结封存；棚下留有水痕，通向旧阶的口子用横木封住，未见亮灯。"
+	elif story.s.place == "shelter":
 		result["visible_equipment"] = {"outer_shade":("放在灯旁" if story.flag("shade_off") else "扣在灯上"),"bell":("铜片挂在钟内" if story.flag("tongue_home") else "挂孔空着"),"yellow_lamp":("亮着" if story.flag("yellow_lit") else "未点亮")}
 		if story.item("拆下的铜舌"): result["visible_equipment"]["carried"] = "手上铜片"
 	if story.item("新灯芯"):
@@ -871,6 +873,15 @@ func _draw() -> void:
 			if story.flag("tongue_home"): draw_line(Vector2(550, 223), Vector2(550, 253), Color("c4a26a"), 5)
 			if story.item("拆下的铜舌"): draw_line(player + Vector2(12, -8), player + Vector2(12, 12), Color("c4a26a"), 4)
 			if story.flag("shade_off"): draw_rect(Rect2(275, 375, 28, 19), Color("d4d8d6"), false, 3)
+			if story.s.ending == "flood":
+				draw_rect(Rect2(193,304,120,104),Color("53605a"))
+				draw_line(Vector2(193,345),Vector2(313,375),Color("b3a07c"),4)
+				draw_rect(Rect2(516,204,69,66),Color("53605a"))
+				draw_line(Vector2(516,224),Vector2(585,249),Color("b3a07c"),4)
+				draw_rect(Rect2(602,370,36,40),Color("53605a"))
+				draw_line(Vector2(705,522),Vector2(788,570),Color("98774e"),12)
+				draw_line(Vector2(705,570),Vector2(788,522),Color("98774e"),12)
+				draw_string(font,Vector2(340,470),"停航 · 灯钟封存",HORIZONTAL_ALIGNMENT_LEFT,260,20,Color("ddc9a5"))
 			if story.s.pollution > 0: draw_rect(Rect2(90, 478, 690, 100), Color(0.2, 0.36, 0.4, 0.55))
 		"steps":
 			draw_rect(Rect2(40, 175, 780, 135), Color("223d4a"))
