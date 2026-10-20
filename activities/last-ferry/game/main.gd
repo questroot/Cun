@@ -225,6 +225,7 @@ func show_title() -> void:
 	refresh_ui()
 
 func start_game(identity: String) -> void:
+	comparing_photo = false
 	story.fresh(identity)
 	started = true
 	player = Vector2(story.s.x, story.s.y)
@@ -242,6 +243,7 @@ func save_game() -> void:
 
 func load_game() -> void:
 	if story.load_game():
+		comparing_photo = false
 		started = true
 		last_place = ""
 		player = Vector2(story.s.x, story.s.y)
@@ -607,6 +609,11 @@ func do_action(id: String) -> void:
 func interact() -> void:
 	if nearest.is_empty() or modal_open or not started: return
 	var target := nearest
+	if comparing_photo and target in ["old_root", "old_stairs", "post_socket", "mooring"]:
+		for obj in scene_objects:
+			if obj.id == target:
+				try_world_click(obj.pos)
+				return
 	if target.ends_with("_gate"):
 		var dest := target.trim_suffix("_gate")
 		if story.s.ending == "flood" and dest == "steps":

@@ -259,6 +259,9 @@ func run() -> void:
 	scene.player = Vector2(45, 440)
 	scene.move_player(Vector2(-100, 0))
 	check(scene.player.x >= 40, "world boundary blocks escape")
+	scene.comparing_photo = true
+	scene.start_game("xu")
+	check(not scene.comparing_photo, "new identity clears transient photo comparison")
 	scene.story.change_place("shelter")
 	scene.last_place = ""
 	scene.update_world()
