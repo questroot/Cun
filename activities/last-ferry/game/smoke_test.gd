@@ -39,6 +39,7 @@ func run() -> void:
 	state.s.x = 650.0
 	state.s.y = 470.0
 	check(not state.act("evac_pack_take"),"bedding not offered before flood")
+	state.s.pollution = 2
 	state.finish("flood")
 	state.change_place("street")
 	state.s.x = 650.0
@@ -53,7 +54,16 @@ func run() -> void:
 	state.s.x = 570.0
 	state.s.y = 350.0
 	check(state.act("evac_pack_deliver") and not state.flag("evac_pack_carried") and not state.act("evac_pack_deliver"),"handover settles parcel once")
+	check(state.valid_save(state.s),"delivered bedding save is valid")
+	state.set_flag("evac_pack_carried")
+	check(not state.valid_save(state.s),"save rejects parcel simultaneously delivered and carried")
+	state.s.flags["evac_pack_carried"] = false
+	state.s.flags["morning_ge_seen"] = false
+	check(not state.valid_save(state.s),"save rejects handover without learning parcel purpose")
 	state.fresh("xu")
+	state.set_flag("evac_pack_carried")
+	check(not state.valid_save(state.s),"save rejects pre-flood evacuation parcel")
+	state.s.flags["evac_pack_carried"] = false
 	check(not state.flag("evac_pack_carried") and not state.flag("evac_pack_delivered"),"missing legacy parcel flags default false")
 	state.s.flags.erase("evac_pack_carried")
 	state.s.flags.erase("evac_pack_delivered")

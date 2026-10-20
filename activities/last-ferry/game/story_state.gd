@@ -757,6 +757,10 @@ func valid_save(data: Variant) -> bool:
 		if not (data.cart_x is float or data.cart_x is int) or not is_finite(float(data.cart_x)) or data.cart_x < 250 or data.cart_x > 430: return false
 	for key in data.flags:
 		if not key is String or not data.flags[key] is bool: return false
+	var pack_carried: bool = data.flags.get("evac_pack_carried",false)
+	var pack_delivered: bool = data.flags.get("evac_pack_delivered",false)
+	if pack_carried and pack_delivered: return false
+	if (pack_carried or pack_delivered) and (data.ending != "flood" or not data.flags.get("morning_ge_seen",false)): return false
 	if data.ending == "flood" and (data.pollution != 2 or data.place in ["steps", "boat"]): return false
 	if data.pollution == 2 and data.ending != "flood": return false
 	if data.ending in ["light", "untie"] and data.pollution > 1: return false
