@@ -267,7 +267,7 @@ func load_game() -> void:
 	roof_guest_position = Vector2(635,490)
 	pulling_cart = false
 	if story.load_game():
-		if story.flag("roof_leak_shown") and not story.flag("roof_inspected"): roof_guest_position = Vector2(565,395)
+		if story.flag("roof_leak_shown"): roof_guest_position = Vector2(565,395)
 		comparing_photo = false
 		started = true
 		last_place = ""
@@ -540,7 +540,7 @@ func update_world() -> void:
 			if story.flag("roof_inspected"): add_object("roof_note", "桌边的两项修屋工序纸",Vector2(400,375))
 			if story.roof_visit_active():
 				if story.flag("roof_guest_admitted") or story.flag("roof_inspected"):
-					add_object("roof_ge", "正擦净鞋底走向屋内干处的老葛" if roof_guest_walking else (("已看清漏点、等你让开勘看的老葛" if story.flag("roof_leak_shown") else "跟你查看桌脚漏点的老葛") if story.flag("roof_guiding") and not story.flag("roof_inspected") else ("按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛")),roof_guest_position if roof_guest_walking or (story.flag("roof_guiding") and not story.flag("roof_inspected")) else Vector2(635,490),"npc")
+					add_object("roof_ge", "正擦净鞋底走向屋内干处的老葛" if roof_guest_walking else (("已看清漏点、等你让开勘看的老葛" if story.flag("roof_leak_shown") else "跟你查看桌脚漏点的老葛") if story.flag("roof_guiding") and not story.flag("roof_inspected") else ("按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛")),roof_guest_position if roof_guest_walking or story.flag("roof_guiding") else Vector2(635,490),"npc")
 				else:
 					add_object("roof_ge_door", "门口等你招呼的老葛",Vector2(500,550),"npc")
 			if story.flag("roof_guiding") and not story.flag("roof_leak_shown") and not story.flag("roof_inspected"): add_object("roof_guide_spot","带老葛查看漏点的桌脚干处",Vector2(510,370))

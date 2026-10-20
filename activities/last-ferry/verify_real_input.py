@@ -84,7 +84,8 @@ try:
     go(450,575);key('e');away=obs();assert not any(o['kind']=='npc' and '老葛' in o['title'] for o in away['visible'][0]['objects']),away
     go(100,440);key('e');guide=next(o for o in obs()['visible'][0]['objects'] if '已看清漏点' in o['title']);go(guide['x'],guide['y'])
     key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
-    click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()
+    completed_guest=next(o for o in inspection['visible'][0]['objects'] if '分项工序的老葛' in o['title']);assert (completed_guest['x'],completed_guest['y'])==(guide['x'],guide['y']),completed_guest
+    click('保存');click('读取');click('确认');loaded_guest=next(o for o in obs()['visible'][0]['objects'] if '分项工序的老葛' in o['title']);assert (loaded_guest['x'],loaded_guest['y'])==(565,395),loaded_guest
     assert any(o['title']=='桌边的两项修屋工序纸' for o in obs()['visible'][0]['objects']),obs()
     go(400,410);key('e');click('展开工序纸');work_note=obs();assert '没有完工勾记' in json.dumps(work_note,ensure_ascii=False),work_note
     assert obs()['visible'][0]['visible_basin']['appearance']=='端在手上',obs();assert '盆还没有放回漏点' in json.dumps(work_note,ensure_ascii=False),work_note
