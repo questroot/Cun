@@ -34,6 +34,16 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(test_dir)
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
+	state.fresh("xu")
+	check(not at("street","roof_arrange"),"roof arrangement requires an observed leak")
+	check(at("house","roof_listen") and at("street","roof_arrange"),"owner can directly ask Ge without Tao checklist")
+	check(state.flag("roof_visit_arranged") and not state.flag("roof_commissioned"),"appointment is not completed roof work")
+	state.s.phase = "epilogue"
+	state.s.ending = "light"
+	check(at("house","roof_inspect") and state.flag("roof_inspected"),"safe morning appointment can receive inspection")
+	check(state.save_game() and state.load_game() and state.flag("roof_inspected"),"inspection persists in isolated test save")
+	state.s.ending = "flood"
+	check(not at("house","roof_inspect"),"flood postpones unsafe house inspection")
 	state.fresh("he")
 	check(not at("house", "drawer_open") and not at("house", "handover_read"), "household privacy and closed drawer respected")
 	check(at("house", "drawer_permission") and at("house", "drawer_open") and at("house", "handover_read"), "permission reveals bounded shared handover document")

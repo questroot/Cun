@@ -35,7 +35,9 @@ def go(x,y):walk('y',400);walk('x',x);walk('y',y)
 def inspect(x,y):go(x,y);key('e');click('现场检查')
 try:
     s.call('launch',{'project':'last-ferry','headless':not args.render});click('许宁 ·')
+    go(600,290);key('e');click('停下脚步')
     go(320,375);key('e');click('坐一会儿');go(450,575);key('e')
+    go(620,430);key('e');click('说说旧屋漏点');assert '明早量桥前' in json.dumps(obs(),ensure_ascii=False),obs()
     go(750,390);key('e')
     inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)
     go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('问他：小满以前');click('提议只把今晚')
@@ -57,6 +59,9 @@ try:
     assert '次日尾声' not in '\n'.join(restored['texts']) and any(o['title']=='已离岸的夜船' for o in restored['visible'][0]['objects']),restored
     key('e');click('船离岸后');click('不必等话');click('确认');dawn=obs();assert '次日尾声' in '\n'.join(dawn['texts']) and '结束渡程' in json.dumps(dawn,ensure_ascii=False)
     go(115,565);key('e');go(95,565);key('e');go(100,440);key('e')
+    assert any(o['title']=='按约来勘看的老葛' for o in obs()['visible'][0]['objects']),obs()
+    go(635,450);key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
+    click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()
     go(320,375);key('e');click('先请人看屋顶');morning=obs();assert '午后可带人来' in json.dumps(morning,ensure_ascii=False)
     basin=morning['visible'][0]['visible_basin'];assert basin['x']==450 and basin['y']==340 and basin['appearance']=='接住滴水',morning
     go(450,575);key('e');go(450,565);key('e');click('离开这段体验');click('确认')

@@ -487,6 +487,8 @@ func update_world() -> void:
 			add_object("paper", "旧桌·私人物品", Vector2(320, 340))
 			if story.flag("drawer_open"): add_object("handover", "旧交接单与今日附记" if story.flag("handover_updated") else "下层抽屉里的折单", Vector2(350,375))
 			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
+			if story.s.phase == "epilogue" and story.s.ending != "flood" and story.flag("roof_visit_arranged"):
+				add_object("roof_ge", "按约来勘看的老葛" if not story.flag("roof_inspected") else "留下分项工序的老葛",Vector2(635,490),"npc")
 			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
 			add_object("watermark", "墙下的旧水印", Vector2(130, 300))
 			if story.s.identity == "he": add_object("xu", "许宁", Vector2(550, 405), "npc")
@@ -677,7 +679,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -710,6 +712,7 @@ func interact() -> void:
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
 		if target == "wet_stock": act_button("看看昨晚浸湿的货物怎么处理", "stock_morning")
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
+		if target == "roof_ge": act_button("请他从干处看漏点，商量分项安排", "roof_inspect")
 		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
 			if story.s.ending == "flood": act_button("留联络方式，等安全后再回来处理旧屋", "leave_contact")
 			else:
@@ -756,6 +759,7 @@ func interact() -> void:
 					act_button("再看看岸和河上各自的动静", "closing_watch")
 					button(modal_body, "今夜到这里，迎接天明", func(): confirm("结束夜晚，进入可自由走访的次日？", func(): do_action("closing_dawn")))
 			"ge":
+				if story.flag("heard_drip"): act_button("说说旧屋漏点，约明早先看瓦", "roof_arrange")
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
 			"shoe_parcel":
@@ -771,6 +775,7 @@ func interact() -> void:
 			"old_photo": act_button("翻看照片正反面，记下岸的位置", "photo_view")
 			"toolbag": act_button("站在干阶上，用竹竿挑起布袋", "tool_retrieve")
 			"tao":
+				if story.flag("heard_drip"): act_button("旧屋还在漏水，问问能找谁看", "roof_help")
 				button(modal_body, "闲谈 · 门口那只杯子", func(): close_modal(); story.note("陶婶：门口那只杯子别收，接漏水的。喝水用柜子上那只。\n" + ("许宁想起从前赊账的橘子糖。陶婶说还卖，不过现在得自己付钱。" if story.s.identity == "xu" else "阿禾说杯沿缺了一角，明天换个盆吧。陶婶看了看天：盆接铺子里头那处漏，门口先用这个。")); refresh_ui())
 				if story.s.identity == "he": act_button("向陶婶借手提黄灯（物品）", "yellow")
 			"ledger":
@@ -786,6 +791,7 @@ func interact() -> void:
 				act_button("查看旧桌（尊重私人物品）", "paper")
 				if story.s.identity == "xu": act_button("坐一会儿，试试口袋里那半只旧哨", "whistle_memory")
 			"roof":
+				if story.flag("roof_visit_arranged"): act_button("看看记下的勘看安排", "roof_arrangement")
 				act_button("停下脚步，听屋里的滴水", "roof_listen")
 				if story.flag("heard_drip") and not story.flag("basin_placed"): act_button("端起搪瓷盆", "basin_take")
 			"drip":

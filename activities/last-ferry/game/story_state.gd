@@ -162,6 +162,11 @@ func act(id: String) -> bool:
 			note(("老葛接过昨晚归还的工具袋，翻出锥子继续补鞋：‘等鞋干了，我去桥上看看。’" if flag("tool_returned") else "老葛把缺了工具的位置空在脚边，先用借来的锥子补鞋：‘袋子晚些再找，今天也得开张。’") + "\n他母亲从巷里喊他吃饭。他应了一声，回头问你要不要加双鞋垫。昨晚听到的声音没有替今早过日子。")
 			set_flag("morning_ge_seen")
 			return true
+		if id == "roof_inspect" and p == "house" and flag("roof_visit_arranged") and s.ending != "flood":
+			if flag("roof_inspected"): return refuse("工序纸已经留在桌边。瓦片和梁仍待分项处理，不必重演一遍勘看。")
+			set_flag("roof_inspected")
+			note("老葛在门口叫过你，才进屋。他站在干地上顺着水痕看梁，用竹竿指了指错开的两片瓦，没有往朽梁上搭梯。\n‘这边瓦能先补，梁得叫木工看过。午后我带补瓦的人来，你人在就一起看；不在得另约，钥匙别随便塞门缝。’\n他把门牌纸翻过来写下两项工序，留在旧桌边。盆还要留着接水，修屋不是已经完成。")
+			return true
 		if id == "epilogue":
 			var lines := {
 				"street":"陶婶仍在盘点。" + ("她把停航告示钉在门外，暂不再借渡口的工具。" if s.ending == "flood" else "她说今年的灯芯她来买，不是替谁承诺一生。阿禾还要清点货物。" + ("他把昨晚留店的那卷重新包好，是否送货的决定也写在自己账下。" if flag("wick_kept") else "")),
@@ -242,6 +247,17 @@ func act(id: String) -> bool:
 			take("老葛的工具袋")
 			set_flag("tool_returned")
 			note("老葛接过袋子，数了数工具，没有说谢谢就立刻消失。\n‘扳手没了，别下去找。我还有一把。’他把长凳让出一半，继续缝鞋，‘白灯本来是让活人上船的，这几天周伯拿它照一整夜。我以为他眼睛坏了。你要问就好好问，他听得见。’\n围挡后有人喊他明早量桥。他答应一声，这里的活还没做完。")
+		"roof_help":
+			if p != "street" or not flag("heard_drip"): return false
+			set_flag("roof_help_asked")
+			note("陶婶放下杯子：‘先别往梁上爬。老葛会看瓦，他明早量桥前还能走一趟。你把漏在哪儿告诉他，别只说屋顶坏了。’\n她指了指檐下补鞋的人，没有替他应下工钱。")
+		"roof_arrange":
+			if p != "street" or not flag("heard_drip"): return false
+			set_flag("roof_visit_arranged")
+			note("你说清水从梁缝斜落到桌脚，旧水印已经干了。老葛在包鞋纸背记下许家门牌。\n‘明早量桥前，我从门口叫你。先看瓦，梁要是朽了得另请人。今晚别自己上去。’\n他把纸压在针线盒下，接着收最后一段鞋线。没有报价，也还没有动屋顶。")
+		"roof_arrangement":
+			if p != "house" or not flag("roof_visit_arranged"): return false
+			note("裂缝旁添着一行自己的字：明早等老葛来门口叫，先看瓦，再定工。盆仍在接水，梁缝没有变小。钥匙留在自己手里。")
 		"roof_listen":
 			if p != "house": return false
 			set_flag("heard_drip")
