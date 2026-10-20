@@ -294,6 +294,11 @@ func show_items() -> void:
 func try_world_click(point: Vector2) -> bool:
 	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if story.s.place == "house":
+		if story.flag("drawer_open") and point.distance_to(Vector2(350,375)) < 24 and player.distance_to(Vector2(350,375)) < 82:
+			do_action("handover_read"); return true
+		if not story.flag("drawer_open") and point.distance_to(Vector2(320,340)) < 27 and player.distance_to(Vector2(320,340)) < 82:
+			do_action("drawer_open"); return true
 	if story.s.place == "street" and story.s.phase == "night" and story.s.pollution == 1 and not story.flag("stock_dried"):
 		if point.distance_to(Vector2(420,300)) < 28 and player.distance_to(Vector2(420,300)) < 82 and story.flag("stock_carried"):
 			do_action("move_wet_stock"); return true
@@ -822,6 +827,12 @@ func _draw() -> void:
 				draw_rect(Rect2(695, 315, 18, 160), Color("b68a59"))
 				draw_string(font, Vector2(550, 180), "渡口停航 · 安全撤离", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("e3c29f"))
 		"house":
+			draw_rect(Rect2(292,322,58,25),Color("655342"))
+			draw_line(Vector2(310,338),Vector2(332,338),Color("c0a97d"),3)
+			if story.flag("drawer_open"):
+				draw_rect(Rect2(292,345,78,42),Color("473f36"))
+				draw_rect(Rect2(337,365,26,18),Color("dfcfaa"))
+				draw_line(Vector2(350,366),Vector2(350,381),Color("99886a"),1)
 			draw_rect(Rect2(675,215,40,30),Color("d4c9a7"))
 			draw_line(Vector2(680,238),Vector2(709,238),Color("6a746b"),2)
 			draw_line(Vector2(687,218),Vector2(687,236),Color("72614a"),2)

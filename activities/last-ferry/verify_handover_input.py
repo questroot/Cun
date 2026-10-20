@@ -19,10 +19,10 @@ def go(x,y):
         else:raise AssertionError(('blocked',axis,target,p))
 try:
     s.call('launch',{'project':'last-ferry','headless':True});click('阿禾 ·')
-    go(100,480);key('e');go(320,380);key('e');click('托住底板');assert '先问屋主' in text()
+    go(100,480);key('e');go(320,380);s.call('action',{'kind':'mouse','x':320,'y':340});assert '先问屋主' in text()
     go(550,445);key('e');click('问她：可以看');assert '别翻上面的家信' in text()
-    go(320,380);key('e');click('托住底板');assert any(o['title']=='下层抽屉里的折单' for o in obs()['visible'][0]['objects']),obs()
-    go(350,415);key('e');click('展开公用物件');document=obs();assert '暂夹铜件' in text()
+    go(320,380);s.call('action',{'kind':'mouse','x':320,'y':340});assert any(o['title']=='下层抽屉里的折单' for o in obs()['visible'][0]['objects']),obs()
+    go(350,415);s.call('action',{'kind':'mouse','x':350,'y':375});document=obs();assert '暂夹铜件' in text()
     go(450,575);key('e');go(750,390);key('e');go(250,395);key('e');click('用记下的交接');assert '还没亲眼' in text()
     key('e');click('现场检查');go(550,275);key('e');click('现场检查')
     go(250,395);key('e');click('用记下的交接');assert '还不是谁在何时' in text()
