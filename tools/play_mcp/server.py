@@ -19,14 +19,19 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = Path(__file__).resolve().parent / '.runtime'
 MAX_BYTES = 65536
 VERSIONS = ('2024-11-05', '2025-03-26')
-KEYS = ['up','down','left','right','enter','escape','space','tab','w','a','s','d','e','1','2','3','4']
+KEYS = ['up','down','left','right','enter','escape','space','tab','w','a','s','d','e','j','i','1','2','3','4']
+# Explicit repository-owned projects only; no caller supplied filesystem paths.
+PROJECTS = {
+    'card-demo': ('card-demo', '灵伴回合冒险 MVP', 'scripts/ai_play_bridge.gd'),
+    'last-ferry': ('activities/last-ferry/game', '末班渡船', 'ai_play_bridge.gd'),
+}
 
 def schema(props=None, required=None):
     return {'type':'object','properties':props or {},'required':required or [],'additionalProperties':False}
 
 TOOLS = [
     {'name':'catalog','description':'List explicitly allowed local game projects. No files or hidden game state.','inputSchema':schema()},
-    {'name':'launch','description':'Start one owned isolated copy of card-demo. No user saves or user processes.','inputSchema':schema({'project':{'type':'string','enum':['card-demo']},'headless':{'type':'boolean'}},['project'])},
+    {'name':'launch','description':'Start one owned isolated allowed project. No user saves or user processes.','inputSchema':schema({'project':{'type':'string','enum':list(PROJECTS)},'headless':{'type':'boolean'}},['project'])},
     {'name':'observe','description':'Read visible scene UI text and buttons only; no hidden game state.','inputSchema':schema()},
     {'name':'action','description':'Send visible button click or bounded physical input; no game-manager APIs.','inputSchema':{'oneOf':[
         schema({'kind':{'const':'click'},'button_id':{'type':'string'}},['kind','button_id']),
@@ -53,7 +58,7 @@ class PlayService:
             raise ValueError('unknown tool or argument')
         with self.lock:
             if name == 'catalog':
-                return {'projects':[{'id':'card-demo','title':'灵伴回合冒险 MVP'}]}
+                return {'projects':[{'id':ident,'title':spec[1]} for ident,spec in PROJECTS.items() if (ROOT/spec[0]/'project.godot').is_file()]}
             if name == 'launch':
                 return self.launch(args)
             if name == 'stop':
@@ -84,25 +89,26 @@ class PlayService:
                     raise ValueError('invalid coordinate')
 
     def launch(self, args):
-        if args.get('project') != 'card-demo' or type(args.get('headless',False)) is not bool:
-            raise ValueError('only card-demo and boolean headless allowed')
+        project_id = args.get('project')
+        if not isinstance(project_id,str) or project_id not in PROJECTS or type(args.get('headless',False)) is not bool:
+            raise ValueError('only allowed project ids and boolean headless accepted')
         if self.process and self.process.poll() is None:
             raise ValueError('owned game already running')
         engine = ROOT / '.local/godot/Godot_v4.7.2-stable_win64_console.exe'
-        source = ROOT / 'card-demo'
+        source = ROOT / PROJECTS[project_id][0]
         if not engine.is_file() or not (source/'project.godot').is_file():
             raise ValueError('trusted engine or project unavailable')
-        if not (source/'scripts/ai_play_bridge.gd').is_file():
+        if not (source/PROJECTS[project_id][2]).is_file():
             raise ValueError('bridge Autoload integration required: script missing')
         # Reject links/reparse points before copying a project into the owned area.
         for base, dirs, files in os.walk(source):
-            dirs[:] = [d for d in dirs if d not in ('.godot','.git')]
+            dirs[:] = [d for d in dirs if d not in ('.godot','.git','.test-output')]
             for item in [Path(base), *(Path(base)/n for n in dirs+files)]:
                 if item.is_symlink() or (hasattr(item,'is_junction') and item.is_junction()):
                     raise ValueError('linked project paths are not allowed')
         self.run_dir = RUNTIME / uuid.uuid4().hex
         project = self.run_dir/'project'
-        shutil.copytree(source, project, ignore=shutil.ignore_patterns('.godot','.git','*.tmp'))
+        shutil.copytree(source, project, ignore=shutil.ignore_patterns('.godot','.git','.test-output','*.tmp'))
         # Only this COPY receives the isolation override. Original project/config is untouched.
         with (project/'override.cfg').open('w',encoding='utf-8') as f:
             f.write('[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="CunPlay/'+self.run_dir.name+'"\n')
@@ -135,7 +141,7 @@ class PlayService:
                     raise RuntimeError('Godot exited before bridge ready; see owned engine.log')
                 try:
                     observed = self.bridge('observe',{})
-                    return {'project':'card-demo','pid':self.process.pid,'isolated':True,'run_dir':str(self.run_dir.relative_to(ROOT)),'observation':observed}
+                    return {'project':project_id,'pid':self.process.pid,'isolated':True,'run_dir':str(self.run_dir.relative_to(ROOT)),'observation':observed}
                 except (OSError,ValueError):
                     time.sleep(.1)
             raise RuntimeError('bridge startup timed out; Autoload integration required')
