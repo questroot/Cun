@@ -20,6 +20,10 @@ def lane_to(dest):
     assert obs()['visible'][0]['location']=='修桥绕行巷',obs()
     click('保存');click('读取');click('确认')
     assert not any(b['text'].startswith('准备好了') for b in obs()['buttons']),obs()
+    barrier=obs()['visible'][0]['visible_barrier'];assert barrier['x']==390 and barrier['height']==220,barrier
+    if dest=='house':
+        key('w',100);key('d',120);key('d',120)
+        blocked=obs()['visible'][0]['player_screen'];assert blocked['x']<390 and 280<blocked['y']<500,blocked
     x,y=(745,350) if dest=='house' else (100,540)
     for axis,target in [('y',540),('x',x),('y',y)]:
         for _ in range(30):
