@@ -621,6 +621,9 @@ func travel(place: String) -> void:
 		story.act("stock_put_back")
 	comparing_photo = false
 	story.change_place(place)
+	if place == "street" and story.s.phase == "dusk" and not story.flag("street_evening_seen"):
+		story.set_flag("street_evening_seen")
+		story.note("你回到街口时，老葛正把补好的鞋并排放在凳上。\n陶婶从门内问：‘明早量桥，先吃了再去？’\n‘带两个馒头就行。鞋等晾干，让他自己来拿，别又替他送到家。’\n她把一张包货纸压在秤下，没喊你停步。街上还有各人的小事，你可以继续走。")
 	player = Vector2(story.s.x, story.s.y)
 	last_place = ""
 	close_modal()

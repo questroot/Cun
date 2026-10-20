@@ -20,7 +20,8 @@ def mouse(x,y):return s.call('action',{'kind':'mouse','x':x,'y':y})
 try:
     s.call('launch',{'project':'last-ferry','headless':True});click('许宁 ·')
     go(695,270);key('e');click('翻看照片');photo=obs();assert '新棚启用前' in json.dumps(photo,ensure_ascii=False)
-    go(450,575);key('e');go(750,390);key('e');go(750,565);key('e')
+    go(450,575);key('e');ambient=obs();assert '没喊你停步' in json.dumps(ambient,ensure_ascii=False) and not ambient['visible'][0]['modal_open'],ambient
+    go(750,390);key('e');go(750,565);key('e')
     for x,y,label in [(165,485,'沿树根'),(330,510,'数矮阶'),(485,445,'蹲下看')]:
         go(x,y);mouse(x,y-40);assert not obs()['visible'][0]['modal_open'],obs()
     go(460,335);key('e');click('拿照片到现场');click('保存');click('读取');click('确认')
