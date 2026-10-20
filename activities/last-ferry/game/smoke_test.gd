@@ -84,6 +84,14 @@ func run() -> void:
 		state.s.awning_pull = bad_pull
 		check(not state.valid_save(state.s),"reject invalid awning pull field")
 	state.fresh("xu")
+	state.change_place("shelter")
+	state.s.phase = "night"
+	state.s.x = 690.0
+	state.s.y = 440.0
+	state.s["awning_pull"] = 90.0
+	state.set_flag("closing_release")
+	check(state.act("awning_tie") and state.notice.contains("凳子空着") and not state.notice.contains("周伯挪了"),"tying rope cannot bring Zhou back from closing scene")
+	state.fresh("xu")
 	check(state.valid_save(state.s),"legacy save without cart position remains valid")
 	state.set_flag("lane_cart_moved")
 	check(state.valid_save(state.s),"legacy cleared cart save remains valid without new field")

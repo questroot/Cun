@@ -233,7 +233,7 @@ func act(id: String) -> bool:
 			if p != "shelter" or flag("awning_tied") or Vector2(s.x,s.y).distance_to(Vector2(690,350+float(s.get("awning_pull",0.0)))) > 100: return false
 			if float(s.get("awning_pull",0.0)) < 85: return refuse("绳端还没拉到木桩旁，你暂时松手；棚布仍低垂，可以再握住继续拉。")
 			set_flag("awning_tied")
-			note("你把拉紧的绳绕在木桩上，低垂的棚布抬起，积水从外侧落下。棚下多出一块可站的干处。周伯挪了挪凳脚：‘这边不滴了。你歇脚就站这里。’灯与钟仍是原来的样子。")
+			note("你把拉紧的绳绕在木桩上，低垂的棚布抬起，积水从外侧落下。棚下多出一块可站的干处。" + ("周伯的凳子空着，他还在旧阶；你把凳脚挪离积水，没喊他回来。" if flag("closing_light") or flag("closing_release") else "周伯挪了挪凳脚：‘这边不滴了。你歇脚就站这里。’") + "灯与钟仍是原来的样子。")
 		"lane_old_level":
 			if p != "lane" or flag("lane_old_level") or Vector2(s.x,s.y).distance_to(Vector2(200,300)) >= 48: return false
 			set_flag("lane_old_level")

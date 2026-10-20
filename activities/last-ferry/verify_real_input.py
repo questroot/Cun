@@ -11,6 +11,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools/play_mcp'))
 from server import PlayService
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--render', action='store_true', help='Use an ordinary game window; no screenshot capture.')
+parser.add_argument('--awning-after-closing',action='store_true',help='Tie awning after Zhou moves to old steps')
 args = parser.parse_args()
 s=PlayService()
 receipts=[]
@@ -61,6 +62,12 @@ try:
     go(750,565);key('e');go(460,335);key('e');click('把两岸的答复')
     started=obs();assert '次日尾声' not in '\n'.join(started['texts'])
     assert '当面挂回钟腹' in json.dumps(started,ensure_ascii=False),started
+    if args.awning_after_closing:
+        go(115,565);key('e');assert any('空凳' in o['title'] for o in obs()['visible'][0]['objects']),obs()
+        go(690,350);key('e');click('握住绳端');s.call('action',{'kind':'key','key':'s','duration_ms':600});key('e');awning_closed=obs()
+        assert '周伯的凳子空着' in '\n'.join(awning_closed['texts']) and '周伯挪了' not in '\n'.join(awning_closed['texts']),awning_closed
+        assert '棚绳系在木桩' in awning_closed['visible'][0]['visible_awning']['appearance'],awning_closed
+        go(750,565);key('e')
     go(590,445);key('e');click('留在干阶上');rung=obs();assert '那边也应了' in json.dumps(rung,ensure_ascii=False)
     key('escape');departed=obs();assert any(o['title']=='已离岸的夜船' for o in departed['visible'][0]['objects']),departed
     click('保存');key('d',8);click('读取');click('确认')
