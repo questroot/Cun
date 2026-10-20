@@ -34,6 +34,11 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(test_dir)
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
+	state.fresh("he")
+	check(not at("street", "move_wet_stock"), "no invented wet stock before water intrusion")
+	check(state.act("night") and at("shelter", "danger"), "first raised white signal reaches street")
+	check(at("street", "move_wet_stock") and state.flag("stock_dried") and state.s.pollution == 1, "moving stock changes mundane state not pollution")
+	check(not at("street", "move_wet_stock"), "stock cannot be repeatedly farmed")
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
 		check(not at("shelter", "restore"), identity + " cannot restore without information/night")

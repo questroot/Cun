@@ -425,6 +425,7 @@ func update_world() -> void:
 	match story.s.place:
 		"street":
 			solids.append(Rect2(145, 190, 235, 95))
+			if story.s.pollution == 1 and story.s.phase == "night": add_object("wet_stock", "干台上的湿货箱" if story.flag("stock_dried") else "门边被水浸到的货箱", Vector2(365,280) if story.flag("stock_dried") else Vector2(365,365))
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
 			add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
@@ -602,7 +603,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -659,6 +660,7 @@ func interact() -> void:
 			"ge":
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
+			"wet_stock": act_button("托住箱底，把货箱移到干台", "move_wet_stock")
 			"old_root": act_button("沿树根看它原来朝哪边生长", "root_view")
 			"old_stairs": act_button("数矮阶，对照旁边后来加高的岸", "stairs_view")
 			"post_socket": act_button("蹲下看方槽边的旧铁锈", "socket_view")
@@ -786,6 +788,11 @@ func _draw() -> void:
 	draw_string(font, Vector2(32, 130), "道路范围：石色地面　圆环：可交互　门形：地点连接", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("bac5c3"))
 	match story.s.place:
 		"street":
+			if story.s.pollution == 1 and story.s.phase == "night":
+				var stock_pos := Vector2(365,280) if story.flag("stock_dried") else Vector2(365,365)
+				draw_rect(Rect2(185,375,270,24),Color("456777"))
+				draw_rect(Rect2(stock_pos-Vector2(20,14),Vector2(40,28)),Color("9a8057"))
+				draw_line(stock_pos-Vector2(15,0),stock_pos+Vector2(15,0),Color("665643"),3)
 			draw_rect(Rect2(130, 175, 265, 120), Color("554b44"))
 			draw_rect(Rect2(138, 165, 250, 25), Color("4e645d"))
 			draw_string(font, Vector2(175, 228), "陶记杂货", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e1cfa6"))
