@@ -27,6 +27,11 @@ var rng := RandomNumberGenerator.new()
 var conversation_target := ""
 var conversation_response := ""
 var comparing_photo := false
+var pulling_cart := false
+
+func cart_position() -> Vector2:
+	if story.flag("lane_cart_moved") and not story.s.has("cart_x"): return Vector2(520,260)
+	return Vector2(float(story.s.get("cart_x",430.0)),400)
 
 func _ready() -> void:
 	add_to_group("cun_play_visible")
@@ -253,6 +258,7 @@ func save_game() -> void:
 	refresh_ui()
 
 func load_game() -> void:
+	pulling_cart = false
 	if story.load_game():
 		comparing_photo = false
 		started = true
@@ -431,6 +437,16 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func move_player(offset: Vector2) -> void:
+	if pulling_cart and story.s.place == "lane":
+		var x := clampf(cart_position().x + minf(offset.x,0.0)*0.5,250,430)
+		story.s["cart_x"] = x
+		player = Vector2(x-80,400)
+		if x <= 340: story.set_flag("lane_cart_moved")
+		story.s.x = player.x
+		story.s.y = player.y
+		last_place = ""
+		update_world()
+		return
 	var next := player + Vector2(offset.x, 0)
 	if walkable(next): player = next
 	next = player + Vector2(0, offset.y)
@@ -462,9 +478,9 @@ func update_world() -> void:
 		"lane":
 			solids.append(Rect2(390,280,80,80))
 			solids.append(Rect2(390,440,80,60))
-			if not story.flag("lane_cart_moved"): solids.append(Rect2(390,360,80,80))
-			else: solids.append(Rect2(488,230,64,60))
-			add_object("lane_cart", "墙边停稳的空手推车" if story.flag("lane_cart_moved") else "卡在围挡缺口的空手推车",Vector2(520,260) if story.flag("lane_cart_moved") else Vector2(350,400))
+			var cart := cart_position()
+			solids.append(Rect2(cart-Vector2(32,30),Vector2(64,60)))
+			add_object("lane_cart", "缺口外停住的空手推车" if story.flag("lane_cart_moved") else "卡在围挡缺口的空手推车",cart-Vector2(80,0))
 			add_object("arrival_gate", "返回桥头落客点",Vector2(100,510),"gate")
 			add_object("house_gate", "许家旧屋门口",Vector2(745,320),"gate")
 		"street":
@@ -654,6 +670,7 @@ func continue_zhou(id: String) -> void:
 	refresh_ui()
 
 func travel(place: String) -> void:
+	pulling_cart = false
 	if story.flag("stock_carried"):
 		story.act("stock_put_back")
 	comparing_photo = false
@@ -687,6 +704,11 @@ func do_action(id: String) -> void:
 	refresh_ui()
 
 func interact() -> void:
+	if pulling_cart:
+		pulling_cart = false
+		story.note("你松开车把，车停在脚边。" + ("中段缺口已经让开。" if story.flag("lane_cart_moved") else "车身仍占着缺口，可以继续拉，也可从南侧绕行。"))
+		refresh_ui()
+		return
 	if nearest.is_empty() or modal_open or not started: return
 	var target := nearest
 	if comparing_photo and target in ["old_root", "old_stairs", "post_socket", "mooring"]:
@@ -728,7 +750,7 @@ func interact() -> void:
 				if story.flag("lane_cart_moved"):
 					button(modal_body,"空车已靠墙停稳，缺口可通行",close_modal)
 				else:
-					button(modal_body,"握住车把，把空车推到墙边",func(): close_modal(); story.set_flag("lane_cart_moved"); story.note("车轮从卡住的碎石上退下来。你把空车推到墙边，横过车把抵稳；围挡中段露出容一人拖箱经过的缺口。"); last_place=""; update_world(); refresh_ui())
+					button(modal_body,"握住车把，向左逐步拉出空车",func(): close_modal(); pulling_cart=true; story.note("握住车把。按左方向键把车从两堆石料之间拉出；E松手。南侧绕路一直留着。"); refresh_ui())
 			"driver":
 				button(modal_body, "请他指一指如今的巷口", func(): close_modal(); story.note("司机指着栏杆尽头：‘沿这头进巷，许家旧屋在里面。桥修好以后，车就不停这边了。’\n他没问你回来住几天，蹲下确认搭扣扣牢，把这条路留给你自己走。"); refresh_ui())
 				button(modal_body, "谢过他，自己慢慢走", func(): close_modal(); story.note("许宁说自己认得屋子，想慢慢走。司机点头：‘行，箱轮那儿有碎石，留点神。’\n他转身收车里的空水瓶，没有再替她安排去处。"); refresh_ui())
@@ -912,7 +934,7 @@ func _draw() -> void:
 		"lane":
 			draw_rect(Rect2(390,280,80,80),Color("736f65"))
 			draw_rect(Rect2(390,440,80,60),Color("736f65"))
-			var cart := Vector2(520,260) if story.flag("lane_cart_moved") else Vector2(430,400)
+			var cart := cart_position()
 			draw_rect(Rect2(cart-Vector2(32,30),Vector2(64,60)),Color("927b58"))
 			draw_circle(cart+Vector2(-28,28),8,Color("333d40"))
 			draw_circle(cart+Vector2(28,28),8,Color("333d40"))

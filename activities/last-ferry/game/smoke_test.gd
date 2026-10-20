@@ -35,6 +35,15 @@ func run() -> void:
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
 	state.fresh("xu")
+	check(state.valid_save(state.s),"legacy save without cart position remains valid")
+	state.set_flag("lane_cart_moved")
+	check(state.valid_save(state.s),"legacy cleared cart save remains valid without new field")
+	state.s["cart_x"] = 395.5
+	check(state.valid_save(state.s) and state.save_game() and state.load_game() and state.s.cart_x == 395.5,"partial cart position persists through real file save/load")
+	for invalid_cart in ["395",249.0,431.0,INF,NAN]:
+		state.s["cart_x"] = invalid_cart
+		check(not state.valid_save(state.s),"invalid cart position rejected")
+	state.fresh("xu")
 	check(not at("street","roof_arrange"),"roof arrangement requires an observed leak")
 	check(at("house","roof_listen") and at("street","roof_arrange"),"owner can directly ask Ge without Tao checklist")
 	check(state.flag("roof_visit_arranged") and not state.flag("roof_commissioned"),"appointment is not completed roof work")

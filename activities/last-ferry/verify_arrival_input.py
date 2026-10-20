@@ -42,11 +42,24 @@ def lane_to(dest):
     if dest=='house' and not cart_moved:
         key('w',100);key('d',120);key('d',120)
         blocked=obs()['visible'][0]['player_screen'];assert blocked['x']<390 and 280<blocked['y']<500,blocked
+        if lane_visits==1:key('a',35)
         if lane_visits>1:
-            key('e');click('握住车把');cart_moved=True
+            key('e');click('握住车把');call('action',{'kind':'key','key':'a','duration_ms':150});key('e')
+            partial=obs();cart=next(o for o in partial['visible'][0]['objects'] if '空手推车' in o['title']);partial_x=cart['x'];assert 260<partial_x<350,partial
             click('保存');click('读取');click('确认')
+            assert next(o for o in obs()['visible'][0]['objects'] if '空手推车' in o['title'])['x']==partial_x,obs()
+            key('e');click('握住车把');click('保存');click('读取');click('确认')
+            before_y=obs()['visible'][0]['player_screen']['y'];key('s',8);assert obs()['visible'][0]['player_screen']['y']>before_y+3,obs()
+            key('w',8);key('e');click('握住车把');key('a',120);key('a',60);key('e');cart_moved=True
             assert '缺口已通' in obs()['visible'][0]['visible_barrier']['appearance'],obs()
-            key('d',100);assert obs()['visible'][0]['player_screen']['x']>480,obs()
+            for axis,target in [('y',540),('x',500),('y',400)]:
+                for _ in range(30):
+                    p=obs()['visible'][0]['player_screen'];d=target-p[axis]
+                    if abs(d)<10:break
+                    key((('d' if d>0 else 'a') if axis=='x' else ('s' if d>0 else 'w')),min(80,max(2,int(abs(d)/2))))
+            assert obs()['visible'][0]['player_screen']['x']>480,obs()
+            key('a',120);crossed=obs()['visible'][0]['player_screen'];assert crossed['x']<385 and 380<crossed['y']<420,crossed
+            key('d',120);assert obs()['visible'][0]['player_screen']['x']>480,obs()
     x,y=(745,350) if dest=='house' else (100,540)
     for axis,target in [('y',540),('x',x),('y',y)]:
         for _ in range(30):

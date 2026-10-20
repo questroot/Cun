@@ -654,6 +654,8 @@ func valid_save(data: Variant) -> bool:
 	if data.identity == "he" and "铜哨" in data.items: return false
 	for line in data.journal:
 		if not line is String: return false
+	if data.has("cart_x"):
+		if not (data.cart_x is float or data.cart_x is int) or not is_finite(float(data.cart_x)) or data.cart_x < 250 or data.cart_x > 430: return false
 	for key in data.flags:
 		if not key is String or not data.flags[key] is bool: return false
 	if data.ending == "flood" and (data.pollution != 2 or data.place in ["steps", "boat"]): return false
