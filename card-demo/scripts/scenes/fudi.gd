@@ -53,7 +53,38 @@ var loot_rng := RandomNumberGenerator.new()
 var equipment: Equipment
 var buildings: Buildings
 
+## Fixed observation provider: only painted targets intersecting the clipped world view.
+func play_visible() -> Dictionary:
+	if not states.has(region) or world_view == null: return {}
+	var result := {"location":Catalog.REGIONS[region].name,"controls":"WASD移动，J斩击/K灵弹/L震荡，E附近交互，M地图，B行囊","world_view":{"x":ARENA.position.x,"y":ARENA.position.y,"width":ARENA.size.x,"height":ARENA.size.y}}
+	if _paused() or finished:
+		result["world_occluded"] = true
+		return result
+	var targets: Array = []
+	var data: Dictionary = Maps.MAPS[region]
+	for i in range(data.sites.size()):
+		var site: Array = data.sites[i]
+		_visible_target(targets,site[1]*data.size,str(site[0]),"investigation",80)
+	_visible_target(targets,data.spawn*data.size,"休息点 · E恢复一次","rest",60)
+	for exit: Array in data.exits:
+		_visible_target(targets,exit[1]*data.size,"E → "+str(Catalog.REGIONS[exit[0]].name),"exit",80)
+	for enemy: Dictionary in states[region].enemies:
+		_visible_target(targets,enemy.position-Vector2(0,38),"守卫","enemy",46)
+	for pickup: Dictionary in states[region].pickups:
+		if not pickup.get("weather_growth",false): _visible_target(targets,pickup.position,str(Catalog.ITEMS[pickup.item].name),"pickup",30)
+	var point := ARENA.position+player_foot-camera_origin
+	result["player_screen"] = {"x":point.x,"y":point.y}
+	result["objects"] = targets
+	return result
+
+func _visible_target(targets: Array, point: Vector2, title: String, kind: String, _radius: float) -> void:
+	var screen := ARENA.position+point-camera_origin
+	# Conservative until exact per-art bounds are available: omit edge fragments.
+	if not ARENA.has_point(screen): return
+	targets.append({"title":title,"kind":kind,"x":screen.x,"y":screen.y})
+
 func _ready() -> void:
+	add_to_group("cun_play_visible")
 	DisplayServer.window_set_title("福地")
 	loot_rng.randomize()
 	for item: String in Catalog.ITEMS:
