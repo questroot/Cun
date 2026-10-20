@@ -186,7 +186,9 @@ func act(id: String) -> bool:
 			return true
 		if id == "roof_show" and p == "house" and flag("roof_guiding") and roof_visit_active():
 			if Vector2(s.x,s.y).distance_to(Vector2(510,370)) > 75: return false
+			if flag("roof_leak_shown"): return false
 			set_flag("roof_leak_shown")
+			note("你站在桌脚旁的干处，指给老葛看这次的新湿痕。他跟到近处停下：‘看见了，水是斜落的。你让开些，我从这里看瓦缝，不上梁。’靠近他便可继续勘看。")
 			return true
 		if id == "roof_inspect" and p == "house" and flag("roof_visit_arranged") and s.ending != "flood":
 			if not flag("roof_guest_admitted") and not flag("roof_inspected"): return refuse("老葛还在门口等，先去招呼他，不能替屋主开门。")

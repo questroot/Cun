@@ -80,8 +80,9 @@ try:
     go(635,450);key('e');click('请他跟自己');go(510,395)
     s.call('action',{'kind':'key','key':'d','duration_ms':300});s.call('action',{'kind':'key','key':'a','duration_ms':300})
     click('保存');click('读取');click('确认')
-    guide=next(o for o in obs()['visible'][0]['objects'] if '跟你查看' in o['title']);assert guide['x']==565 and guide['y']==395,guide
-    go(guide['x'],guide['y'])
+    guide=next(o for o in obs()['visible'][0]['objects'] if '已看清漏点' in o['title']);assert guide['x']==565 and guide['y']==395,guide
+    go(450,575);key('e');away=obs();assert not any(o['kind']=='npc' and '老葛' in o['title'] for o in away['visible'][0]['objects']),away
+    go(100,440);key('e');guide=next(o for o in obs()['visible'][0]['objects'] if '已看清漏点' in o['title']);go(guide['x'],guide['y'])
     key('e');click('请他从干处');inspection=obs();assert '两项工序' in json.dumps(inspection,ensure_ascii=False),inspection
     click('保存');click('读取');click('确认');assert any('分项工序' in o['title'] for o in obs()['visible'][0]['objects']),obs()
     assert any(o['title']=='桌边的两项修屋工序纸' for o in obs()['visible'][0]['objects']),obs()
