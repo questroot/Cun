@@ -89,6 +89,10 @@ try:
     if args.handover:
         go(100,480);key('e');go(350,415);key('e');click('另附今日处理');handover_update=obs()
         assert '没有替当年的残姓补名字' in json.dumps(handover_update,ensure_ascii=False) and '自己放进下层抽屉' in json.dumps(handover_update,ensure_ascii=False),handover_update
+        click('保存');click('读取');click('确认')
+        assert any(o['title']=='旧交接单与今日附记' for o in obs()['visible'][0]['objects']),obs()
+        key('e');click('再看旧单');handover_update=obs()
+        assert '两张纸各说自己那一天' in json.dumps(handover_update,ensure_ascii=False),handover_update
         go(450,575);key('e')
     go(450,565);key('e');click('离开这段体验');click('确认');left=obs()
     assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
