@@ -711,6 +711,7 @@ func interact() -> void:
 				if story.has("lamp") and story.has("bell"): act_button("告诉她棚里的灯罩与缺舌铜钟，问她愿不愿一起查", "exchange")
 			"timetable", "lamp", "bell", "inscription":
 				act_button("现场检查与记录", target)
+				if target == "lamp" and story.flag("handover_seen") and not story.flag("handover_matched"): act_button("用记下的交接两栏，对照灯罩夹痕与钟架", "handover_compare")
 				if target == "bell":
 					act_button("察看钟座背面刻记", "mark")
 					if story.item("拆下的铜舌"): act_button("将取出的铜片挂回钟腹", "install_tongue")
@@ -730,6 +731,7 @@ func interact() -> void:
 						confirm(warning, func(): do_action("danger")))
 					button(modal_body, "危险：强行砸坏灯内铜舌", func(): confirm("铜舌承载旧约，破坏后将无法恢复边界，立即导致渡口失守。这不是修复方法。确认破坏？", func(): do_action("break")))
 			"zhou":
+				if story.flag("handover_matched") and not story.flag("handover_discussed"): act_button("问交接补记：暂夹的铜件后来怎样了", "handover_zhou")
 				button(modal_body, "闲谈 · 明早的渡船", func(): close_modal(); story.note("周伯：最后一班已经走了。明天六点。桥开了，这棚就拆。我还能守几年？她要是回来，看不见灯怎么办？"); refresh_ui())
 				if story.s.identity == "he" and story.item("新灯芯"): act_button("交付新灯芯（物品）", "deliver")
 				if story.flag("wick_kept") and not story.flag("wick_explained"): act_button("亲口说明这卷留店，不把未送推给陶婶", "wick_explain")

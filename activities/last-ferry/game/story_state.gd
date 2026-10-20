@@ -260,6 +260,15 @@ func act(id: String) -> bool:
 			take("新灯芯")
 			set_flag("delivered")
 			note("阿禾把新灯芯交给周伯。周伯说今夜要让船看得更清楚；你记住这不是平日的用量。")
+		"handover_compare":
+			if p != "shelter" or not flag("handover_seen"): return false
+			if not has("lamp") or not has("bell"): return refuse("折单只说暂夹铜件。还没亲眼看过灯罩的夹痕与钟架缺口，不能把两个空白直接连成一件事。")
+			set_flag("handover_matched")
+			note("你把记下的两栏分别对着现场看：白罩内缘有一条夹压的亮痕，钟架缺口宽度相近。它们支持‘钟的部件被借来固定灯罩’，还不是谁在何时做的证明。\n单上的待修没有划掉。临时用一下，后来一直没还——这个经过需要问亲手经管过的人。")
+		"handover_zhou":
+			if p != "shelter" or not flag("handover_matched"): return false
+			set_flag("handover_discussed")
+			note("周伯接着你说的‘待修’，没有把责任推给纸上缺掉的名字。\n‘罩裂那天是我借的铜舌，够薄，能卡住。我说等新扣件到了就还。凳子搬了，班照常报；后来不报了，我就老想着明天。’\n他说最后一次把白罩朝水举起，是想让等的人看得见，不是旧交接单叫他这样做的。‘不是谁留下的一条规矩，是我把几件事混在一起，拖到今天。’\n你知道了一次修补怎样拖成现状；仍不知道每一声呼唤是谁。周伯也没有因此答应你敲最后一钟。")
 		"zhou_memory":
 			if p != "shelter": return false
 			set_flag("heard_zhou")
