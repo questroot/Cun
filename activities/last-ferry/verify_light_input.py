@@ -48,7 +48,8 @@ try:
         click('准备好了');click('确认');go(250,395);key('e');click('危险：举白灯');click('确认')
         invaded=obs();assert '侵入 1 / 2' in '\n'.join(invaded['texts']),invaded
         if not args.leave_stock:
-            go(365,410);key('e');click('托住箱底');mistake=obs()
+            go(365,410);key('e');click('托住箱底');assert 'carried_stock' in obs()['visible'][0],obs()
+            go(420,340);key('e');click('把手中的货箱');mistake=obs()
             assert '侵入 1 / 2' in '\n'.join(mistake['texts']) and any(o['title']=='干台上的湿货箱' for o in mistake['visible'][0]['objects']),mistake
         else:
             mistake=invaded
@@ -72,7 +73,7 @@ try:
     returned=obs();assert '没烫着吧' in json.dumps(returned,ensure_ascii=False),returned
     key('i');assert '手提黄灯：' not in '\n'.join(obs()['texts']);key('escape')
     if args.recover_mistake:
-        go(365,320);key('e');click('看看昨晚浸湿');stock_morning=obs();assert '不会因此自动变干' in json.dumps(stock_morning,ensure_ascii=False),stock_morning
+        go(420,340);key('e');click('看看昨晚浸湿');stock_morning=obs();assert '不会因此自动变干' in json.dumps(stock_morning,ensure_ascii=False),stock_morning
         assert ('陶婶后半夜自己搬上' if args.leave_stock else '你昨晚搬上干台') in json.dumps(stock_morning,ensure_ascii=False),stock_morning
     go(450,565);key('e');click('离开这段体验');click('确认');left=obs()
     assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left

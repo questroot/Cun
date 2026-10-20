@@ -37,6 +37,8 @@ func run() -> void:
 	state.fresh("he")
 	check(not at("street", "move_wet_stock"), "no invented wet stock before water intrusion")
 	check(state.act("night") and at("shelter", "danger"), "first raised white signal reaches street")
+	check(not at("street", "move_wet_stock"), "cannot place a box not carried")
+	check(at("street", "stock_take") and state.flag("stock_carried"), "pick up before moving stock")
 	check(at("street", "move_wet_stock") and state.flag("stock_dried") and state.s.pollution == 1, "moving stock changes mundane state not pollution")
 	check(not at("street", "move_wet_stock"), "stock cannot be repeatedly farmed")
 	for identity in ["xu", "he"]:

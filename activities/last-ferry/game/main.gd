@@ -63,6 +63,8 @@ func play_visible() -> Dictionary:
 		result["visible_toolbag"] = {"x":650,"y":490,"appearance":"老葛长凳边的工具袋"}
 	elif story.s.place == "steps" and not story.flag("tool_returned"):
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
+	if story.flag("stock_carried"):
+		result["carried_stock"] = {"x":player.x+15,"y":player.y+10,"appearance":"托着湿货箱"}
 	if comparing_photo and story.s.place == "steps":
 		result["held_photo"] = {"description":"新棚启用前的旧照：水面在上，三道矮阶靠岸，斜柳朝水，木柱上的灯在矮阶左上；照片不含新棚或桥围挡。", "screen_rect":{"x":50,"y":510,"width":210,"height":110}}
 	result["objects"] = targets
@@ -426,7 +428,8 @@ func update_world() -> void:
 		"street":
 			solids.append(Rect2(145, 190, 235, 95))
 			if story.s.pollution == 1:
-				add_object("wet_stock", "干台上的湿货箱" if story.flag("stock_dried") else ("陶婶摊开的湿货" if story.s.phase == "epilogue" else "门边被水浸到的货箱"), Vector2(365,280) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))
+				add_object("wet_stock", "干台上的湿货箱" if story.flag("stock_dried") else ("陶婶摊开的湿货" if story.s.phase == "epilogue" else "门边被水浸到的货箱"), Vector2(420,300) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))
+			if story.s.pollution == 1 and story.s.phase == "night" and not story.flag("stock_dried"): add_object("dry_stock", "柜台边的干台", Vector2(420,300))
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
 			add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
@@ -591,6 +594,8 @@ func continue_zhou(id: String) -> void:
 	refresh_ui()
 
 func travel(place: String) -> void:
+	if story.flag("stock_carried"):
+		story.act("stock_put_back")
 	comparing_photo = false
 	story.change_place(place)
 	player = Vector2(story.s.x, story.s.y)
@@ -604,7 +609,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock", "stock_take", "stock_put_back"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -662,7 +667,11 @@ func interact() -> void:
 			"ge":
 				act_button("坐下听他说昨晚的事", "ge_talk")
 				if story.item("老葛的工具袋"): act_button("把挑上来的工具袋交还给他", "tool_return")
-			"wet_stock": act_button("托住箱底，把货箱移到干台", "move_wet_stock")
+			"wet_stock":
+				if story.flag("stock_carried"): act_button("把箱子放回门边", "stock_put_back")
+				elif not story.flag("stock_dried"): act_button("托住箱底，拿起湿货箱", "stock_take")
+			"dry_stock":
+				if story.flag("stock_carried"): act_button("把手中的货箱放到干台", "move_wet_stock")
 			"old_root": act_button("沿树根看它原来朝哪边生长", "root_view")
 			"old_stairs": act_button("数矮阶，对照旁边后来加高的岸", "stairs_view")
 			"post_socket": act_button("蹲下看方槽边的旧铁锈", "socket_view")
@@ -791,7 +800,7 @@ func _draw() -> void:
 	match story.s.place:
 		"street":
 			if story.s.pollution == 1:
-				var stock_pos := Vector2(365,280) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365)
+				var stock_pos := player+Vector2(15,10) if story.flag("stock_carried") else (Vector2(420,300) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))
 				draw_rect(Rect2(185,375,270,24),Color("456777"))
 				draw_rect(Rect2(stock_pos-Vector2(20,14),Vector2(40,28)),Color("9a8057"))
 				draw_line(stock_pos-Vector2(15,0),stock_pos+Vector2(15,0),Color("665643"),3)

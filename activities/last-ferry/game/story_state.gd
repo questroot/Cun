@@ -465,9 +465,19 @@ func act(id: String) -> bool:
 			set_flag("tongue_home")
 			set_flag("released")
 			finish("untie")
+		"stock_take":
+			if p != "street" or s.phase != "night" or s.pollution != 1 or flag("stock_dried") or flag("stock_carried"): return false
+			set_flag("stock_carried")
+			note("你托住箱底，湿纸贴住手背。干台就在柜台右边，先把箱子送到那里，再放下；也可以原地放回。")
+		"stock_put_back":
+			if p != "street" or not flag("stock_carried"): return false
+			s.flags.erase("stock_carried")
+			note("你把箱子放回门边稳住，没有把搬到一半写成已经晾干。")
 		"move_wet_stock":
 			if p != "street" or s.phase != "night" or s.pollution != 1: return false
 			if flag("stock_dried"): return refuse("箱子已搬到干台，不必来回折腾货物。")
+			if not flag("stock_carried"): return refuse("先托起门边的箱子，再送到干台。")
+			s.flags.erase("stock_carried")
 			set_flag("stock_dried")
 			note("你托住浸湿的箱底，把门边的货箱挪上干台。纸边已经软了，里面的火柴另摊开，不能假装没湿过。\n陶婶没问你是不是故意的。她说：‘这箱我来收。先别再举那盏白的，棚里到底怎么回事，你去看清。’\n搬箱没有使侵入数变回零，也没替任何人原谅你；只是眼下这点水不再泡着明天要卖的东西。")
 		"danger":
