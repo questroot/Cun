@@ -444,6 +444,7 @@ func update_world() -> void:
 		"house":
 			solids.append(Rect2(220, 190, 200, 105))
 			add_object("paper", "旧桌·私人物品", Vector2(320, 340))
+			if story.flag("drawer_open"): add_object("handover", "下层抽屉里的折单", Vector2(350,375))
 			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
 			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
 			add_object("watermark", "墙下的旧水印", Vector2(130, 300))
@@ -614,7 +615,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock", "stock_take", "stock_put_back"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -690,7 +691,9 @@ func interact() -> void:
 					act_button("核对周伯两份灯芯的账", "ledger")
 					if story.item("新灯芯"): act_button("这卷先留店里，亲自向周伯说明未送", "wick_keep")
 				else: button(modal_body, "不翻别人的账本", close_modal)
+			"handover": act_button("展开公用物件交接单，看两栏记的什么", "handover_read")
 			"paper":
+				if not story.flag("drawer_open"): act_button("托住底板，拉开下层抽屉", "drawer_open")
 				act_button("查看旧桌（尊重私人物品）", "paper")
 				if story.s.identity == "xu": act_button("坐一会儿，试试口袋里那半只旧哨", "whistle_memory")
 			"roof":
@@ -703,6 +706,7 @@ func interact() -> void:
 				if story.flag("basin_carried"): act_button("试把盆放在旧水印下", "basin_wrong")
 				else: button(modal_body, "摸摸墙下的水印", func(): close_modal(); story.note("手指上只沾到墙灰。水印是旧的。"); refresh_ui())
 			"xu":
+				if story.s.identity == "he" and not story.flag("drawer_allowed"): act_button("问她：可以看旧桌下层的公用单据吗", "drawer_permission")
 				button(modal_body, "闲谈 · 她为什么还在等", func(): close_modal(); story.note("阿禾：周伯说今晚别去河边。你为什么还在等？\n许宁：因为他说别去的时候，没说那里什么都没有。"); refresh_ui())
 				if story.has("lamp") and story.has("bell"): act_button("告诉她棚里的灯罩与缺舌铜钟，问她愿不愿一起查", "exchange")
 			"timetable", "lamp", "bell", "inscription":

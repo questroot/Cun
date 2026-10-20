@@ -35,6 +35,10 @@ func run() -> void:
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
 	state.fresh("he")
+	check(not at("house", "drawer_open") and not at("house", "handover_read"), "household privacy and closed drawer respected")
+	check(at("house", "drawer_permission") and at("house", "drawer_open") and at("house", "handover_read"), "permission reveals bounded shared handover document")
+	check(state.flag("handover_seen") and not state.flag("consent_zhou") and not state.flag("heard_zhou") and state.s.pollution == 0, "historical receipt is not consent identity or intrusion")
+	state.fresh("he")
 	check(not at("street", "move_wet_stock"), "no invented wet stock before water intrusion")
 	check(state.act("night") and at("shelter", "danger"), "first raised white signal reaches street")
 	check(not at("street", "move_wet_stock"), "cannot place a box not carried")

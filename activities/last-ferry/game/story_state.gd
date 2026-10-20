@@ -170,6 +170,19 @@ func act(id: String) -> bool:
 			set_flag(id)
 			var descriptions := {"root_view":"柳树上半截已经锯掉，老根仍从干阶斜向河面。从现在站的干阶能看清根须扎向水边；照片里写的左右取决于拍摄者站在哪边，不能直接当成眼前屏幕的左右。", "stairs_view":"新岸沿高高压在旧岸后面，下面三道窄阶只容半只脚。石面上水磨出的弧线连着，不是新棚前那段后来浇出的宽台。你没有为数阶踏进湿苔。", "socket_view":"方槽里没有宝物，只有方木留下的压痕和两枚锈钉。槽口朝旧阶开，离如今系缆石很近。曾有一根柱子在这里站过；现灯在上游，并不能把这段石头也搬过去。"}
 			note(descriptions[id])
+		"drawer_permission":
+			if p != "house" or s.identity != "he": return false
+			set_flag("drawer_allowed")
+			note("阿禾问能否看看旧桌。许宁把自己的信收回包里，只指下层抽屉：‘渡口公用东西的单子在那层。别翻上面的家信。看完留在屋里。’")
+		"drawer_open":
+			if p != "house": return false
+			if s.identity == "he" and not flag("drawer_allowed"): return refuse("这是许家的抽屉，先问屋主。没得到许可，不替别人决定哪些旧物可以公开。")
+			set_flag("drawer_open")
+			note("下层抽屉被潮气卡住。你托着底板慢慢拉开，露出一张折起的公用物件交接单；上层家信没有动。")
+		"handover_read":
+			if p != "house" or not flag("drawer_open"): return false
+			set_flag("handover_seen")
+			note("纸上分两栏：‘迁到新棚：候船凳二、灯柱一、白色通航灯罩一。’‘暂留旧阶：铜钟一，报班照旧；新棚不另设钟。’\n收讫栏是周伯的姓，另一行只剩许字，日期边缘缺了一块。背面补记‘灯罩裂，暂夹铜件固定，待修’；没写铜件是什么，也没写后来谁动过。\n这能说明灯与钟曾分开交接，不能据残姓认出任何人，更不能把当年收物当作今夜同意。单子留在抽屉，不带走。")
 		"photo_view":
 			if p != "house": return false
 			set_flag("photo_seen")
