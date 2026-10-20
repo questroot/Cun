@@ -272,6 +272,8 @@
 - 公共陷阱可见圈本地接入：只输出已画黄/红圈屏内交集，不输出未来随机/计时；实际Godot17边界断言通过（初夹具typed Array错误停止后append修正，保留失败），正常MCP自然探索34步遇黄圈/arena范围/生命100与地图遮挡通过d98f6bbd，已先推main3173df7；补自然黄圈按bounds反向移动/10×60帧后B实际滚轮读记录7ef833f2：预警1/命中0/闪避1通过，公共证据main d1a59f8；先前0d791b2c屏外即停只有闪避0保留不算通过。非独立/全战斗验收；个人已无冲突merge d1a59f8，真实bridge1a712827与末班渡船引擎Verify通过。证据读取空数组错误已修非游戏失败。
 - 巷道可选推空车：初始中段缺口被空车堵住，南侧仍可直接绕行；近处E把车推靠墙后图形/solid改变，中段可实走，bool存读保留、不赠物/线索或强制任务。真实MCP先不推绕过→携箱返回推车→存读→原阻挡横穿成功b2369bd5，Verify通过；未独立体验，仍非完整幕。
 - 公共宝箱观察本地：屏内箱中心/既有普通异变状态标签，22项Godot边界夹具通过；正常入口12步向右567cd53d只验聚合/遮挡，未遇箱/未实际开启，正常探索67aab026共102action遇普通箱、按屏内坐标短步接近E变已领取/行囊3份/生命100通过，已先交main a9b9a77，个人已无冲突merge，MCP五组与末班渡船真实引擎Verify通过，保留巷道推车改动。守箱敌人与当前粉红预警/惊醒圈本地独立屏内过滤补齐，箱屏外仍能报屏内活敌、已死/清场/遮挡不报；真实Godot27项边界通过，正常入口自然遇异变箱→E触发/四守卫首领惊醒圈→实际JLK短步→地图遮挡9e1ce2d5通过（79action/7组可见战斗），已先交main b619e8e；未击败领奖/完整战斗；个人已无冲突merge b619e8e，真实入口c4335c8b五类provider并存及末班渡船引擎Verify通过。拟新独立福地整段任务create被SESSIONS_TASK_DEPENDENCIES/retry:false拒绝，未重试/未派发，不把草案称已运行。
+- 到埠整段独立复玩卡player-arrival-agency已建ASSIGNED rev1（显式dependsOn空），尚无attempt。带instruction的dispatch返回SESSIONS_TASK_FIELDS/retry:false，get确认无受理/无执行，未重试；临时端点catalog验证后已停，无游戏启动。后只读核插件ordinary-session-tasks.mjs确认dispatch只接受requestId/action/taskId/expectedRevision，原拒绝发生在intent前；get无attempt后使用合法字段成功派发39958a87（新attempt64170582，rev3），未绕过卡。独立玩家进行中，运行时不改游戏不追提示；临时端点job pwsh-dc6f9a1b6e1d400a需交付后停止。端点JSON有BOM，Python读需utf-8-sig，本次读取错误已纠正。
+- 等待独立玩家期间仅维护文档/回归记录器：EXPANSION纠正巷道与已验范围、README地点；arrival回归逐公开调用落盘含异常/stop而非仅4末态。AST隔离假服务验证成功/异常持久化与重抛通过，不启动游戏、不当实机回归通过；玩家运行中不改游戏。
 - 下一步：根据用户及玩家反馈扩展完整章节与交互，不用增加点击文本或等待时长冒充电影级体验。公共入口活动列表和在线NPC不在本轮扩展重点。
 
 
