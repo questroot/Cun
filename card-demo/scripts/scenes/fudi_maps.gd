@@ -1,11 +1,12 @@
 extends RefCounted
+const Art = preload("res://scripts/scenes/fudi_map_art.gd")
 ## Ten authored exploration maps. Coordinates below are normalized to each world's size.
 ## NPC scenes are short echoes of the existing character drafts, not completed revival arcs.
 const IDS := ["grove", "post", "quarry", "ruins", "refuge", "wetland", "causeway", "kilnwood", "archive", "snowridge"]
 ## Clockwise order; each spoke joins matching indices in the two rings.
 const INNER_RING := ["grove", "post", "quarry", "ruins", "refuge"]
 const OUTER_RING := ["wetland", "causeway", "kilnwood", "archive", "snowridge"]
-const MAPS := {
+const ORIGINAL_MAPS := {
 	"grove": {
 		"size": Vector2(3600, 2400), "spawn": Vector2(0.15, 0.50), "npc": "祝婶", "chapter": "今天几个人吃饭",
 		"ground": "#253e35", "road": "#75674c", "accent": "#e8b770", "terrain": "garden",
@@ -128,6 +129,8 @@ const MAPS := {
 	},
 }
 
+static var MAPS: Dictionary = Art.apply_layouts(ORIGINAL_MAPS)
+
 static func bounds(id: String) -> Rect2:
 	return Rect2(Vector2.ZERO, MAPS[id].size)
 
@@ -141,10 +144,25 @@ static func obstacles(id: String) -> Array[Rect2]:
 static func walkable(id: String, point: Vector2, margin: float = 22.0) -> bool:
 	if not bounds(id).grow(-margin).has_point(point):
 		return false
+	if Art.has_art(id):
+		return Art.on_ground(MAPS[id], point, margin)
 	for rect: Rect2 in obstacles(id):
 		if rect.grow(margin).has_point(point):
 			return false
 	return true
+
+static func arrival_point(id: String, previous: String) -> Vector2:
+	for exit: Array in MAPS[id].exits:
+		if exit[0] != previous:
+			continue
+		var gate: Vector2 = exit[1] * MAPS[id].size
+		for road: Array in MAPS[id].roads:
+			if Vector2(road[0]).is_equal_approx(exit[1]):
+				return gate + (Vector2(road[1]) * MAPS[id].size - gate).normalized() * 100
+			if Vector2(road[-1]).is_equal_approx(exit[1]):
+				return gate + (Vector2(road[-2]) * MAPS[id].size - gate).normalized() * 100
+		return gate + (MAPS[id].size * 0.5 - gate).normalized() * 100
+	return MAPS[id].spawn * MAPS[id].size
 
 static func site_position(id: String, index: int) -> Vector2:
 	return MAPS[id].sites[index][1] * MAPS[id].size

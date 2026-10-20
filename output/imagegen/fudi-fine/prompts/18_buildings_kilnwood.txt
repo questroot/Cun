@@ -1,0 +1,20 @@
+Use case: stylized-concept
+Asset type: finished pixel-art game buildings asset
+A single complete standalone exterior game sprite of a monumental old pine charcoal kiln complex: large central brick barrel kiln with round black furnace arch and warm ember glow, two sooty chimneys, cedar side galleries, worn brown tiles, stacked logs, resin jars and broad stone stairs.
+Three-quarter overhead RPG building view, front entrance faces the bottom of the image.
+Full building and all roof ornaments are visible, no cropped towers, generous 8 percent empty margin.
+Broad majestic silhouette, central doorway and stairs land exactly at horizontal center.
+Highly detailed individual roof tiles, joinery, masonry courses, carved brackets, worn corners,
+material color variation and grounded architectural depth. Keep clear chunky pixel clusters.
+No enclosing landscape, no grass field, no square pedestal, no unrelated objects.
+Solid perfectly flat bright magenta #ff00ff background for chroma-key extraction, no checkerboard,
+no gradient, no colored reflected magenta on the subject, no cast shadow on the magenta background.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel art, highly detailed and polished,
+consistent crisp square pixel clusters, selective dark outlines, layered cool shadows,
+warm top-left light, jade and teal, aged gold, cedar brown and muted plum palette.
+Rich material-specific pixel texture, deliberate clustered highlights, tasteful weathering.
+Authentic game asset, not vector art, not a flat geometric diagram, not a 3D render,
+not photorealistic, no smooth gradients, no blur, no anti-aliased painted edges.
+No characters, no monsters, no interface, no frame, no labels, no letters, no numbers,
+no watermark, no logos, no signature. Maintain a consistent art direction across this set.

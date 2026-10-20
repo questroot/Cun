@@ -4,12 +4,16 @@ const Catalog = preload("res://scripts/scenes/boss_catalog.gd")
 const Items = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const Skills = preload("res://scripts/scenes/boss_skills.gd")
+const VFX = preload("res://scripts/scenes/pixel_vfx.gd")
 var game: Control
 var bosses: Dictionary = {}
 var banner: Label
+var casts: Array[Dictionary] = []
 
 func enter_region() -> void:
 	# Cancel warnings during travel; returning always leaves time to react.
+	casts.clear()
 	for boss: Dictionary in bosses.values():
 		boss.windup = 0.0
 		boss.cooldown = maxf(1.8, float(boss.cooldown))
@@ -21,13 +25,12 @@ func play_visible() -> Dictionary:
 	var warnings: Array = []
 	for boss: Dictionary in targets(game.region):
 		var config: Dictionary = Catalog.DEFINITIONS[boss.id]
-		var point: Vector2 = game.ARENA.position+boss.position-game.camera_origin
+		var point: Vector2 = game.world_to_screen(boss.position)
 		if game.ARENA.has_point(point): visible.append({"title":str(config.name),"x":point.x,"y":point.y,"kind":"boss"})
 		if float(boss.windup) > 0:
-			var center: Vector2 = game.ARENA.position+boss.target-game.camera_origin
-			var radius := float(config.radius)
-			var clipped: Rect2 = game.ARENA.intersection(Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2))
-			if clipped.has_area(): warnings.append({"appearance":"红色攻击预警圈","visible_bounds":{"x":clipped.position.x,"y":clipped.position.y,"width":clipped.size.x,"height":clipped.size.y}})
+			var bounds := Skills.bounds(boss)
+			var clipped: Rect2 = game.ARENA.intersection(Rect2(game.world_to_screen(bounds.position),bounds.size*game.WORLD_ZOOM))
+			if clipped.has_area(): warnings.append({"appearance":"红色%s攻击预警" % Skills.SHAPE_NAMES[Skills.current(boss).shape],"visible_bounds":{"x":clipped.position.x,"y":clipped.position.y,"width":clipped.size.x,"height":clipped.size.y}})
 	return {"visible_bosses":visible,"visible_warnings":warnings}
 
 func _ready() -> void:
@@ -35,15 +38,16 @@ func _ready() -> void:
 	for id: String in Catalog.DEFINITIONS:
 		var config: Dictionary = Catalog.DEFINITIONS[id]
 		var home: Vector2 = config.point * Maps.MAPS[config.region].size
-		bosses[id] = {"id": id, "position": home, "home": home, "hp": config.hp, "max_hp": config.hp, "hit_radius": 42.0, "hit_height": 45.0, "flash": 0.0, "cooldown": 1.8, "windup": 0.0, "target": home, "paid": false}
+		bosses[id] = {"id": id, "position": home, "home": home, "hp": config.hp, "max_hp": config.hp, "hit_radius": 42.0, "hit_height": 45.0, "flash": 0.0, "cooldown": 1.8, "windup": 0.0, "target": home, "paid": false, "skill_index": 0}
+	game.world_canvas.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	game.world_canvas.draw.connect(draw_world)
 	game.minimap.draw.connect(draw_minimap)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(10, game.ARENA.size.y - 64)
+	panel.position = Vector2(420, game.ARENA.size.y - 46)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_theme_stylebox_override("panel", UI.panel(Color(0.11, 0.045, 0.04, 0.9)))
+	panel.add_theme_stylebox_override("panel", UI.hud_panel(Color(0.11, 0.045, 0.04, 0.9)))
 	game.world_view.add_child(panel)
-	banner = UI.label("", 16, Color("#f3c997"))
+	banner = UI.label("", 15, Color("#f3c997"))
 	panel.add_child(banner)
 	game.tools.atlas.set_meta("boss_provider", summary)
 	refresh()
@@ -69,6 +73,8 @@ func collect_defeated() -> void:
 			continue
 		boss.paid = true
 		boss.windup = 0.0
+		for i in range(casts.size()-1,-1,-1):
+			if casts[i].boss_id == id: casts.remove_at(i)
 		var config: Dictionary = Catalog.DEFINITIONS[id]
 		for i in range(int(config.count)):
 			game.states[config.region].pickups.append({"item": config.drop, "position": boss.position, "boss_drop": true})
@@ -81,7 +87,9 @@ func summary(region: String) -> String:
 		if config.region != region:
 			continue
 		var boss: Dictionary = bosses[id]
-		lines.append("%s · %s · 坐标%d,%d · %s · 掉落%s×%d" % [config.name, "已击败" if int(boss.hp) <= 0 else "生命%d/%d" % [boss.hp, boss.max_hp], int(boss.home.x), int(boss.home.y), config.skill, Items.ITEMS[config.drop].name, config.count])
+		lines.append("%s · %s · 坐标%d,%d · 掉落%s×%d" % [config.name, "已击败" if int(boss.hp) <= 0 else "生命%d/%d" % [boss.hp, boss.max_hp], int(boss.home.x), int(boss.home.y), Items.ITEMS[config.drop].name, config.count])
+		for skill: Dictionary in Skills.MOVES[id]:
+			lines.append("  %s · %.2f秒预警 · 伤害%d · %s" % [skill.name,skill.windup,skill.damage,skill.hint])
 	return "本区暂无首领" if lines.is_empty() else "\n".join(lines)
 
 func _process(delta: float) -> void:
@@ -92,27 +100,33 @@ func _process(delta: float) -> void:
 func tick(delta: float) -> void:
 	if game.finished or game._paused() or delta <= 0:
 		return
+	for i in range(casts.size()-1,-1,-1):
+		casts[i].life -= delta
+		if float(casts[i].life) <= 0: casts.remove_at(i)
 	for boss: Dictionary in targets(game.region):
 		var config: Dictionary = Catalog.DEFINITIONS[boss.id]
+		var skill := Skills.current(boss)
 		var slow: float = game.equipment.effects.enemy_speed_scale(boss) if game.equipment != null else 1.0
 		boss.flash = maxf(0, float(boss.flash) - delta)
 		var offset: Vector2 = game.player_foot - boss.position
 		if float(boss.windup) > 0:
 			boss.windup = maxf(0, float(boss.windup) - delta)
 			if float(boss.windup) == 0:
-				# The circle is locked at cast time: walking out always avoids this hit.
-				if game.player_foot.distance_to(boss.target) <= float(config.radius) and game.hurt_timer <= 0:
-					game.health = maxi(0, game.health - game.incoming_damage(int(config.damage)))
+				# Lock geometry at cast time. Each cast resolves once, even across multi zones.
+				casts.append({"boss_id":boss.id,"skill":skill,"target":boss.target,"origin":boss.get("cast_origin",boss.position),"direction":boss.get("direction",Vector2.RIGHT),"zones":boss.get("zones",[boss.target]).duplicate(),"life":VFX.LIFETIME})
+				if Skills.hits(boss,game.player_foot) and game.hurt_timer <= 0:
+					game.health = maxi(0, game.health - game.incoming_damage(int(skill.damage)))
 					game.hurt_timer = 1.0
-				boss.cooldown = config.cooldown
+				boss.cooldown = skill.cooldown
+				boss.skill_index = (int(boss.skill_index)+1)%4
 			continue
 		boss.cooldown = maxf(0, float(boss.cooldown) - delta)
 		if offset.length() > 520 or game.player_foot.distance_to(boss.home) > 650:
 			boss.position = game.move_world(boss.position, boss.position.direction_to(boss.home) * minf(float(config.speed) * slow * delta, boss.position.distance_to(boss.home)))
 			continue
-		if offset.length() <= float(config.reach) and float(boss.cooldown) <= 0 and visible_path(boss.position, game.player_foot):
-			boss.target = game.player_foot if float(config.reach) >= 250 else boss.position
-			boss.windup = config.windup
+		if offset.length() <= float(skill.reach) and float(boss.cooldown) <= 0 and visible_path(boss.position, game.player_foot):
+			Skills.lock(boss,game.player_foot)
+			boss.windup = skill.windup
 		elif offset.length() > 65:
 			boss.position = game.move_world(boss.position, offset.normalized() * minf(float(config.speed) * slow * delta, offset.length() - 65))
 	if game.health <= 0:
@@ -129,20 +143,21 @@ func visible_path(start: Vector2, end: Vector2) -> bool:
 
 func refresh() -> void:
 	var active := targets(game.region)
-	var configured := false
-	for config: Dictionary in Catalog.DEFINITIONS.values():
-		configured = configured or config.region == game.region
-	var text := "%s · 首领进度 %d / 6" % ["本地首领已击败" if configured else "本区暂无首领", 6 - remaining()]
+	var text := ""
+	var nearby := false
 	if not active.is_empty():
 		var boss: Dictionary = active[0]
 		for candidate: Dictionary in active:
 			if game.player_foot.distance_to(candidate.position) < game.player_foot.distance_to(boss.position):
 				boss = candidate
 		var config: Dictionary = Catalog.DEFINITIONS[boss.id]
-		text = "首领：%s  %d/%d · 小地图红菱形 · 首领进度 %d/6" % [config.name, boss.hp, boss.max_hp, 6 - remaining()]
+		nearby = game.visible_world().has_point(boss.position) and game.player_foot.distance_to(boss.position) <= 650
+		text = "%s  %d / %d" % [config.name, boss.hp, boss.max_hp]
 		if float(boss.windup) > 0:
-			text = "%s · %.1f秒后 %s！离开红圈" % [config.name, boss.windup, config.skill]
+			var skill := Skills.current(boss)
+			text = "%s · %.1f秒后 %s · %s" % [config.name, boss.windup, skill.name, skill.hint]
 	banner.text = text
+	banner.get_parent().visible = nearby
 
 func draw_world() -> void:
 	var canvas: Control = game.world_canvas
@@ -152,9 +167,7 @@ func draw_world() -> void:
 		var color := Color(config.color)
 		var point: Vector2 = boss.position
 		if float(boss.windup) > 0:
-			canvas.draw_circle(boss.target, float(config.radius), Color(0.95, 0.20, 0.14, 0.22))
-			canvas.draw_arc(boss.target, float(config.radius), 0, TAU, 64, Color("#ff8b61"), 3, true)
-			canvas.draw_arc(boss.target, float(config.radius) * (1.0 - float(boss.windup) / float(config.windup)), 0, TAU, 64, Color("#ffd3a1"), 3, true)
+			Skills.draw_warning(canvas,boss)
 		canvas.draw_set_transform(point, 0, Vector2(1, 0.28))
 		canvas.draw_circle(Vector2.ZERO, 48, Color(0.01, 0.02, 0.03, 0.55))
 		canvas.draw_set_transform(Vector2.ZERO)
@@ -165,6 +178,8 @@ func draw_world() -> void:
 		canvas.draw_rect(Rect2(top, Vector2(136, 7)), Color("#221f29"))
 		canvas.draw_rect(Rect2(top, Vector2(136.0 * float(boss.hp) / float(boss.max_hp), 7)), color)
 		canvas.draw_string(font, top + Vector2(-8, -9), config.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, color)
+	for cast: Dictionary in casts:
+		VFX.draw_cast(canvas,cast)
 
 func draw_minimap() -> void:
 	var rect := Rect2(Vector2(10, 30), game.minimap.size - Vector2(20, 40))

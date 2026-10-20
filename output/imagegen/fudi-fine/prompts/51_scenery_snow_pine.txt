@@ -1,0 +1,17 @@
+Use case: stylized-concept
+Asset type: finished pixel-art game scenery asset
+A single standalone environmental vegetation sprite: a hardy blue jade pine with layered boughs carrying thick white snow caps, icy blue shadow clusters and visible warm dark trunk.
+Three-quarter overhead RPG view, full plant including its root contact, centered with 10 percent margin.
+Rich layered foliage, intentional leaf clusters, natural asymmetric silhouette, beautiful bark or stem textures,
+dark cool inner canopy and warm top-left light. Strong clean pixel-art silhouette at game scale.
+No enclosing landscape, no ground plane, no pot, no square pedestal, no cast shadow.
+Solid perfectly flat bright magenta #ff00ff background, no checkerboard and no gradient.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel art, highly detailed and polished,
+consistent crisp square pixel clusters, selective dark outlines, layered cool shadows,
+warm top-left light, jade and teal, aged gold, cedar brown and muted plum palette.
+Rich material-specific pixel texture, deliberate clustered highlights, tasteful weathering.
+Authentic game asset, not vector art, not a flat geometric diagram, not a 3D render,
+not photorealistic, no smooth gradients, no blur, no anti-aliased painted edges.
+No characters, no monsters, no interface, no frame, no labels, no letters, no numbers,
+no watermark, no logos, no signature. Maintain a consistent art direction across this set.

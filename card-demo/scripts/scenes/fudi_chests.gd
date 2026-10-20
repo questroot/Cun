@@ -5,6 +5,8 @@ const Loot = preload("res://scripts/scenes/loot_catalog.gd")
 const Items = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Bosses = preload("res://scripts/scenes/boss_catalog.gd")
+const Skills = preload("res://scripts/scenes/boss_skills.gd")
+const VFX = preload("res://scripts/scenes/pixel_vfx.gd")
 const ENEMY_ART = preload("res://assets/characters/pet_enemy_stone.png")
 var game
 var rng := RandomNumberGenerator.new()
@@ -15,7 +17,7 @@ func play_visible() -> Array:
 	var result: Array = []
 	if not initialized or game._paused() or game.finished: return result
 	for chest: Dictionary in regions[game.region]:
-		var point: Vector2 = game.ARENA.position+chest.position-game.camera_origin
+		var point: Vector2 = game.world_to_screen(chest.position)
 		if not game.ARENA.has_point(point): continue
 		var label := "异变宝箱" if chest.mutated else "普通宝箱"
 		match chest.state:
@@ -37,16 +39,20 @@ func play_visible_encounters() -> Dictionary:
 		var boss: Dictionary = chest.boss
 		if int(boss.hp)>0:
 			_visible_actor(actors,boss.position,"守箱·"+str(Bosses.DEFINITIONS[boss.art].name))
-			if float(boss.windup)>0: _visible_warning(warnings,boss.target,105,"粉红攻击预警圈")
+			if float(boss.windup)>0:
+				var bounds := Skills.bounds(boss)
+				var clipped: Rect2 = game.ARENA.intersection(Rect2(game.world_to_screen(bounds.position),bounds.size*game.WORLD_ZOOM))
+				if clipped.has_area(): warnings.append({"appearance":"红色守箱首领攻击预警","visible_bounds":{"x":clipped.position.x,"y":clipped.position.y,"width":clipped.size.x,"height":clipped.size.y}})
 		if float(chest.warning)>0: _visible_warning(warnings,chest.position,135,"异变惊醒紫色圈")
 	return {"actors":actors,"warnings":warnings}
 
 func _visible_actor(result: Array, position: Vector2, title: String) -> void:
-	var point: Vector2 = game.ARENA.position+position-game.camera_origin
+	var point: Vector2 = game.world_to_screen(position)
 	if game.ARENA.has_point(point): result.append({"title":title,"x":point.x,"y":point.y})
 
 func _visible_warning(result: Array, position: Vector2, radius: float, appearance: String) -> void:
-	var center: Vector2 = game.ARENA.position+position-game.camera_origin
+	var center: Vector2 = game.world_to_screen(position)
+	radius *= game.WORLD_ZOOM
 	var bounds: Rect2 = game.ARENA.intersection(Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2))
 	if bounds.has_area(): result.append({"appearance":appearance,"visible_bounds":{"x":bounds.position.x,"y":bounds.position.y,"width":bounds.size.x,"height":bounds.size.y}})
 
@@ -75,14 +81,23 @@ func _add_chest(id: String, mutated: bool) -> void:
 	occupied.append_array(game.states[id].enemies)
 	occupied.append_array(regions[id])
 	var point: Vector2 = game._free_point(id, rng, occupied)
+	var separated_point := Vector2.INF
+	var preferred_margin := 150.0
+	if Maps.Art.has_art(id):
+		preferred_margin = float(Maps.MAPS[id].art_radius) - 35.0
 	# Prefer roomy ground so the initial encounter has safe, reachable spawn positions.
 	for attempt in range(200):
 		var separated := true
 		for other: Dictionary in regions[id]:
 			separated = separated and point.distance_to(other.position) >= 240
-		if Maps.walkable(id, point, 150) and separated:
-			break
+		if separated:
+			separated_point = point
+			if Maps.walkable(id, point, preferred_margin):
+				break
 		point = game._free_point(id, rng, occupied)
+	# A failed preference search must never discard the mandatory chest spacing.
+	if separated_point != Vector2.INF:
+		point = separated_point
 	regions[id].append({"position": point, "mutated": mutated, "state": "sealed", "mobs": [], "boss": {}, "warning": 0.0, "rewarded": false})
 
 func interaction_target() -> Dictionary:
@@ -159,6 +174,7 @@ func _start_encounter(chest: Dictionary) -> void:
 		chest.mobs.append({"position": points[i], "home": points[i], "hp": 36, "max_hp": 36, "damage": 6, "speed": 72.0, "flash": 0.0, "paid": false})
 	var hp := ceili(float(base.hp) * Rules.BOSS_HP_SCALE)
 	chest.boss = {"position": points[-1], "home": chest.position, "hp": hp, "max_hp": hp, "damage": ceili(float(base.damage) * Rules.BOSS_DAMAGE_SCALE), "flash": 0.0, "cooldown": 2.0, "windup": 0.0, "target": points[-1], "art": art_id, "paid": false, "hit_radius": 38.0, "hit_height": 45.0}
+	chest.boss.merge({"id":art_id,"skill_index":0,"cast_fx":{}})
 	chest.state = "guarding"
 	chest.warning = 1.2
 
@@ -224,7 +240,9 @@ func enter_region() -> void:
 		for chest: Dictionary in chests:
 			if chest.state == "guarding":
 				chest.boss.windup = 0.0
+				chest.boss.cast_fx = {}
 				chest.boss.cooldown = maxf(1.8, float(chest.boss.cooldown))
+				for mob: Dictionary in chest.mobs: mob["attack_fx"] = 0.0
 
 func _process(delta: float) -> void:
 	if initialized and game.is_processing() and not game.finished and not game._paused():
@@ -244,11 +262,15 @@ func tick(delta: float) -> void:
 			if int(mob.hp) <= 0:
 				continue
 			mob.flash = maxf(0, float(mob.flash) - delta)
+			mob["attack_fx"] = maxf(0,float(mob.get("attack_fx",0.0))-delta)
 			var offset: Vector2 = game.player_foot - mob.position
 			if offset.length() > 32 and offset.length() < 600:
 				var slow: float = game.equipment.effects.enemy_speed_scale(mob)
 				mob.position = game.move_world(mob.position, offset.normalized() * minf(float(mob.speed) * slow * delta, offset.length() - 32))
 			elif offset.length() <= 32:
+				if game.hurt_timer <= 0:
+					mob["attack_fx"] = VFX.LIFETIME
+					mob["attack_point"] = game.player_foot
 				_hurt(int(mob.damage))
 		_tick_boss(chest.boss, delta)
 	if game.health <= 0:
@@ -264,22 +286,29 @@ func _hurt(amount: int) -> void:
 
 func _tick_boss(boss: Dictionary, delta: float) -> void:
 	if int(boss.hp) <= 0:
+		boss["cast_fx"] = {}
 		return
+	var skill := Skills.current(boss)
+	if not boss.cast_fx.is_empty():
+		boss.cast_fx.life -= delta
+		if float(boss.cast_fx.life) <= 0: boss.cast_fx = {}
 	boss.flash = maxf(0, float(boss.flash) - delta)
 	if float(boss.windup) > 0:
 		boss.windup = maxf(0, float(boss.windup) - delta)
 		if float(boss.windup) == 0:
-			if game.player_foot.distance_to(boss.target) <= 105:
-				_hurt(int(boss.damage))
-			boss.cooldown = 3.4
+			boss.cast_fx = {"skill":skill,"target":boss.target,"origin":boss.cast_origin,"direction":boss.direction,"zones":boss.zones.duplicate(),"life":VFX.LIFETIME}
+			if Skills.hits(boss,game.player_foot):
+				_hurt(ceili(float(skill.damage)*Rules.BOSS_DAMAGE_SCALE))
+			boss.cooldown = skill.cooldown
+			boss.skill_index = (int(boss.skill_index)+1)%4
 		return
 	boss.cooldown = maxf(0, float(boss.cooldown) - delta)
 	var offset: Vector2 = game.player_foot - boss.position
 	if game.player_foot.distance_to(boss.home) > 650:
 		boss.position = game.move_world(boss.position, boss.position.direction_to(boss.home) * minf(55 * delta, boss.position.distance_to(boss.home)))
-	elif offset.length() <= 240 and float(boss.cooldown) <= 0 and _path_clear(game.region, boss.position, game.player_foot):
-		boss.target = game.player_foot
-		boss.windup = 1.25
+	elif offset.length() <= float(skill.reach) and float(boss.cooldown) <= 0 and _path_clear(game.region, boss.position, game.player_foot):
+		Skills.lock(boss,game.player_foot)
+		boss.windup = skill.windup
 	elif offset.length() > 65:
 		var slow: float = game.equipment.effects.enemy_speed_scale(boss)
 		boss.position = game.move_world(boss.position, offset.normalized() * minf(55 * slow * delta, offset.length() - 65))
@@ -325,14 +354,18 @@ func draw_world() -> void:
 			if int(mob.hp) <= 0:
 				continue
 			_draw_guard(canvas, mob, ENEMY_ART, Vector2(66, 66), "异变守卫", 25)
+			if float(mob.get("attack_fx",0.0)) > 0:
+				VFX.draw(canvas,"guard-fog",mob.get("attack_point",mob.position),VFX.LIFETIME-float(mob.attack_fx),Vector2.ONE*2)
 		var boss: Dictionary = chest.boss
 		if int(boss.hp) > 0:
 			if float(boss.windup) > 0:
-				canvas.draw_circle(boss.target, 105, Color(0.85, 0.25, 0.65, 0.24))
-				canvas.draw_arc(boss.target, 105, 0, TAU, 48, Color("#ffabd5"), 3, true)
+				Skills.draw_warning(canvas,boss)
+				var skill := Skills.current(boss)
+				canvas.draw_string(font,boss.target+Vector2(-90,-20),"%s · %s" % [skill.name,skill.hint],HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("#fff0c0"))
 			var art: Texture2D = Bosses.ART[boss.art]
 			var extent := Vector2(art.get_width(), art.get_height()) * 0.72
 			_draw_guard(canvas, boss, art, extent, "守箱·" + str(Bosses.DEFINITIONS[boss.art].name), 56)
+			if not boss.cast_fx.is_empty(): VFX.draw_cast(canvas,boss.cast_fx)
 		if float(chest.warning) > 0:
 			canvas.draw_arc(point, 135, 0, TAU, 48, Color("#e3a3ff"), 4, true)
 			canvas.draw_string(font, point + Vector2(55, -55), "异变惊醒！准备迎战", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#e8c4ff"))

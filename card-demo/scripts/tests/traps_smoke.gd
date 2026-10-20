@@ -75,6 +75,10 @@ func run_checks() -> void:
 		printerr("Trap checks require an isolated Cun-Traps-* save directory.")
 		quit(2)
 		return
+	if not Catalog.ENABLED:
+		print("TRAPS_RESULT: SKIPPED (地图陷阱暂已停用，保留启用时的机制检查)")
+		quit(0)
+		return
 	await frames()
 	var data = root.get_node("DataManager")
 	data.write_save()
@@ -198,6 +202,10 @@ func run_checks() -> void:
 	traps.tick(0.1)
 	check(traps.hazards.is_empty() and traps.timers.grove == 2, "安全区触发检查失败后延迟重试，无凭空伤害")
 	prepare("grove")
+	# A long lane has room for both complete warning circles inside the camera.
+	# The first legal test point is a building stair endpoint, where deferral is valid.
+	game.player_foot = Maps.MAPS.grove.size * Vector2(0.53, 0.60)
+	game._update_camera()
 	var positions: Array[Vector2] = []
 	var kinds: Dictionary = {}
 	var intervals: Dictionary = {}
@@ -207,13 +215,16 @@ func run_checks() -> void:
 		traps.timers.grove = 0
 		traps.tick(0.1)
 		if traps.hazards.is_empty():
+			print("TRAP_DIAGNOSTIC missed roll=%d player=%s camera=%s" % [roll, game.player_foot, game.camera_origin])
 			valid = false
 			continue
 		var hazard: Dictionary = traps.hazards[0]
 		positions.append(hazard.position)
 		kinds[hazard.kind] = true
 		intervals[int(float(traps.timers.grove) * 100)] = true
-		valid = valid and traps.valid_point("grove", hazard.position, Catalog.TRAPS[hazard.kind].radius) and Rect2(game.camera_origin, game.ARENA.size).has_point(hazard.position) and float(traps.timers.grove) >= 8 and float(traps.timers.grove) <= 14
+		valid = valid and traps.valid_point("grove", hazard.position, Catalog.TRAPS[hazard.kind].radius) and game.visible_world().has_point(hazard.position) and float(traps.timers.grove) >= 8 and float(traps.timers.grove) <= 14
+	if not valid or positions.size() != 25 or kinds.size() != 2 or intervals.size() <= 5:
+		print("TRAP_DIAGNOSTIC positions=%d kinds=%s intervals=%d valid=%s" % [positions.size(), kinds, intervals.size(), valid])
 	check(valid and positions.size() == 25 and positions[0] != positions[1] and kinds.size() == 2 and intervals.size() > 5, "实际随机调度生成不同类型、坐标与8–14秒间隔，且位于可见合法区域")
 	prepare("grove")
 	traps.spawn("thorns", point)

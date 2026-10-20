@@ -1,0 +1,501 @@
+[
+  {
+    "id": "zhu-shen",
+    "name": "祝婶",
+    "role": "灶街掌勺人",
+    "canvas": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "master": "masters/zhu-shen.png",
+    "display": "display/zhu-shen-8x.png",
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 12,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          291
+        ],
+        [
+          "#f5e7c5",
+          179
+        ],
+        [
+          "#e7a477",
+          164
+        ],
+        [
+          "#793548",
+          164
+        ],
+        [
+          "#ad5855",
+          154
+        ],
+        [
+          "#624052",
+          109
+        ],
+        [
+          "#a6654a",
+          92
+        ],
+        [
+          "#ffdab0",
+          56
+        ],
+        [
+          "#a6a7ae",
+          52
+        ],
+        [
+          "#daa45e",
+          48
+        ],
+        [
+          "#e38c6d",
+          11
+        ],
+        [
+          "#bb5254",
+          4
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "a-jian",
+    "name": "阿缄",
+    "role": "旧城邮差",
+    "canvas": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "master": "masters/a-jian.png",
+    "display": "display/a-jian-8x.png",
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 11,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          337
+        ],
+        [
+          "#303f62",
+          201
+        ],
+        [
+          "#546b99",
+          176
+        ],
+        [
+          "#624052",
+          131
+        ],
+        [
+          "#e7a477",
+          118
+        ],
+        [
+          "#daa45e",
+          116
+        ],
+        [
+          "#a6654a",
+          104
+        ],
+        [
+          "#f5e7c5",
+          52
+        ],
+        [
+          "#ffdab0",
+          42
+        ],
+        [
+          "#91acc0",
+          37
+        ],
+        [
+          "#bb5254",
+          6
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "wen-yan",
+    "name": "温砚",
+    "role": "石像修复师",
+    "canvas": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "master": "masters/wen-yan.png",
+    "display": "display/wen-yan-8x.png",
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 11,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          287
+        ],
+        [
+          "#624052",
+          261
+        ],
+        [
+          "#a6654a",
+          250
+        ],
+        [
+          "#6a7c69",
+          148
+        ],
+        [
+          "#3d4747",
+          146
+        ],
+        [
+          "#e7a477",
+          131
+        ],
+        [
+          "#daa45e",
+          85
+        ],
+        [
+          "#ffdab0",
+          51
+        ],
+        [
+          "#a6a7ae",
+          23
+        ],
+        [
+          "#a4b38b",
+          10
+        ],
+        [
+          "#f5e7c5",
+          4
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "lu-jianwei",
+    "name": "陆见微",
+    "role": "记录研究员",
+    "canvas": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "master": "masters/lu-jianwei.png",
+    "display": "display/lu-jianwei-8x.png",
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 12,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          318
+        ],
+        [
+          "#e7a477",
+          160
+        ],
+        [
+          "#624052",
+          151
+        ],
+        [
+          "#f5e7c5",
+          135
+        ],
+        [
+          "#453e68",
+          130
+        ],
+        [
+          "#766a9c",
+          117
+        ],
+        [
+          "#daa45e",
+          70
+        ],
+        [
+          "#ffdab0",
+          46
+        ],
+        [
+          "#a6654a",
+          32
+        ],
+        [
+          "#b1a1ca",
+          24
+        ],
+        [
+          "#a6a7ae",
+          18
+        ],
+        [
+          "#bb5254",
+          4
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "shi-yi",
+    "name": "拾一",
+    "role": "救援机偶",
+    "canvas": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "master": "masters/shi-yi.png",
+    "display": "display/shi-yi-8x.png",
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 10,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          348
+        ],
+        [
+          "#254f5d",
+          292
+        ],
+        [
+          "#a6a7ae",
+          227
+        ],
+        [
+          "#427f88",
+          174
+        ],
+        [
+          "#f5e7c5",
+          158
+        ],
+        [
+          "#85c8c0",
+          47
+        ],
+        [
+          "#624052",
+          30
+        ],
+        [
+          "#daa45e",
+          24
+        ],
+        [
+          "#a6654a",
+          22
+        ],
+        [
+          "#bb5254",
+          14
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "stage-guide",
+    "name": "关卡向导",
+    "role": "主城引路人",
+    "canvas": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "master": "masters/stage-guide.png",
+    "display": "display/stage-guide-8x.png",
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 11,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          326
+        ],
+        [
+          "#f5e7c5",
+          244
+        ],
+        [
+          "#347a78",
+          219
+        ],
+        [
+          "#244e56",
+          198
+        ],
+        [
+          "#624052",
+          95
+        ],
+        [
+          "#e7a477",
+          83
+        ],
+        [
+          "#a6654a",
+          62
+        ],
+        [
+          "#ffdab0",
+          47
+        ],
+        [
+          "#a6a7ae",
+          45
+        ],
+        [
+          "#daa45e",
+          40
+        ],
+        [
+          "#78b69e",
+          7
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "merchant",
+    "name": "城镇商人",
+    "role": "通用商人",
+    "canvas": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "master": "masters/merchant.png",
+    "display": "display/merchant-8x.png"
+  }
+]

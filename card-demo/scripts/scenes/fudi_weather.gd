@@ -4,6 +4,7 @@ const Ecology = preload("res://scripts/scenes/weather_ecology.gd")
 const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
 var game: Control
 var elapsed := 0.0
 var climates: Dictionary = {}
@@ -17,7 +18,7 @@ func play_visible() -> Array:
 	var result: Array = []
 	if not initialized or game._paused() or game.finished: return result
 	for plot: Dictionary in plots[game.region]:
-		var point: Vector2 = game.ARENA.position+plot.position-game.camera_origin
+		var point: Vector2 = game.world_to_screen(plot.position)
 		if not game.ARENA.has_point(point): continue
 		var entry := {"x":point.x,"y":point.y,"appearance":"圆形药圃与生长弧"}
 		# Match the draw-time proximity rule and require the complete label to fit.
@@ -26,7 +27,7 @@ func play_visible() -> Array:
 			var stage := "成熟 · 靠近采集" if plot.ripe else ("生长 %d%%" % int(progress*100) if Ecology.compatible(plot.item,climates[game.region]) else "待候 %d%%" % int(progress*100))
 			var label := "%s · %s" % [Catalog.ITEMS[plot.item].name,stage]
 			var font := ThemeDB.fallback_font
-			var label_bounds := Rect2(point+Vector2(-50,42-font.get_ascent(16)),font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,16))
+			var label_bounds := Rect2(point+Vector2(-50,42-font.get_ascent(16))*game.WORLD_ZOOM,font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,16)*game.WORLD_ZOOM)
 			if game.ARENA.encloses(label_bounds): entry["visible_label"] = label
 		result.append(entry)
 	return result
@@ -58,16 +59,17 @@ func initialize() -> void:
 	game.world_canvas.add_child(garden)
 	game.minimap.draw.connect(_draw_garden_map)
 	overlay = Control.new()
+	overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	overlay.size = game.ARENA.size
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.draw.connect(_draw_weather)
 	game.world_view.add_child(overlay)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(10, 8)
-	panel.add_theme_stylebox_override("panel", UI.panel(Color(0.04, 0.09, 0.12, 0.87)))
+	panel.position = Vector2(12, 12)
+	panel.add_theme_stylebox_override("panel", UI.hud_panel(Color(0.04, 0.09, 0.12, 0.82)))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(panel)
-	weather_label = UI.label("", 16)
+	weather_label = UI.label("", 14)
 	panel.add_child(weather_label)
 	game.tools.atlas.set_meta("weather_provider", summary)
 	initialized = true
@@ -143,7 +145,8 @@ func adapt_enemies(id: String) -> void:
 
 func _refresh() -> void:
 	garden.size = game.world_canvas.size
-	weather_label.text = "%s  |  小地图绿点：再生药圃 · 成熟后靠近采集  |  B 生态" % Ecology.describe(game.region, elapsed)
+	var climate: Dictionary = Ecology.WEATHER[climates[game.region]]
+	weather_label.text = "%s · %s属性" % [climate.name, climate.attribute]
 	overlay.queue_redraw()
 	garden.queue_redraw()
 
@@ -179,30 +182,5 @@ func _draw_garden_map() -> void:
 func _draw_weather() -> void:
 	if not initialized:
 		return
-	var area := overlay.size
 	var weather: String = climates[game.region]
-	var color := Color(Ecology.WEATHER[weather].color)
-	var clock := elapsed
-	if weather == "fog":
-		overlay.draw_rect(Rect2(Vector2.ZERO, area), Color(color, 0.09))
-		for i in range(8):
-			var x := fposmod(i * 193.0 + clock * 13, area.x + 200) - 100
-			overlay.draw_circle(Vector2(x, 110 + sin(i * 2.4 + clock * 0.15) * 120), 125, Color(color, 0.035))
-	elif weather == "heat":
-		overlay.draw_rect(Rect2(Vector2.ZERO, area), Color(color, 0.045))
-		for i in range(20):
-			var point := Vector2(fposmod(i * 127.0 + sin(clock + i) * 12, area.x), area.y - fposmod(i * 53 + clock * 20, area.y))
-			overlay.draw_circle(point, 2, Color(color, 0.5))
-	elif weather in ["rain", "storm", "snow", "wind"]:
-		for i in range(65 if weather != "wind" else 24):
-			var point := Vector2(fposmod(i * 137.0 + clock * (35 if weather == "snow" else 90), area.x), fposmod(i * 73.0 + clock * (24 if weather == "snow" else 290), area.y))
-			if weather == "snow":
-				overlay.draw_circle(point, 2 + i % 2, Color(color, 0.7))
-			else:
-				overlay.draw_line(point, point + (Vector2(28, -4) if weather == "wind" else Vector2(-7, 16)), Color(color, 0.45), 1, true)
-		if weather == "storm" and fmod(clock, 8) < 0.10:
-			overlay.draw_rect(Rect2(Vector2.ZERO, area), Color(color, 0.07))
-	else:
-		for i in range(16):
-			var point := Vector2(fposmod(i * 173.0 + clock * 9, area.x), 80 + fposmod(i * 61.0 + sin(clock * 0.8 + i) * 12, area.y - 80))
-			overlay.draw_circle(point, 2, Color(color, 0.55))
+	PixelVFX.draw_weather(overlay,weather,overlay.size,elapsed)

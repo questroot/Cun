@@ -1,0 +1,1 @@
+Replace the entire background with a single perfectly flat solid bright green color #00FF00 for chroma key. Remove ALL shadows, glow, gradients, brown and pink haze outside the building. Preserve the complete building, towers, flags, postbox and steps exactly. No green inside the building. Output a clean standalone game sprite on a uniform green rectangle.

@@ -1,0 +1,125 @@
+{
+  "image": "npc-ten-atlas.png",
+  "frames": [
+    {
+      "id": "lu-yan",
+      "name": "路盐",
+      "x": 0,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "jin-suanpan",
+      "name": "金算盘",
+      "x": 48,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "shen-heng",
+      "name": "沈衡",
+      "x": 96,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "luo-zhu",
+      "name": "洛铸",
+      "x": 144,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "ye-ting",
+      "name": "叶汀",
+      "x": 192,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "qiao-huang",
+      "name": "乔簧",
+      "x": 0,
+      "y": 64,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "cen-chi",
+      "name": "岑尺",
+      "x": 48,
+      "y": 64,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "xie-tingzhou",
+      "name": "谢停舟",
+      "x": 96,
+      "y": 64,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "wen-zhou",
+      "name": "闻昼",
+      "x": 144,
+      "y": 64,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "changdaozhe",
+      "name": "长祷者",
+      "x": 192,
+      "y": 64,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    }
+  ]
+}

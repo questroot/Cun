@@ -1,6 +1,7 @@
 """Reproducible original synth score and Foley. Requires numpy; no samples/network.
 
-Run with Python 3.10+: python tools/build_fudi_audio.py
+Legacy v1 only: python tools/build_fudi_audio.py --legacy-v1
+Current orchestral music: tools/build_fudi_orchestra.py (preserves Foley).
 PCM stereo WAVs are directly editable/importable in Godot. All echo tails wrap
 around the musical period, so loops retain their ambience across the seam.
 """
@@ -197,6 +198,9 @@ def sfx():
 
 
 if __name__ == '__main__':
+    import sys
+    if '--legacy-v1' not in sys.argv:
+        raise SystemExit('This is the legacy short-loop synthesizer. Use tools/build_fudi_orchestra.py for the current score. --legacy-v1 explicitly restores the old audio set.')
     for spec in MAPS:
         score(spec)
     for spec in BOSSES:

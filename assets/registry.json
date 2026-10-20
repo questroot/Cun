@@ -1336,275 +1336,275 @@
     },
     {
       "id": "asset_55e81a0a6a6eae3b",
-      "name": "boss_H01",
-      "path": "card-demo/assets/audio/music/boss_H01.wav",
+      "name": "残旗剑士·断刃电流",
+      "path": "card-demo/assets/audio/music/boss_H01.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "残旗急阵; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "0f4914995cb4799f319811e65b711aa0276e41300a6ae66356266228f51e8f9e"
+      "notes": "五拍硬摇滚; solo opener: distortion_guitar; 5/4; 72 bars; 10 instrumental parts; editable MIDI: tools/audio/scores/boss_H01.mid; human listening review pending",
+      "sha256": "f95a2d8416e641cb199e2497a773ec2e0bf764708ee1a25351db0948d86c99c9"
     },
     {
       "id": "asset_41a15ce9246b8609",
-      "name": "boss_H02",
-      "path": "card-demo/assets/audio/music/boss_H02.wav",
+      "name": "荆冠鹿骑·跃枝追猎",
+      "path": "card-demo/assets/audio/music/boss_H02.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "荆冠逐猎; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "bcdf71a5dc1fa57b92c91d9b87ffeab956d934ed0e07dedb44c4d81f395ead33"
+      "notes": "六拍民谣摇滚; solo opener: violin; 6/8; 72 bars; 10 instrumental parts; editable MIDI: tools/audio/scores/boss_H02.mid; human listening review pending",
+      "sha256": "99b06c93eaa99849de956b2c6a9a8bbc565fa6eff26572b6ad53f253754f6483"
     },
     {
       "id": "asset_898eb4e2450e8b30",
-      "name": "boss_H03",
-      "path": "card-demo/assets/audio/music/boss_H03.wav",
+      "name": "沉潜重装·液压脉冲",
+      "path": "card-demo/assets/audio/music/boss_H03.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "沉潜铁潮; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "6fd7343ff9b6a84523e72d688d0924338c65adade66f3de0347aaa9a2f2b97e7"
+      "notes": "半拍工业重摇滚; solo opener: electric_bass; 4/4; 72 bars; 9 instrumental parts; editable MIDI: tools/audio/scores/boss_H03.mid; human listening review pending",
+      "sha256": "000f2ebbbeaa462adaf9bc2fb15e40cf9d4ab0592e5fa9236f35894c5a35bf25"
     },
     {
       "id": "asset_74eca930013992f5",
-      "name": "boss_H04",
-      "path": "card-demo/assets/audio/music/boss_H04.wav",
+      "name": "灰翼审判者·天穹折光",
+      "path": "card-demo/assets/audio/music/boss_H04.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "灰翼裁决; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "8b21ac629def10fdb860296ff21dd78865977426b2d412ddd92f561f68de41f5"
+      "notes": "钢琴交响摇滚; solo opener: piano; 4/4; 72 bars; 10 instrumental parts; editable MIDI: tools/audio/scores/boss_H04.mid; human listening review pending",
+      "sha256": "674209084fe9f7fa1a8c2ec05f247a64d7cc11359d0521da2cf57ade3835d777"
     },
     {
       "id": "asset_b83189114f338419",
-      "name": "boss_H05",
-      "path": "card-demo/assets/audio/music/boss_H05.wav",
+      "name": "霜典记录者·镜面错码",
+      "path": "card-demo/assets/audio/music/boss_H05.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "霜文封印; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "46f23ef4ee331e0fbf3e822d1d6b694d0c6d8039bc1e0b7d2c156004d4db257d"
+      "notes": "七拍前卫摇滚; solo opener: clean_guitar; 7/8; 72 bars; 12 instrumental parts; editable MIDI: tools/audio/scores/boss_H05.mid; human listening review pending",
+      "sha256": "dbfa210ddf827d18fffad8096cc078c5a67ee2c8282b64cc276d7b01e48c558a"
     },
     {
       "id": "asset_3e87ef803c98193b",
-      "name": "boss_H06",
-      "path": "card-demo/assets/audio/music/boss_H06.wav",
+      "name": "锈钟守望者·锈蚀钟摆",
+      "path": "card-demo/assets/audio/music/boss_H06.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "锈钟震鸣; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "58af38a10112b2abae457d5aa0087ec44b76c1a20fb31b3eacb73929f73418c5"
+      "notes": "三拍厄运摇滚; solo opener: glock; 3/4; 72 bars; 12 instrumental parts; editable MIDI: tools/audio/scores/boss_H06.mid; human listening review pending",
+      "sha256": "8b6f148f5c1cd64ecc6b57652cda2ee87876a3ac4bb32dbf03e21a718c526453"
     },
     {
       "id": "asset_99be6405247862af",
-      "name": "map_archive",
-      "path": "card-demo/assets/audio/music/map_archive.wav",
+      "name": "镜沙档案馆·镜中复调",
+      "path": "card-demo/assets/audio/music/map_archive.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "镜沙残页; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "17fdbee87e42808bd2c1ca4262149835c3bf4c0e93d82c69015f2dde47625a4f"
+      "notes": "档案复调; solo opener: celesta; 4/4; 64 bars; 10 instrumental parts; editable MIDI: tools/audio/scores/map_archive.mid; human listening review pending",
+      "sha256": "c275ce18fa6b23ea5e562572000a80ff8d5d635f0af3da076c9b75da5b8ed413"
     },
     {
       "id": "asset_15299352be1621a4",
-      "name": "map_causeway",
-      "path": "card-demo/assets/audio/music/map_causeway.wav",
+      "name": "断桥驿路·风中的旧路标",
+      "path": "card-demo/assets/audio/music/map_causeway.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "断桥彼岸; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "c9d60e1ba6f43b9a4bc2332d47cb6639350026ee08e8d1fa4bc6b20f27ca0205"
+      "notes": "旅途民谣; solo opener: steel_guitar; 4/4; 64 bars; 9 instrumental parts; editable MIDI: tools/audio/scores/map_causeway.mid; human listening review pending",
+      "sha256": "98a6b45bda798349f9f7b7e9d56f8d8b3e7ea0da535cffc97a32ecceb3e93e40"
     },
     {
       "id": "asset_6b6b652d5e3ff0c2",
-      "name": "map_grove",
-      "path": "card-demo/assets/audio/music/map_grove.wav",
+      "name": "青岚灶街·烟火圆舞曲",
+      "path": "card-demo/assets/audio/music/map_grove.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "灶火与青岚; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "b707180cb4f1023cd079c12fcbbe0b66b5d03e575cf17b08aaf2aa8fa070b398"
+      "notes": "街巷圆舞曲; solo opener: flute; 3/4; 64 bars; 9 instrumental parts; editable MIDI: tools/audio/scores/map_grove.mid; human listening review pending",
+      "sha256": "2d3fde7e0d8fa51108c0293d183d51a938b3fe6d29ce2bec47b560966bef766a"
     },
     {
       "id": "asset_a6aa62ae877545d1",
-      "name": "map_kilnwood",
-      "path": "card-demo/assets/audio/music/map_kilnwood.wav",
+      "name": "松烟炭林·封火后的余温",
+      "path": "card-demo/assets/audio/music/map_kilnwood.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "松烟余温; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "d13efece1c1532c8c22e53d239b3bfa967924d02fa3e5552219388c6d3cfc60a"
+      "notes": "炭林低木管; solo opener: bassoon; 3/4; 64 bars; 9 instrumental parts; editable MIDI: tools/audio/scores/map_kilnwood.mid; human listening review pending",
+      "sha256": "b5d79a9134e025c0f4d4413a3bfed75b7e290c4d4d8d115cad9f0e65c1259c6b"
     },
     {
       "id": "asset_d83c7c8c322f441a",
-      "name": "map_post",
-      "path": "card-demo/assets/audio/music/map_post.wav",
+      "name": "旧城邮驿·无人签收的信",
+      "path": "card-demo/assets/audio/music/map_post.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "未寄出的信; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "da4652b665dd5a51d88242caa3a6c2bc68add300c3e82a2fd7747cc5c383ba7b"
+      "notes": "书信室内乐; solo opener: cello; 4/4; 64 bars; 8 instrumental parts; editable MIDI: tools/audio/scores/map_post.mid; human listening review pending",
+      "sha256": "80c9a1572baff8d4d523e25562b490c0b62745a9dc4bf26fbeac7580abc0e437"
     },
     {
       "id": "asset_ec5340ca740c122e",
-      "name": "map_quarry",
-      "path": "card-demo/assets/audio/music/map_quarry.wav",
+      "name": "赤岩钟楼·石与铜的回响",
+      "path": "card-demo/assets/audio/music/map_quarry.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "赤岩晚钟; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "6faf9765946b2d1caf9899816eda3f51b8335e3019c5857dde6fc169f3bdb1c0"
+      "notes": "石壁铜管回响; solo opener: trombone; 4/4; 64 bars; 12 instrumental parts; editable MIDI: tools/audio/scores/map_quarry.mid; human listening review pending",
+      "sha256": "8ac19ef939a01f632e8db5b25cbfbf97fff473e807d9a26e0348f3b40848f73e"
     },
     {
       "id": "asset_343755a768a8b3cb",
-      "name": "map_refuge",
-      "path": "card-demo/assets/audio/music/map_refuge.wav",
+      "name": "归航救援营·把名字带回家",
+      "path": "card-demo/assets/audio/music/map_refuge.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "循光归航; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "24718f5dbc332e9f868c0f318fe00303b5a8537b88dc263a8b970e2b049d850f"
+      "notes": "营地木吉他赞歌; solo opener: nylon_guitar; 4/4; 64 bars; 10 instrumental parts; editable MIDI: tools/audio/scores/map_refuge.mid; human listening review pending",
+      "sha256": "0e6c7d7c6609f9aaf8fc29b8bc9eafabcd6c0068a4e709d42811ebd2c2c28c94"
     },
     {
       "id": "asset_e5ec184e409f4db3",
-      "name": "map_ruins",
-      "path": "card-demo/assets/audio/music/map_ruins.wav",
+      "name": "灵泉记录站·七分钟的涟漪",
+      "path": "card-demo/assets/audio/music/map_ruins.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "灵泉旧记录; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "2340b2d700616b702ef7c5942f3890b70ec4d1a4e75c5697a9176c4c5053e718"
+      "notes": "水纹竖琴; solo opener: harp; 5/4; 64 bars; 9 instrumental parts; editable MIDI: tools/audio/scores/map_ruins.mid; human listening review pending",
+      "sha256": "a260611718c05432645c4b200223aaf15bb785ea8e3b0563934f0bfec3c3bb34"
     },
     {
       "id": "asset_7a204cf2de688265",
-      "name": "map_snowridge",
-      "path": "card-demo/assets/audio/music/map_snowridge.wav",
+      "name": "霜脊瞭望岭·群山与归队信标",
+      "path": "card-demo/assets/audio/music/map_snowridge.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "霜脊信标; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "7547d1d756742497751fb93732aceec2d0ddf4b9708cbc9d417d16c6b54fa5fa"
+      "notes": "雪岭铜管诗; solo opener: horn; 4/4; 64 bars; 11 instrumental parts; editable MIDI: tools/audio/scores/map_snowridge.mid; human listening review pending",
+      "sha256": "1d8b44fa44587b6f4b92ee1d5201347da3b0c593d81155fc7d57209969ae4311"
     },
     {
       "id": "asset_bdd64f3819610c69",
-      "name": "map_wetland",
-      "path": "card-demo/assets/audio/music/map_wetland.wav",
+      "name": "雨灯湿地·渡口夜船歌",
+      "path": "card-demo/assets/audio/music/map_wetland.ogg",
       "kind": "audio",
       "tags": [
         "fudi",
-        "procedural-audio",
-        "music"
+        "orchestral-music",
+        "hybrid-v3"
       ],
-      "source": "tools/build_fudi_audio.py (seed 20261020; original procedural synthesis; no external samples)",
+      "source": "Original score: tools/fudi_orchestra_scores.py; GeneralUser GS 2.0.3; see assets/audio/GENERALUSER-LICENSE.txt",
       "license": "unknown",
-      "author": "Codex procedural composition for Cun",
+      "author": "Cun / Codex original composition; instrument samples: S. Christian Collins / GeneralUser GS contributors",
       "status": "draft",
-      "notes": "雨灯浮水; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
-      "sha256": "fd0c6d46c9787a76862237750da89fd45f54bc72748ad1dd9418802b310b34c2"
+      "notes": "雨夜船歌; solo opener: clarinet; 6/8; 64 bars; 10 instrumental parts; editable MIDI: tools/audio/scores/map_wetland.mid; human listening review pending",
+      "sha256": "2c839c2afe59ac85efd395e2ec747ba4f89d5860a978e05b26ac9c23ffa16c6f"
     },
     {
       "id": "asset_dc196e4a2f6e279b",
@@ -1894,6 +1894,440 @@
       "status": "draft",
       "notes": "warning; source and parameters in card-demo/assets/audio/manifest.json; listening review pending; license not assigned",
       "sha256": "1844f09677811c7eb95842c9e5754e0237bd2cba7d40e356515d834d1aea966c"
+    },
+    {
+      "id": "asset_263f79bbf2e39912",
+      "name": "archive",
+      "path": "card-demo/assets/backgrounds/fudi/archive.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "90973747649b239d00350909a25210e26e2942c7a69dd57dc1eb8af3a524712b"
+    },
+    {
+      "id": "asset_32a265829b0006f3",
+      "name": "causeway",
+      "path": "card-demo/assets/backgrounds/fudi/causeway.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "67f48eeeee5be3a5e2caf78893a448382d6890d8de0c88f25005b2db38bea8a5"
+    },
+    {
+      "id": "asset_fe331a556b44c105",
+      "name": "grove",
+      "path": "card-demo/assets/backgrounds/fudi/grove.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "f3553c2f29bbd777935fc68bb3a8c6d4b736396abccfaf960030036cb661009a"
+    },
+    {
+      "id": "asset_9ec714d98248b3bc",
+      "name": "kilnwood",
+      "path": "card-demo/assets/backgrounds/fudi/kilnwood.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "436c89be2f7e75272cf73df0e2c6d479b4e112631f84d55d676787ad518ebb86"
+    },
+    {
+      "id": "asset_0e59d6057666c095",
+      "name": "post",
+      "path": "card-demo/assets/backgrounds/fudi/post.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "34c2050777067d6b2a7c27d15a00117d504bdcdd390d34055828ab802eedc517"
+    },
+    {
+      "id": "asset_960b36bf6cc51b83",
+      "name": "quarry",
+      "path": "card-demo/assets/backgrounds/fudi/quarry.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "129ae489614a5b232ae2bbbc5368f147fc3b860033e175d13a02263f981a9d75"
+    },
+    {
+      "id": "asset_7946708d7de0c094",
+      "name": "refuge",
+      "path": "card-demo/assets/backgrounds/fudi/refuge.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "4f56119061083aed7b9c14834673873c8d6567791061d87360f52f2f2e0d1204"
+    },
+    {
+      "id": "asset_911f87439f76fd2f",
+      "name": "ruins",
+      "path": "card-demo/assets/backgrounds/fudi/ruins.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "44d3f16b76588602d6950e8f674137ac18ff2c74a5cfbd43b70281acdbb472f6"
+    },
+    {
+      "id": "asset_8fba303e084f0545",
+      "name": "wetland",
+      "path": "card-demo/assets/backgrounds/fudi/wetland.webp",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "map",
+        "generated",
+        "lossless"
+      ],
+      "source": "Existing gpt-image-2 gateway generation; output/imagegen/fudi-fine/",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Nine finished map paintings requested for scene replacement, 2026-10-20. Lossless WebP decoded pixels verified against source PNG; hashes and reviewed navigation in adjacent manifest.json. Release rights not independently verified.",
+      "sha256": "36805a42a466f02082b3ec2a225378028280587176a5a5fc5d534cffccd4e135"
+    },
+    {
+      "id": "asset_bd81f9cf05496952",
+      "name": "cen-chi",
+      "path": "card-demo/assets/characters/npcs/cen-chi.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "ba4b16ec4a5b23ce50129fd844ae608ba9d67c0961968d83c0fec7e4e2c298b9"
+    },
+    {
+      "id": "asset_bbcd4d3227baf70b",
+      "name": "changdaozhe",
+      "path": "card-demo/assets/characters/npcs/changdaozhe.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "a895343429c7e142285b62304e7199a7a368c7291148ce271169da4ca1d483eb"
+    },
+    {
+      "id": "asset_4a11dfa46b989dfa",
+      "name": "jin-suanpan",
+      "path": "card-demo/assets/characters/npcs/jin-suanpan.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "bf434f9615985811eea697c2285be3a7624d4068e70066684e5d83d29d3408b7"
+    },
+    {
+      "id": "asset_152e4c5854c9d9f2",
+      "name": "lu-yan",
+      "path": "card-demo/assets/characters/npcs/lu-yan.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "4c3e79259037534496ef314952a60e54602213c5404f737a8ba3041fbf16554f"
+    },
+    {
+      "id": "asset_1d614ee60e66c0eb",
+      "name": "luo-zhu",
+      "path": "card-demo/assets/characters/npcs/luo-zhu.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "268055f867ef5f9e5d9b4fcd8274f4e598c344a225a8d3a68b0227ef82f948f2"
+    },
+    {
+      "id": "asset_6cd5b6164fb344d9",
+      "name": "qiao-huang",
+      "path": "card-demo/assets/characters/npcs/qiao-huang.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "a4bba7030b43f239be58c6b8b6ae4dd81b9b5ebf675e33772bd376a53f51bfa1"
+    },
+    {
+      "id": "asset_6dace88b881d8b5b",
+      "name": "shen-heng",
+      "path": "card-demo/assets/characters/npcs/shen-heng.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "1b8ab6ea11d864fe301cc9e37a64124871bcaa21e95f927c72fc58c67a54fcd1"
+    },
+    {
+      "id": "asset_29391b76cf1cd6f7",
+      "name": "wen-zhou",
+      "path": "card-demo/assets/characters/npcs/wen-zhou.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "c8af0f257aa0d7546342fcbe012a1705c610c90002e54acaffabee548aa88b59"
+    },
+    {
+      "id": "asset_fe04a144f7367bfd",
+      "name": "xie-tingzhou",
+      "path": "card-demo/assets/characters/npcs/xie-tingzhou.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "006c5be3475e947659e2e43b638ae5986d622280e0ff3ed7c6fc8789669dc8b2"
+    },
+    {
+      "id": "asset_98d9de89a70e486a",
+      "name": "ye-ting",
+      "path": "card-demo/assets/characters/npcs/ye-ting.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "npc",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/npc-expansion/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "b1f914f24ca11c982f91c984646eff361572c9b1803a2ab277a07a9e811ec902"
+    },
+    {
+      "id": "asset_bd8832ff7454e04b",
+      "name": "blue-exclamation",
+      "path": "card-demo/assets/ui/quest-markers/blue-exclamation.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "quest-marker",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/quest-markers/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "fea0ac4cd301a2da57e5346a1c2bf705cea40e526b2621533d8f70ed5c96345e"
+    },
+    {
+      "id": "asset_63525844917d6043",
+      "name": "blue-question",
+      "path": "card-demo/assets/ui/quest-markers/blue-question.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "quest-marker",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/quest-markers/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "d511415d133f227270907c4b67bb8ae4204286ac55845ef5dcc215a412097724"
+    },
+    {
+      "id": "asset_a945fa2067258502",
+      "name": "red-exclamation",
+      "path": "card-demo/assets/ui/quest-markers/red-exclamation.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "quest-marker",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/quest-markers/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "0d7e126b1b1be36211e00b7b989f836340f78dd6e9a8f56ab04cd94dd2ff79b8"
+    },
+    {
+      "id": "asset_abda8160d585410f",
+      "name": "red-question",
+      "path": "card-demo/assets/ui/quest-markers/red-question.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "quest-marker",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/quest-markers/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "835f143ec5a6f503743cf39585ed63276c206d2e779e862abe53e66c3fbe7c32"
+    },
+    {
+      "id": "asset_53e26ffc744d60cd",
+      "name": "yellow-exclamation",
+      "path": "card-demo/assets/ui/quest-markers/yellow-exclamation.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "quest-marker",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/quest-markers/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "fc50cdce93af0efea9a779b7c41786986b85bde3a18074de53c118b4e282740b"
+    },
+    {
+      "id": "asset_4616f1c0a3836ea5",
+      "name": "yellow-question",
+      "path": "card-demo/assets/ui/quest-markers/yellow-question.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "quest-marker",
+        "pixel-art"
+      ],
+      "source": "Local pixel-art-studio drawing source: pixel-art/quest-markers/build.py",
+      "license": "unknown",
+      "author": "Codex local pixel drawing",
+      "status": "review",
+      "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
+      "sha256": "a5b10eb0326b397ee312021175cb23b7c4242d749b06e16d7bbb360d21f4dd79"
     }
   ]
 }

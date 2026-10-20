@@ -1,0 +1,24 @@
+Use case: stylized-concept
+Asset type: finished pixel-art game maps asset
+A beautifully detailed top-down orthographic playable region map of quiet abandoned Chinese postal town, grey green paving, weathered cedar mail houses, red postboxes, faded paper envelopes and crimson pennants without writing, ivy and low stone walls.
+Landscape canvas, game terrain fills all edges. Strict overhead camera, no horizon and no isometric tilt.
+The map is a large coherent game playfield, not a world globe and not a decorative parchment.
+Terrain and props are small relative to the whole scene so there is plenty of open walking space.
+Keep the authored road route clear, 3 percent of map width, with normalized coordinates (x right, y down):
+[[Vector2(0.08, 0.50), Vector2(0.24, 0.50), Vector2(0.51, 0.72), Vector2(0.77, 0.28), Vector2(0.92, 0.50)], [Vector2(0.51, 0.72), Vector2(0.50, 0.92)]],
+Four non-walkable terrain blocks at these normalized Rect2(x,y,width,height) positions:
+[Rect2(0.34, 0.20, 0.09, 0.30), Rect2(0.59, 0.70, 0.12, 0.13), Rect2(0.14, 0.70, 0.17, 0.09), Rect2(0.60, 0.17, 0.08, 0.16)],
+Place region-themed walls/water/rock/garden only in those blocks and visually low scenery elsewhere.
+Do not add a central hero, boss, treasure chest, UI or labels. Keep roads open and legible.
+The large interactive building is added separately at runtime, so leave the third block understated.
+Ground-level pixel texture with readable cobbles, moss, grass blades and small material clusters.
+Use understated decorative details off the roads; preserve strong readability of the road network.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel art, highly detailed and polished,
+consistent crisp square pixel clusters, selective dark outlines, layered cool shadows,
+warm top-left light, jade and teal, aged gold, cedar brown and muted plum palette.
+Rich material-specific pixel texture, deliberate clustered highlights, tasteful weathering.
+Authentic game asset, not vector art, not a flat geometric diagram, not a 3D render,
+not photorealistic, no smooth gradients, no blur, no anti-aliased painted edges.
+No characters, no monsters, no interface, no frame, no labels, no letters, no numbers,
+no watermark, no logos, no signature. Maintain a consistent art direction across this set.

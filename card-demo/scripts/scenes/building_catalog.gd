@@ -32,6 +32,9 @@ static func footprint(region: String) -> Rect2:
 	return Rect2(Vector2(ground.get_center().x - extent.x * 0.5, ground.end.y - extent.y), extent)
 
 static func entrance(region: String) -> Vector2:
+	if Maps.Art.has_art(region):
+		var door: Array = Maps.Art.layouts[region].door
+		return Vector2(door[0], door[1]) * Maps.MAPS[region].size
 	var rect := footprint(region)
 	return Vector2(rect.get_center().x, rect.end.y + 65)
 

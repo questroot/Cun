@@ -1,5 +1,7 @@
 extends RefCounted
 ## Per-map hazards: warning time always precedes a single hit; weather affects selection.
+# 暂时停用地图随机陷阱；恢复时改为 true，原机制与配置保留。
+const ENABLED := false
 const MIN_INTERVAL := 8.0
 const MAX_INTERVAL := 14.0
 const ENTRY_GRACE := 3.0
@@ -35,4 +37,6 @@ static func names(id: String) -> String:
 	return " / ".join(result)
 
 static func describe(id: String) -> String:
+	if not ENABLED:
+		return "地图随机陷阱暂已停用。"
 	return "随机陷阱：%s\n黄色圈预警1.3–1.7秒后爆发，离开范围可闪避。每次爆发最多命中一次；安全点不生成陷阱。" % names(id)

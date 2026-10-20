@@ -59,10 +59,24 @@ func run_checks() -> void:
 		var door := BuildingCatalog.entrance(id)
 		var reachable := reachable_cells(id)
 		check(Maps.walkable(id, door, 32) and reachable.has(Vector2i((door / 64).floor())), "入口从出生点连通且可站立 " + id)
-		game.player_foot = door + Vector2(0, 220)
+		var approach := door + Vector2(0, 220)
+		if Maps.Art.has_art(id):
+			# Find a connected point on the actual painted approach, outside the trigger.
+			var nearest := INF
+			for road: Array in Maps.MAPS[id].roads:
+				for n in range(road.size() - 1):
+					var a: Vector2 = road[n] * Maps.MAPS[id].size
+					var b: Vector2 = road[n + 1] * Maps.MAPS[id].size
+					for step in range(101):
+						var point := a.lerp(b, float(step) / 100)
+						var distance := point.distance_to(door)
+						if distance >= 180 and distance < nearest and Maps.walkable(id, point):
+							nearest = distance
+							approach = point
+		game.player_foot = approach
 		structures.tick(0.01)
 		var visits: int = state.visits
-		game.player_foot = game.move_world(game.player_foot, Vector2(0, -220))
+		game.player_foot = game.move_world(game.player_foot, door - game.player_foot)
 		structures.tick(0.01)
 		var slot := "buff" if BuildingCatalog.EFFECTS[state.effect].positive else "debuff"
 		check(state.visits == visits + 1 and structures.active[slot].effect == state.effect, "实际走入建筑入口获得随机效果 " + id)

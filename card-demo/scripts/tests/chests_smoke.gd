@@ -146,17 +146,19 @@ func run_checks() -> void:
 				modal.hide()
 			chest.warning = 0.0
 			boss.position = chest.position + Vector2(80, 0)
+			boss.skill_index = 0
 			boss.cooldown = 0.0
 			chests._tick_boss(boss, 0.01)
 			check(boss.windup > 0 and game.health == health, "守箱首领先预警再攻击")
 			game.player_foot = chest.position + Vector2(-220, 0)
-			chests._tick_boss(boss, 1.3)
+			chests._tick_boss(boss, float(chests.Skills.current(boss).windup)+.01)
 			check(game.health == health, "走出锁定圈可躲守箱首领伤害")
 			game.player_foot = boss.position + Vector2(-65, 0)
+			boss.skill_index = 0
 			boss.cooldown = 0.0
 			game.hurt_timer = 0.0
 			chests._tick_boss(boss, 0.01)
-			chests._tick_boss(boss, 1.3)
+			chests._tick_boss(boss, float(chests.Skills.current(boss).windup)+.01)
 			check(game.health == health - int(boss.damage), "首领实际造成削弱后伤害")
 			boss.hp -= 7
 			var injured: int = boss.hp

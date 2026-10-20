@@ -57,10 +57,27 @@ func run() -> void:
 	var manifest: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/audio/manifest.json"))
 	check(manifest.assets.size() == 38, "38 generated audio assets")
 	for asset: Dictionary in manifest.assets:
-		var sound = audio.stream(str(asset.path).trim_suffix(".wav"), asset.loop)
+		var sound = audio.stream(str(asset.path).get_basename(), asset.loop)
 		check(sound != null and absf(sound.get_length() - float(asset.seconds)) < 0.002, "load/duration " + asset.id)
 		if asset.loop:
-			check(sound.loop_mode == AudioStreamWAV.LOOP_FORWARD and sound.loop_end > 0, "loop metadata " + asset.id)
+			var looping: bool = sound is AudioStreamOggVorbis and sound.loop and sound.loop_offset == 0.0
+			if sound is AudioStreamWAV:
+				looping = sound.loop_mode == AudioStreamWAV.LOOP_FORWARD and sound.loop_end > 0
+			check(looping, "loop metadata " + asset.id)
+	check(manifest.version == 2 and manifest.music_revision == "hybrid-v3", "hybrid V3 revision is active")
+	var signatures := {}
+	var openers := {}
+	for asset: Dictionary in manifest.assets:
+		if not str(asset.path).begins_with("music/"):
+			continue
+		check(asset.seconds > 100 and asset.sections.size() == 6 and asset.instruments.size() >= 8, "developed orchestral arrangement " + asset.id)
+		check(asset.solo_opening_bars == 4 and asset.instruments.has(asset.opener), "exposed solo opener " + asset.id)
+		openers[asset.opener] = true
+		if str(asset.id).begins_with("boss_"):
+			check(asset.instruments.has("electric_bass") and asset.instruments.has("percussion"), "Boss electric bass and drum kit " + asset.id)
+		signatures[asset.texture] = true
+	check(signatures.size() == 16, "sixteen distinct authored arrangement identities")
+	check(openers.size() == 16, "sixteen different opening instruments")
 	game.set_process(true)
 	# Manual updates happen within this turn, before the engine processes gameplay.
 	for id: String in Maps.IDS:

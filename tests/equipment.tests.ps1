@@ -50,4 +50,7 @@ Invoke-EquipmentCheck 'equipment' $checkArgs
 $effectsArgs = @('--path', $testRoot, '--script', 'res://scripts/tests/equipment_effects_smoke.gd')
 if (-not $Render) { $effectsArgs = @('--headless') + $effectsArgs }
 Invoke-EquipmentCheck 'effects' $effectsArgs
+$fusionArgs = @('--path', $testRoot, '--script', 'res://scripts/tests/equipment_fusion_smoke.gd')
+if (-not $Render) { $fusionArgs = @('--headless') + $fusionArgs }
+Invoke-EquipmentCheck 'fusion' $fusionArgs
 Write-Output "Evidence: $testRoot"

@@ -1,0 +1,17 @@
+Use case: stylized-concept
+Asset type: finished pixel-art game chests asset
+A single standalone mysterious mutated violet treasure chest game sprite.
+State: closed, seals broken, cyan crystal lock and tiny golden reward glints, safe to claim. Three-quarter overhead front view with visible top, front and right side.
+Beautiful chunky silhouette, individual carved planks, iron corner caps, rivets, a clear large central lock,
+strong restrained clustered highlights, aged wood grain, readable at small size.
+Entire object centered and uncropped with 12 percent margin. No props outside chest fittings.
+Solid perfectly flat bright green #00ff00 background, no ground, no shadow, no checkerboard, no glow fog.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel art, highly detailed and polished,
+consistent crisp square pixel clusters, selective dark outlines, layered cool shadows,
+warm top-left light, jade and teal, aged gold, cedar brown and muted plum palette.
+Rich material-specific pixel texture, deliberate clustered highlights, tasteful weathering.
+Authentic game asset, not vector art, not a flat geometric diagram, not a 3D render,
+not photorealistic, no smooth gradients, no blur, no anti-aliased painted edges.
+No characters, no monsters, no interface, no frame, no labels, no letters, no numbers,
+no watermark, no logos, no signature. Maintain a consistent art direction across this set.

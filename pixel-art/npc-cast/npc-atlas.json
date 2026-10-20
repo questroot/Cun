@@ -1,0 +1,89 @@
+{
+  "image": "npc-atlas.png",
+  "frames": [
+    {
+      "id": "zhu-shen",
+      "name": "祝婶",
+      "x": 0,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "a-jian",
+      "name": "阿缄",
+      "x": 48,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "wen-yan",
+      "name": "温砚",
+      "x": 96,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "lu-jianwei",
+      "name": "陆见微",
+      "x": 144,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "shi-yi",
+      "name": "拾一",
+      "x": 192,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "stage-guide",
+      "name": "关卡向导",
+      "x": 240,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    },
+    {
+      "id": "merchant",
+      "name": "城镇商人",
+      "x": 288,
+      "y": 0,
+      "w": 48,
+      "h": 64,
+      "foot_anchor": [
+        24,
+        61
+      ]
+    }
+  ]
+}

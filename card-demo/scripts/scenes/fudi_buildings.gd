@@ -12,16 +12,16 @@ var banner: Label
 
 func play_visible() -> Dictionary:
 	if game == null or game._paused() or game.finished: return {}
-	var door: Vector2 = game.ARENA.position+Catalog.entrance(game.region)-game.camera_origin
+	var door: Vector2 = game.world_to_screen(Catalog.entrance(game.region))
 	if not game.ARENA.has_point(door): return {}
-	var result := {"entrance":{"x":door.x,"y":door.y},"activation_radius":Catalog.RADIUS,"appearance":"建筑入口光圈，走入自动生效"}
+	var result := {"entrance":{"x":door.x,"y":door.y},"activation_radius":Catalog.RADIUS*game.WORLD_ZOOM,"appearance":"建筑入口光圈，走入自动生效"}
 	var rect := Catalog.footprint(game.region)
-	var label_origin := door+Vector2(-rect.size.x*0.45,-62)
+	var label_origin: Vector2 = door+Vector2(-rect.size.x*0.45,-62)*game.WORLD_ZOOM
 	var effect: Dictionary = Catalog.EFFECTS[states[game.region].effect]
 	var text := "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益",effect.name,effect.description]
 	var font := ThemeDB.fallback_font
 	var text_size := font.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,17)
-	var bounds := Rect2(label_origin-Vector2(0,font.get_ascent(17)),text_size)
+	var bounds := Rect2(label_origin-Vector2(0,font.get_ascent(17))*game.WORLD_ZOOM,text_size*game.WORLD_ZOOM)
 	if game.ARENA.encloses(bounds): result["visible_label"] = text
 	return result
 
@@ -36,13 +36,11 @@ func _ready() -> void:
 	game.minimap.draw.connect(draw_minimap)
 	game.tools.atlas.set_meta("building_provider", summary)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(680, game.ARENA.size.y - 78)
+	panel.position = Vector2(12, 50)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var skin := UI.panel(Color(0.04, 0.10, 0.12, 0.93))
-	skin.set_content_margin_all(10)
+	var skin := UI.hud_panel(Color(0.04, 0.10, 0.12, 0.84))
 	panel.add_theme_stylebox_override("panel", skin)
-	banner = UI.label("", 15, Color("#d5e9d5"))
-	banner.custom_minimum_size = Vector2(505, 48)
+	banner = UI.label("", 14, Color("#d5e9d5"))
 	panel.add_child(banner)
 	game.world_view.add_child(panel)
 	refresh()
@@ -116,7 +114,14 @@ func status_text() -> String:
 
 func refresh() -> void:
 	if banner != null:
-		banner.text = status_text()
+		var lines: Array[String] = []
+		for slot: String in ["buff", "debuff"]:
+			if active.has(slot):
+				var state: Dictionary = active[slot]
+				var effect: Dictionary = Catalog.EFFECTS[state.effect]
+				lines.append("%s %s · %s · %ds" % ["增益" if effect.positive else "减益", effect.name, effect.description, ceili(state.left)])
+		banner.text = "\n".join(lines)
+		banner.get_parent().visible = not lines.is_empty()
 
 func draw_minimap() -> void:
 	var rect := Rect2(Vector2(10, 30), game.minimap.size - Vector2(20, 40))
@@ -128,11 +133,12 @@ func draw_minimap() -> void:
 func draw_world() -> void:
 	var id: String = game.region
 	var rect := Catalog.footprint(id)
-	if not Rect2(game.camera_origin, game.ARENA.size).grow(250).intersects(rect):
+	var door := Catalog.entrance(id)
+	var view: Rect2 = game.visible_world().grow(250)
+	if not view.intersects(rect) and not view.has_point(door):
 		return
 	var canvas: Control = game.world_canvas
 	var data: Dictionary = Catalog.REGIONS[id]
-	var door := Catalog.entrance(id)
 	var tint := Catalog.color(states[id].effect)
 	var wall := Color(data.wall)
 	var roof := Color(data.roof)
@@ -142,6 +148,9 @@ func draw_world() -> void:
 	var w := rect.size.x
 	var bottom := rect.end.y
 	var center := rect.get_center().x
+	if Maps.Art.has_art(id):
+		_draw_entrance(canvas, id, door, w, trim, tint)
+		return
 	# Broad terraces, side walls and multiple roof planes give a readable large silhouette.
 	canvas.draw_rect(Rect2(rect.position + Vector2(18, 20), rect.size), Color(0.01, 0.025, 0.03, 0.5))
 	canvas.draw_rect(rect, wall.darkened(0.28))
@@ -203,6 +212,10 @@ func draw_world() -> void:
 		_:
 			canvas.draw_rect(Rect2(ornament + Vector2(-46, 8), Vector2(92, 36)), roof.darkened(0.25))
 			canvas.draw_string(ThemeDB.fallback_font, ornament + Vector2(-22, 35), "百味", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, trim)
+	_draw_entrance(canvas, id, door, w, trim, tint)
+
+func _draw_entrance(canvas: Control, id: String, door: Vector2, w: float, trim: Color, tint: Color) -> void:
+	var data: Dictionary = Catalog.REGIONS[id]
 	# Entrance clearly advertises both polarity and the precise activation boundary.
 	canvas.draw_circle(door, Catalog.RADIUS, Color(tint, 0.08))
 	canvas.draw_arc(door, Catalog.RADIUS, 0, TAU, 64, Color(tint, 0.7), 3, true)

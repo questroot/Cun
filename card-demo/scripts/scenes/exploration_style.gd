@@ -16,6 +16,16 @@ static func label(text: String, font_size: int = 18, color: Color = Color("#dfeb
 	node.add_theme_color_override("font_color", color)
 	return node
 
+static func hud_panel(color: Color) -> StyleBoxFlat:
+	var skin := panel(color)
+	skin.border_color = Color(0.55, 0.7, 0.65, 0.3)
+	skin.set_corner_radius_all(8)
+	skin.content_margin_left = 10
+	skin.content_margin_right = 10
+	skin.content_margin_top = 6
+	skin.content_margin_bottom = 6
+	return skin
+
 static func button(text: String, action: Callable) -> Button:
 	var node := Button.new()
 	node.text = text

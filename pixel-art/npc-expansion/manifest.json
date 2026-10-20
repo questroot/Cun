@@ -1,0 +1,762 @@
+[
+  {
+    "id": "lu-yan",
+    "name": "路盐",
+    "role": "旧路行商",
+    "master": "masters/lu-yan.png",
+    "display": "display/lu-yan-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 10,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          372
+        ],
+        [
+          "#594b43",
+          238
+        ],
+        [
+          "#92845e",
+          217
+        ],
+        [
+          "#a6654a",
+          188
+        ],
+        [
+          "#624052",
+          178
+        ],
+        [
+          "#daa45e",
+          174
+        ],
+        [
+          "#e7a477",
+          120
+        ],
+        [
+          "#f5e7c5",
+          51
+        ],
+        [
+          "#bb5254",
+          45
+        ],
+        [
+          "#ffdab0",
+          24
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "jin-suanpan",
+    "name": "金算盘",
+    "role": "寄售与仓储装置",
+    "master": "masters/jin-suanpan.png",
+    "display": "display/jin-suanpan-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 9,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          599
+        ],
+        [
+          "#daa45e",
+          177
+        ],
+        [
+          "#a6654a",
+          138
+        ],
+        [
+          "#936852",
+          128
+        ],
+        [
+          "#85c8c0",
+          76
+        ],
+        [
+          "#624052",
+          50
+        ],
+        [
+          "#584060",
+          46
+        ],
+        [
+          "#a6a7ae",
+          20
+        ],
+        [
+          "#f5e7c5",
+          8
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "shen-heng",
+    "name": "沈衡",
+    "role": "续灯商会发起人",
+    "master": "masters/shen-heng.png",
+    "display": "display/shen-heng-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 12,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          300
+        ],
+        [
+          "#526b8a",
+          173
+        ],
+        [
+          "#624052",
+          160
+        ],
+        [
+          "#303f62",
+          144
+        ],
+        [
+          "#e7a477",
+          138
+        ],
+        [
+          "#f5e7c5",
+          107
+        ],
+        [
+          "#a6654a",
+          68
+        ],
+        [
+          "#ffdab0",
+          47
+        ],
+        [
+          "#a6a7ae",
+          23
+        ],
+        [
+          "#bb5254",
+          19
+        ],
+        [
+          "#daa45e",
+          19
+        ],
+        [
+          "#91aeb1",
+          14
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "luo-zhu",
+    "name": "洛铸",
+    "role": "救援铁匠",
+    "master": "masters/luo-zhu.png",
+    "display": "display/luo-zhu-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 10,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          379
+        ],
+        [
+          "#a6654a",
+          243
+        ],
+        [
+          "#624052",
+          195
+        ],
+        [
+          "#a6a7ae",
+          160
+        ],
+        [
+          "#e7a477",
+          130
+        ],
+        [
+          "#713348",
+          119
+        ],
+        [
+          "#daa45e",
+          57
+        ],
+        [
+          "#ffdab0",
+          52
+        ],
+        [
+          "#985054",
+          47
+        ],
+        [
+          "#f5e7c5",
+          13
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "ye-ting",
+    "name": "叶汀",
+    "role": "复苏照护药剂师",
+    "master": "masters/ye-ting.png",
+    "display": "display/ye-ting-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 11,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          309
+        ],
+        [
+          "#4a8777",
+          204
+        ],
+        [
+          "#e7a477",
+          169
+        ],
+        [
+          "#f5e7c5",
+          167
+        ],
+        [
+          "#624052",
+          108
+        ],
+        [
+          "#a6654a",
+          105
+        ],
+        [
+          "#2b5154",
+          94
+        ],
+        [
+          "#ffdab0",
+          56
+        ],
+        [
+          "#8ebca1",
+          34
+        ],
+        [
+          "#daa45e",
+          26
+        ],
+        [
+          "#bb5254",
+          4
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "qiao-huang",
+    "name": "乔簧",
+    "role": "维修人偶机关师",
+    "master": "masters/qiao-huang.png",
+    "display": "display/qiao-huang-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 9,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          535
+        ],
+        [
+          "#8e7657",
+          204
+        ],
+        [
+          "#daa45e",
+          178
+        ],
+        [
+          "#a6654a",
+          135
+        ],
+        [
+          "#a6a7ae",
+          110
+        ],
+        [
+          "#624052",
+          101
+        ],
+        [
+          "#c6b178",
+          88
+        ],
+        [
+          "#f5e7c5",
+          31
+        ],
+        [
+          "#4a485b",
+          9
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "cen-chi",
+    "name": "岑尺",
+    "role": "旧测绘站回响",
+    "master": "masters/cen-chi.png",
+    "display": "display/cen-chi-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 11,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          359
+        ],
+        [
+          "#30495d",
+          198
+        ],
+        [
+          "#577e91",
+          152
+        ],
+        [
+          "#e7a477",
+          123
+        ],
+        [
+          "#94c2c1",
+          115
+        ],
+        [
+          "#624052",
+          108
+        ],
+        [
+          "#a6a7ae",
+          54
+        ],
+        [
+          "#a6654a",
+          54
+        ],
+        [
+          "#ffdab0",
+          47
+        ],
+        [
+          "#daa45e",
+          45
+        ],
+        [
+          "#f5e7c5",
+          32
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "xie-tingzhou",
+    "name": "谢停舟",
+    "role": "守灯会司灯人",
+    "master": "masters/xie-tingzhou.png",
+    "display": "display/xie-tingzhou-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 11,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          444
+        ],
+        [
+          "#404354",
+          174
+        ],
+        [
+          "#666e80",
+          152
+        ],
+        [
+          "#624052",
+          146
+        ],
+        [
+          "#e7a477",
+          140
+        ],
+        [
+          "#a6654a",
+          77
+        ],
+        [
+          "#f5e7c5",
+          70
+        ],
+        [
+          "#ffdab0",
+          47
+        ],
+        [
+          "#daa45e",
+          40
+        ],
+        [
+          "#bec4d1",
+          12
+        ],
+        [
+          "#a6a7ae",
+          9
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "wen-zhou",
+    "name": "闻昼",
+    "role": "神学研究者",
+    "master": "masters/wen-zhou.png",
+    "display": "display/wen-zhou-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 10,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          358
+        ],
+        [
+          "#49385e",
+          195
+        ],
+        [
+          "#e7a477",
+          132
+        ],
+        [
+          "#a6654a",
+          121
+        ],
+        [
+          "#624052",
+          118
+        ],
+        [
+          "#7c5e85",
+          77
+        ],
+        [
+          "#daa45e",
+          73
+        ],
+        [
+          "#f5e7c5",
+          46
+        ],
+        [
+          "#ffdab0",
+          35
+        ],
+        [
+          "#a6a7ae",
+          12
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  },
+  {
+    "id": "changdaozhe",
+    "name": "长祷者",
+    "role": "祈愿无名异灵",
+    "master": "masters/changdaozhe.png",
+    "display": "display/changdaozhe-8x.png",
+    "size": [
+      48,
+      64
+    ],
+    "foot_anchor": [
+      24,
+      61
+    ],
+    "stats": {
+      "size": [
+        48,
+        64
+      ],
+      "frames": 1,
+      "layers": [
+        "main"
+      ],
+      "durations": [
+        100
+      ],
+      "tags": {},
+      "colors_used": 7,
+      "palette_size": 12,
+      "top_colors": [
+        [
+          "#292438",
+          551
+        ],
+        [
+          "#6d678d",
+          319
+        ],
+        [
+          "#3f3a5c",
+          195
+        ],
+        [
+          "#ada1bb",
+          94
+        ],
+        [
+          "#f5e7c5",
+          66
+        ],
+        [
+          "#a6a7ae",
+          31
+        ],
+        [
+          "#daa45e",
+          18
+        ]
+      ],
+      "semi_alpha_px": 0,
+      "isolated_px": [],
+      "near_duplicate_colors": []
+    }
+  }
+]

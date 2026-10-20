@@ -5,6 +5,7 @@ const Loot = preload("res://scripts/scenes/loot_catalog.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
 const Hero = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const Effects = preload("res://scripts/scenes/equipment_effects.gd")
+const Fusion = preload("res://scripts/scenes/equipment_fusion.gd")
 var game
 var equipped: Dictionary = {}
 var selected := ""
@@ -33,16 +34,24 @@ var set_label: Label
 var equipment_view: HBoxContainer
 var effects_view: RichTextLabel
 var effects_button: Button
+var fusion: Fusion
+var fusion_button: Button
+var fuse_item_button: Button
 
 func _ready() -> void:
 	game = get_parent()
 	effects = Effects.new()
 	add_child(effects)
+	fusion = Fusion.new()
+	add_child(fusion)
 	layer = 110
 	entry_button = UI.button("人物装备  C", open)
 	entry_button.position = Vector2(1104, 158)
 	entry_button.size.x = 152
 	add_child(entry_button)
+	if game.has_method("register_hud_action"):
+		entry_button.text = "装备 C"
+		game.register_hud_action(entry_button)
 	_build()
 	modal.hide()
 
@@ -77,7 +86,7 @@ func available(item: String) -> int:
 	return maxi(0, int(game.inventory.get(item, 0)) - (1 if equipped.values().has(item) else 0))
 
 func open() -> void:
-	if game.finished or game.dialogue.visible or game.journal.visible or game.tools.is_open():
+	if game.finished or game.dialogue.visible or game.journal.visible or game.tools.is_open() or game.menu.visible:
 		return
 	refresh()
 	modal.show()
@@ -137,12 +146,10 @@ func _build() -> void:
 	layout.add_child(heading)
 	var title := _label(heading, "人物装备", 28, Color("#f4daa0"))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	effects_button = UI.button("套装与特效", func() -> void:
-		equipment_view.visible = not equipment_view.visible
-		effects_view.visible = not equipment_view.visible
-		effects_button.text = "返回装备栏" if effects_view.visible else "套装与特效"
-		_refresh_effects())
+	effects_button = UI.button("套装与特效", func() -> void: show_view("equipment" if effects_view.visible else "effects"))
 	heading.add_child(effects_button)
+	fusion_button = UI.button("装备融合", func() -> void: show_view("equipment" if fusion.view.visible else "fusion"))
+	heading.add_child(fusion_button)
 	close_button = UI.button("继续探索  C / Esc", close)
 	heading.add_child(close_button)
 	var columns := HBoxContainer.new()
@@ -200,7 +207,7 @@ func _build() -> void:
 		refresh())
 	bag_heading.add_child(filter)
 	scroll = ScrollContainer.new()
-	scroll.custom_minimum_size.y = 225
+	scroll.custom_minimum_size.y = 200
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	bag.add_child(scroll)
@@ -230,7 +237,8 @@ func _build() -> void:
 	detail_stats = _label(words, "", 16)
 	comparison = _label(detail_layout, "", 16, Color("#9fc8c0"))
 	comparison.custom_minimum_size.y = 42
-	special_label = _label(detail_layout, "", 16, Color("#e6d099"))
+	special_label = _label(detail_layout, "", 15, Color("#e6d099"))
+	special_label.max_lines_visible = 3
 	special_label.custom_minimum_size.y = 40
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 10)
@@ -239,6 +247,8 @@ func _build() -> void:
 	unequip_button = UI.button("卸下装备", func() -> void: unequip_slot(Catalog.slot(selected)))
 	actions.add_child(equip_button)
 	actions.add_child(unequip_button)
+	fuse_item_button = UI.button("融合此装备", func() -> void: fusion.open_for(selected))
+	actions.add_child(fuse_item_button)
 	effects_view = RichTextLabel.new()
 	effects_view.bbcode_enabled = true
 	effects_view.custom_minimum_size.y = 508
@@ -246,7 +256,17 @@ func _build() -> void:
 	effects_view.add_theme_font_size_override("normal_font_size", 18)
 	layout.add_child(effects_view)
 	effects_view.hide()
+	fusion.build(layout)
 	_label(layout, "本轮探索有效 · 跨地图保留，重开清空  |  点击装备查看对比，点击左侧栏位筛选  |  打开面板时探索暂停", 16, Color("#94b3ac"))
+
+func show_view(page: String) -> void:
+	equipment_view.visible = page == "equipment"
+	effects_view.visible = page == "effects"
+	fusion.view.visible = page == "fusion"
+	effects_button.text = "返回装备栏" if effects_view.visible else "套装与特效"
+	fusion_button.text = "返回装备栏" if fusion.view.visible else "装备融合"
+	_refresh_effects()
+	fusion.refresh()
 
 func select_slot(key: String) -> void:
 	filter_slot = key
@@ -300,6 +320,7 @@ func refresh() -> void:
 	if not shown.has(selected):
 		selected = shown[0] if not shown.is_empty() else ""
 	_refresh_detail()
+	fusion.refresh()
 
 func _refresh_detail() -> void:
 	for item: String in item_buttons:
@@ -311,6 +332,7 @@ func _refresh_detail() -> void:
 	var valid := Loot.ITEMS.has(selected) and int(game.inventory.get(selected, 0)) > 0
 	detail_icon.texture = Loot.ITEMS[selected].icon if valid else null
 	equip_button.disabled = not valid
+	fuse_item_button.disabled = not valid
 	unequip_button.disabled = true
 	if not valid:
 		equip_button.text = "穿戴装备"
@@ -332,6 +354,7 @@ func _refresh_detail() -> void:
 		difference[stat] -= old[stat]
 	comparison.text = "当前：%s\n替换变化：%s" % [Loot.ITEMS[worn].name if worn != "" else "空栏位", Catalog.text(difference, true)]
 	special_label.text = Catalog.effect_text(selected)
+	special_label.tooltip_text = special_label.text
 	equip_button.text = "已穿戴" if worn == selected else ("替换穿戴" if worn != "" else "穿戴装备")
 	equip_button.disabled = worn == selected
 	unequip_button.disabled = worn != selected

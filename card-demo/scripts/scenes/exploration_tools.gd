@@ -17,6 +17,8 @@ func _ready() -> void:
 	add_child(bar)
 	bar.add_child(UI.button("地图  M", open_map))
 	bar.add_child(UI.button("切换游戏", switch_game))
+	if get_parent().has_method("configure_exploration_actions"):
+		get_parent().configure_exploration_actions(bar)
 	atlas = Atlas.new()
 	add_child(atlas)
 	confirm = Control.new()

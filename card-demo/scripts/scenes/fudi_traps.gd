@@ -23,8 +23,8 @@ func play_visible() -> Array:
 	if not initialized or game._paused() or game.finished: return result
 	for hazard: Dictionary in hazards:
 		var config: Dictionary = Catalog.TRAPS[hazard.kind]
-		var center: Vector2 = game.ARENA.position+hazard.position-game.camera_origin
-		var radius := float(config.radius)
+		var center: Vector2 = game.world_to_screen(hazard.position)
+		var radius: float = float(config.radius) * game.WORLD_ZOOM
 		var bounds: Rect2 = game.ARENA.intersection(Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2))
 		if not bounds.has_area(): continue
 		result.append({"appearance":"红色爆发圈" if float(hazard.age)>=float(config.warning) else "黄色预警圈","visible_bounds":{"x":bounds.position.x,"y":bounds.position.y,"width":bounds.size.x,"height":bounds.size.y}})
@@ -49,11 +49,11 @@ func initialize() -> void:
 	game.world_canvas.add_child(canvas)
 	game.minimap.draw.connect(_draw_minimap)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(10, 72)
-	panel.add_theme_stylebox_override("panel", UI.panel(Color(0.09, 0.065, 0.035, 0.88)))
+	panel.position = Vector2(380, 12)
+	panel.add_theme_stylebox_override("panel", UI.hud_panel(Color(0.09, 0.065, 0.035, 0.9)))
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	game.world_view.add_child(panel)
-	status_label = UI.label("", 16, Color("#f4cf8b"))
+	status_label = UI.label("", 15, Color("#f4cf8b"))
 	panel.add_child(status_label)
 	initialized = true
 	_refresh()
@@ -74,6 +74,8 @@ func movement_scale() -> float:
 	return slow_scale if slow_left > 0 else 1.0
 
 func summary(id: String) -> String:
+	if not Catalog.ENABLED:
+		return Catalog.describe(id)
 	var record: Dictionary = records[id]
 	return "%s\n本轮预警%d次 · 命中%d次 · 闪避%d次。转图取消正在发生的危险，保留本地倒计时。" % [Catalog.describe(id), record.spawned, record.hits, record.dodged]
 
@@ -86,7 +88,7 @@ func _process(delta: float) -> void:
 	_refresh()
 
 func tick(delta: float) -> void:
-	if not initialized or game.finished or game._paused() or delta <= 0:
+	if not Catalog.ENABLED or not initialized or game.finished or game._paused() or delta <= 0:
 		return
 	if region != game.region:
 		enter_region(game.region)
@@ -130,17 +132,30 @@ func valid_point(id: String, point: Vector2, radius: float) -> bool:
 	return Maps.walkable(id, point, radius + 12) and not safe_zone(id, point, radius)
 
 func choose_point(id: String, radius: float) -> Vector2:
-	var visible := Rect2(game.camera_origin, game.ARENA.size).grow(-radius - 10)
+	var visible: Rect2 = game.visible_world().grow(-radius - 10)
 	for attempt in range(48):
 		var angle := rng.randf_range(0, TAU)
 		var distance := rng.randf_range(0, 40) if rng.randf() < 0.35 else rng.randf_range(65, 145)
 		var point: Vector2 = game.player_foot + Vector2.from_angle(angle) * distance
 		if visible.has_point(point) and valid_point(id, point, radius):
 			return point
+		if Maps.Art.has_art(id):
+			# Narrow bridges need candidates on their visible lane, with the same safety checks.
+			var nearest := Vector2.INF
+			var nearest_distance := INF
+			for road: Array in Maps.MAPS[id].roads:
+				for i in range(road.size() - 1):
+					var candidate := Geometry2D.get_closest_point_to_segment(point, road[i] * Maps.MAPS[id].size, road[i + 1] * Maps.MAPS[id].size)
+					var lane_distance := point.distance_squared_to(candidate)
+					if lane_distance < nearest_distance:
+						nearest_distance = lane_distance
+						nearest = candidate
+			if nearest.distance_to(game.player_foot) <= 145 and visible.has_point(nearest) and valid_point(id, nearest, radius):
+				return nearest
 	return Vector2.INF
 
 func spawn(kind: String, point: Vector2) -> bool:
-	if not initialized or game.finished or game._paused() or not hazards.is_empty() or grace > 0:
+	if not Catalog.ENABLED or not initialized or game.finished or game._paused() or not hazards.is_empty() or grace > 0:
 		return false
 	if not kind in Catalog.REGIONS[region] or not valid_point(region, point, float(Catalog.TRAPS[kind].radius)):
 		return false
@@ -195,13 +210,14 @@ func _refresh() -> void:
 		var hazard: Dictionary = hazards[0]
 		var config: Dictionary = Catalog.TRAPS[hazard.kind]
 		var countdown := maxf(0, float(config.warning) - float(hazard.age))
-		status_label.text = "%s %s · %s · 伤害%d%s" % ["预警" if countdown > 0 else "危险", config.name, "%.1f秒后爆发，请离开黄圈" % countdown if countdown > 0 else "远离红圈", hazard.damage, "（天气增强）" if hazard.boosted else ""]
+		status_label.text = "%s · %s" % [config.name, "%.1f秒后爆发，离开黄圈" % countdown if countdown > 0 else "危险！远离红圈"]
 	elif notice_left > 0:
 		status_label.text = notice
 	else:
-		status_label.text = "本区陷阱：%s  |  黄圈预警 → 红圈爆发，走出范围闪避" % Catalog.names(region)
+		status_label.text = ""
 	if slow_left > 0:
-		status_label.text += "  |  减速剩余%.1f秒" % slow_left
+		status_label.text += "  减速 %.1fs" % slow_left
+	status_label.get_parent().visible = not hazards.is_empty() or notice_left > 0 or slow_left > 0
 	canvas.queue_redraw()
 	game.minimap.queue_redraw()
 

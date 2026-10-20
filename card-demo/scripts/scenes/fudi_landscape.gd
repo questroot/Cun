@@ -1,5 +1,5 @@
 extends RefCounted
-## Code-native world art: roads, gardens, stone buildings, archives and rescue beacons.
+## Nine finished map paintings; the remaining snowridge keeps its procedural scenery.
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 
 static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
@@ -7,6 +7,10 @@ static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 	var extent: Vector2 = data.size
 	var ground := Color(data.ground)
 	var accent := Color(data.accent)
+	if Maps.Art.has_art(id):
+		canvas.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		canvas.draw_texture_rect(Maps.Art.TEXTURES[id], Rect2(Vector2.ZERO, extent), false)
+		return
 	canvas.draw_rect(Rect2(Vector2.ZERO, extent), ground)
 	# Stable terrain patches make distant screens distinct without imported bitmap assets.
 	var rng := RandomNumberGenerator.new()
@@ -87,9 +91,11 @@ static func building(canvas: CanvasItem, rect: Rect2, wall: Color, accent: Color
 		var point := Vector2(rect.position.x + rect.size.x * (n + 1) / 4, rect.end.y - 35)
 		canvas.draw_rect(Rect2(point - Vector2(9, 18), Vector2(18, 24)), Color(accent, 0.4))
 
-static func landmark(canvas: CanvasItem, point: Vector2, kind: String, accent: Color) -> void:
+static func landmark(canvas: CanvasItem, point: Vector2, kind: String, accent: Color, baked: bool = false) -> void:
 	canvas.draw_circle(point, 65, Color(accent, 0.08))
 	canvas.draw_arc(point, 56, 0, TAU, 48, Color(accent, 0.55), 2, true)
+	if baked:
+		return # Keep the painted structure visible; only the interaction ring is added.
 	match kind:
 		"stove", "table", "workshop", "post", "archive", "camp":
 			building(canvas, Rect2(point - Vector2(48, 76), Vector2(96, 76)), Color("#675e4f"), accent)

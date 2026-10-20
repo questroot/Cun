@@ -1,0 +1,17 @@
+Use case: stylized-concept
+Asset type: finished pixel-art game herbs asset
+A single exquisite standalone collectible medicinal herb inventory icon: a patch of tiny lush olive and jade moss cushions growing from a rough dark grey split stone, tiny fern-like fronds and pale green top-left highlights.
+Whole plant specimen, compact elegant centered silhouette, beautifully structured leaves, crisp botanical detail,
+subtle cool shadows and warm top-left glints. Clearly identifiable at small game icon scale.
+No bottle, no bag, no frame, no pedestal, no circle behind it, no soil bed, no scenery.
+Entire herb fits with 15 percent clear margin and no clipped leaves.
+Solid perfectly flat bright magenta #ff00ff background, no shadow or checkerboard.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel art, highly detailed and polished,
+consistent crisp square pixel clusters, selective dark outlines, layered cool shadows,
+warm top-left light, jade and teal, aged gold, cedar brown and muted plum palette.
+Rich material-specific pixel texture, deliberate clustered highlights, tasteful weathering.
+Authentic game asset, not vector art, not a flat geometric diagram, not a 3D render,
+not photorealistic, no smooth gradients, no blur, no anti-aliased painted edges.
+No characters, no monsters, no interface, no frame, no labels, no letters, no numbers,
+no watermark, no logos, no signature. Maintain a consistent art direction across this set.

@@ -1,0 +1,19 @@
+Use case: stylized-concept
+Asset type: finished pixel-art game plants asset
+An exact three-cell horizontal sprite sheet for one medicinal plant species: awakening herb with branching stems and star-shaped pointed lime jade leaves, small amber vein highlights, wind-curled pointed leaf tips.
+Exactly three separate clearly spaced plants LEFT TO RIGHT: tiny sprout, medium leafy plant with buds,
+fully mature flowering or fruiting plant. Each occupies its own equal one-third of the canvas.
+Each plant stands at the same bottom baseline with a tiny dark soil root clump.
+No extra plants and no overlapping cells. Keep all silhouettes well inside their cells, at least 15 percent cell margin.
+Fixed three-quarter overhead RPG perspective. Beautiful crisp leaf veins, flowers and roots, game-readable clusters.
+Solid perfectly flat bright magenta #ff00ff background, no ground plane, no gridlines or cell borders,
+no text labels, no staged arrows, no checkerboard. Full plant is visible in each cell.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel art, highly detailed and polished,
+consistent crisp square pixel clusters, selective dark outlines, layered cool shadows,
+warm top-left light, jade and teal, aged gold, cedar brown and muted plum palette.
+Rich material-specific pixel texture, deliberate clustered highlights, tasteful weathering.
+Authentic game asset, not vector art, not a flat geometric diagram, not a 3D render,
+not photorealistic, no smooth gradients, no blur, no anti-aliased painted edges.
+No characters, no monsters, no interface, no frame, no labels, no letters, no numbers,
+no watermark, no logos, no signature. Maintain a consistent art direction across this set.

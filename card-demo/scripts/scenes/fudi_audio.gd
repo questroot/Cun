@@ -64,14 +64,18 @@ func initialize() -> void:
 
 func stream(path: String, loop: bool = false) -> AudioStream:
 	if not cache.has(path):
-		var sound := load(ROOT + path + ".wav") as AudioStreamWAV
+		var extension := ".ogg" if path.begins_with("music/") else ".wav"
+		var sound := load(ROOT + path + extension) as AudioStream
 		if sound == null:
 			return null
-		sound = sound.duplicate() as AudioStreamWAV
-		if loop:
+		sound = sound.duplicate() as AudioStream
+		if sound is AudioStreamWAV and loop:
 			sound.loop_mode = AudioStreamWAV.LOOP_FORWARD
 			sound.loop_begin = 0
 			sound.loop_end = int(round(sound.get_length() * sound.mix_rate))
+		elif sound is AudioStreamOggVorbis:
+			sound.loop = loop
+			sound.loop_offset = 0.0
 		cache[path] = sound
 	return cache[path]
 
@@ -299,6 +303,8 @@ func _build_controls() -> void:
 	rows.add_child(mute_button)
 	rows.add_child(UI.button("收起  Esc", close_settings))
 	panel.hide()
+	if game.has_method("register_menu_action"):
+		game.register_menu_action(button)
 
 func close_settings() -> void:
 	panel.hide()

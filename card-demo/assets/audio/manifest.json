@@ -1,201 +1,1367 @@
 {
-  "version": 1,
-  "sample_rate": 22050,
+  "version": 2,
   "channels": 2,
-  "bits": 16,
-  "source": "Original procedural composition and synthesis; tools/build_fudi_audio.py; seed 20261020; no external samples.",
+  "source": "Music: original solo openings, orchestral and hybrid rock scores rendered with GeneralUser GS 2.0.3 / TinySoundFont 0.3.7. Foley/ambience: unchanged original procedural v1.",
   "assets": [
     {
       "id": "map_grove",
-      "title": "灶火与青岚",
-      "path": "music/map_grove.wav",
-      "seconds": 48.0,
-      "peak_db": -2.85,
-      "rms_db": -17.56,
-      "sha256": "b707180cb4f1023cd079c12fcbbe0b66b5d03e575cf17b08aaf2aa8fa070b398",
-      "bpm": 80,
-      "bars": 16,
-      "loop": true
+      "title": "青岚灶街·烟火圆舞曲",
+      "path": "music/map_grove.ogg",
+      "seconds": 125.279,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.8,
+      "rms_db": -14.89,
+      "sha256": "2d3fde7e0d8fa51108c0293d183d51a938b3fe6d29ce2bec47b560966bef766a",
+      "bpm": 92,
+      "bars": 64,
+      "meter": "3/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "祝婶的灶火、药圃与留给街坊的餐桌",
+      "opener": "flute",
+      "solo_opening_bars": 4,
+      "genre": "街巷圆舞曲",
+      "lead": "flute",
+      "partner": "clarinet",
+      "texture": "waltz",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 88.32
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 16.306,
+          "bpm": 92
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 47.612,
+          "bpm": 93.38
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 63.034,
+          "bpm": 94.3
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 93.577,
+          "bpm": 93.38
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 108.999,
+          "bpm": 89.24
+        }
+      ],
+      "section_rms_db": [
+        -16.53,
+        -14.03,
+        -15.38,
+        -13.97,
+        -13.94,
+        -19.73
+      ],
+      "instruments": {
+        "flute": 140,
+        "bass": 60,
+        "cello": 120,
+        "strings": 336,
+        "viola": 12,
+        "harp": 180,
+        "percussion": 8,
+        "clarinet": 70,
+        "horn": 36
+      },
+      "note_count": 962,
+      "midi": "tools/audio/scores/map_grove.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_post",
-      "title": "未寄出的信",
-      "path": "music/map_post.wav",
-      "seconds": 50.526,
-      "peak_db": -2.85,
-      "rms_db": -17.29,
-      "sha256": "da4652b665dd5a51d88242caa3a6c2bc68add300c3e82a2fd7747cc5c383ba7b",
-      "bpm": 76,
-      "bars": 16,
-      "loop": true
+      "title": "旧城邮驿·无人签收的信",
+      "path": "music/map_post.ogg",
+      "seconds": 197.02,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -2.12,
+      "rms_db": -18.33,
+      "sha256": "80c9a1572baff8d4d523e25562b490c0b62745a9dc4bf26fbeac7580abc0e437",
+      "bpm": 78,
+      "bars": 64,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "静默信巷、邮袋、寻人留言墙",
+      "opener": "cello",
+      "solo_opening_bars": 4,
+      "genre": "书信室内乐",
+      "lead": "oboe",
+      "partner": "cello",
+      "texture": "chamber",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 74.88
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 25.643,
+          "bpm": 78
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 74.877,
+          "bpm": 79.17
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 99.131,
+          "bpm": 79.95
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 147.164,
+          "bpm": 79.17
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 171.417,
+          "bpm": 75.66
+        }
+      ],
+      "section_rms_db": [
+        -23.34,
+        -19.09,
+        -20.36,
+        -16.39,
+        -15.24,
+        -23.38
+      ],
+      "instruments": {
+        "cello": 137,
+        "bass": 60,
+        "strings": 144,
+        "viola": 60,
+        "harp": 140,
+        "oboe": 118,
+        "horn": 37,
+        "flute": 8
+      },
+      "note_count": 704,
+      "midi": "tools/audio/scores/map_post.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_quarry",
-      "title": "赤岩晚钟",
-      "path": "music/map_quarry.wav",
-      "seconds": 45.714,
-      "peak_db": -2.85,
-      "rms_db": -16.66,
-      "sha256": "6faf9765946b2d1caf9899816eda3f51b8335e3019c5857dde6fc169f3bdb1c0",
-      "bpm": 84,
-      "bars": 16,
-      "loop": true
+      "title": "赤岩钟楼·石与铜的回响",
+      "path": "music/map_quarry.ogg",
+      "seconds": 187.41,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -2.16,
+      "rms_db": -20.63,
+      "sha256": "8ac19ef939a01f632e8db5b25cbfbf97fff473e807d9a26e0348f3b40848f73e",
+      "bpm": 82,
+      "bars": 64,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "赤岩、工坊锤砧、旧城晚钟与护像长廊",
+      "opener": "trombone",
+      "solo_opening_bars": 4,
+      "genre": "石壁铜管回响",
+      "lead": "horn",
+      "partner": "bassoon",
+      "texture": "forge",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 78.72
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 24.392,
+          "bpm": 82
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 71.225,
+          "bpm": 83.23
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 94.295,
+          "bpm": 84.05
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 139.985,
+          "bpm": 83.23
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 163.056,
+          "bpm": 79.54
+        }
+      ],
+      "section_rms_db": [
+        -28.76,
+        -22.52,
+        -24.08,
+        -19.11,
+        -15.78,
+        -25.58
+      ],
+      "instruments": {
+        "trombone": 23,
+        "bass": 60,
+        "cello": 60,
+        "strings": 120,
+        "viola": 60,
+        "harp": 60,
+        "horn": 163,
+        "timpani": 15,
+        "glock": 30,
+        "bassoon": 68,
+        "flute": 8,
+        "violin": 12
+      },
+      "note_count": 679,
+      "midi": "tools/audio/scores/map_quarry.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_ruins",
-      "title": "灵泉旧记录",
-      "path": "music/map_ruins.wav",
-      "seconds": 49.231,
-      "peak_db": -2.85,
-      "rms_db": -16.94,
-      "sha256": "2340b2d700616b702ef7c5942f3890b70ec4d1a4e75c5697a9176c4c5053e718",
-      "bpm": 78,
-      "bars": 16,
-      "loop": true
+      "title": "灵泉记录站·七分钟的涟漪",
+      "path": "music/map_ruins.ogg",
+      "seconds": 200.099,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.86,
+      "rms_db": -16.87,
+      "sha256": "a260611718c05432645c4b200223aaf15bb785ea8e3b0563934f0bfec3c3bb34",
+      "bpm": 96,
+      "bars": 64,
+      "meter": "5/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "灵泉水路、记录台与互相矛盾的备份",
+      "opener": "harp",
+      "solo_opening_bars": 4,
+      "genre": "水纹竖琴",
+      "lead": "flute",
+      "partner": "oboe",
+      "texture": "ripples",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 92.16
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 26.044,
+          "bpm": 96
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 76.047,
+          "bpm": 97.44
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 100.679,
+          "bpm": 98.4
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 149.463,
+          "bpm": 97.44
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 174.096,
+          "bpm": 93.12
+        }
+      ],
+      "section_rms_db": [
+        -23.58,
+        -16.22,
+        -17.37,
+        -15.54,
+        -14.8,
+        -21.61
+      ],
+      "instruments": {
+        "harp": 614,
+        "bass": 60,
+        "cello": 60,
+        "strings": 149,
+        "viola": 60,
+        "flute": 146,
+        "celesta": 15,
+        "oboe": 70,
+        "horn": 39
+      },
+      "note_count": 1213,
+      "midi": "tools/audio/scores/map_ruins.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_refuge",
-      "title": "循光归航",
-      "path": "music/map_refuge.wav",
-      "seconds": 44.651,
-      "peak_db": -2.85,
-      "rms_db": -17.41,
-      "sha256": "24718f5dbc332e9f868c0f318fe00303b5a8537b88dc263a8b970e2b049d850f",
-      "bpm": 86,
-      "bars": 16,
-      "loop": true
+      "title": "归航救援营·把名字带回家",
+      "path": "music/map_refuge.ogg",
+      "seconds": 174.632,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.89,
+      "rms_db": -19.39,
+      "sha256": "0e6c7d7c6609f9aaf8fc29b8bc9eafabcd6c0068a4e709d42811ebd2c2c28c94",
+      "bpm": 88,
+      "bars": 64,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "救援名单、中继塔、仍等待归队的营地",
+      "opener": "nylon_guitar",
+      "solo_opening_bars": 4,
+      "genre": "营地木吉他赞歌",
+      "lead": "horn",
+      "partner": "violin",
+      "texture": "hymn",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 84.48
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 22.729,
+          "bpm": 88
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 66.368,
+          "bpm": 89.32
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 87.866,
+          "bpm": 90.2
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 130.441,
+          "bpm": 89.32
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 151.938,
+          "bpm": 85.36
+        }
+      ],
+      "section_rms_db": [
+        -26.22,
+        -21.1,
+        -23.4,
+        -17.56,
+        -14.89,
+        -24.91
+      ],
+      "instruments": {
+        "nylon_guitar": 11,
+        "bass": 60,
+        "cello": 60,
+        "strings": 120,
+        "viola": 60,
+        "harp": 140,
+        "horn": 158,
+        "violin": 77,
+        "trombone": 12,
+        "flute": 8
+      },
+      "note_count": 706,
+      "midi": "tools/audio/scores/map_refuge.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_wetland",
-      "title": "雨灯浮水",
-      "path": "music/map_wetland.wav",
-      "seconds": 53.333,
-      "peak_db": -2.85,
-      "rms_db": -17.45,
-      "sha256": "fd0c6d46c9787a76862237750da89fd45f54bc72748ad1dd9418802b310b34c2",
-      "bpm": 72,
-      "bars": 16,
-      "loop": true
+      "title": "雨灯湿地·渡口夜船歌",
+      "path": "music/map_wetland.ogg",
+      "seconds": 137.211,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.98,
+      "rms_db": -19.65,
+      "sha256": "2c839c2afe59ac85efd395e2ec747ba4f89d5860a978e05b26ac9c23ffa16c6f",
+      "bpm": 84,
+      "bars": 64,
+      "meter": "6/8",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "雨灯、芦苇、渡口与给晚归人留的热汤",
+      "opener": "clarinet",
+      "solo_opening_bars": 4,
+      "genre": "雨夜船歌",
+      "lead": "oboe",
+      "partner": "flute",
+      "texture": "boat",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 80.64
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 17.858,
+          "bpm": 84
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 52.147,
+          "bpm": 85.26
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 69.037,
+          "bpm": 86.1
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 102.489,
+          "bpm": 85.26
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 119.38,
+          "bpm": 81.48
+        }
+      ],
+      "section_rms_db": [
+        -26.96,
+        -20.31,
+        -21.66,
+        -18.06,
+        -15.83,
+        -25.22
+      ],
+      "instruments": {
+        "clarinet": 12,
+        "bass": 60,
+        "cello": 120,
+        "strings": 144,
+        "viola": 60,
+        "harp": 360,
+        "oboe": 127,
+        "percussion": 8,
+        "flute": 68,
+        "horn": 36
+      },
+      "note_count": 995,
+      "midi": "tools/audio/scores/map_wetland.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_causeway",
-      "title": "断桥彼岸",
-      "path": "music/map_causeway.wav",
-      "seconds": 43.636,
-      "peak_db": -2.85,
-      "rms_db": -17.03,
-      "sha256": "c9d60e1ba6f43b9a4bc2332d47cb6639350026ee08e8d1fa4bc6b20f27ca0205",
-      "bpm": 88,
-      "bars": 16,
-      "loop": true
+      "title": "断桥驿路·风中的旧路标",
+      "path": "music/map_causeway.ogg",
+      "seconds": 147.765,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.59,
+      "rms_db": -18.48,
+      "sha256": "98a6b45bda798349f9f7b7e9d56f8d8b3e7ea0da535cffc97a32ecceb3e93e40",
+      "bpm": 104,
+      "bars": 64,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "残桥、未拆的信与通向彼岸的绕行路",
+      "opener": "steel_guitar",
+      "solo_opening_bars": 4,
+      "genre": "旅途民谣",
+      "lead": "clarinet",
+      "partner": "horn",
+      "texture": "journey",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 99.84
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 19.232,
+          "bpm": 104
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 56.158,
+          "bpm": 105.56
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 74.348,
+          "bpm": 106.6
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 110.373,
+          "bpm": 105.56
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 128.563,
+          "bpm": 100.88
+        }
+      ],
+      "section_rms_db": [
+        -24.0,
+        -19.14,
+        -21.9,
+        -16.87,
+        -14.96,
+        -21.74
+      ],
+      "instruments": {
+        "steel_guitar": 14,
+        "bass": 60,
+        "cello": 204,
+        "strings": 148,
+        "viola": 60,
+        "harp": 140,
+        "clarinet": 138,
+        "horn": 108,
+        "flute": 8
+      },
+      "note_count": 880,
+      "midi": "tools/audio/scores/map_causeway.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_kilnwood",
-      "title": "松烟余温",
-      "path": "music/map_kilnwood.wav",
-      "seconds": 46.829,
-      "peak_db": -2.85,
-      "rms_db": -17.71,
-      "sha256": "d13efece1c1532c8c22e53d239b3bfa967924d02fa3e5552219388c6d3cfc60a",
-      "bpm": 82,
-      "bars": 16,
-      "loop": true
+      "title": "松烟炭林·封火后的余温",
+      "path": "music/map_kilnwood.ogg",
+      "seconds": 128.063,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -2.1,
+      "rms_db": -17.69,
+      "sha256": "b5d79a9134e025c0f4d4413a3bfed75b7e290c4d4d8d115cad9f0e65c1259c6b",
+      "bpm": 90,
+      "bars": 64,
+      "meter": "3/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "炭窑、松脂、修复工具与保护石像的试材台",
+      "opener": "bassoon",
+      "solo_opening_bars": 4,
+      "genre": "炭林低木管",
+      "lead": "bassoon",
+      "partner": "clarinet",
+      "texture": "embers",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 86.4
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 16.668,
+          "bpm": 90
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 48.67,
+          "bpm": 91.35
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 64.435,
+          "bpm": 92.25
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 95.657,
+          "bpm": 91.35
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 111.421,
+          "bpm": 87.3
+        }
+      ],
+      "section_rms_db": [
+        -22.63,
+        -18.31,
+        -19.78,
+        -15.99,
+        -14.35,
+        -22.93
+      ],
+      "instruments": {
+        "bassoon": 131,
+        "bass": 60,
+        "cello": 60,
+        "strings": 144,
+        "viola": 60,
+        "harp": 60,
+        "clarinet": 68,
+        "horn": 36,
+        "flute": 8
+      },
+      "note_count": 627,
+      "midi": "tools/audio/scores/map_kilnwood.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_archive",
-      "title": "镜沙残页",
-      "path": "music/map_archive.wav",
-      "seconds": 51.892,
-      "peak_db": -2.85,
-      "rms_db": -17.61,
-      "sha256": "17fdbee87e42808bd2c1ca4262149835c3bf4c0e93d82c69015f2dde47625a4f",
-      "bpm": 74,
-      "bars": 16,
-      "loop": true
+      "title": "镜沙档案馆·镜中复调",
+      "path": "music/map_archive.ogg",
+      "seconds": 167.039,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.8,
+      "rms_db": -17.63,
+      "sha256": "c275ce18fa6b23ea5e562572000a80ff8d5d635f0af3da076c9b75da5b8ed413",
+      "bpm": 92,
+      "bars": 64,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "镜沙索引、异本与尚未闭合的证据链",
+      "opener": "celesta",
+      "solo_opening_bars": 4,
+      "genre": "档案复调",
+      "lead": "violin",
+      "partner": "oboe",
+      "texture": "counterpoint",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 88.32
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 21.741,
+          "bpm": 92
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 63.483,
+          "bpm": 93.38
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 84.045,
+          "bpm": 94.3
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 124.769,
+          "bpm": 93.38
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 145.332,
+          "bpm": 89.24
+        }
+      ],
+      "section_rms_db": [
+        -25.8,
+        -18.6,
+        -19.71,
+        -15.53,
+        -14.16,
+        -23.31
+      ],
+      "instruments": {
+        "celesta": 33,
+        "bass": 60,
+        "cello": 60,
+        "strings": 156,
+        "viola": 60,
+        "harp": 180,
+        "violin": 175,
+        "oboe": 158,
+        "flute": 24,
+        "horn": 42
+      },
+      "note_count": 948,
+      "midi": "tools/audio/scores/map_archive.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "map_snowridge",
-      "title": "霜脊信标",
-      "path": "music/map_snowridge.wav",
-      "seconds": 54.857,
-      "peak_db": -2.85,
-      "rms_db": -17.86,
-      "sha256": "7547d1d756742497751fb93732aceec2d0ddf4b9708cbc9d417d16c6b54fa5fa",
-      "bpm": 70,
-      "bars": 16,
-      "loop": true
+      "title": "霜脊瞭望岭·群山与归队信标",
+      "path": "music/map_snowridge.ogg",
+      "seconds": 213.439,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.77,
+      "rms_db": -18.72,
+      "sha256": "1d8b44fa44587b6f4b92ee1d5201347da3b0c593d81155fc7d57209969ae4311",
+      "bpm": 72,
+      "bars": 64,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "雪山、失联信标与下一次共同归来的名单",
+      "opener": "horn",
+      "solo_opening_bars": 4,
+      "genre": "雪岭铜管诗",
+      "lead": "horn",
+      "partner": "flute",
+      "texture": "mountain",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 69.12
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 27.78,
+          "bpm": 72
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 81.117,
+          "bpm": 73.08
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 107.391,
+          "bpm": 73.8
+        },
+        {
+          "name": "再现与高潮",
+          "bar": 48,
+          "seconds": 159.428,
+          "bpm": 73.08
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 56,
+          "seconds": 185.702,
+          "bpm": 69.84
+        }
+      ],
+      "section_rms_db": [
+        -30.63,
+        -21.05,
+        -23.66,
+        -15.73,
+        -14.85,
+        -26.63
+      ],
+      "instruments": {
+        "horn": 155,
+        "bass": 60,
+        "cello": 60,
+        "strings": 120,
+        "viola": 60,
+        "harp": 140,
+        "percussion": 8,
+        "flute": 64,
+        "trombone": 12,
+        "oboe": 8,
+        "violin": 11
+      },
+      "note_count": 698,
+      "midi": "tools/audio/scores/map_snowridge.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "boss_H01",
-      "title": "残旗急阵",
-      "path": "music/boss_H01.wav",
-      "seconds": 29.091,
-      "peak_db": -2.85,
-      "rms_db": -18.55,
-      "sha256": "0f4914995cb4799f319811e65b711aa0276e41300a6ae66356266228f51e8f9e",
-      "bpm": 132,
-      "bars": 16,
-      "loop": true
+      "title": "残旗剑士·断刃电流",
+      "path": "music/boss_H01.ogg",
+      "seconds": 157.635,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.94,
+      "rms_db": -22.58,
+      "sha256": "f95a2d8416e641cb199e2497a773ec2e0bf764708ee1a25351db0948d86c99c9",
+      "bpm": 136,
+      "bars": 72,
+      "meter": "5/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "断桥错步突刺：短促失真吉他与五拍硬摇滚",
+      "opener": "distortion_guitar",
+      "solo_opening_bars": 4,
+      "genre": "五拍硬摇滚",
+      "lead": "distortion_guitar",
+      "partner": "trombone",
+      "texture": "blades",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 130.56
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 18.384,
+          "bpm": 136
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 53.68,
+          "bpm": 138.04
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 71.068,
+          "bpm": 139.4
+        },
+        {
+          "name": "再现与交响高潮",
+          "bar": 48,
+          "seconds": 105.504,
+          "bpm": 142.12
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 64,
+          "seconds": 139.28,
+          "bpm": 131.92
+        }
+      ],
+      "section_rms_db": [
+        -34.19,
+        -24.23,
+        -25.5,
+        -21.85,
+        -18.8,
+        -32.11
+      ],
+      "instruments": {
+        "distortion_guitar": 227,
+        "electric_bass": 204,
+        "strings": 226,
+        "viola": 68,
+        "overdrive_guitar": 720,
+        "percussion": 935,
+        "timpani": 196,
+        "trombone": 104,
+        "horn": 98,
+        "flute": 8
+      },
+      "note_count": 2786,
+      "midi": "tools/audio/scores/boss_H01.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "boss_H02",
-      "title": "荆冠逐猎",
-      "path": "music/boss_H02.wav",
-      "seconds": 30.968,
-      "peak_db": -2.85,
-      "rms_db": -19.32,
-      "sha256": "bcdf71a5dc1fa57b92c91d9b87ffeab956d934ed0e07dedb44c4d81f395ead33",
-      "bpm": 124,
-      "bars": 16,
-      "loop": true
+      "title": "荆冠鹿骑·跃枝追猎",
+      "path": "music/boss_H02.ogg",
+      "seconds": 109.009,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -2.03,
+      "rms_db": -20.62,
+      "sha256": "99b06c93eaa99849de956b2c6a9a8bbc565fa6eff26572b6ad53f253754f6483",
+      "bpm": 118,
+      "bars": 72,
+      "meter": "6/8",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "林冠与鹿蹄：小提琴跳弓、木吉他与民谣摇滚",
+      "opener": "violin",
+      "solo_opening_bars": 4,
+      "genre": "六拍民谣摇滚",
+      "lead": "violin",
+      "partner": "nylon_guitar",
+      "texture": "hunt",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 113.28
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 12.713,
+          "bpm": 118
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 37.121,
+          "bpm": 119.77
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 49.145,
+          "bpm": 120.95
+        },
+        {
+          "name": "再现与交响高潮",
+          "bar": 48,
+          "seconds": 72.958,
+          "bpm": 123.31
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 64,
+          "seconds": 96.316,
+          "bpm": 114.46
+        }
+      ],
+      "section_rms_db": [
+        -29.66,
+        -22.27,
+        -23.66,
+        -20.11,
+        -16.76,
+        -31.26
+      ],
+      "instruments": {
+        "violin": 165,
+        "electric_bass": 136,
+        "strings": 200,
+        "viola": 68,
+        "nylon_guitar": 802,
+        "percussion": 529,
+        "timpani": 140,
+        "horn": 80,
+        "trombone": 16,
+        "flute": 8
+      },
+      "note_count": 2144,
+      "midi": "tools/audio/scores/boss_H02.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "boss_H03",
-      "title": "沉潜铁潮",
-      "path": "music/boss_H03.wav",
-      "seconds": 34.286,
-      "peak_db": -2.85,
-      "rms_db": -18.78,
-      "sha256": "6fd7343ff9b6a84523e72d688d0924338c65adade66f3de0347aaa9a2f2b97e7",
-      "bpm": 112,
-      "bars": 16,
-      "loop": true
+      "title": "沉潜重装·液压脉冲",
+      "path": "music/boss_H03.ogg",
+      "seconds": 182.454,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -2.18,
+      "rms_db": -21.44,
+      "sha256": "000f2ebbbeaa462adaf9bc2fb15e40cf9d4ab0592e5fa9236f35894c5a35bf25",
+      "bpm": 94,
+      "bars": 72,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "压力机与高压爆破：电贝斯切分、半拍重鼓及低铜管",
+      "opener": "electric_bass",
+      "solo_opening_bars": 4,
+      "genre": "半拍工业重摇滚",
+      "lead": "electric_bass",
+      "partner": "trombone",
+      "texture": "siege",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 90.24
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 21.278,
+          "bpm": 94
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 62.132,
+          "bpm": 95.41
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 82.257,
+          "bpm": 96.35
+        },
+        {
+          "name": "再现与交响高潮",
+          "bar": 48,
+          "seconds": 122.115,
+          "bpm": 98.23
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 64,
+          "seconds": 161.21,
+          "bpm": 91.18
+        }
+      ],
+      "section_rms_db": [
+        -23.87,
+        -20.55,
+        -22.46,
+        -20.32,
+        -20.53,
+        -28.34
+      ],
+      "instruments": {
+        "electric_bass": 159,
+        "strings": 198,
+        "viola": 68,
+        "distortion_guitar": 480,
+        "percussion": 703,
+        "timpani": 140,
+        "trombone": 94,
+        "horn": 79,
+        "flute": 8
+      },
+      "note_count": 1929,
+      "midi": "tools/audio/scores/boss_H03.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "boss_H04",
-      "title": "灰翼裁决",
-      "path": "music/boss_H04.wav",
-      "seconds": 26.667,
-      "peak_db": -2.85,
-      "rms_db": -17.78,
-      "sha256": "8b21ac629def10fdb860296ff21dd78865977426b2d412ddd92f561f68de41f5",
-      "bpm": 144,
-      "bars": 16,
-      "loop": true
+      "title": "灰翼审判者·天穹折光",
+      "path": "music/boss_H04.ogg",
+      "seconds": 124.281,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -2.02,
+      "rms_db": -21.17,
+      "sha256": "674209084fe9f7fa1a8c2ec05f247a64d7cc11359d0521da2cf57ade3835d777",
+      "bpm": 138,
+      "bars": 72,
+      "meter": "4/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "灰翼俯冲与落羽：钢琴大跳、明亮增四度和交响摇滚",
+      "opener": "piano",
+      "solo_opening_bars": 4,
+      "genre": "钢琴交响摇滚",
+      "lead": "piano",
+      "partner": "horn",
+      "texture": "judgement",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 132.48
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 14.494,
+          "bpm": 138
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 42.322,
+          "bpm": 140.07
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 56.03,
+          "bpm": 141.45
+        },
+        {
+          "name": "再现与交响高潮",
+          "bar": 48,
+          "seconds": 83.18,
+          "bpm": 144.21
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 64,
+          "seconds": 109.809,
+          "bpm": 133.86
+        }
+      ],
+      "section_rms_db": [
+        -30.06,
+        -22.77,
+        -23.85,
+        -21.01,
+        -17.27,
+        -29.3
+      ],
+      "instruments": {
+        "piano": 141,
+        "electric_bass": 272,
+        "strings": 182,
+        "viola": 68,
+        "distortion_guitar": 960,
+        "percussion": 819,
+        "timpani": 140,
+        "horn": 153,
+        "trombone": 16,
+        "flute": 8
+      },
+      "note_count": 2759,
+      "midi": "tools/audio/scores/boss_H04.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "boss_H05",
-      "title": "霜文封印",
-      "path": "music/boss_H05.wav",
-      "seconds": 32.0,
-      "peak_db": -2.85,
-      "rms_db": -18.08,
-      "sha256": "46f23ef4ee331e0fbf3e822d1d6b694d0c6d8039bc1e0b7d2c156004d4db257d",
-      "bpm": 120,
-      "bars": 16,
-      "loop": true
+      "title": "霜典记录者·镜面错码",
+      "path": "music/boss_H05.ogg",
+      "seconds": 133.99,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -1.81,
+      "rms_db": -19.14,
+      "sha256": "dbfa210ddf827d18fffad8096cc078c5a67ee2c8282b64cc276d7b01e48c558a",
+      "bpm": 112,
+      "bars": 72,
+      "meter": "7/8",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "镜像霜文：清音电吉他点奏、七拍切分与钢琴倒影",
+      "opener": "clean_guitar",
+      "solo_opening_bars": 4,
+      "genre": "七拍前卫摇滚",
+      "lead": "clean_guitar",
+      "partner": "piano",
+      "texture": "fugue",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 107.52
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 15.626,
+          "bpm": 112
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 45.628,
+          "bpm": 113.68
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 60.408,
+          "bpm": 114.8
+        },
+        {
+          "name": "再现与交响高潮",
+          "bar": 48,
+          "seconds": 89.678,
+          "bpm": 117.04
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 64,
+          "seconds": 118.388,
+          "bpm": 108.64
+        }
+      ],
+      "section_rms_db": [
+        -26.97,
+        -20.45,
+        -21.71,
+        -18.47,
+        -15.63,
+        -27.09
+      ],
+      "instruments": {
+        "clean_guitar": 205,
+        "electric_bass": 204,
+        "strings": 214,
+        "viola": 68,
+        "steel_guitar": 600,
+        "celesta": 17,
+        "percussion": 703,
+        "piano": 188,
+        "timpani": 140,
+        "flute": 24,
+        "horn": 89,
+        "trombone": 16
+      },
+      "note_count": 2468,
+      "midi": "tools/audio/scores/boss_H05.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "boss_H06",
-      "title": "锈钟震鸣",
-      "path": "music/boss_H06.wav",
-      "seconds": 33.103,
-      "peak_db": -2.85,
-      "rms_db": -18.14,
-      "sha256": "58af38a10112b2abae457d5aa0087ec44b76c1a20fb31b3eacb73929f73418c5",
-      "bpm": 116,
-      "bars": 16,
-      "loop": true
+      "title": "锈钟守望者·锈蚀钟摆",
+      "path": "music/boss_H06.ogg",
+      "seconds": 169.251,
+      "sample_rate": 44100,
+      "channels": 2,
+      "codec": "Vorbis",
+      "peak_db": -2.0,
+      "rms_db": -22.72,
+      "sha256": "8b6f148f5c1cd64ecc6b57652cda2ee87876a3ac4bb32dbf03e21a718c526453",
+      "bpm": 76,
+      "bars": 72,
+      "meter": "3/4",
+      "loop": true,
+      "revision": "hybrid-v3",
+      "scene": "摇摆巨钟：钟琴裸奏、缓慢厄运摇滚与低音钢琴",
+      "opener": "glock",
+      "solo_opening_bars": 4,
+      "genre": "三拍厄运摇滚",
+      "lead": "horn",
+      "partner": "piano",
+      "texture": "bells",
+      "sections": [
+        {
+          "name": "序奏",
+          "bar": 0,
+          "seconds": 0.0,
+          "bpm": 72.96
+        },
+        {
+          "name": "主题A",
+          "bar": 8,
+          "seconds": 19.738,
+          "bpm": 76
+        },
+        {
+          "name": "展开与对答",
+          "bar": 24,
+          "seconds": 57.636,
+          "bpm": 77.14
+        },
+        {
+          "name": "主题B",
+          "bar": 32,
+          "seconds": 76.304,
+          "bpm": 77.9
+        },
+        {
+          "name": "再现与交响高潮",
+          "bar": 48,
+          "seconds": 113.278,
+          "bpm": 79.42
+        },
+        {
+          "name": "尾声与回环",
+          "bar": 64,
+          "seconds": 149.543,
+          "bpm": 73.72
+        }
+      ],
+      "section_rms_db": [
+        -34.68,
+        -24.47,
+        -25.94,
+        -22.33,
+        -18.77,
+        -30.59
+      ],
+      "instruments": {
+        "glock": 41,
+        "electric_bass": 136,
+        "strings": 136,
+        "viola": 68,
+        "horn": 138,
+        "distortion_guitar": 120,
+        "timpani": 143,
+        "percussion": 297,
+        "piano": 68,
+        "trombone": 16,
+        "flute": 8,
+        "violin": 23
+      },
+      "note_count": 1194,
+      "midi": "tools/audio/scores/boss_H06.mid",
+      "soundfont": "GeneralUser GS 2.0.3"
     },
     {
       "id": "amb_forest",
@@ -417,5 +1583,6 @@
       "sha256": "92909868dc17b2a379ab890c7ddb6e04cfdf0ce9a57784cb871130bd75cbfcea",
       "loop": false
     }
-  ]
+  ],
+  "music_revision": "hybrid-v3"
 }

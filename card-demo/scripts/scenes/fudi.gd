@@ -12,8 +12,14 @@ const Loot = preload("res://scripts/scenes/loot_catalog.gd")
 const Equipment = preload("res://scripts/scenes/fudi_equipment.gd")
 const Buildings = preload("res://scripts/scenes/fudi_buildings.gd")
 const Chests = preload("res://scripts/scenes/fudi_chests.gd")
+const GMTools = preload("res://scripts/scenes/fudi_gm.gd")
+const NPCs = preload("res://scripts/scenes/fudi_npcs.gd")
+const NpcExchange = preload("res://scripts/scenes/fudi_npc_exchange.gd")
+const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
 const ENEMY_ART := preload("res://assets/characters/pet_enemy_stone.png")
-const ARENA := Rect2(24, 212, 1232, 430)
+const ARENA := Rect2(16, 88, 1248, 560)
+const WORLD_ZOOM := 0.8
+const VIEW_SIZE := ARENA.size / WORLD_ZOOM
 const SPEED := 260.0
 const ATTACKS := {
 	"j": {"damage": 26, "cooldown": 0.32, "radius": 112.0, "name": "斩击"},
@@ -52,6 +58,17 @@ var continue_button: Button
 var loot_rng := RandomNumberGenerator.new()
 var equipment: Equipment
 var buildings: Buildings
+var gm: CanvasLayer
+var health_bar: ProgressBar
+var health_label: Label
+var hud_actions: HBoxContainer
+var menu_button: Button
+var menu: Control
+var menu_actions: VBoxContainer
+var menu_exit: Button
+var menu_info: Label
+var npcs: Node
+var npc_exchange: Node
 
 ## Fixed observation provider: only painted targets intersecting the clipped world view.
 func play_visible() -> Dictionary:
@@ -69,19 +86,19 @@ func play_visible() -> Dictionary:
 	for exit: Array in data.exits:
 		_visible_target(targets,exit[1]*data.size,"E → "+str(Catalog.REGIONS[exit[0]].name),"exit",80)
 	for enemy: Dictionary in states[region].enemies:
-		var center := ARENA.position+Vector2(enemy.position)-camera_origin
+		var center := world_to_screen(enemy.position)
 		_visible_target(targets,enemy.position-Vector2(0,38),"守卫","enemy",46)
-		var bar := Rect2(center-Vector2(28,84),Vector2(56,5))
-		if ARENA.encloses(bar) and not targets.is_empty() and targets[-1].kind == "enemy" and ARENA.has_point(center-Vector2(0,38)):
+		var bar := Rect2(center-Vector2(28,84)*WORLD_ZOOM,Vector2(56,5)*WORLD_ZOOM)
+		if ARENA.encloses(bar) and not targets.is_empty() and targets[-1].kind == "enemy" and ARENA.has_point(center-Vector2(0,38)*WORLD_ZOOM):
 			targets[-1]["visible_health_bar"] = {"fill_ratio":clampf(float(enemy.hp)/float(enemy.get("max_hp",60)),0.0,1.0),"x":bar.position.x,"y":bar.position.y,"width":bar.size.x,"height":bar.size.y}
 	for pickup: Dictionary in states[region].pickups:
 		if not pickup.get("weather_growth",false): _visible_target(targets,pickup.position,str(Catalog.ITEMS[pickup.item].name),"pickup",30)
-	var point := ARENA.position+player_foot-camera_origin
+	var point := world_to_screen(player_foot)
 	result["player_screen"] = {"x":point.x,"y":point.y}
 	result["objects"] = targets
 	var terrain: Array = []
 	for rect: Rect2 in Maps.obstacles(region):
-		var painted := Rect2(ARENA.position+rect.position-camera_origin,rect.size)
+		var painted := Rect2(world_to_screen(rect.position),rect.size*WORLD_ZOOM)
 		var clipped := ARENA.intersection(painted)
 		if clipped.has_area():
 			terrain.append({"appearance":"地形或建筑的已绘主体，不代表完整碰撞轮廓","visible_bounds":{"x":clipped.position.x,"y":clipped.position.y,"width":clipped.size.x,"height":clipped.size.y}})
@@ -97,13 +114,20 @@ func play_visible() -> Dictionary:
 		result["chest_encounter_view"] = chests.play_visible_encounters()
 	var weather := get_node_or_null("Weather")
 	if weather != null: result["visible_gardens"] = weather.play_visible()
+	if npcs != null: result["visible_npcs"] = npcs.play_visible()
 	return result
 
 func _visible_target(targets: Array, point: Vector2, title: String, kind: String, _radius: float) -> void:
-	var screen := ARENA.position+point-camera_origin
+	var screen := world_to_screen(point)
 	# Conservative until exact per-art bounds are available: omit edge fragments.
 	if not ARENA.has_point(screen): return
 	targets.append({"title":title,"kind":kind,"x":screen.x,"y":screen.y})
+
+func world_to_screen(point: Vector2) -> Vector2:
+	return ARENA.position + (point - camera_origin) * WORLD_ZOOM
+
+func visible_world() -> Rect2:
+	return Rect2(camera_origin, VIEW_SIZE)
 
 func _ready() -> void:
 	add_to_group("cun_play_visible")
@@ -120,6 +144,7 @@ func _ready() -> void:
 	world_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(world_view)
 	world_canvas = Control.new()
+	world_canvas.scale = Vector2.ONE * WORLD_ZOOM
 	world_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	world_canvas.draw.connect(_draw_world)
 	world_view.add_child(world_canvas)
@@ -133,7 +158,7 @@ func _ready() -> void:
 	tools.atlas.resource_provider = remaining_resources
 	tools.atlas.set_meta("loot_provider", Loot.summary)
 	tools.atlas.travel_requested.connect(enter_region)
-	tools.modal_blocker = func() -> bool: return get_meta("audio_settings_open", false) or dialogue.visible or journal.visible or outcome.visible or (equipment != null and equipment.is_open())
+	tools.modal_blocker = func() -> bool: return menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or dialogue.visible or journal.visible or outcome.visible or (equipment != null and equipment.is_open())
 	enter_region(region)
 	var bosses := Bosses.new()
 	bosses.name = "Bosses"
@@ -147,6 +172,15 @@ func _ready() -> void:
 	var chests := Chests.new()
 	chests.name = "Chests"
 	add_child(chests)
+	gm = GMTools.new()
+	gm.name = "GMTools"
+	add_child(gm)
+	npcs = NPCs.new()
+	npcs.name = "NPCs"
+	add_child(npcs)
+	npc_exchange = NpcExchange.new()
+	npc_exchange.name = "NpcExchange"
+	add_child(npc_exchange)
 
 func combat_targets() -> Array[Dictionary]:
 	var targets: Array[Dictionary] = []
@@ -178,7 +212,7 @@ func _free_point(id: String, rng: RandomNumberGenerator, occupied: Array) -> Vec
 	var extent: Vector2 = Maps.MAPS[id].size
 	for attempt in range(3000):
 		var point := Vector2(rng.randf_range(130, extent.x - 130), rng.randf_range(160, extent.y - 130))
-		if not Maps.walkable(id, point, 55) or point.distance_to(Maps.MAPS[id].spawn * extent) < 400:
+		if not Maps.walkable(id, point, 55) or point.distance_to(Maps.MAPS[id].spawn * extent) < 400 or NPCs.reserved(id, point):
 			continue
 		var clear := true
 		for site: Array in Maps.MAPS[id].sites:
@@ -197,30 +231,56 @@ func _free_point(id: String, rng: RandomNumberGenerator, occupied: Array) -> Vec
 
 func _build_hud() -> void:
 	var header := PanelContainer.new()
-	header.position = Vector2(24, 20)
-	header.size = Vector2(1232, 124)
-	header.add_theme_stylebox_override("panel", UI.panel())
+	header.position = Vector2(16, 12)
+	header.size = Vector2(1248, 64)
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var skin := UI.panel(Color("#142d32"))
+	skin.set_content_margin_all(0)
+	header.add_theme_stylebox_override("panel", skin)
 	add_child(header)
-	var layout := VBoxContainer.new()
-	header.add_child(layout)
-	status = UI.label("", 25, Color("#f4daa0"))
-	layout.add_child(status)
-	bag = UI.label("", 19)
-	layout.add_child(bag)
-	layout.add_child(UI.label("WASD 移动  /  J 斩击  K 灵弹  L 震荡  /  E 调查·休息·通行  /  B 行囊  C 装备  /  靠近光点采集", 17))
-	skills = UI.label("", 19, Color("#b5d9d1"))
-	skills.position = Vector2(350, 169)
+	status = UI.label("", 22, Color("#f4daa0"))
+	status.position = Vector2(34, 18)
+	add_child(status)
+	bag = UI.label("", 13, Color("#9eb8b0"))
+	bag.position = Vector2(34, 49)
+	bag.size.x = 280
+	bag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	add_child(bag)
+	health_label = UI.label("", 16)
+	health_label.position = Vector2(330, 22)
+	add_child(health_label)
+	health_bar = ProgressBar.new()
+	health_bar.position = Vector2(330, 51)
+	health_bar.show_percentage = false
+	health_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color("#29423f")
+	track.set_corner_radius_all(4)
+	health_bar.add_theme_stylebox_override("background", track)
+	health_bar.add_theme_stylebox_override("fill", track.duplicate())
+	add_child(health_bar)
+	health_bar.size = Vector2(200, 7)
+	hud_actions = HBoxContainer.new()
+	hud_actions.position = Vector2(800, 25)
+	hud_actions.add_theme_constant_override("separation", 8)
+	add_child(hud_actions)
+	menu_button = UI.button("菜单 Esc", toggle_menu)
+	style_hud_button(menu_button)
+	hud_actions.add_child(menu_button)
+	skills = UI.label("", 16, Color("#b5d9d1"))
+	skills.position = Vector2(28, 674)
 	add_child(skills)
 	minimap = Control.new()
-	minimap.position = Vector2(1000, 230)
-	minimap.size = Vector2(238, 158)
+	minimap.position = Vector2(1042, 100)
+	minimap.size = Vector2(210, 140)
 	minimap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	minimap.draw.connect(_draw_minimap)
 	add_child(minimap)
-	hint = UI.label("", 17, Color("#e5d49e"))
-	hint.position = Vector2(28, 652)
-	hint.size = Vector2(1224, 66)
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint = UI.label("", 16, Color("#e5d49e"))
+	hint.position = Vector2(420, 674)
+	hint.size = Vector2(830, 28)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	add_child(hint)
 	var layer := CanvasLayer.new()
 	layer.layer = 100
@@ -273,10 +333,92 @@ func _build_hud() -> void:
 	book_layout.add_child(journal_text)
 	book_layout.add_child(UI.button("继续探索  B / Esc", func() -> void: journal.hide()))
 	journal.hide()
+	menu = Control.new()
+	menu.name = "ExplorationMenu"
+	menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(menu)
+	var menu_shade := ColorRect.new()
+	menu_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu_shade.color = Color(0.01, 0.03, 0.04, 0.65)
+	menu.add_child(menu_shade)
+	var menu_panel := PanelContainer.new()
+	menu_panel.position = Vector2(850, 88)
+	menu_panel.custom_minimum_size = Vector2(398, 460)
+	menu_panel.add_theme_stylebox_override("panel", UI.panel())
+	menu.add_child(menu_panel)
+	var menu_layout := VBoxContainer.new()
+	menu_layout.add_theme_constant_override("separation", 14)
+	menu_panel.add_child(menu_layout)
+	menu_layout.add_child(UI.label("探索菜单", 24, Color("#f4daa0")))
+	menu_info = UI.label("", 16)
+	menu_info.custom_minimum_size.x = 355
+	menu_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	menu_layout.add_child(menu_info)
+	menu_actions = VBoxContainer.new()
+	menu_actions.add_theme_constant_override("separation", 8)
+	menu_layout.add_child(menu_actions)
+	menu_actions.add_child(UI.button("继续探索  Esc", close_menu))
+	menu_layout.add_child(UI.label("WASD 移动 · E 交互\nJ 斩击 · K 灵弹 · L 震荡\nM 地图 · B 行囊 · C 装备\n靠近资源自动采集；规则详见 M / B。", 15, Color("#9eb8b0")))
+	menu.hide()
 	var update_shade := func() -> void: modal_shade.visible = outcome.visible or dialogue.visible or journal.visible
 	for panel: Control in [outcome, dialogue, journal]:
 		panel.visibility_changed.connect(update_shade)
 	update_shade.call()
+
+func style_hud_button(button: Button) -> void:
+	button.custom_minimum_size = Vector2(104, 36)
+	button.add_theme_font_size_override("font_size", 15)
+	for state: String in ["normal", "hover", "pressed"]:
+		var skin: StyleBoxFlat = button.get_theme_stylebox(state).duplicate()
+		skin.set_content_margin_all(8)
+		button.add_theme_stylebox_override(state, skin)
+
+func register_hud_action(button: Button) -> void:
+	button.reparent(hud_actions, false)
+	style_hud_button(button)
+	button.custom_minimum_size.x = 104
+	button.size = button.custom_minimum_size
+	hud_actions.move_child(menu_button, -1)
+
+func configure_exploration_actions(bar: HBoxContainer) -> void:
+	var map_button := bar.get_child(0) as Button
+	var exit_button := bar.get_child(1) as Button
+	register_hud_action(map_button)
+	register_menu_action(exit_button)
+	menu_exit = exit_button
+	bar.hide()
+	var journal_button := UI.button("行囊 B", func() -> void:
+		if not _paused() and not finished:
+			open_journal())
+	hud_actions.add_child(journal_button)
+	style_hud_button(journal_button)
+	hud_actions.move_child(menu_button, -1)
+
+func register_menu_action(button: Button) -> void:
+	var actions := button.pressed.get_connections()
+	for action: Dictionary in actions:
+		button.pressed.disconnect(action.callable)
+	button.pressed.connect(func() -> void:
+		close_menu()
+		for action: Dictionary in actions:
+			action.callable.call())
+	button.reparent(menu_actions, false)
+	button.custom_minimum_size.x = 0
+	button.size.x = 0
+	if menu_exit != null:
+		menu_actions.move_child(button, menu_exit.get_index())
+
+func toggle_menu() -> void:
+	if menu.visible:
+		close_menu()
+	elif not _paused() and not finished:
+		menu_info.text = "%s · %s\n守卫剩余 %d · 见闻 %d / %d\n行囊 %d 份 · 坐标 %d, %d" % [Maps.MAPS[region].npc, Maps.MAPS[region].chapter, states[region].enemies.size(), _visited_total(), Maps.site_total(), _inventory_total(), int(player_foot.x), int(player_foot.y)]
+		menu.show()
+		model.update_movement(Vector2.ZERO, 0)
+
+func close_menu() -> void:
+	menu.hide()
+	menu_button.release_focus()
 
 func remaining_resources(id: String) -> Dictionary:
 	var counts: Dictionary = {}
@@ -297,6 +439,7 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 	if world_canvas.size != Vector2.ZERO:
 		states[region].foot = player_foot
 	region = id
+	for enemy: Dictionary in states[id].enemies: enemy["attack_fx"] = 0.0
 	tools.region = id
 	var chests := get_node_or_null("Chests")
 	if chests != null:
@@ -309,10 +452,7 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 		traps.enter_region(id)
 	player_foot = states[id].foot
 	if via_gate:
-		for exit: Array in Maps.MAPS[id].exits:
-			if exit[0] == previous:
-				var inward: Vector2 = (Vector2(0.5, 0.5) - exit[1]).normalized()
-				player_foot = exit[1] * Maps.MAPS[id].size + inward * 100
+		player_foot = Maps.arrival_point(id, previous)
 	world_canvas.size = Maps.MAPS[id].size
 	model.position = player_foot
 	model.update_movement(Vector2.ZERO, 0)
@@ -335,6 +475,11 @@ func resume_exploration() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
+		if menu.visible:
+			if key == KEY_ESCAPE:
+				close_menu()
+			get_viewport().set_input_as_handled()
+			return
 		if dialogue.visible:
 			if key in [KEY_E, KEY_ESCAPE]:
 				dialogue.hide()
@@ -347,7 +492,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if tools.is_open() or finished:
 			return
-		if key == KEY_B:
+		if key == KEY_ESCAPE and not _paused():
+			toggle_menu()
+			get_viewport().set_input_as_handled()
+		elif key == KEY_B:
 			open_journal()
 			get_viewport().set_input_as_handled()
 		elif key == KEY_E:
@@ -472,6 +620,7 @@ func _process(delta: float) -> void:
 	var move_speed := SPEED + (float(equipment.bonuses().speed) if equipment != null else 0.0)
 	if buildings != null:
 		move_speed *= buildings.multiplier("speed")
+	move_speed *= gm.speed_multiplier() if gm != null else 1.0
 	player_foot = move_world(player_foot, direction * move_speed * movement_scale * minf(delta, 0.1))
 	if direction != Vector2.ZERO:
 		facing = direction
@@ -483,6 +632,7 @@ func _process(delta: float) -> void:
 		cooldowns[key] = maxf(0, float(cooldowns[key]) - delta)
 	for enemy: Dictionary in states[region].enemies:
 		enemy.flash = maxf(0, float(enemy.flash) - delta)
+		enemy["attack_fx"] = maxf(0,float(enemy.get("attack_fx",0.0))-delta)
 		var offset: Vector2 = player_foot - enemy.position
 		if offset.length() > 32 and offset.length() < 380:
 			var slow: float = equipment.effects.enemy_speed_scale(enemy) if equipment != null else 1.0
@@ -490,6 +640,9 @@ func _process(delta: float) -> void:
 		elif offset.length() <= 32 and hurt_timer <= 0:
 			health = maxi(0, health - incoming_damage(int(enemy.get("damage", 10))))
 			hurt_timer = 1.0
+			enemy["attack_fx"] = PixelVFX.LIFETIME
+			enemy["attack_weather"] = enemy.get("weather","clear")
+			enemy["attack_point"] = player_foot
 	_tick_projectiles(delta)
 	for i in range(effects.size() - 1, -1, -1):
 		effects[i].life -= delta
@@ -545,22 +698,19 @@ func _inventory_total() -> int:
 	return count
 
 func _refresh_ui() -> void:
-	status.text = "福地  /  %s     生命 %d / 100     守卫 %d" % [Catalog.REGIONS[region].name, health, states[region].enemies.size()]
-	var extent: Vector2 = Maps.MAPS[region].size
-	bag.text = "%s · %s   |   行囊 %d 份   |   坐标 %d, %d / %d × %d" % [Maps.MAPS[region].npc, Maps.MAPS[region].chapter, _inventory_total(), int(player_foot.x), int(player_foot.y), int(extent.x), int(extent.y)]
+	status.text = Catalog.REGIONS[region].name
+	health_label.text = "生命 %d / 100" % health
+	health_bar.value = health
+	var fill := health_bar.get_theme_stylebox("fill") as StyleBoxFlat
+	fill.bg_color = Color("#e78f82") if health <= 30 else Color("#9bceb2")
 	var parts: Array[String] = []
 	for key: String in cooldowns:
-		parts.append("%s %s  %s" % [key.to_upper(), ATTACKS[key].name, "就绪" if float(cooldowns[key]) <= 0 else "%.1fs" % cooldowns[key]])
-	skills.text = "    ".join(parts)
-	var cleared := 0
-	for id: String in states:
-		if states[id].enemies.is_empty() and (get_node_or_null("Bosses") == null or get_node("Bosses").targets(id).is_empty()) and (get_node_or_null("Chests") == null or get_node("Chests").targets(id).is_empty()):
-			cleared += 1
+		parts.append("%s %s" % [key.to_upper(), ATTACKS[key].name if float(cooldowns[key]) <= 0 else "%.1fs" % cooldowns[key]])
+	skills.text = "   ·   ".join(parts)
 	var target := interaction_target()
-	var prompt := "E " + str(target.name) if not target.is_empty() else "循路探索地标；M 跨区旅行，B 查看行囊与已发现线索。"
 	var next: int = states[region].visited.find(false)
-	var objective := "本地人物线索已齐" if next < 0 else "下一线索：" + str(Maps.MAPS[region].sites[next][0])
-	hint.text = "%s   |   %s\n区域肃清 %d / %d  ·  人物见闻 %d / %d  ·  小地图：金色菱形为地标，蓝圈为出口，白点为你。" % [prompt, objective, cleared, Maps.IDS.size(), _visited_total(), Maps.site_total()]
+	bag.text = "%s · %s" % [Maps.MAPS[region].npc, "本地见闻已齐" if next < 0 else "寻找" + str(Maps.MAPS[region].sites[next][0])]
+	hint.text = "E  " + str(target.name) if not target.is_empty() else "WASD 移动 · 循路探索"
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#0d1c26"))
@@ -569,13 +719,13 @@ func _draw_world() -> void:
 	if not states.has(region):
 		return
 	var canvas := world_canvas
-	Landscape.paint(canvas, region, Rect2(camera_origin, ARENA.size))
+	Landscape.paint(canvas, region, visible_world())
 	var font := ThemeDB.fallback_font
 	var data: Dictionary = Maps.MAPS[region]
 	for i in range(data.sites.size()):
 		var site: Array = data.sites[i]
 		var point: Vector2 = site[1] * data.size
-		Landscape.landmark(canvas, point, site[3], Color(data.accent))
+		Landscape.landmark(canvas, point, site[3], Color(data.accent), Maps.Art.has_art(region))
 		canvas.draw_string(font, point + Vector2(-76, 44), str(site[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(data.accent))
 		canvas.draw_string(font, point + Vector2(-65, 68), "已记录" if states[region].visited[i] else "靠近按 E 调查", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("#c4d3c9"))
 	var rest: Vector2 = data.spawn * data.size
@@ -605,6 +755,8 @@ func _draw_world() -> void:
 		canvas.draw_texture_rect(ENEMY_ART, Rect2(point - Vector2(38, 76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color(enemy.get("tint", Color.WHITE)))
 		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56, 5)), Color("#18212b"))
 		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56 * float(enemy.hp) / float(enemy.get("max_hp", 60)), 5)), Color("#dc947e"))
+		if float(enemy.get("attack_fx",0.0)) > 0:
+			PixelVFX.draw(canvas,"guard-"+str(enemy.get("attack_weather","clear")),enemy.get("attack_point",point),PixelVFX.LIFETIME-float(enemy.attack_fx),Vector2.ONE*2)
 	var origin := player_foot - Vector2(0, 30)
 	canvas.draw_line(origin + facing * 26, origin + facing * 48, Color("#f5d69b"), 3, true)
 	for shot: Dictionary in projectiles:
@@ -617,7 +769,7 @@ func _draw_world() -> void:
 		canvas.draw_arc(effect.position, float(effect.radius), 0 if effect.kind == "l" else angle - 1.4, TAU if effect.kind == "l" else angle + 1.4, 48, color, 7, true)
 
 func _paused() -> bool:
-	return get_meta("audio_settings_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
+	return menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
 
 func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
 	var point := origin
@@ -635,12 +787,22 @@ func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
 func _update_camera() -> void:
 	# Leave headroom for tall boss silhouettes and their health bars.
 	var headroom := buildings.camera_height() if buildings != null else 0.65
-	camera_origin = (player_foot - ARENA.size * Vector2(0.5, headroom)).clamp(Vector2.ZERO, Maps.MAPS[region].size - ARENA.size)
-	world_canvas.position = -camera_origin
+	camera_origin = (player_foot - VIEW_SIZE * Vector2(0.5, headroom)).clamp(Vector2.ZERO, Maps.MAPS[region].size - VIEW_SIZE)
+	world_canvas.position = -camera_origin * WORLD_ZOOM
 	minimap.queue_redraw()
 
 func interaction_target() -> Dictionary:
 	var data: Dictionary = Maps.MAPS[region]
+	if npcs != null:
+		var nearest_npc: Dictionary = npcs.interaction_target()
+		if not nearest_npc.is_empty():
+			var npc_distance: float = player_foot.distance_to(npcs.position_of(nearest_npc.npc_id))
+			var landmark_distance: float = player_foot.distance_to(data.spawn * data.size)
+			for site: Array in data.sites:
+				landmark_distance = minf(landmark_distance, player_foot.distance_to(site[1] * data.size))
+			for gate: Array in data.exits:
+				landmark_distance = minf(landmark_distance, player_foot.distance_to(gate[1] * data.size))
+			if npc_distance < landmark_distance: return nearest_npc
 	for i in range(data.sites.size()):
 		if player_foot.distance_to(Maps.site_position(region, i)) <= 100:
 			return {"kind": "site", "index": i, "name": str(data.sites[i][0]) + " · " + str(data.npc)}
@@ -649,6 +811,9 @@ func interaction_target() -> Dictionary:
 	for exit: Array in data.exits:
 		if player_foot.distance_to(exit[1] * data.size) <= 120:
 			return {"kind": "exit", "destination": exit[0], "name": "前往" + str(Catalog.REGIONS[exit[0]].name)}
+	if npcs != null:
+		var npc_target: Dictionary = npcs.interaction_target()
+		if not npc_target.is_empty(): return npc_target
 	var chests := get_node_or_null("Chests")
 	if chests != null:
 		return chests.interaction_target()
@@ -664,6 +829,10 @@ func interact() -> void:
 		sound_requested.emit("discovery")
 	var data: Dictionary = Maps.MAPS[region]
 	match target.kind:
+		"npc":
+			npcs.talk(target.npc_id)
+			npc_exchange.present(target.npc_id)
+			return
 		"chest":
 			get_node("Chests").interact(target.chest)
 			return
@@ -710,6 +879,7 @@ func open_journal() -> void:
 			has_local_record = true
 			lines.append("%s：%s" % [local_data.sites[i][0], local_data.sites[i][2]])
 	if not has_local_record: lines.append("还没有调查记录；靠近地标按 E。")
+	if npcs != null: lines.append_array(npcs.journal_lines())
 	lines.append("\n行囊与规则")
 	for item: String in Loot.ITEMS:
 		if int(inventory.get(item, 0)) > 0:
@@ -769,13 +939,16 @@ func _draw_minimap() -> void:
 	var extent: Vector2 = Maps.MAPS[region].size
 	minimap.draw_style_box(UI.panel(Color(0.03, 0.08, 0.1, 0.93)), Rect2(Vector2.ZERO, minimap.size))
 	minimap.draw_string(ThemeDB.fallback_font, Vector2(12, 22), "%s  %d × %d" % [Catalog.REGIONS[region].name, int(extent.x), int(extent.y)], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#e7d4a8"))
+	if Maps.Art.has_art(region):
+		minimap.draw_texture_rect(Maps.Art.TEXTURES[region], rect, false, Color(0.8, 0.8, 0.8))
 	for road: Array in Maps.MAPS[region].roads:
 		var points := PackedVector2Array()
 		for point: Vector2 in road:
 			points.append(rect.position + point * rect.size)
 		minimap.draw_polyline(points, Color("#7f927d"), 2, true)
-	for obstacle: Rect2 in Maps.obstacles(region):
-		minimap.draw_rect(Rect2(rect.position + obstacle.position / extent * rect.size, obstacle.size / extent * rect.size), Color("#63716b"))
+	if not Maps.Art.has_art(region):
+		for obstacle: Rect2 in Maps.obstacles(region):
+			minimap.draw_rect(Rect2(rect.position + obstacle.position / extent * rect.size, obstacle.size / extent * rect.size), Color("#63716b"))
 	for i in range(3):
 		var point := rect.position + Maps.site_position(region, i) / extent * rect.size
 		var color := Color("#9ecab7") if states[region].visited[i] else Color("#f1d291")
@@ -784,5 +957,5 @@ func _draw_minimap() -> void:
 		minimap.draw_arc(rect.position + exit[1] * rect.size, 5, 0, TAU, 12, Color("#8ed6ec"), 2, true)
 	for pickup: Dictionary in states[region].pickups:
 		minimap.draw_circle(rect.position + pickup.position / extent * rect.size, 1.5, Color("#9db88c", 0.65))
-	minimap.draw_rect(Rect2(rect.position + camera_origin / extent * rect.size, ARENA.size / extent * rect.size), Color("#d4e7d2"), false)
+	minimap.draw_rect(Rect2(rect.position + camera_origin / extent * rect.size, VIEW_SIZE / extent * rect.size), Color("#d4e7d2"), false)
 	minimap.draw_circle(rect.position + player_foot / extent * rect.size, 4, Color.WHITE)

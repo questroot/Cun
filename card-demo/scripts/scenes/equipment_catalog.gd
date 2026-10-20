@@ -56,7 +56,10 @@ static func loadout_stats(loadout: Dictionary) -> Dictionary:
 static func effect_text(item: String) -> String:
 	var original := item
 	item = Loot.base_item(item)
-	var prefix := "异变品质：原非零属性提高30%（向上取整）。\n" if original != item else ""
+	var metadata: Dictionary = Loot.ITEMS.get(original, {})
+	var prefix := "异变品质：原非零属性提高30%（向上取整）。\n" if float(metadata.get("stat_scale", 1.0)) > 1.0 else ""
+	if int(metadata.get("fusion_level", 0)) > 0:
+		prefix += "融合 +%d：仅提升此件属性，套装与武器特效保留。\n" % int(metadata.fusion_level)
 	if WEAPON_EFFECTS.has(item):
 		return prefix + WEAPON_EFFECTS[item]
 	var id := item.get_slice("-", 0)
@@ -69,6 +72,14 @@ static func slot(item: String) -> String:
 	return "weapon" if WEAPONS.has(item) else item.get_slice("-", 1)
 
 static func stats(item: String) -> Dictionary:
+	var metadata: Dictionary = Loot.ITEMS.get(item, {})
+	if metadata.has("fusion_source"):
+		var values := stats(str(metadata.fusion_source))
+		var level := int(metadata.fusion_level)
+		for key: String in values:
+			if int(values[key]) > 0:
+				values[key] += maxi(1, ceili(float(values[key]) * 0.1)) * level
+		return values
 	var base := Loot.base_item(item)
 	if base != item:
 		var enhanced := stats(base)

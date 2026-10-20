@@ -1,0 +1,4 @@
+numpy>=1.26
+scipy>=1.11
+tinysoundfont==0.3.7
+soundfile==0.14.0

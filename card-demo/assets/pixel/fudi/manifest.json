@@ -1,0 +1,593 @@
+{
+  "version": 1,
+  "style": "Fudi 32-color pixel art; top-left light; 1x masters; 2x world scale",
+  "source": "pixel-art/fudi-world/build.py; local deterministic drawing, no gateway requests",
+  "palette": [
+    "#17252d",
+    "#283a43",
+    "#40535a",
+    "#657477",
+    "#9caaa1",
+    "#d7d9bb",
+    "#49372e",
+    "#71503a",
+    "#a17249",
+    "#c89c64",
+    "#ebcf91",
+    "#203d3b",
+    "#2f5948",
+    "#50805a",
+    "#7da366",
+    "#b6c984",
+    "#214a58",
+    "#367487",
+    "#61acb3",
+    "#ade0d1",
+    "#393754",
+    "#62547d",
+    "#9476aa",
+    "#d3afcb",
+    "#653b40",
+    "#ad5552",
+    "#de8970",
+    "#bc7a3d",
+    "#efa94f",
+    "#ffe1a0",
+    "#7e9da9",
+    "#e9f2dd"
+  ],
+  "assets": [
+    {
+      "category": "maps",
+      "id": "grove",
+      "name": "青岚灶街地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 9,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/grove.png",
+      "batch": 1,
+      "sha256": "dda23f322821e3acb42a1896e45b0afff16928a73f2714fd20591100998895c5",
+      "reviewed": true,
+      "visual_review": "Grove grass, garden rows and warm path read distinctly; refined quiet edges retain seamless joins.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "post",
+      "name": "旧城邮驿地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 9,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/post.png",
+      "batch": 1,
+      "sha256": "074448e2d596b79daee26532042d1491549298d078c7df378b15ff992ce597e3",
+      "reviewed": true,
+      "visual_review": "Post stone ground is distinct from warm cobbles and wall courses; highlights remain on top-left.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "quarry",
+      "name": "赤岩钟楼地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 7,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/quarry.png",
+      "batch": 1,
+      "sha256": "2952aa0495a4154bd1cd738b8febedf4bd64be94435b3b61959061b5e9b1c878",
+      "reviewed": true,
+      "visual_review": "Quarry uses brown rock ground and masonry; refined slab undersides improve depth without bright foreground noise.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "ruins",
+      "name": "灵泉记录站地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 9,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/ruins.png",
+      "batch": 2,
+      "sha256": "0b72781942722baf3d81a8d65993dbdab6af5e3cdb65be26433261ed388d2c7d",
+      "reviewed": true,
+      "visual_review": "Ruins blue stone separates paths from water; warm slab caps create readable light direction.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "refuge",
+      "name": "归航救援营地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 10,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/refuge.png",
+      "batch": 2,
+      "sha256": "4fa696533cdc630bff75f4cfdd1dbde9bb3970d11d2863efea5e8bb32782e593",
+      "reviewed": true,
+      "visual_review": "Refuge grey-green walls and earthy paths remain readable against shaded ground; no alpha fringe.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "wetland",
+      "name": "雨灯湿地地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 8,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/wetland.png",
+      "batch": 2,
+      "sha256": "7ca8971b0ad0370e2a00d98e4ab059ecca0a554afd5aaddc4abeeabae19b38e2",
+      "reviewed": true,
+      "visual_review": "Wetland shallow-water row is distinguishable from dark pool row; short ripples avoid hard bright grids.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "causeway",
+      "name": "断桥驿路地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 6,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/causeway.png",
+      "batch": 3,
+      "sha256": "476d1a001ad3fd7281917818410ca5ce409ea17001bf449f5dcdc58daeb94adf",
+      "reviewed": true,
+      "visual_review": "Causeway grey paths and blue channel tiles read as road and water, with subdued joins.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "kilnwood",
+      "name": "松烟炭林地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 10,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/kilnwood.png",
+      "batch": 3,
+      "sha256": "1fb103ee433579d24a18baea2cca36ba7a0d24d7bbf2061701cc55bf5336590e",
+      "reviewed": true,
+      "visual_review": "Kilnwood uses charred earth and warm planting rows; cluster density remains background-safe.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "archive",
+      "name": "镜沙档案馆地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 11,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/archive.png",
+      "batch": 3,
+      "sha256": "76e50ff7c2a55a245d65e629dc8bca910ec8cf6599d038efd50cee3706d30837",
+      "reviewed": true,
+      "visual_review": "Archive purple floor and lavender masonry distinguish the region from ruins; top highlights stay consistent.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "maps",
+      "id": "snowridge",
+      "name": "霜脊瞭望岭地形图集",
+      "size": [
+        128,
+        128
+      ],
+      "budget": 20,
+      "colors": 9,
+      "alpha": "binary",
+      "bbox": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "path": "card-demo/assets/pixel/fudi/maps/snowridge.png",
+      "batch": 4,
+      "sha256": "00da9652ca91d204ffed289d23f601e735780cc2eb2010fd66bc9cf91d5d856f",
+      "reviewed": true,
+      "visual_review": "Snowridge snow clusters and icy stone palette read clearly; opposite tile edges match.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "grove",
+      "name": "青岚百味大食堂",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 13,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        28,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/grove.png",
+      "batch": 4,
+      "sha256": "7999ec7eb4412b36a4affb640784a161eea8ab563a61c3b80160f13d98fac227",
+      "reviewed": true,
+      "visual_review": "Grove hall bowl sign, broad roof and stairs are legible; refined eaves and wood grain add depth.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "post",
+      "name": "旧城总邮驿",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 13,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        17,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/post.png",
+      "batch": 4,
+      "sha256": "a36614be01b81124c3514d671bedfab3529c676d7d1acb30892f9d957a643cdd",
+      "reviewed": true,
+      "visual_review": "Post twin towers, envelope, flag and mailbox distinguish the function; transparent margin and lighting pass.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "quarry",
+      "name": "赤岩铸造大殿",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 13,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        3,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/quarry.png",
+      "batch": 5,
+      "sha256": "3069ce6de4488e2e97016474904296a5ebac1c804e7e202859d58fd7dd9fcf86",
+      "reviewed": true,
+      "visual_review": "Forge twin chimneys, solid clustered smoke and bright furnace are identifiable; anvil reads at 1x.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "ruins",
+      "name": "灵泉水镜圣所",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 15,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        8,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/ruins.png",
+      "batch": 5,
+      "sha256": "5a7e218c8779a6a8ffd15810c5ab0b3bb96a5e201c5b27389762580999eace13",
+      "reviewed": true,
+      "visual_review": "Sanctum crystal dome and twin water bowls distinguish it; refined roof texture stays subordinate to entrance.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "refuge",
+      "name": "归航救援总厅",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 16,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        28,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/refuge.png",
+      "batch": 5,
+      "sha256": "b6424e33be44fa2a3084da187b7980a17bcf5b974ca94bdbd96d6a80196e6e95",
+      "reviewed": true,
+      "visual_review": "Clinic roof emblem, supply boxes and two plants read clearly; stair planes are consistent with left lighting.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "wetland",
+      "name": "雨灯临水长榭",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 14,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        51,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/wetland.png",
+      "batch": 6,
+      "sha256": "76ed4d666e8befc514367d38e0c1ca39851660710affffce2fb327e5a136986b",
+      "reviewed": true,
+      "visual_review": "Wetland hall has a low broad roof, suspended lanterns and raised dock posts; silhouette differs from other halls.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "causeway",
+      "name": "断桥守望关楼",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 11,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        17,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/causeway.png",
+      "batch": 6,
+      "sha256": "b9855c10bb1203586e81c121bab5175a93098233dcba7128c4d02c1c8d1b6447",
+      "reviewed": true,
+      "visual_review": "Causeway gate is readable through twin towers and portcullis; blue flag contrasts against stone.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "kilnwood",
+      "name": "松烟封火大窑",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 14,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        3,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/kilnwood.png",
+      "batch": 6,
+      "sha256": "b9a747c746c6ba0849ca94681e0a7f2e4761a893580b3f1b085f8d041fdf22eb",
+      "reviewed": true,
+      "visual_review": "Kilnwood dome furnace and chimneys read as a kiln; refined brick bands and fire remain clustered and crisp.",
+      "passes": [
+        "draft",
+        "refined"
+      ]
+    },
+    {
+      "category": "buildings",
+      "id": "archive",
+      "name": "镜沙星穹档案馆",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 17,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        9,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/archive.png",
+      "batch": 7,
+      "sha256": "773081e058fc065185774e7485205a8d9973c5d542e22fd958e33944ce69930b",
+      "reviewed": false
+    },
+    {
+      "category": "buildings",
+      "id": "snowridge",
+      "name": "霜脊观星高台",
+      "size": [
+        320,
+        192
+      ],
+      "budget": 28,
+      "colors": 14,
+      "alpha": "binary",
+      "bbox": [
+        22,
+        3,
+        306,
+        188
+      ],
+      "path": "card-demo/assets/pixel/fudi/buildings/snowridge.png",
+      "batch": 7,
+      "sha256": "8337261a53c3c516850545d07783b8e791880c0183f27309b2d6c21b6b731d36",
+      "reviewed": false
+    },
+    {
+      "category": "chests",
+      "id": "normal_closed",
+      "name": "普通宝箱·关闭",
+      "size": [
+        48,
+        48
+      ],
+      "budget": 16,
+      "colors": 6,
+      "alpha": "binary",
+      "bbox": [
+        5,
+        12,
+        45,
+        44
+      ],
+      "path": "card-demo/assets/pixel/fudi/chests/normal_closed.png",
+      "batch": 7,
+      "sha256": "ffa9065c20b091c0cb90faf3935a0d2247def2150061df33d6260a4b894c821e",
+      "reviewed": false
+    }
+  ]
+}

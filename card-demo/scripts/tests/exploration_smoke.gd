@@ -1,6 +1,7 @@
 extends SceneTree
 const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const NAV_CELL := 32.0 # Resolve narrow painted lanes and resource clearance without 64px cell aliasing.
 var checks := 0
 var failures := 0
 var game
@@ -84,11 +85,13 @@ func run_checks() -> void:
 	game = current_scene
 	game.set_process(false)
 	check(game.name == "Fudi" and game.health == 100 and game.states.size() == 10, "通过实际入口按钮进入福地，初始十域与生命正确")
+	await verify_compact_hud()
 	for id: String in Maps.IDS:
 		check(game.remaining_resources(id) == Catalog.REGIONS[id].resources, "地图配置与真实采集节点一致: " + id)
 	check(Catalog.scarcity(0) == "已采尽" and Catalog.scarcity(1) == "极稀缺" and Catalog.scarcity(3) == "稀缺" and Catalog.scarcity(6) == "适中" and Catalog.scarcity(8) == "丰富", "稀缺度边界与已采尽正确")
+	var movement_origin: Vector2 = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size
 	for code: int in [KEY_W, KEY_A, KEY_S, KEY_D]:
-		game.player_foot = Vector2(640, 460)
+		game.player_foot = movement_origin
 		var before: Vector2 = game.player_foot
 		key(code)
 		game._process(0.1)
@@ -96,19 +99,19 @@ func run_checks() -> void:
 		var displacement: Vector2 = game.player_foot - before
 		var expected: Vector2 = {KEY_W: Vector2.UP, KEY_A: Vector2.LEFT, KEY_S: Vector2.DOWN, KEY_D: Vector2.RIGHT}[code]
 		check(displacement.normalized().is_equal_approx(expected) and game.model.walking, "WASD真实按键方向: " + OS.get_keycode_string(code))
-	game.player_foot = Vector2(640, 460)
+	game.player_foot = movement_origin
 	key(KEY_W)
 	key(KEY_D)
 	game._process(0.1)
 	key(KEY_W, false)
 	key(KEY_D, false)
-	check(is_equal_approx(game.player_foot.distance_to(Vector2(640, 460)), game.SPEED * 0.1), "斜向移动归一化，不额外加速")
+	check(is_equal_approx(game.player_foot.distance_to(movement_origin), game.SPEED * 0.1), "斜向移动归一化，不额外加速")
 	game.player_foot = Maps.MAPS[game.region].size - Vector2(24, 24)
 	key(KEY_D)
 	game._process(1)
 	key(KEY_D, false)
 	check(game.player_foot.x <= Maps.MAPS[game.region].size.x - 22, "地图边界阻止移出区域")
-	game.player_foot = Vector2(640, 460)
+	game.player_foot = movement_origin
 	key(KEY_M)
 	key(KEY_M, false)
 	await frames()
@@ -147,10 +150,11 @@ func run_checks() -> void:
 	await verify_large_maps()
 	game.enter_region("quarry")
 	# Controlled combat fixture, with real key events for each skill.
-	game.player_foot = Vector2(600, 460)
+	var combat_origin: Vector2 = Maps.MAPS.quarry.spawn * Maps.MAPS.quarry.size
+	game.player_foot = combat_origin
 	game.facing = Vector2.RIGHT
-	var front := {"position": Vector2(660, 460), "hp": 60, "flash": 0.0}
-	var behind := {"position": Vector2(540, 460), "hp": 60, "flash": 0.0}
+	var front := {"position": combat_origin + Vector2(60, 0), "hp": 60, "flash": 0.0}
+	var behind := {"position": combat_origin - Vector2(60, 0), "hp": 60, "flash": 0.0}
 	game.states.quarry.enemies = [front, behind]
 	key(KEY_J)
 	key(KEY_J, false)
@@ -176,7 +180,7 @@ func run_checks() -> void:
 	await capture("combat")
 	check(not game.attack("l"), "范围攻击冷却有效")
 	game.cooldowns.l = 0.0
-	game.states.quarry.enemies = [{"position": Vector2(900, 460), "hp": 60, "flash": 0.0}]
+	game.states.quarry.enemies = [{"position": combat_origin + Vector2(300, 0), "hp": 60, "flash": 0.0}]
 	game.attack("l")
 	check(game.states.quarry.enemies[0].hp == 60, "超出技能范围不受伤")
 	game.states.quarry.enemies[0].position = game.player_foot
@@ -251,7 +255,7 @@ func run_checks() -> void:
 
 func reachable_cells(id: String) -> Dictionary:
 	var seen: Dictionary = {}
-	var start: Vector2i = Vector2i((Maps.MAPS[id].spawn * Maps.MAPS[id].size / 64.0).floor())
+	var start: Vector2i = Vector2i((Maps.MAPS[id].spawn * Maps.MAPS[id].size / NAV_CELL).floor())
 	var frontier: Array[Vector2i] = [start]
 	seen[start] = true
 	var cursor := 0
@@ -260,16 +264,73 @@ func reachable_cells(id: String) -> Dictionary:
 		cursor += 1
 		for offset: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			var next := cell + offset
-			if not seen.has(next) and Maps.walkable(id, (Vector2(next) + Vector2(0.5, 0.5)) * 64, 28):
+			if not seen.has(next) and Maps.walkable(id, (Vector2(next) + Vector2(0.5, 0.5)) * NAV_CELL, 28):
 				seen[next] = true
 				frontier.append(next)
 	return seen
+
+func verify_compact_hud() -> void:
+	check(game.ARENA.size.y == 560 and game.world_view.get_global_rect().end.y <= 648, "精简顶栏后地图视野扩大，底部操作提示完整保留")
+	check(is_equal_approx(game.WORLD_ZOOM, 0.8) and game.visible_world().size == Vector2(1560, 700) and game.world_canvas.scale == Vector2(0.8, 0.8), "视角拉远至80%，UI保持原尺寸")
+	check(game.world_to_screen(game.player_foot).is_equal_approx(game.model.get_global_transform_with_canvas().origin), "缩放后屏内观察坐标与实际角色绘制位置一致")
+	var buttons: Array = game.hud_actions.get_children()
+	var clear: bool = buttons.size() == 4
+	for i in range(buttons.size()):
+		clear = clear and Rect2(0, 0, 1280, 88).encloses(buttons[i].get_global_rect())
+		for j in range(i + 1, buttons.size()):
+			clear = clear and not buttons[i].get_global_rect().intersects(buttons[j].get_global_rect())
+	check(clear, "地图、行囊、装备、菜单四个紧凑入口在顶栏内可见且不重叠")
+	check(game.health_bar.get_global_rect().end.y <= 64, "细生命条完整位于紧凑顶栏内")
+	check(not game.get_node("Buildings").banner.get_parent().visible and not game.get_node("Traps").status_label.get_parent().visible and not game.get_node("Bosses").banner.get_parent().visible, "无效果、无危险、无附近首领时隐藏说明面板")
+	await capture("compact_hud")
+	key(KEY_ESCAPE)
+	key(KEY_ESCAPE, false)
+	check(game.menu.visible and game._paused() and game.play_visible().get("world_occluded", false), "Esc打开菜单，暂停探索并遮挡世界观察")
+	var foot: Vector2 = game.player_foot
+	var cooldowns: Dictionary = game.cooldowns.duplicate()
+	key(KEY_D)
+	key(KEY_J)
+	game._process(0.5)
+	key(KEY_D, false)
+	key(KEY_J, false)
+	for code: int in [KEY_M, KEY_B, KEY_C]:
+		key(code)
+		key(code, false)
+	check(game.player_foot == foot and game.cooldowns == cooldowns and not game.tools.is_open() and not game.journal.visible and not game.equipment.is_open(), "菜单阻止移动、攻击及其他面板快捷键穿透")
+	await capture("compact_menu")
+	key(KEY_ESCAPE)
+	key(KEY_ESCAPE, false)
+	check(not game.menu.visible and not game._paused(), "Esc关闭菜单恢复探索")
+	await click(game.menu_button)
+	var sound: Button
+	for node in game.menu_actions.get_children():
+		if node is Button and node.text == "声音":
+			sound = node
+	check(sound != null and sound.is_visible_in_tree(), "声音设置收进菜单后仍可见")
+	if sound != null:
+		await click(sound)
+		check(game.get_node("Audio").panel.visible and not game.menu.visible and game._paused(), "菜单声音入口实际打开设置，保持暂停")
+		key(KEY_ESCAPE)
+		key(KEY_ESCAPE, false)
+	await click(game.menu_button)
+	await click(game.menu_exit)
+	check(game.tools.confirm.visible and not game.menu.visible, "菜单返回入口保留进度重置确认")
+	key(KEY_ESCAPE)
+	key(KEY_ESCAPE, false)
+	await click(buttons[1])
+	check(game.journal.visible and game._paused(), "顶栏行囊按钮实际打开记录")
+	key(KEY_B)
+	key(KEY_B, false)
 
 func verify_large_maps() -> void:
 	await verify_connections()
 	for id: String in Maps.IDS:
 		game.enter_region(id)
 		var extent: Vector2 = Maps.MAPS[id].size
+		if Maps.Art.has_art(id):
+			check(Maps.Art.TEXTURES[id].get_size() == Vector2(1536, 1024), "生成地图成图纹理载入: " + id)
+		else:
+			check(id == "snowridge", "第十图保留原场景绘制")
 		check(extent.x >= 3600 and extent.y >= 2400, "实际世界尺寸扩大且超过单屏: " + id)
 		var reachable := reachable_cells(id)
 		var targets: Array[Vector2] = []
@@ -283,7 +344,9 @@ func verify_large_maps() -> void:
 			targets.append(enemy.position)
 		var accessible := true
 		for point: Vector2 in targets:
-			accessible = accessible and Maps.walkable(id, point) and reachable.has(Vector2i((point / 64.0).floor()))
+			if not Maps.walkable(id, point) or not reachable.has(Vector2i((point / NAV_CELL).floor())):
+				print("NAV_DIAGNOSTIC %s %s walkable=%s" % [id, point, Maps.walkable(id, point)])
+			accessible = accessible and Maps.walkable(id, point) and reachable.has(Vector2i((point / NAV_CELL).floor()))
 		check(accessible, "全部地标、出口、资源、敌人从出生点连通: " + id)
 		var roads_clear := true
 		for road: Array in Maps.MAPS[id].roads:
@@ -294,10 +357,17 @@ func verify_large_maps() -> void:
 				for sample in range(steps + 1):
 					roads_clear = roads_clear and Maps.walkable(id, start.lerp(end, float(sample) / steps), 46)
 		check(roads_clear, "整段道路保留通行宽度，路线不穿过障碍: " + id)
-		var obstacle: Rect2 = Maps.obstacles(id)[0]
-		var before := Vector2(obstacle.position.x - 35, obstacle.get_center().y)
-		var stopped: Vector2 = game.move_world(before, Vector2(obstacle.size.x + 100, 0))
-		check(stopped.x < obstacle.position.x - 21, "大步移动不能穿过地形障碍: " + id)
+		if Maps.Art.has_art(id):
+			# Every painted map begins on a horizontal road. Its south edge is terrain/water.
+			var before: Vector2 = Maps.MAPS[id].spawn * extent
+			var off_road := before + Vector2(0, 400)
+			var stopped: Vector2 = game.move_world(before, Vector2(0, 400))
+			check(Maps.walkable(id, before) and not Maps.walkable(id, off_road) and Maps.walkable(id, stopped) and stopped.distance_to(before) < 200, "道路可行，无法大步穿入水面或地形: " + id)
+		else:
+			var obstacle: Rect2 = Maps.obstacles(id)[0]
+			var before := Vector2(obstacle.position.x - 35, obstacle.get_center().y)
+			var stopped: Vector2 = game.move_world(before, Vector2(obstacle.size.x + 100, 0))
+			check(stopped.x < obstacle.position.x - 21, "大步移动不能穿过地形障碍: " + id)
 		game.player_foot = Maps.site_position(id, 2)
 		key(KEY_E)
 		key(KEY_E, false)
@@ -331,8 +401,10 @@ func verify_large_maps() -> void:
 		check(game.region == "grove" and not game.tools.atlas.visible and game.states[id].visited == [true, true, true], "跨区旅行保留人物线索与正确返回: " + id)
 	check(game._visited_total() == 30 and Maps.site_total() == 30, "十张地图共30处见闻可以完成")
 	game.enter_region("grove")
-	game.player_foot = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size
+	# The long central north/south lane is visible in the finished painting.
+	game.player_foot = Vector2(0.53, 0.51) * Maps.MAPS.grove.size
 	var before_walk: Vector2 = game.player_foot
+	game.get_node("Buildings").active.clear()
 	key(KEY_S)
 	for i in range(45):
 		game._process(0.05)
@@ -340,7 +412,7 @@ func verify_large_maps() -> void:
 	check(game.player_foot.y - before_walk.y > 500 and game.camera_origin.y > 1000 and game.model.walking, "真实连续WASD走出旧范围，镜头跟随且播放行走")
 	game.player_foot = Maps.MAPS.grove.size - Vector2(30, 30)
 	game._process(0)
-	check(game.camera_origin.is_equal_approx(Maps.MAPS.grove.size - game.ARENA.size), "远端镜头限制在世界边界内")
+	check(game.camera_origin.is_equal_approx(Maps.MAPS.grove.size - game.VIEW_SIZE), "拉远后远端镜头仍限制在世界边界内")
 	game.player_foot = Maps.MAPS.grove.exits[1][1] * Maps.MAPS.grove.size
 	key(KEY_E)
 	key(KEY_E, false)

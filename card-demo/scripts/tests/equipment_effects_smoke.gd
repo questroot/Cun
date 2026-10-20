@@ -309,4 +309,4 @@ func run_checks() -> void:
 	check(game.equipment.effects.elapsed < 0.5 and game.equipment.effects.shield_points == 0 and game.equipment.effects.echo_ready == 0 and game.equipment.effects.pending.is_empty() and game.equipment.equipped.is_empty(), "真实重开重置套装、武器时钟、待触发队列和护盾")
 	check(FileAccess.get_file_as_string(data.SAVE_PATH) == saved, "套装与武器特殊效果不写灵伴存档")
 	print("EQUIPMENT_RESULT: effects %d checks, %d failures" % [checks, failures])
-	quit(0 if failures == 0 else 1)
+	await finish_checks()

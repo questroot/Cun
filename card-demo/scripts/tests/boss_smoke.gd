@@ -66,6 +66,20 @@ func capture(label: String) -> void:
 	check(root.get_texture().get_image().save_png(path) == OK, "真实渲染截图 " + label)
 	print("BOSS_CAPTURE: " + ProjectSettings.globalize_path(path))
 
+func lane_direction(id: String, point: Vector2) -> Vector2:
+	var direction := Vector2.RIGHT
+	var nearest := INF
+	if Maps.Art.has_art(id):
+		for road: Array in Maps.MAPS[id].roads:
+			for i in range(road.size() - 1):
+				var a: Vector2 = road[i] * Maps.MAPS[id].size
+				var b: Vector2 = road[i + 1] * Maps.MAPS[id].size
+				var distance := point.distance_to(Geometry2D.get_closest_point_to_segment(point, a, b))
+				if distance < nearest:
+					nearest = distance
+					direction = (b - a).normalized()
+	return direction
+
 func run_checks() -> void:
 	if not str(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")).begins_with("Cun-Boss-"):
 		printerr("Boss checks require an isolated Cun-Boss-* save directory.")
@@ -95,11 +109,13 @@ func run_checks() -> void:
 		check(boss.home.distance_to(Maps.MAPS[config.region].spawn * Maps.MAPS[config.region].size) > 650, "远离玩家出生点 " + id)
 		var art: Texture2D = Catalog.ART[id]
 		check(art.get_image().get_pixel(0, 0).a == 0 and art.get_height() > 150, "透明原图与尺寸 " + id)
-		game.player_foot = boss.home + Vector2(-180, 0)
+		var lane := lane_direction(config.region, boss.home)
+		game.player_foot = boss.home - lane * 180
 		await capture(id)
-		game.player_foot = boss.home + Vector2(65, 0)
+		game.player_foot = boss.home + lane * 65
 		game.health = 100
 		game.hurt_timer = 0
+		boss.skill_index = 0 # This legacy check covers each boss's original first move.
 		boss.cooldown = 0.0
 		bosses.tick(0.01)
 		check(float(boss.windup) > 0 and game.health == 100, "攻击先预警，无立即伤害 " + id)
@@ -110,14 +126,17 @@ func run_checks() -> void:
 		bosses.tick(3)
 		check(boss.windup == windup and game.health == 100, "行囊暂停首领预警 " + id)
 		game.journal.hide()
-		game.player_foot = boss.home + Vector2(220, 0)
+		game.player_foot = game.move_world(game.player_foot, lane * 155)
+		check(Maps.walkable(config.region, game.player_foot) and game.player_foot.distance_to(boss.home + lane * 220) < 1, "沿成图道路实际移出预警圈 " + id)
 		bosses.tick(float(config.windup) + 0.01)
 		check(game.health == 100, "离开锁定预警圈成功闪避 " + id)
+		boss.skill_index = 0
 		boss.cooldown = 0.0
-		game.player_foot = boss.home + Vector2(65, 0)
+		game.player_foot = boss.home + lane * 65
 		bosses.tick(0.01)
 		bosses.tick(float(config.windup) + 0.01)
 		check(game.health == 100 - int(config.damage), "预警结束圈内按本首领伤害命中 " + id)
+		boss.skill_index = 0
 		boss.cooldown = 0.0
 		bosses.tick(0.01)
 		game.hurt_timer = 1
@@ -127,6 +146,7 @@ func run_checks() -> void:
 		var hurt_hp: int = boss.hp
 		game.get_node("Weather").tick(76)
 		check(boss.hp == hurt_hp and boss.max_hp == config.hp, "天气不能覆盖首领美术和受伤血量 " + id)
+		boss.skill_index = 0
 		boss.cooldown = 0.0
 		bosses.tick(0.01)
 		var other := "post" if config.region != "post" else "grove"

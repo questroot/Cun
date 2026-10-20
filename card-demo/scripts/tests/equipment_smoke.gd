@@ -37,12 +37,15 @@ func click(control: Control) -> void:
 		game.equipment.scroll.ensure_control_visible(control)
 	await frames()
 	var point := control.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = point
+	control.get_viewport().push_input(motion, true)
 	for pressed: bool in [true, false]:
 		var event := InputEventMouseButton.new()
 		event.button_index = MOUSE_BUTTON_LEFT
 		event.pressed = pressed
 		event.position = point
-		Input.parse_input_event(event)
+		control.get_viewport().push_input(event, true)
 		await frames()
 
 func capture(label: String) -> void:
@@ -53,6 +56,12 @@ func capture(label: String) -> void:
 	var path := "user://equipment_%s.png" % label
 	check(root.get_texture().get_image().save_png(path) == OK, "真实窗口截图 " + label)
 	print("EQUIPMENT_CAPTURE: " + ProjectSettings.globalize_path(path))
+
+func finish_checks() -> void:
+	# Give active audio decoders time to release after the scene exits.
+	game.queue_free()
+	await create_timer(0.5).timeout
+	quit(0 if failures == 0 else 1)
 
 func run_checks() -> void:
 	if not str(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")).begins_with("Cun-Equipment-"):
@@ -215,4 +224,4 @@ func run_checks() -> void:
 	check(game.equipment.equipped.is_empty() and game._inventory_total() == 0, "真实重开清空装备与穿戴状态")
 	check(FileAccess.get_file_as_string(data.SAVE_PATH) == saved, "穿戴、战斗、跨图与重开未修改灵伴存档")
 	print("EQUIPMENT_RESULT: %d checks, %d failures" % [checks, failures])
-	quit(0 if failures == 0 else 1)
+	await finish_checks()
