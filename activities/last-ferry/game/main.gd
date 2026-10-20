@@ -296,7 +296,7 @@ func try_world_click(point: Vector2) -> bool:
 	if story.s.phase == "epilogue": return false
 	if story.s.place == "house":
 		if story.flag("drawer_open") and point.distance_to(Vector2(350,375)) < 24 and player.distance_to(Vector2(350,375)) < 82:
-			do_action("handover_read"); return true
+			do_action("handover_revisit" if story.flag("handover_updated") else "handover_read"); return true
 		if not story.flag("drawer_open") and point.distance_to(Vector2(320,340)) < 27 and player.distance_to(Vector2(320,340)) < 82:
 			do_action("drawer_open"); return true
 	if story.s.place == "street" and story.s.phase == "night" and story.s.pollution == 1 and not story.flag("stock_dried"):
@@ -449,7 +449,7 @@ func update_world() -> void:
 		"house":
 			solids.append(Rect2(220, 190, 200, 105))
 			add_object("paper", "旧桌·私人物品", Vector2(320, 340))
-			if story.flag("drawer_open"): add_object("handover", "下层抽屉里的折单", Vector2(350,375))
+			if story.flag("drawer_open"): add_object("handover", "旧交接单与今日附记" if story.flag("handover_updated") else "下层抽屉里的折单", Vector2(350,375))
 			add_object("roof", "屋梁与旧搪瓷盆", Vector2(600, 250))
 			add_object("drip", "桌脚的新湿痕", Vector2(450, 340))
 			add_object("watermark", "墙下的旧水印", Vector2(130, 300))
@@ -620,7 +620,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	story.act(id)
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -648,6 +648,7 @@ func interact() -> void:
 	if story.s.phase == "epilogue":
 		open_modal(object_title(target), "天已经亮了。夜里的处理不会因为你走访而重来；看看人们各自准备做的事，再决定何时离开。")
 		act_button("看看这里今早怎样继续", "epilogue")
+		if target == "handover" and story.flag("handover_updated"): act_button("再看旧单与今日附记", "handover_revisit")
 		if target == "handover" and story.flag("handover_discussed") and not story.flag("handover_updated"): act_button("另附今日处理记录，不改旧单", "handover_update")
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
 		if target == "wet_stock": act_button("看看昨晚浸湿的货物怎么处理", "stock_morning")
@@ -698,7 +699,7 @@ func interact() -> void:
 					if story.item("新灯芯"): act_button("这卷先留店里，亲自向周伯说明未送", "wick_keep")
 				else: button(modal_body, "不翻别人的账本", close_modal)
 			"handover":
-				act_button("展开公用物件交接单，看两栏记的什么", "handover_read")
+				act_button("再看旧单与今日附记" if story.flag("handover_updated") else "展开公用物件交接单，看两栏记的什么", "handover_revisit" if story.flag("handover_updated") else "handover_read")
 				if story.flag("handover_discussed") and not story.flag("handover_updated"): act_button("另附今日处理记录，不改旧单", "handover_update")
 			"paper":
 				if not story.flag("drawer_open"): act_button("托住底板，拉开下层抽屉", "drawer_open")
@@ -834,6 +835,7 @@ func _draw() -> void:
 			draw_line(Vector2(310,338),Vector2(332,338),Color("c0a97d"),3)
 			if story.flag("drawer_open"):
 				draw_rect(Rect2(292,345,78,42),Color("473f36"))
+				if story.flag("handover_updated"): draw_rect(Rect2(315,353,26,18),Color("eee3c9"))
 				draw_rect(Rect2(337,365,26,18),Color("dfcfaa"))
 				draw_line(Vector2(350,366),Vector2(350,381),Color("99886a"),1)
 			draw_rect(Rect2(675,215,40,30),Color("d4c9a7"))

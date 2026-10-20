@@ -110,6 +110,10 @@ func act(id: String) -> bool:
 	if s.left:
 		notice = "本段体验已结束。可读取离开前的存档，或重新选择身份。"
 		return false
+	if id == "handover_revisit":
+		if p != "house" or not flag("handover_updated"): return false
+		note("旧交接单仍有缺角，‘暂夹铜件待修’没有被涂掉。旁边今日附记写着：铜舌归钟，白罩取下。\n两张纸各说自己那一天发生的事。后来的修复不使当年的拖延没发生，也不替将来的人预先作出选择。")
+		return true
 	if id == "handover_update":
 		if p != "house" or not flag("handover_discussed") or not flag("drawer_open"): return false
 		if not flag("tongue_home") or not flag("shade_off"): return refuse("还不能记成完成：须亲眼完成铜舌归钟、取下通航白罩。问清经过不等于修好。")
