@@ -14,6 +14,8 @@ Python 标准库实现，默认使用 **标准 MCP stdio（逐行 UTF-8 JSON-RPC
 | `action` | `{"kind":"mouse","x":100,"y":200,"button":"left","frames":1}` | viewport 范围内实际鼠标输入，left/right/wheel_up/wheel_down；滚轮一次一格，可逐次观察后继续 |
 | `stop` | `{}` | 仅结束当前服务器创建的游戏子进程；重复调用安全 |
 
+键输入可改用 `{"kind":"key","key":"a","duration_ms":100}`：整数1–1000ms，与 `frames` 互斥，只支持 key。按墙钟到期后的下个处理帧释放；卡顿会超出请求时长，因此不是实时deadline保证。原frames语义不变。短距离移动可优先短毫秒段并观察实际结果，不依赖固定像素/帧。
+
 成功 action 的 observation 额外包含 `input_timing`：`held_process_frames` 是桥按请求等待的处理帧数，`held_wall_ms` 是事件按下之后至释放之前的实际墙钟毫秒（不含鼠标预移动及释放后的观察等待）。不是固定物理步长，也不保证位移；卡顿、相机跟随和游戏自身时钟应分别诊断。该字段不暂停模型思考期间的游戏，不代表实时闪避/战斗能力已验证。
 
 RichText观察仅包含当前滚动窗口与祖先裁剪内的完整布局行，边缘残行暂省略；不再输出整篇前4096字。未完成排版、table/img等复杂富文本保守省略，需要专用可见provider；不承诺所有自定义文本效果。滚轮是实际鼠标事件，不是直接设置滚动值。

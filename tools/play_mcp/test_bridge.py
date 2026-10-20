@@ -95,6 +95,13 @@ func play_visible() -> Dictionary:
             assert timing['held_process_frames'] == 6 and timing['held_wall_ms'] > 0, timing
             physical = key_result['result']['visible'][0]
             assert 1 <= physical['physical_frames'] <= 7 and physical['released'], physical
+            for invalid_duration in [0,1001,1.5]:
+                assert not request('action',{'kind':'key','key':'w','duration_ms':invalid_duration})['ok']
+            assert not request('action',{'kind':'key','key':'w','frames':2,'duration_ms':100})['ok']
+            timed=request('action',{'kind':'key','key':'w','duration_ms':100})
+            assert timed['ok'],timed
+            assert 100 <= timed['result']['input_timing']['held_wall_ms'] < 1000,timed
+            assert timed['result']['visible'][0]['released'],timed
             for attack in ['j','k','l']:
                 held=request('action',{'kind':'key','key':attack,'frames':4})
                 assert held['ok'] and 1 <= held['result']['visible'][0]['combat_keys'][attack] <= 5, held
