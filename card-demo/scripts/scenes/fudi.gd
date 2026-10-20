@@ -79,6 +79,13 @@ func play_visible() -> Dictionary:
 	var point := ARENA.position+player_foot-camera_origin
 	result["player_screen"] = {"x":point.x,"y":point.y}
 	result["objects"] = targets
+	var terrain: Array = []
+	for rect: Rect2 in Maps.obstacles(region):
+		var painted := Rect2(ARENA.position+rect.position-camera_origin,rect.size)
+		var clipped := ARENA.intersection(painted)
+		if clipped.has_area():
+			terrain.append({"appearance":"地形或建筑的已绘主体，不代表完整碰撞轮廓","visible_bounds":{"x":clipped.position.x,"y":clipped.position.y,"width":clipped.size.x,"height":clipped.size.y}})
+	result["visible_terrain"] = terrain
 	var bosses := get_node_or_null("Bosses")
 	if bosses != null: result["boss_view"] = bosses.play_visible()
 	if buildings != null: result["building_view"] = buildings.play_visible()
