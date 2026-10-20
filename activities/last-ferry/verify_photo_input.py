@@ -25,7 +25,8 @@ try:
         go(x,y);mouse(x,y-40);assert not obs()['visible'][0]['modal_open'],obs()
     go(460,335);key('e');click('拿照片到现场');click('保存');click('读取');click('确认')
     assert not any(b['text'].startswith('收起照片') for b in obs()['buttons']),obs()
-    key('e');click('拿照片到现场');key('e');wrong=obs();assert '缆绳槽' in json.dumps(wrong,ensure_ascii=False)
+    key('e');click('拿照片到现场');assert 'held_photo' in obs()['visible'][0],obs()
+    key('e');wrong=obs();assert '缆绳槽' in json.dumps(wrong,ensure_ascii=False)
     go(485,445);key('e');right=obs();assert '旧照片拍摄的岸上' in json.dumps(right,ensure_ascii=False) and not right['visible'][0]['modal_open'],right
     go(115,565);key('e');go(455,465);key('e');click('告诉他亲眼核对');zhou=obs()
     assert '新棚是我跟人一起挪的' in json.dumps(zhou,ensure_ascii=False) and '不能替她说' in json.dumps(zhou,ensure_ascii=False),zhou

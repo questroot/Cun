@@ -63,6 +63,8 @@ func play_visible() -> Dictionary:
 		result["visible_toolbag"] = {"x":650,"y":490,"appearance":"老葛长凳边的工具袋"}
 	elif story.s.place == "steps" and not story.flag("tool_returned"):
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
+	if comparing_photo and story.s.place == "steps":
+		result["held_photo"] = {"description":"新棚启用前的旧照：水面在上，三道矮阶靠岸，斜柳朝水，木柱上的灯在矮阶左上；照片不含新棚或桥围挡。", "screen_rect":{"x":50,"y":510,"width":210,"height":110}}
 	result["objects"] = targets
 	result["obstacles"] = obstacles
 	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
@@ -863,6 +865,15 @@ func _draw() -> void:
 		draw_rect(Rect2(bag_pos-Vector2(11,4),Vector2(22,19)),Color("8e7052"))
 		draw_arc(bag_pos-Vector2(0,5),8,PI,TAU,12,Color("cbb28b"),2)
 		draw_line(bag_pos+Vector2(-5,4),bag_pos+Vector2(6,8),Color("c3c2b6"),2)
+	if comparing_photo and story.s.place == "steps":
+		draw_rect(Rect2(50,510,210,110),Color("d4c9a7"))
+		draw_rect(Rect2(60,520,190,29),Color("72827f"))
+		for step in range(3): draw_line(Vector2(130,558+step*7),Vector2(215,558+step*7),Color("6c6e60"),3)
+		draw_line(Vector2(225,587),Vector2(209,542),Color("655e44"),5)
+		draw_line(Vector2(212,551),Vector2(237,535),Color("655e44"),2)
+		draw_line(Vector2(110,583),Vector2(110,550),Color("6e5a43"),4)
+		draw_circle(Vector2(110,550),5,Color("a68b55"))
+		draw_string(font,Vector2(63,609),"旧照 · 新棚启用前",HORIZONTAL_ALIGNMENT_LEFT,185,15,Color("3e443e"))
 	for i in range(4):
 		var r := Rect2(280 + i * 70, 650, 65, 55)
 		draw_rect(r, Color("384c54"))
