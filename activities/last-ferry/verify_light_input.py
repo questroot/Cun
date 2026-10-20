@@ -65,7 +65,7 @@ try:
         go(750,390);key('e')
     inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)
     if args.handover:
-        go(250,395);key('e');click('用记下的交接');go(455,465);key('e');click('问交接补记')
+        go(250,395);key('e');click('拿交接补记');go(455,465);key('e');click('问交接补记')
     go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('提议只把今晚');key('escape')
     go(250,395)
     s.call('action',{'kind':'mouse','x':250,'y':360});s.call('action',{'kind':'mouse','x':250,'y':360})

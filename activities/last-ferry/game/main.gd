@@ -720,7 +720,7 @@ func interact() -> void:
 				if story.has("lamp") and story.has("bell"): act_button("告诉她棚里的灯罩与缺舌铜钟，问她愿不愿一起查", "exchange")
 			"timetable", "lamp", "bell", "inscription":
 				act_button("现场检查与记录", target)
-				if target == "lamp" and story.flag("handover_seen") and not story.flag("handover_matched"): act_button("用记下的交接两栏，对照灯罩夹痕与钟架", "handover_compare")
+				if target in ["lamp", "bell"] and story.flag("handover_seen") and not story.flag("handover_matched"): act_button("拿交接补记，就近核对灯罩" if target == "lamp" else "拿交接补记，就近核对钟架", "handover_lamp" if target == "lamp" else "handover_bell")
 				if target == "bell":
 					act_button("察看钟座背面刻记", "mark")
 					if story.item("拆下的铜舌"): act_button("将取出的铜片挂回钟腹", "install_tongue")

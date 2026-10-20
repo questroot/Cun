@@ -277,6 +277,11 @@ func act(id: String) -> bool:
 			take("新灯芯")
 			set_flag("delivered")
 			note("阿禾把新灯芯交给周伯。周伯说今夜要让船看得更清楚；你记住这不是平日的用量。")
+		"handover_lamp", "handover_bell":
+			if p != "shelter" or not flag("handover_seen"): return false
+			learn("lamp" if id == "handover_lamp" else "bell")
+			if has("lamp") and has("bell"): return act("handover_compare")
+			note("白罩内缘的夹痕露出来了，压进去的薄边留下浅浅亮线。折单没画尺寸，钟架那头还没核对。" if id == "handover_lamp" else "你按折单看钟架的挂孔，孔沿有新木屑和亮断口。灯罩那头还没核对，暂时只记下这里。")
 		"handover_compare":
 			if p != "shelter" or not flag("handover_seen"): return false
 			if not has("lamp") or not has("bell"): return refuse("折单只说暂夹铜件。还没亲眼看过灯罩的夹痕与钟架缺口，不能把两个空白直接连成一件事。")

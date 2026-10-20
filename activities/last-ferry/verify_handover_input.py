@@ -23,9 +23,8 @@ try:
     go(550,445);key('e');click('问她：可以看');assert '别翻上面的家信' in text()
     go(320,380);s.call('action',{'kind':'mouse','x':320,'y':340});assert any(o['title']=='下层抽屉里的折单' for o in obs()['visible'][0]['objects']),obs()
     go(350,415);s.call('action',{'kind':'mouse','x':350,'y':375});document=obs();assert '暂夹铜件' in text()
-    go(450,575);key('e');go(750,390);key('e');go(250,395);key('e');click('用记下的交接');assert '还没亲眼' in text()
-    key('e');click('现场检查');go(550,275);key('e');click('现场检查')
-    go(250,395);key('e');click('用记下的交接');assert '亮痕旁没有刻名字' in text()
+    go(450,575);key('e');go(750,390);key('e');go(250,395);key('e');click('拿交接补记');assert '钟架那头还没核对' in text()
+    go(550,275);key('e');click('拿交接补记');assert '亮痕旁没有刻名字' in text()
     go(455,465);key('e');click('问交接补记');testimony=obs();assert '是我借的铜舌' in text() and '把话停在那里' in text()
     key('e');remaining=obs();assert any(b['text'].startswith('问他：小满以前') for b in remaining['buttons']),remaining
     out=s.run_dir/'handover-evidence.json';out.write_text(json.dumps({'document':document,'testimony':testimony,'method':'normal new game, public observation and actual inputs only'},ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
