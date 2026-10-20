@@ -235,8 +235,10 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 		get_viewport().push_input(down, true)
 	else:
 		Input.parse_input_event(down)
+	var held_started := Time.get_ticks_usec()
 	for _i in range(int(frames)):
 		await get_tree().process_frame
+	var held_usec := Time.get_ticks_usec() - held_started
 	if up is InputEventMouseButton:
 		get_viewport().push_input(up, true)
 	else:
@@ -244,7 +246,9 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_active = false
-	_reply(peer, {"ok": true, "result": _observe()})
+	var observation := _observe()
+	observation["input_timing"] = {"held_process_frames":int(frames),"held_wall_ms":float(held_usec)/1000.0,"clock":"process_frame; not fixed physics ticks or a guaranteed displacement"}
+	_reply(peer, {"ok": true, "result": observation})
 
 func _mouse(position: Vector2, index: MouseButton, pressed: bool) -> InputEventMouseButton:
 	var event := InputEventMouseButton.new()
