@@ -76,6 +76,9 @@ func play_visible() -> Dictionary:
 		result["visible_toolbag"] = {"x":235,"y":355,"appearance":"挂在湿阶低处的布袋"}
 	if story.s.place == "shelter":
 		result["visible_awning"] = {"x":575,"y":195,"width":160,"lower_edge_y":280-float(story.s.get("awning_pull",0.0))/2.0,"rope_end_y":350+float(story.s.get("awning_pull",0.0)),"appearance":("棚布与系绳仍在，下面已漫水，不能避水" if story.s.ending == "flood" else ("棚绳系在木桩，棚下干处" if story.flag("awning_tied") else ("棚布低边滴水，松绳可向下拉" if story.s.phase != "epilogue" else "低垂棚布与未系绳端")))}
+		result["visible_awning_post"] = {"x":700,"y":420,"width":7,"height":35,"appearance":"系棚绳的木桩，拉绳端到桩旁再系"}
+		if story.flag("awning_tied") and story.s.ending != "flood":
+			result["visible_dry_patch"] = {"x":590,"y":365,"width":135,"height":75,"appearance":"地面勾线标出的棚下干处；仅避棚布滴水，不防漫水"}
 	if story.s.place == "lane":
 		var cart := cart_position()
 		result["visible_cart"] = {"x":cart.x,"y":cart.y,"width":64,"height":60,"appearance":"空车木板车身，两侧车轮，左侧伸出车把"}
@@ -1080,6 +1083,7 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([Vector2(575,195),Vector2(735,195),Vector2(735,270-tension*45),Vector2(575,280-tension*45)]),Color("526b70"))
 			draw_line(Vector2(690,245-tension*40),Vector2(690,350+tension*90),Color("b8a279"),3)
 			draw_line(Vector2(700,420),Vector2(700,455),Color("8d7250"),7)
+			draw_string(font,Vector2(710,450),"系绳桩",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c4b294"))
 			if story.flag("awning_tied") and story.s.ending != "flood": draw_rect(Rect2(590,365,135,75),Color("77745c"),false,2)
 			elif not story.flag("awning_tied"):
 				for drop in range(3): draw_line(Vector2(610+drop*32,285-tension*40),Vector2(610+drop*32,305-tension*40),Color("75a5bb"),2)
