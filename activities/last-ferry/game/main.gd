@@ -298,7 +298,8 @@ func show_items() -> void:
 ## Direct manipulation uses the same location-checked rules as keyboard accessibility.
 func handle_luggage(put_down: bool) -> void:
 	close_modal()
-	story.set_flag("luggage_placed" if put_down else "luggage_taken")
+	story.set_flag("luggage_taken")
+	story.s.flags["luggage_placed"] = put_down
 	story.note("许宁把箱子竖放在门内干处。文件留在箱里，钥匙还在自己口袋。" if put_down else "许宁抠掉箱轮里的碎石，拎起自己的行李。箱里是换洗衣服和处理旧屋的文件。")
 	last_place = ""
 	update_world()
@@ -309,8 +310,8 @@ func try_world_click(point: Vector2) -> bool:
 	if story.s.phase == "epilogue": return false
 	if story.s.place == "arrival" and not story.flag("luggage_taken") and point.distance_to(Vector2(305,360)) < 28 and player.distance_to(Vector2(305,360)) < 82:
 		handle_luggage(false); return true
-	if story.s.place == "house" and story.flag("luggage_taken") and not story.flag("luggage_placed") and point.distance_to(Vector2(590,510)) < 28 and player.distance_to(Vector2(590,510)) < 82:
-		handle_luggage(true); return true
+	if story.s.place == "house" and story.flag("luggage_taken") and point.distance_to(Vector2(590,510)) < 28 and player.distance_to(Vector2(590,510)) < 82:
+		handle_luggage(not story.flag("luggage_placed")); return true
 	if story.s.place == "house":
 		if story.flag("drawer_open") and point.distance_to(Vector2(350,375)) < 24 and player.distance_to(Vector2(350,375)) < 82:
 			do_action("handover_revisit" if story.flag("handover_updated") else "handover_read"); return true
@@ -708,7 +709,8 @@ func interact() -> void:
 				button(modal_body, "谢过他，自己慢慢走", func(): close_modal(); story.note("许宁说自己认得屋子，想慢慢走。司机点头：‘行，箱轮那儿有碎石，留点神。’\n他转身收车里的空水瓶，没有再替她安排去处。"); refresh_ui())
 			"luggage_place":
 				if story.flag("luggage_placed"):
-					button(modal_body, "行李已经安放好，留在干处", close_modal)
+					button(modal_body, "重新提起自己的行李", func(): handle_luggage(false))
+					button(modal_body, "仍留在干处", close_modal)
 					return
 				button(modal_body, "把自己的行李留在门内", func(): handle_luggage(true))
 			"luggage":
