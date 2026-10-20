@@ -40,6 +40,8 @@ var debris: Array[Vector2] = []
 var target := Vector2.ZERO
 var moving := false
 var model: HeroWalkScript
+var processing_flash := 0.0
+var button_hints: Array[Label] = []
 
 var status_label: Label
 var goal_label: Label
@@ -86,23 +88,68 @@ func _ready() -> void:
 	_make_button("重新开始", Vector2(938, 23), Vector2(118, 43), _start_round)
 	var back := _make_button("返回外缘", Vector2(1070, 23), Vector2(138, 43), func() -> void: GameManager.goto_scene("outskirts"))
 	back.name = "ReturnButton"
-	expand_button = _make_button("扩建浮台  -3木料  -2废料", Vector2(858, 263), Vector2(345, 44), _expand_raft)
-	collector_button = _make_button("建造集水打捞站  -2木料  -3废料", Vector2(858, 313), Vector2(345, 44), _build_collector)
-	claim_button = _make_button("领取产出", Vector2(858, 363), Vector2(345, 44), _claim_production)
-	upgrade_button = _make_button("升级站：自动收取  -2木料  -2废料", Vector2(858, 413), Vector2(345, 44), _upgrade_collector)
-	workshop_button = _make_button("建造简易工坊  -2木料  -2废料", Vector2(858, 463), Vector2(345, 44), _build_workshop)
-	process_button = _make_button("搓制绳索  -1纤维  +1绳索", Vector2(858, 513), Vector2(345, 44), _process_fiber)
-	order_button = _make_button("交付委托  -2清水  -2绳索", Vector2(858, 563), Vector2(345, 44), _fulfill_order)
+	expand_button = _make_button("扩建浮台  -3木料  -2废料", Vector2(858, 263), Vector2(345, 32), _expand_raft)
+	collector_button = _make_button("建造集水打捞站  -2木料  -3废料", Vector2(858, 313), Vector2(345, 32), _build_collector)
+	claim_button = _make_button("领取产出", Vector2(858, 363), Vector2(345, 32), _claim_production)
+	upgrade_button = _make_button("升级站：自动收取  -2木料  -2废料", Vector2(858, 413), Vector2(345, 32), _upgrade_collector)
+	workshop_button = _make_button("建造简易工坊  -2木料  -2废料", Vector2(858, 463), Vector2(345, 32), _build_workshop)
+	process_button = _make_button("搓制绳索  -1纤维  +1绳索", Vector2(858, 513), Vector2(345, 32), _process_fiber)
+	order_button = _make_button("交付委托  -2清水  -2绳索", Vector2(858, 563), Vector2(345, 32), _fulfill_order)
+	for button in [expand_button, collector_button, claim_button, upgrade_button, workshop_button, process_button, order_button]:
+		var hint := Label.new()
+		hint.position = button.position + Vector2(4, 32)
+		hint.add_theme_font_size_override("font_size", 13)
+		hint.add_theme_color_override("font_color", Color("#ffe5a0"))
+		add_child(hint)
+		button_hints.append(hint)
 	var note := Label.new()
-	note.text = "建站后每4秒产出清水、纤维各1；升级前请手动领取。\n委托奖励木料、废料各2；第二单后解锁工坊自动搓绳。\n漂浮物每6秒补充，最多5份；重开/离开仅重置本活动。"
+	note.text = "建站后每4秒产出清水、纤维各1；升级前请手动领取。\n委托奖励木料、废料各2；第二单后解锁工坊自动搓绳。\n漂浮物每6秒补充，最多5份；离开再进入保留进度，重开清空；关闭游戏不保留。"
 	note.position = Vector2(862, 615)
 	note.add_theme_font_size_override("font_size", 16)
 	note.add_theme_color_override("font_color", Color("#c9e2de"))
 	add_child(note)
-	_start_round()
+	if GameManager.water_activity_state.is_empty():
+		_start_round()
+	else:
+		_restore_round(GameManager.water_activity_state)
 	exploration_tools = ExplorationTools.new()
 	exploration_tools.region = "water_activity"
 	add_child(exploration_tools)
+
+func _exit_tree() -> void:
+	if model != null:
+		_cache_round()
+
+func _cache_round() -> void:
+	GameManager.water_activity_state = {
+		"wood": wood, "scrap": scrap, "water": water, "fiber": fiber, "rope": rope,
+		"raft_tiles": raft_tiles, "collectors": collectors, "orders_completed": orders_completed,
+		"pending_water": pending_water, "pending_fiber": pending_fiber,
+		"automated_collecting": automated_collecting, "workshop_built": workshop_built,
+		"production_elapsed": production_elapsed, "debris_elapsed": debris_elapsed,
+		"player_foot": player_foot, "debris": debris.duplicate(), "result": result_label.text
+	}
+
+func _restore_round(state: Dictionary) -> void:
+	wood = state["wood"]
+	scrap = state["scrap"]
+	water = state["water"]
+	fiber = state["fiber"]
+	rope = state["rope"]
+	raft_tiles = state["raft_tiles"]
+	collectors = state["collectors"]
+	orders_completed = state["orders_completed"]
+	pending_water = state["pending_water"]
+	pending_fiber = state["pending_fiber"]
+	automated_collecting = state["automated_collecting"]
+	workshop_built = state["workshop_built"]
+	production_elapsed = state["production_elapsed"]
+	debris_elapsed = state["debris_elapsed"]
+	player_foot = state["player_foot"]
+	debris = state["debris"].duplicate()
+	model.position = player_foot
+	result_label.text = state["result"]
+	_refresh_ui()
 
 func _make_button(text: String, position_value: Vector2, size_value: Vector2, action: Callable) -> Button:
 	var button := Button.new()
@@ -134,8 +181,10 @@ func _start_round() -> void:
 	model.update_movement(Vector2.ZERO, 0.0)
 	moving = false
 	debris = [Vector2(152, 350), Vector2(295, 590), Vector2(735, 350), Vector2(735, 570), Vector2(148, 575)]
+	processing_flash = 0.0
 	result_label.text = "走近水面漂浮物自动打捞；收集五份可扩建浮台并建造第一座站。"
 	_refresh_ui()
+	_cache_round()
 
 func _collect_debris() -> void:
 	wood += 1
@@ -180,6 +229,7 @@ func _tick_production(delta: float) -> void:
 			water += cycles * collectors
 			if workshop_built:
 				rope += cycles * collectors
+				processing_flash = 1.0
 			else:
 				fiber += cycles * collectors
 		else:
@@ -219,6 +269,7 @@ func _build_workshop() -> bool:
 	wood -= WORKSHOP_WOOD
 	scrap -= WORKSHOP_SCRAP
 	workshop_built = true
+	processing_flash = 1.0
 	rope += fiber
 	fiber = 0
 	result_label.text = "简易工坊建成：现有纤维已加工，此后产出自动制成绳索。"
@@ -272,6 +323,13 @@ func _refresh_ui() -> void:
 	workshop_button.disabled = not automated_collecting or workshop_built or orders_completed < 2 or wood < WORKSHOP_WOOD or scrap < WORKSHOP_SCRAP
 	process_button.disabled = fiber < 1
 	order_button.disabled = water < ORDER_WATER or rope < ORDER_ROPE
+	button_hints[0].text = "缺木料 %d、废料 %d" % [maxi(0, EXPAND_WOOD - wood), maxi(0, EXPAND_SCRAP - scrap)] if expand_button.disabled else "可扩建"
+	button_hints[1].text = "先扩建空位" if collectors >= raft_tiles - 1 else ("缺木料 %d、废料 %d" % [maxi(0, COLLECTOR_WOOD - wood), maxi(0, COLLECTOR_SCRAP - scrap)] if collector_button.disabled else "可建造")
+	button_hints[2].text = "已自动收取" if automated_collecting else ("暂无待领产出（建站后每4秒产出）" if claim_button.disabled else "可领取")
+	button_hints[3].text = "先建站" if collectors == 0 else ("完成首单解锁" if orders_completed < 1 else ("已升级" if automated_collecting else ("缺木料 %d、废料 %d" % [maxi(0, UPGRADE_WOOD - wood), maxi(0, UPGRADE_SCRAP - scrap)] if upgrade_button.disabled else "可升级")))
+	button_hints[4].text = "先升级站点" if not automated_collecting else ("完成第二单解锁" if orders_completed < 2 else ("已建造" if workshop_built else ("缺木料 %d、废料 %d" % [maxi(0, WORKSHOP_WOOD - wood), maxi(0, WORKSHOP_SCRAP - scrap)] if workshop_button.disabled else "可建造")))
+	button_hints[5].text = "缺纤维 %d（建站产出后领取）" % maxi(0, 1 - fiber) if process_button.disabled else "可加工"
+	button_hints[6].text = "缺清水 %d、绳索 %d" % [maxi(0, ORDER_WATER - water), maxi(0, ORDER_ROPE - rope)] if order_button.disabled else "可交付"
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
@@ -284,8 +342,10 @@ func _input(event: InputEvent) -> void:
 			moving = true
 
 func _process(delta: float) -> void:
+	processing_flash = maxf(0.0, processing_flash - delta)
 	if exploration_tools.is_open():
 		model.update_movement(Vector2.ZERO, 0)
+		queue_redraw()
 		return
 	wave_elapsed += delta
 	_tick_production(delta)
@@ -348,3 +408,15 @@ func _draw() -> void:
 			draw_circle(center + Vector2(36, 33), 20.0, Color("#427a81"))
 			draw_circle(center + Vector2(36, 33), 13.0, Color("#ace1da"))
 			draw_line(center + Vector2(36, 13), center + Vector2(36, 3), Color("#e8f4d5"), 3.0)
+	if workshop_built:
+		var shop := Rect2(Vector2(450, 465), Vector2(125, 66))
+		draw_rect(shop, Color("#684733"))
+		draw_rect(shop.grow(-5), Color("#c99a58"))
+		draw_colored_polygon(PackedVector2Array([Vector2(440, 465), Vector2(512, 428), Vector2(585, 465)]), Color("#a84436"))
+		draw_rect(Rect2(501, 487, 23, 44), Color("#463a30"))
+		var glow := Color("#fff0a1") if processing_flash > 0.0 else Color("#e7ca88")
+		draw_arc(Vector2(550, 493), 15.0, 0.0, TAU, 24, glow, 5.0)
+		draw_circle(Vector2(550, 493), 4.0, glow)
+		draw_string(ThemeDB.fallback_font, Vector2(460, 454), "工坊", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+		if processing_flash > 0.0:
+			draw_string(ThemeDB.fallback_font, Vector2(492, 420), "加工 +绳索", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#fff0a1"))
