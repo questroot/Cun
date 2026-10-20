@@ -180,7 +180,8 @@ func act(id: String) -> bool:
 			set_flag("basin_placed")
 			note("你把端着的盆放回桌脚漏点。滴水重新落进盆里，瓦片和梁还没有修好。")
 			return true
-		if id == "leave" and p == "street":
+		if id == "leave" and (p == "street" or (p == "arrival" and s.ending == "flood")):
+			if flag("evac_pack_carried"): return refuse("你还托着邻居的被褥包。可以交给桥头接应者，或沿干路把包交回老葛；别把替人带的东西一起带出这段旅程。")
 			s.left = true
 			note("旅途记录：%s。保留经历，不带走当地人的财物与身份。许宁与阿禾仍会继续自己的生活。" % ending_name())
 			return true

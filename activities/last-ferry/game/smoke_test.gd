@@ -49,6 +49,7 @@ func run() -> void:
 	check(state.act("evac_pack_take") and not state.act("evac_pack_take"),"take one bedding parcel only")
 	check(state.act("evac_pack_drop") and state.act("evac_pack_take"),"parcel can be returned then accepted again")
 	state.change_place("arrival")
+	check(not state.act("leave") and not state.s.left and state.flag("evac_pack_carried"),"cannot leave with accepted neighbour parcel")
 	state.s.x = 100.0
 	check(not state.act("evac_pack_deliver"),"handover requires receiver proximity")
 	state.s.x = 570.0
@@ -57,6 +58,8 @@ func run() -> void:
 	check(state.act("evac_pack_read_tag") and not state.act("evac_pack_wrong_desk") and state.flag("evac_pack_carried"),"wrong desk preserves parcel and allows recovery")
 	check(state.act("evac_pack_deliver") and not state.flag("evac_pack_carried") and not state.act("evac_pack_deliver"),"handover settles parcel once")
 	check(state.valid_save(state.s),"delivered bedding save is valid")
+	check(state.act("leave") and state.s.left,"bridgehead exit works after voluntary delivery")
+	state.s.left = false
 	state.set_flag("evac_pack_carried")
 	check(not state.valid_save(state.s),"save rejects parcel simultaneously delivered and carried")
 	state.s.flags["evac_pack_carried"] = false

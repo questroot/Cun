@@ -8,7 +8,9 @@ parser.add_argument('--identity',choices=['he','xu'],default='he')
 parser.add_argument('--late-gauge',action='store_true',help='Xu first inspects gauge only after flooding')
 parser.add_argument('--tie-awning',action='store_true',help='Tie shelter awning through real movement before dangerous signals')
 parser.add_argument('--evac-pack',action='store_true',help='Carry neighbour bedding through dry lane to bridgehead')
+parser.add_argument('--bridge-exit',action='store_true',help='Cancel then confirm safe departure at bridgehead after delivery')
 args=parser.parse_args()
+if args.bridge_exit and not args.evac_pack:parser.error('--bridge-exit requires --evac-pack')
 if args.late_gauge and args.identity!='xu':parser.error('--late-gauge requires --identity xu')
 s=PlayService()
 receipts=[]
@@ -84,11 +86,17 @@ try:
         go(100,440);key('e');go(100,550);key('e');lane_go(100,540);key('e')
         bridge=obs();assert not any(('班车司机' in o['title'] or '自己的行李箱' in o['title']) for o in bridge['visible'][0]['objects']),bridge
         assert bridge['visible'][0]['visible_receiver_table']['width']==110,bridge
+        if args.bridge_exit:
+            go(300,510);key('e');click('离开这段体验');click('确认');assert '你还托着邻居' in '\n'.join(obs()['texts']) and '托着' in obs()['visible'][0]['visible_evac_pack']['appearance'],obs()
         go(570,370);key('e');click('按登记交给河街');assert 'visible_evac_pack' in obs()['visible'][0] and '还没看清' in '\n'.join(obs()['texts']),obs()
         key('e');click('托住包');assert '河街十二号' in '\n'.join(obs()['texts']) and '陈家' in obs()['visible'][0]['visible_evac_pack']['cloth_tag'],obs()
         key('e');click('按登记交给六码头');assert '不收住户被褥' in '\n'.join(obs()['texts']) and '托着' in obs()['visible'][0]['visible_evac_pack']['appearance'],obs()
         key('e');click('按登记交给河街');delivered=obs();assert '已交接' in delivered['visible'][0]['visible_evac_pack']['appearance'],delivered
         click('保存');click('读取');click('确认');assert '已交接' in obs()['visible'][0]['visible_evac_pack']['appearance'],obs()
+        if args.bridge_exit:
+            go(300,510);key('e');click('离开这段体验');click('取消');assert '旅途记录' not in '\n'.join(obs()['texts']),obs()
+            key('e');click('离开这段体验');click('确认');assert '旅途记录' in '\n'.join(obs()['texts']),obs()
+            print(json.dumps({'ok':True,'bridge_exit':True,'runtime':str(s.run_dir)},ensure_ascii=False));sys.exit(0)
         go(745,540);key('e');lane_go(745,350);key('e');go(450,575);key('e');assert not any(o['title']=='老葛扎好的邻居被褥包' for o in obs()['visible'][0]['objects']),obs()
     go(750,390);key('e');shelter=obs();titles=[o['title'] for o in shelter['visible'][0]['objects']]
     click('保存');click('读取');click('确认');shelter=obs()

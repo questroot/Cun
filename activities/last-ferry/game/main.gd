@@ -557,6 +557,7 @@ func update_world() -> void:
 		"arrival":
 			if story.s.ending == "flood":
 				add_object("evac_receiver","桥头接应的人与干台",Vector2(570,330),"npc")
+				add_object("departure","沿安全桥路离开渡口",Vector2(300,510),"gate")
 				add_object("lane_gate","沿干路返回旧屋与街口",Vector2(745,500),"gate")
 			else:
 				add_object("driver", "收行李舱搭扣的班车司机",Vector2(570,330),"npc")
