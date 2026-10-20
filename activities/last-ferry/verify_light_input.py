@@ -65,6 +65,8 @@ try:
     go(115,565);key('e');go(95,565);key('e');go(320,385);key('e');click('擦干提柄')
     returned=obs();assert '没烫着吧' in json.dumps(returned,ensure_ascii=False),returned
     key('i');assert '手提黄灯：' not in '\n'.join(obs()['texts']);key('escape')
+    if args.recover_mistake:
+        go(365,320);key('e');click('看看昨晚浸湿');assert '不会因此自动变干' in json.dumps(obs(),ensure_ascii=False),obs()
     go(450,565);key('e');click('离开这段体验');click('确认');left=obs()
     assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
     out=s.run_dir/'shore-evidence.json';out.write_text(json.dumps({'mistake_consequence':mistake,'order_kept':kept,'order_explained':explained,'lit_still_night':lit,'rung':rung,'silence':silent,'dawn':dawn,'lamp_returned':returned,'formal_departure':left,'method':'normal opening, real visible button/key/mouse inputs only'},ensure_ascii=False,indent=2),encoding='utf-8')

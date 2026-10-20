@@ -425,7 +425,8 @@ func update_world() -> void:
 	match story.s.place:
 		"street":
 			solids.append(Rect2(145, 190, 235, 95))
-			if story.s.pollution == 1 and story.s.phase == "night": add_object("wet_stock", "干台上的湿货箱" if story.flag("stock_dried") else "门边被水浸到的货箱", Vector2(365,280) if story.flag("stock_dried") else Vector2(365,365))
+			if story.s.pollution == 1:
+				add_object("wet_stock", "干台上的湿货箱" if story.flag("stock_dried") else ("陶婶摊开的湿货" if story.s.phase == "epilogue" else "门边被水浸到的货箱"), Vector2(365,280) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
 			add_object("ge", "围挡旁补鞋的老葛", Vector2(620, 470), "npc")
@@ -632,6 +633,7 @@ func interact() -> void:
 		open_modal(object_title(target), "天已经亮了。夜里的处理不会因为你走访而重来；看看人们各自准备做的事，再决定何时离开。")
 		act_button("看看这里今早怎样继续", "epilogue")
 		if target == "tao" and story.s.identity == "he" and story.item("手提黄灯"): act_button("擦干提柄，把借来的灯还给陶婶", "return_lamp")
+		if target == "wet_stock": act_button("看看昨晚浸湿的货物怎么处理", "stock_morning")
 		if target == "ge": act_button("问老葛今早准备做什么", "morning_ge")
 		if target == "paper" and story.s.identity == "xu" and not story.flag("morning_decided"):
 			act_button("先请人看屋顶，不急着决定卖不卖房", "roof_commission")
@@ -788,8 +790,8 @@ func _draw() -> void:
 	draw_string(font, Vector2(32, 130), "道路范围：石色地面　圆环：可交互　门形：地点连接", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("bac5c3"))
 	match story.s.place:
 		"street":
-			if story.s.pollution == 1 and story.s.phase == "night":
-				var stock_pos := Vector2(365,280) if story.flag("stock_dried") else Vector2(365,365)
+			if story.s.pollution == 1:
+				var stock_pos := Vector2(365,280) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365)
 				draw_rect(Rect2(185,375,270,24),Color("456777"))
 				draw_rect(Rect2(stock_pos-Vector2(20,14),Vector2(40,28)),Color("9a8057"))
 				draw_line(stock_pos-Vector2(15,0),stock_pos+Vector2(15,0),Color("665643"),3)

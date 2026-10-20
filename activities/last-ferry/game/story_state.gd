@@ -109,6 +109,9 @@ func act(id: String) -> bool:
 			s.left = true
 			note("旅途记录：%s。保留经历，不带走当地人的财物与身份。许宁与阿禾仍会继续自己的生活。" % ending_name())
 			return true
+		if id == "stock_morning" and p == "street" and s.pollution == 1:
+			note(("你昨晚搬上干台的箱子还在。" if flag("stock_dried") else "门边的箱子已不在水里，陶婶后半夜自己搬上了干台。") + "纸包摊开晾着，有几盒火柴仍不能卖。\n陶婶把损耗记进店账，没有在你名字旁画一个勾或叉：‘白天还有人来买盐，这里不能一直停在昨晚。’\n灯的边界修好了，已经湿过的东西却不会因此自动变干。")
+			return true
 		if id == "return_lamp" and p == "street" and s.identity == "he":
 			if not item("手提黄灯"): return refuse("借来的灯已经还了，不必再交一次。")
 			take("手提黄灯")
