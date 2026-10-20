@@ -487,6 +487,7 @@ func update_world() -> void:
 			add_object("back", "返回旧石阶（安全）", Vector2(450, 570), "gate")
 	if story.s.ending == "flood":
 		if story.s.place == "shelter":
+			solids.append(Rect2(705,522,83,48))
 			scene_objects.clear()
 			add_object("evacuation", "撤离后封起的灯钟与停航告示", Vector2(455,430))
 			add_object("street_gate", "沿干路回街口", Vector2(95,570), "gate")
