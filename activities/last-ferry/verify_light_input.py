@@ -11,6 +11,7 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--render',action='store_true')
 parser.add_argument('--recover-mistake',action='store_true',help='Raise white light once, move wet stock, then repair without erasing intrusion')
 parser.add_argument('--leave-stock',action='store_true',help='With --recover-mistake, leave wet stock for Tao to handle')
+parser.add_argument('--handover',action='store_true',help='Investigate handover then append actual repair record in morning')
 args=parser.parse_args()
 if args.leave_stock and not args.recover_mistake: parser.error('--leave-stock requires --recover-mistake')
 s=PlayService()
@@ -41,6 +42,11 @@ try:
     go(320,385);key('e');click('向陶婶借手提黄灯')
     go(420,275);s.call('action',{'kind':'mouse','x':420,'y':235});click('确认');kept=obs();assert '今晚未交' in json.dumps(kept,ensure_ascii=False)
     assert kept['visible'][0]['visible_wick']['appearance']=='柜台干货格留存的灯芯',kept
+    if args.handover:
+        go(100,480);key('e');go(550,445);key('e');click('问她：可以看')
+        go(320,380);s.call('action',{'kind':'mouse','x':320,'y':340});go(350,415);s.call('action',{'kind':'mouse','x':350,'y':375})
+        assert '暂夹铜件' in json.dumps(obs(),ensure_ascii=False),obs()
+        go(450,575);key('e')
     walk('x',750);walk('y',390);key('e')
     go(455,465);key('e');click('亲口说明这卷');explained=obs();assert '你也会自己拿主意了' in json.dumps(explained,ensure_ascii=False);key('escape')
     mistake=None
@@ -58,6 +64,8 @@ try:
             assert any(o['title']=='门边被水浸到的货箱' for o in mistake['visible'][0]['objects']),mistake
         go(750,390);key('e')
     inspect(125,290);inspect(250,395);inspect(550,275);inspect(620,425)
+    if args.handover:
+        go(250,395);key('e');click('用记下的交接');go(455,465);key('e');click('问交接补记')
     go(455,465);key('e');click('问他：黄灯底座');click('问他：小满以前');click('提出解释：等候');click('提议只把今晚');key('escape')
     go(250,395)
     s.call('action',{'kind':'mouse','x':250,'y':360});s.call('action',{'kind':'mouse','x':250,'y':360})
@@ -77,8 +85,13 @@ try:
     if args.recover_mistake:
         go(420,340);key('e');click('看看昨晚浸湿');stock_morning=obs();assert '不会因此自动变干' in json.dumps(stock_morning,ensure_ascii=False),stock_morning
         assert ('陶婶后半夜自己搬上' if args.leave_stock else '你昨晚搬上干台') in json.dumps(stock_morning,ensure_ascii=False),stock_morning
+    handover_update=None
+    if args.handover:
+        go(100,480);key('e');go(350,415);key('e');click('另附今日处理');handover_update=obs()
+        assert '没有替当年的残姓补名字' in json.dumps(handover_update,ensure_ascii=False) and '自己放进下层抽屉' in json.dumps(handover_update,ensure_ascii=False),handover_update
+        go(450,575);key('e')
     go(450,565);key('e');click('离开这段体验');click('确认');left=obs()
     assert '旅途记录' in json.dumps(left,ensure_ascii=False) and any('返回身份选择' in b['text'] for b in left['buttons']),left
-    out=s.run_dir/'shore-evidence.json';out.write_text(json.dumps({'mistake_consequence':mistake,'order_kept':kept,'order_explained':explained,'lit_still_night':lit,'rung':rung,'silence':silent,'dawn':dawn,'lamp_returned':returned,'formal_departure':left,'method':'normal opening, real visible button/key/mouse inputs only'},ensure_ascii=False,indent=2),encoding='utf-8')
+    out=s.run_dir/'shore-evidence.json';out.write_text(json.dumps({'handover_update':handover_update,'mistake_consequence':mistake,'order_kept':kept,'order_explained':explained,'lit_still_night':lit,'rung':rung,'silence':silent,'dawn':dawn,'lamp_returned':returned,'formal_departure':left,'method':'normal opening, real visible button/key/mouse inputs only'},ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({'ok':True,'evidence':str(out)},ensure_ascii=False))
 finally:s.stop()
