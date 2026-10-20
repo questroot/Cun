@@ -10,6 +10,21 @@ var active: Dictionary = {}
 var region := ""
 var banner: Label
 
+func play_visible() -> Dictionary:
+	if game == null or game._paused() or game.finished: return {}
+	var door: Vector2 = game.ARENA.position+Catalog.entrance(game.region)-game.camera_origin
+	if not game.ARENA.has_point(door): return {}
+	var result := {"entrance":{"x":door.x,"y":door.y},"activation_radius":Catalog.RADIUS,"appearance":"建筑入口光圈，走入自动生效"}
+	var rect := Catalog.footprint(game.region)
+	var label_origin := door+Vector2(-rect.size.x*0.45,-62)
+	var effect: Dictionary = Catalog.EFFECTS[states[game.region].effect]
+	var text := "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益",effect.name,effect.description]
+	var font := ThemeDB.fallback_font
+	var text_size := font.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,17)
+	var bounds := Rect2(label_origin-Vector2(0,font.get_ascent(17)),text_size)
+	if game.ARENA.encloses(bounds): result["visible_label"] = text
+	return result
+
 func _ready() -> void:
 	game = get_parent()
 	rng.randomize()

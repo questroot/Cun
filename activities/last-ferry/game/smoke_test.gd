@@ -34,6 +34,135 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(test_dir)
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
+	state.fresh("xu")
+	check(not at("house","lane_old_level"),"water marks cannot be observed from other scenes")
+	state.change_place("lane")
+	state.s.x = 400.0
+	state.s.y = 540.0
+	check(not state.act("lane_old_level") and not state.act("lane_today_level"),"distant marks not awarded")
+	state.s.x = 200.0
+	state.s.y = 320.0
+	var evidence_before: int = state.s.evidence.size()
+	check(state.act("lane_old_level") and not state.act("lane_today_level"),"near old trace does not award today's gauge")
+	var journal_after: int = state.s.journal.size()
+	check(not state.act("lane_old_level") and state.s.journal.size()==journal_after,"repeat visits do not duplicate observation")
+	state.s.x = 650.0
+	check(state.act("lane_today_level") and state.s.evidence.size()==evidence_before and state.s.pollution==0,"today gauge is local knowledge not core evidence or intrusion")
+	check(state.save_game() and state.load_game() and state.flag("lane_old_level") and state.flag("lane_today_level"),"both independent water observations persist")
+	check(state.lane_water_description().contains("低处"),"initial gauge is low")
+	state.s.pollution = 1
+	check(state.lane_water_description().contains("中格"),"first intrusion visibly raises gauge")
+	check(state.act("lane_level_revisit") and not state.act("lane_level_revisit"),"middle gauge recorded once only on actual revisit")
+	state.s.pollution = 2
+	check(state.lane_water_description().contains("上格"),"flood gauge exceeds upper mark")
+	check(state.act("lane_level_revisit") and state.flag("lane_level_seen_1") and state.flag("lane_level_seen_2"),"upper revisit preserves earlier middle record")
+	state.finish("flood")
+	state.change_place("lane")
+	state.s.x = 650.0
+	state.s.y = 320.0
+	check(state.save_game() and state.load_game() and not state.act("lane_level_revisit"),"revisit records persist without repeat after loading")
+	state.fresh("xu")
+	state.s.pollution = 2
+	state.finish("flood")
+	state.change_place("lane")
+	state.s.x = 650.0
+	state.s.y = 320.0
+	check(state.act("lane_level_revisit") and state.notice.contains("首次") and state.flag("lane_today_level"),"first flooded visit records first observation in epilogue")
+	check(not state.flag("lane_level_seen_1") and not state.flag("lane_level_seen_0"),"late arrival does not invent unseen earlier levels")
+	check(not state.act("lane_level_revisit"),"first late observation does not repeat each frame")
+	state.fresh("xu")
+	check(not at("shelter","awning_tie"),"slack rope cannot be tied as completed")
+	state.s["awning_pull"] = 35.0
+	check(state.save_game() and state.load_game() and state.s.awning_pull == 35.0,"partial awning pull persists")
+	check(not state.act("awning_tie"),"partial rope still needs pulling")
+	state.s.awning_pull = 90.0
+	state.s.x = 690.0
+	state.s.y = 440.0
+	check(state.act("awning_tie") and state.flag("awning_tied"),"fully pulled rope can be tied")
+	check(not state.act("awning_tie"),"tied rope not replayed")
+	state.s.x = 500.0
+	check(not state.act("shelter_dry_stand"),"dry standing requires actual area entry")
+	state.s.x = 650.0
+	state.s.y = 400.0
+	check(state.act("shelter_dry_stand") and not state.act("shelter_dry_stand"),"actual dry patch entry recorded once")
+	for bad_pull in [-1,91,"30",INF,NAN]:
+		state.s.awning_pull = bad_pull
+		check(not state.valid_save(state.s),"reject invalid awning pull field")
+	state.fresh("xu")
+	state.change_place("shelter")
+	state.s.phase = "night"
+	state.s.x = 690.0
+	state.s.y = 440.0
+	state.s["awning_pull"] = 90.0
+	state.set_flag("closing_release")
+	check(state.act("awning_tie") and state.notice.contains("凳子空着") and not state.notice.contains("周伯挪了"),"tying rope cannot bring Zhou back from closing scene")
+	state.fresh("xu")
+	check(state.valid_save(state.s),"legacy save without cart position remains valid")
+	state.set_flag("lane_cart_moved")
+	check(state.valid_save(state.s),"legacy cleared cart save remains valid without new field")
+	state.s["cart_x"] = 395.5
+	check(state.valid_save(state.s) and state.save_game() and state.load_game() and state.s.cart_x == 395.5,"partial cart position persists through real file save/load")
+	for invalid_cart in ["395",249.0,431.0,INF,NAN]:
+		state.s["cart_x"] = invalid_cart
+		check(not state.valid_save(state.s),"invalid cart position rejected")
+	state.fresh("xu")
+	check(at("house","roof_listen") and state.act("basin_take") and state.act("basin_place"),"prepare basin catching water")
+	check(state.act("basin_take") and state.flag("basin_carried") and not state.flag("basin_placed"),"lifting catching basin stops catching rather than duplicating it")
+	check(state.save_game() and state.load_game() and state.flag("basin_carried") and not state.flag("basin_placed"),"carried lifted basin persists")
+	check(state.act("basin_place") and state.flag("basin_placed") and not state.flag("basin_carried"),"replace lifted basin restores catching")
+	check(state.act("basin_take"),"lift basin before dawn")
+	state.finish("untie")
+	state.change_place("house")
+	check(state.flag("basin_carried") and not state.flag("basin_placed"),"dawn does not magically replace carried basin")
+	check(state.act("basin_place") and state.flag("basin_placed") and not state.flag("basin_carried"),"morning allows physically replacing carried basin")
+	state.fresh("xu")
+	check(not at("street","roof_arrange"),"roof arrangement requires an observed leak")
+	check(at("house","roof_listen") and at("street","roof_arrange"),"owner can directly ask Ge without Tao checklist")
+	check(state.flag("roof_visit_arranged") and not state.flag("roof_commissioned"),"appointment is not completed roof work")
+	check(not state.act("roof_arrange") and state.act("roof_recall"),"appointment cannot be duplicated but remains reviewable")
+	check(not state.roof_visit_active(),"night appointment does not move visitor early")
+	state.s.phase = "epilogue"
+	state.s.ending = "light"
+	check(state.roof_visit_active(),"safe dawn appointment locates visitor at house")
+	check(not at("house","roof_inspect"),"appointment alone does not authorize entering house")
+	check(at("house","roof_admit") and not state.act("roof_admit"),"owner admits guest once before inspection")
+	check(state.save_game() and state.load_game() and state.flag("roof_guest_admitted"),"admission persists")
+	check(not at("house","roof_inspect"),"admission does not replace showing actual leak")
+	check(state.act("roof_guide"),"owner can lead admitted visitor")
+	state.s.x = 635.0
+	state.s.y = 490.0
+	check(not state.act("roof_show"),"cannot point out leak from entrance")
+	state.s.x = 510.0
+	state.s.y = 370.0
+	check(state.act("roof_show"),"reaching dry leak spot enables inspection")
+	check(at("house","roof_inspect") and state.flag("roof_inspected"),"safe morning appointment can receive inspection")
+	check(state.save_game() and state.load_game() and state.flag("roof_inspected"),"inspection persists in isolated test save")
+	check(at("house","roof_note_read") and state.notice.contains("没有完工勾记"),"physical work note records outstanding work rather than a completed repair")
+	check(not at("house","roof_inspect"),"inspection cannot be replayed by sweeping buttons")
+	check(at("house","roof_commission") and state.notice.contains("两项工序") and not state.notice.contains("等到老葛路过"),"morning plan acknowledges completed inspection rather than resets encounter")
+	state.s.ending = "flood"
+	check(not state.roof_visit_active(),"flood keeps visitor outside unsafe house")
+	check(not at("house","roof_inspect"),"flood postpones unsafe house inspection")
+	state.fresh("he")
+	check(not at("house", "drawer_open") and not at("house", "handover_read"), "household privacy and closed drawer respected")
+	check(at("house", "drawer_permission") and at("house", "drawer_open") and at("house", "handover_read"), "permission reveals bounded shared handover document")
+	check(state.flag("handover_seen") and not state.flag("consent_zhou") and not state.flag("heard_zhou") and state.s.pollution == 0, "historical receipt is not consent identity or intrusion")
+	check(state.current_questions().contains("纸没说夹的是什么"), "handover notes retain uncertainty rather than solution")
+	check(not at("shelter", "handover_compare") and not state.act("handover_zhou"), "document alone cannot establish physical link")
+	check(state.act("lamp") and state.act("bell") and state.act("handover_compare") and state.act("handover_zhou"), "physical checks precede testimony about temporary repair")
+	check(not state.flag("consent") and not state.flag("heard_zhou") and state.s.pollution == 0, "repair testimony does not replace memory or agreement")
+	check(not at("house", "handover_update"), "testimony cannot be written as a completed repair")
+	state.set_flag("tongue_home")
+	state.set_flag("shade_off")
+	check(state.act("handover_update") and state.flag("handover_updated"), "actual completed repair gets separate present-day note")
+	check(not state.act("handover_update") and not state.flag("consent"), "no duplicate record or consent reward")
+	state.fresh("he")
+	check(not at("street", "move_wet_stock"), "no invented wet stock before water intrusion")
+	check(state.act("night") and at("shelter", "danger"), "first raised white signal reaches street")
+	check(not at("street", "move_wet_stock"), "cannot place a box not carried")
+	check(at("street", "stock_take") and state.flag("stock_carried"), "pick up before moving stock")
+	check(at("street", "move_wet_stock") and state.flag("stock_dried") and state.s.pollution == 1, "moving stock changes mundane state not pollution")
+	check(not at("street", "move_wet_stock"), "stock cannot be repeatedly farmed")
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
 		check(not at("shelter", "restore"), identity + " cannot restore without information/night")
@@ -53,6 +182,8 @@ func run() -> void:
 			check(at("shelter", "swap"), "unique borrowed yellow lamp prevents white signal")
 			check(not at("shelter", "danger"), "safe lamp state has actual effect")
 		else:
+			check(not at("steps", "board"),"returnee cannot cross water gap while boat approaches")
+			state.s.flags["boat_arrival_pending"] = false
 			check(at("steps", "board"), "returnee boards local side deck")
 			check(state.s.place == "boat", "boat local location entered")
 			state.change_place("steps")
@@ -122,6 +253,20 @@ func run() -> void:
 		check(state.save_game() and state.load_game() and state.flag("xu_identified"), "encounter progress survives save")
 		check(at("steps", "ask_departure") and state.has("xu_wish"), "ask person rather than infer desired ending")
 
+	state.fresh("xu")
+	check(not at("street", "wick_keep"), "returnee cannot take apprentice order responsibility")
+	check(not at("steps", "photo_shift"), "cannot compare unseen photograph")
+	check(at("house", "photo_view") and state.flag("photo_seen"), "photo records observable older shoreline")
+	check(at("steps", "photo_same") and not state.flag("photo_compared") and state.s.pollution == 0, "wrong spatial reading yields safe counterevidence")
+	check(not at("steps", "photo_shift") and not state.flag("photo_compared"), "guessing correct interpretation cannot invent observations")
+	check(at("steps", "root_view") and at("steps", "stairs_view") and at("steps", "socket_view"), "physical comparison requires personally inspecting marks")
+	check(at("steps", "photo_shift") and state.flag("photo_compared") and not state.flag("consent"), "historical comparison is not consent or supernatural proof")
+	check(at("shelter", "photo_zhou") and state.flag("photo_discussed") and not state.flag("consent") and not state.flag("heard_zhou"), "sharing old shore does not replace listening or permission")
+	state.fresh("he")
+	check(at("street", "wick_keep") and not state.item("新灯芯"), "apprentice can honestly retain undelivered goods")
+	check(not at("shelter", "deliver") and not state.flag("consent"), "retained order is neither duplicate delivery nor ending consent")
+	check(at("shelter", "wick_explain") and state.flag("wick_explained") and not state.flag("consent"), "personal explanation does not replace negotiation")
+	check(state.save_game() and state.load_game() and state.flag("wick_kept"), "new order decision compatible with v1 saves")
 	for identity in ["xu", "he"]:
 		state.fresh(identity)
 		check(not at("shelter", "retrieve_tongue"), "cannot retrieve through closed shade")
@@ -245,6 +390,9 @@ func run() -> void:
 	scene.player = Vector2(45, 440)
 	scene.move_player(Vector2(-100, 0))
 	check(scene.player.x >= 40, "world boundary blocks escape")
+	scene.comparing_photo = true
+	scene.start_game("xu")
+	check(not scene.comparing_photo, "new identity clears transient photo comparison")
 	scene.story.change_place("shelter")
 	scene.last_place = ""
 	scene.update_world()
@@ -271,6 +419,19 @@ func run() -> void:
 	scene.player = Vector2(550,280)
 	check(scene.try_world_click(Vector2(550,240)) and scene.story.flag("tongue_home"), "direct install changes equipment")
 	check(not scene.modal_open, "repair manipulation does not open choice menus")
+	scene.start_game("he")
+	scene.travel("steps")
+	scene.player = Vector2(235,400)
+	check(scene.try_world_click(Vector2(235,355)) and not scene.story.item("老葛的工具袋"), "direct bag click does not loot unidentified property")
+	scene.travel("street")
+	scene.story.act("ge_talk")
+	scene.travel("steps")
+	scene.player = Vector2(235,400)
+	check(scene.try_world_click(Vector2(235,355)) and scene.story.item("老葛的工具袋") and not scene.modal_open, "direct bamboo retrieval keeps exploration")
+	scene.travel("street")
+	scene.player = Vector2(620,520)
+	check(scene.try_world_click(Vector2(620,470)) and scene.story.flag("tool_returned") and not scene.story.item("老葛的工具袋"), "direct return consumes actual carried bag")
+	check(scene.play_visible().visible_toolbag.appearance == "老葛长凳边的工具袋", "returned bag remains physically visible beside owner")
 	scene.start_game("he")
 	scene.travel("shelter")
 	scene.player = Vector2(455,520)

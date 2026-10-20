@@ -53,7 +53,60 @@ var loot_rng := RandomNumberGenerator.new()
 var equipment: Equipment
 var buildings: Buildings
 
+## Fixed observation provider: only painted targets intersecting the clipped world view.
+func play_visible() -> Dictionary:
+	if not states.has(region) or world_view == null: return {}
+	var result := {"location":Catalog.REGIONS[region].name,"controls":"WASD移动，J斩击/K灵弹/L震荡，E附近交互，M地图，B行囊","world_view":{"x":ARENA.position.x,"y":ARENA.position.y,"width":ARENA.size.x,"height":ARENA.size.y}}
+	if _paused() or finished:
+		result["world_occluded"] = true
+		return result
+	var targets: Array = []
+	var data: Dictionary = Maps.MAPS[region]
+	for i in range(data.sites.size()):
+		var site: Array = data.sites[i]
+		_visible_target(targets,site[1]*data.size,str(site[0]),"investigation",80)
+	_visible_target(targets,data.spawn*data.size,"休息点 · E恢复一次","rest",60)
+	for exit: Array in data.exits:
+		_visible_target(targets,exit[1]*data.size,"E → "+str(Catalog.REGIONS[exit[0]].name),"exit",80)
+	for enemy: Dictionary in states[region].enemies:
+		var center := ARENA.position+Vector2(enemy.position)-camera_origin
+		_visible_target(targets,enemy.position-Vector2(0,38),"守卫","enemy",46)
+		var bar := Rect2(center-Vector2(28,84),Vector2(56,5))
+		if ARENA.encloses(bar) and not targets.is_empty() and targets[-1].kind == "enemy" and ARENA.has_point(center-Vector2(0,38)):
+			targets[-1]["visible_health_bar"] = {"fill_ratio":clampf(float(enemy.hp)/float(enemy.get("max_hp",60)),0.0,1.0),"x":bar.position.x,"y":bar.position.y,"width":bar.size.x,"height":bar.size.y}
+	for pickup: Dictionary in states[region].pickups:
+		if not pickup.get("weather_growth",false): _visible_target(targets,pickup.position,str(Catalog.ITEMS[pickup.item].name),"pickup",30)
+	var point := ARENA.position+player_foot-camera_origin
+	result["player_screen"] = {"x":point.x,"y":point.y}
+	result["objects"] = targets
+	var terrain: Array = []
+	for rect: Rect2 in Maps.obstacles(region):
+		var painted := Rect2(ARENA.position+rect.position-camera_origin,rect.size)
+		var clipped := ARENA.intersection(painted)
+		if clipped.has_area():
+			terrain.append({"appearance":"地形或建筑的已绘主体，不代表完整碰撞轮廓","visible_bounds":{"x":clipped.position.x,"y":clipped.position.y,"width":clipped.size.x,"height":clipped.size.y}})
+	result["visible_terrain"] = terrain
+	var bosses := get_node_or_null("Bosses")
+	if bosses != null: result["boss_view"] = bosses.play_visible()
+	if buildings != null: result["building_view"] = buildings.play_visible()
+	var traps := get_node_or_null("Traps")
+	if traps != null: result["visible_hazards"] = traps.play_visible()
+	var chests := get_node_or_null("Chests")
+	if chests != null:
+		result["visible_chests"] = chests.play_visible()
+		result["chest_encounter_view"] = chests.play_visible_encounters()
+	var weather := get_node_or_null("Weather")
+	if weather != null: result["visible_gardens"] = weather.play_visible()
+	return result
+
+func _visible_target(targets: Array, point: Vector2, title: String, kind: String, _radius: float) -> void:
+	var screen := ARENA.position+point-camera_origin
+	# Conservative until exact per-art bounds are available: omit edge fragments.
+	if not ARENA.has_point(screen): return
+	targets.append({"title":title,"kind":kind,"x":screen.x,"y":screen.y})
+
 func _ready() -> void:
+	add_to_group("cun_play_visible")
 	DisplayServer.window_set_title("福地")
 	loot_rng.randomize()
 	for item: String in Catalog.ITEMS:
@@ -649,6 +702,15 @@ func _visited_total() -> int:
 func open_journal() -> void:
 	journal_text.bbcode_enabled = true
 	var lines: Array[String] = ["行囊与见闻  ·  本轮收集 %d 份  ·  人物线索 %d / %d" % [_inventory_total(), _visited_total(), Maps.site_total()], "C 打开人物装备，可穿戴、替换与卸下；装备数量包含已穿戴物品，本轮有效。"]
+	lines.append("\n此地已读见闻 · " + str(Catalog.REGIONS[region].name))
+	var local_data: Dictionary = Maps.MAPS[region]
+	var has_local_record := false
+	for i in range(local_data.sites.size()):
+		if states[region].visited[i]:
+			has_local_record = true
+			lines.append("%s：%s" % [local_data.sites[i][0], local_data.sites[i][2]])
+	if not has_local_record: lines.append("还没有调查记录；靠近地标按 E。")
+	lines.append("\n行囊与规则")
 	for item: String in Loot.ITEMS:
 		if int(inventory.get(item, 0)) > 0:
 			lines.append("[img=44x44]%s[/img]  %s × %d" % [Loot.ITEMS[item].icon.resource_path, Loot.ITEMS[item].name, inventory[item]])

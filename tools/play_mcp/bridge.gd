@@ -92,10 +92,42 @@ func _blocked_input(node: Node, point: Vector2, keyboard: bool) -> bool:
 			return true
 	return false
 
+func _visible_rect(control: Control) -> Rect2:
+	var rect := control.get_global_rect().intersection(get_viewport().get_visible_rect())
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is Control and ancestor.clip_contents:
+			rect = rect.intersection(ancestor.get_global_rect())
+		ancestor = ancestor.get_parent()
+	return rect
+
+# Return only complete laid-out lines inside the clipped scrolling text viewport.
+# Complex tables/custom effects need a dedicated provider; never fall back to full text.
+func _rich_visible_text(label: RichTextLabel) -> String:
+	if not label.is_finished(): return ""
+	if label.bbcode_enabled and ("[table" in label.text or "[img" in label.text): return ""
+	var value := label.get_parsed_text()
+	if label.visible_characters >= 0: value = value.left(label.visible_characters)
+	var clip := _visible_rect(label)
+	var style := label.get_theme_stylebox("normal")
+	var origin := label.global_position+Vector2(style.get_content_margin(SIDE_LEFT),style.get_content_margin(SIDE_TOP))
+	var scroll := label.get_v_scroll_bar().value
+	var lines: PackedStringArray = []
+	for i in range(label.get_line_count()):
+		var y := origin.y+label.get_line_offset(i)-scroll
+		var height := label.get_line_height(i)
+		var width := label.get_line_width(i)
+		if y < clip.position.y or y+height > clip.end.y: continue
+		if origin.x < clip.position.x or origin.x+width > clip.end.x: continue
+		var span := label.get_line_range(i)
+		if span.x >= value.length(): continue
+		lines.append(value.substr(span.x,mini(span.y,value.length())-span.x))
+	return "".join(lines).left(4096)
+
 func _walk(node: Node, texts: Array, buttons: Array) -> void:
-	if node is Control and node.is_visible_in_tree() and node.get_global_rect().intersects(get_viewport().get_visible_rect()):
+	if node is Control and node.is_visible_in_tree() and _visible_rect(node).has_area():
 		if node is Label or node is RichTextLabel:
-			var value: String = node.text if node is Label else node.get_parsed_text()
+			var value: String = node.text if node is Label else _rich_visible_text(node)
 			if node.visible_characters >= 0:
 				value = value.left(node.visible_characters)
 			if not value.is_empty():
@@ -103,7 +135,7 @@ func _walk(node: Node, texts: Array, buttons: Array) -> void:
 		if node is BaseButton:
 			var id := str(node.get_instance_id())
 			_buttons[id] = weakref(node)
-			var rect: Rect2 = node.get_global_rect()
+			var rect: Rect2 = _visible_rect(node)
 			buttons.append({"id": id, "text": node.text if node is Button else node.name, "disabled": node.disabled or _blocked(node), "blocked": _blocked(node), "rect": {"x": rect.position.x, "y": rect.position.y, "width": rect.size.x, "height": rect.size.y}})
 	for child in node.get_children():
 		if texts.size() + buttons.size() > 512:
@@ -138,6 +170,10 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 		return
 	var args: Dictionary = request.params
 	var kind = args.get("kind")
+	var duration = args.get("duration_ms", 0)
+	if args.has("duration_ms") and (kind != "key" or args.has("frames") or not (duration is int or duration is float) or duration != int(duration) or duration < 1 or duration > 1000):
+		_reply(peer, {"ok":false,"error":"duration_ms requires key, integer 1..1000 and no frames"})
+		return
 	var frames = args.get("frames", 1)
 	if not (frames is int or frames is float) or frames != int(frames) or frames < 1 or frames > 120:
 		_reply(peer, {"ok": false, "error": "frames must be integer 1..120"})
@@ -151,11 +187,15 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 		if not is_instance_valid(button) or not button.is_visible_in_tree() or button.disabled or _blocked(button):
 			_reply(peer, {"ok": false, "error": "button not visible or enabled"})
 			return
-		var center: Vector2 = button.get_global_rect().get_center()
+		var visible_rect := _visible_rect(button)
+		if not visible_rect.has_area():
+			_reply(peer, {"ok": false, "error": "button clipped outside visible UI"})
+			return
+		var center: Vector2 = visible_rect.get_center()
 		down = _mouse(center, MOUSE_BUTTON_LEFT, true)
 		up = _mouse(center, MOUSE_BUTTON_LEFT, false)
 	elif kind == "key":
-		var keys := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "enter": KEY_ENTER, "escape": KEY_ESCAPE, "space": KEY_SPACE, "tab": KEY_TAB, "w": KEY_W, "a": KEY_A, "s": KEY_S, "d": KEY_D, "e": KEY_E, "j": KEY_J, "i": KEY_I, "1": KEY_1, "2": KEY_2, "3": KEY_3, "4": KEY_4}
+		var keys := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "enter": KEY_ENTER, "escape": KEY_ESCAPE, "esc": KEY_ESCAPE, "space": KEY_SPACE, "tab": KEY_TAB, "w": KEY_W, "a": KEY_A, "s": KEY_S, "d": KEY_D, "e": KEY_E, "j": KEY_J, "k": KEY_K, "l": KEY_L, "i": KEY_I, "m": KEY_M, "b": KEY_B, "c": KEY_C, "1": KEY_1, "2": KEY_2, "3": KEY_3, "4": KEY_4}
 		if not keys.has(args.get("key", "")):
 			_reply(peer, {"ok": false, "error": "key not allowed"})
 			return
@@ -174,10 +214,11 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 			_reply(peer, {"ok": false, "error": "invalid coordinates"})
 			return
 		var position := Vector2(float(x), float(y))
-		if not get_viewport().get_visible_rect().has_point(position) or args.get("button", "left") not in ["left", "right"]:
+		if not get_viewport().get_visible_rect().has_point(position) or args.get("button", "left") not in ["left", "right", "wheel_up", "wheel_down"]:
 			_reply(peer, {"ok": false, "error": "mouse outside viewport or invalid button"})
 			return
-		var index := MOUSE_BUTTON_LEFT if args.get("button", "left") == "left" else MOUSE_BUTTON_RIGHT
+		var indices := {"left":MOUSE_BUTTON_LEFT,"right":MOUSE_BUTTON_RIGHT,"wheel_up":MOUSE_BUTTON_WHEEL_UP,"wheel_down":MOUSE_BUTTON_WHEEL_DOWN}
+		var index: int = indices[args.get("button", "left")]
 		down = _mouse(position, index, true)
 		up = _mouse(position, index, false)
 	else:
@@ -198,8 +239,17 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 		get_viewport().push_input(down, true)
 	else:
 		Input.parse_input_event(down)
-	for _i in range(int(frames)):
-		await get_tree().process_frame
+	var held_started := Time.get_ticks_usec()
+	var held_frames := 0
+	if args.has("duration_ms"):
+		while Time.get_ticks_usec()-held_started < int(duration)*1000:
+			await get_tree().process_frame
+			held_frames += 1
+	else:
+		for _i in range(int(frames)):
+			await get_tree().process_frame
+			held_frames += 1
+	var held_usec := Time.get_ticks_usec() - held_started
 	if up is InputEventMouseButton:
 		get_viewport().push_input(up, true)
 	else:
@@ -207,7 +257,9 @@ func _handle(peer: Dictionary, request: Dictionary) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_active = false
-	_reply(peer, {"ok": true, "result": _observe()})
+	var observation := _observe()
+	observation["input_timing"] = {"held_process_frames":held_frames,"held_wall_ms":float(held_usec)/1000.0,"clock":"process_frame; not fixed physics ticks or a guaranteed displacement"}
+	_reply(peer, {"ok": true, "result": observation})
 
 func _mouse(position: Vector2, index: MouseButton, pressed: bool) -> InputEventMouseButton:
 	var event := InputEventMouseButton.new()

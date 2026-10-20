@@ -11,6 +11,45 @@ var rng := RandomNumberGenerator.new()
 var regions: Dictionary = {}
 var initialized := false
 
+func play_visible() -> Array:
+	var result: Array = []
+	if not initialized or game._paused() or game.finished: return result
+	for chest: Dictionary in regions[game.region]:
+		var point: Vector2 = game.ARENA.position+chest.position-game.camera_origin
+		if not game.ARENA.has_point(point): continue
+		var label := "异变宝箱" if chest.mutated else "普通宝箱"
+		match chest.state:
+			"guarding": label += " · 守卫中"
+			"cleared": label += " · E领奖"
+			"opened": label += " · 已领取"
+			_: label += " · E开启"
+		result.append({"title":label,"x":point.x,"y":point.y,"kind":"chest"})
+	return result
+
+func play_visible_encounters() -> Dictionary:
+	var actors: Array = []
+	var warnings: Array = []
+	if not initialized or game._paused() or game.finished: return {}
+	for chest: Dictionary in regions[game.region]:
+		if chest.state != "guarding": continue
+		for mob: Dictionary in chest.mobs:
+			if int(mob.hp)>0: _visible_actor(actors,mob.position,"异变守卫")
+		var boss: Dictionary = chest.boss
+		if int(boss.hp)>0:
+			_visible_actor(actors,boss.position,"守箱·"+str(Bosses.DEFINITIONS[boss.art].name))
+			if float(boss.windup)>0: _visible_warning(warnings,boss.target,105,"粉红攻击预警圈")
+		if float(chest.warning)>0: _visible_warning(warnings,chest.position,135,"异变惊醒紫色圈")
+	return {"actors":actors,"warnings":warnings}
+
+func _visible_actor(result: Array, position: Vector2, title: String) -> void:
+	var point: Vector2 = game.ARENA.position+position-game.camera_origin
+	if game.ARENA.has_point(point): result.append({"title":title,"x":point.x,"y":point.y})
+
+func _visible_warning(result: Array, position: Vector2, radius: float, appearance: String) -> void:
+	var center: Vector2 = game.ARENA.position+position-game.camera_origin
+	var bounds: Rect2 = game.ARENA.intersection(Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2))
+	if bounds.has_area(): result.append({"appearance":appearance,"visible_bounds":{"x":bounds.position.x,"y":bounds.position.y,"width":bounds.size.x,"height":bounds.size.y}})
+
 func _ready() -> void:
 	game = get_parent()
 	rng.randomize()
