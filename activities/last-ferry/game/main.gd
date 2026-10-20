@@ -945,8 +945,12 @@ func interact() -> void:
 				elif not story.flag("stock_dried"): act_button("托住箱底，拿起湿货箱", "stock_take")
 			"dry_stock":
 				if story.flag("stock_carried"): act_button("把手中的货箱放到干台", "move_wet_stock")
-			"old_root": act_button("沿树根看它原来朝哪边生长", "root_view")
-			"old_stairs": act_button("数矮阶，对照旁边后来加高的岸", "stairs_view")
+			"old_root":
+				act_button("沿树根看它原来朝哪边生长", "root_view")
+				if story.s.phase == "night" and not story.flag("released") and not story.flag("river_willow_listen"): act_button("留在柳根背风处，听两边的声音", "river_willow_listen")
+			"old_stairs":
+				act_button("数矮阶，对照旁边后来加高的岸", "stairs_view")
+				if story.s.phase == "night" and not story.flag("released") and not story.flag("river_stair_listen"): act_button("留在最高干阶，听船侧的日常话", "river_stair_listen")
 			"post_socket": act_button("蹲下看方槽边的旧铁锈", "socket_view")
 			"old_photo": act_button("翻看照片正反面，记下岸的位置", "photo_view")
 			"toolbag": act_button("站在干阶上，用竹竿挑起布袋", "tool_retrieve")

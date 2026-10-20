@@ -75,6 +75,11 @@ try:
         go(115,565);key('e');go(175,355);key('e');click('把交班渡牌');returned_tag=obs();assert 'visible_ferry_tag' not in returned_tag['visible'][0] and any('挂回的旧渡牌' in o['title'] for o in returned_tag['visible'][0]['objects']),returned_tag
         click('保存');click('读取');click('确认');assert any('挂回的旧渡牌' in o['title'] for o in obs()['visible'][0]['objects']),obs()
         go(750,565);key('e')
+    if args.boat_approach:
+        go(165,460);key('e');click('留在柳根');assert '岸后巷子也有人喊同一句' in '\n'.join(obs()['texts']),obs()
+        go(330,500);key('e');click('留在最高干阶');assert '热的留着呢' in '\n'.join(obs()['texts']),obs()
+        click('保存');click('读取');click('确认');key('e');assert not any(b['text'].startswith('留在最高干阶') for b in obs()['buttons']),obs();key('esc')
+        click('记录');heard='\n'.join(obs()['texts']);assert heard.count('热的留着呢')==1 and heard.count('岸后巷子也有人喊同一句')==1,heard;key('esc')
     go(460,335);click('先站在干阶听河声');key('1');key('1');key('2');key('3')
     river=obs();assert not river['visible'][0]['modal_open'] and '我以为你听不出来了' in json.dumps(river,ensure_ascii=False),river
     key('e');click('问他：你希望')

@@ -149,6 +149,16 @@ func act(id: String) -> bool:
 		set_flag("ferry_tag_returned")
 		note("你把渡牌挂回告示旁的空钩，刻字朝外。木牌碰了两下棚柱，晃动停了。交班物回到岸上，不表示你已替船上的人答应结束，也不改变灯和钟的状态。")
 		return true
+	if id in ["river_willow_listen","river_stair_listen"]:
+		if s.left or p != "steps" or s.phase != "night" or flag("released"): return false
+		var listening_at := Vector2(165,445) if id == "river_willow_listen" else Vector2(330,470)
+		if Vector2(s.x,s.y).distance_to(listening_at) >= 80 or flag(id): return false
+		set_flag(id)
+		if id == "river_willow_listen":
+			note("你站到柳根背风的一侧。河上的‘回家吃饭’刚落，岸后巷子也有人喊同一句；接着是碗沿轻轻相碰。两处声音不一样远，你没有朝水里走。")
+		else:
+			note("你留在最上面一层干阶。船侧传来一句‘又慢了’，随后是杯子搁到木板的声音。隔了一会，另一人说‘热的留着呢’。这些话不是在给每个来岸边的人发同一张请帖。")
+		return true
 	if id == "evac_pack_read_tag":
 		if s.left or s.ending != "flood" or not flag("evac_pack_carried"): return false
 		set_flag("evac_pack_tag_read")

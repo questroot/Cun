@@ -34,6 +34,22 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(test_dir)
 	state.save_path = test_dir + "/journey.json"
 	print("TEST_STORAGE ", ProjectSettings.globalize_path(test_dir), " (never production user://)")
+	state.fresh("xu")
+	state.change_place("steps")
+	state.s.x = 165.0
+	state.s.y = 445.0
+	check(not state.act("river_willow_listen"),"shore listening unavailable by daylight")
+	state.s.phase = "night"
+	state.s.x = 700.0
+	check(not state.act("river_willow_listen"),"shore listening requires actual willow proximity")
+	state.s.x = 165.0
+	check(state.act("river_willow_listen") and not state.act("river_willow_listen"),"willow fragment heard once")
+	state.s.x = 330.0
+	state.s.y = 470.0
+	state.set_flag("released")
+	check(not state.act("river_stair_listen"),"no close boat conversation after departure")
+	state.s.flags["released"] = false
+	check(state.act("river_stair_listen") and state.save_game() and state.load_game() and not state.act("river_stair_listen"),"stair listening survives reload without repetition")
 	state.fresh("he")
 	state.change_place("street")
 	state.s.x = 650.0
