@@ -36,6 +36,26 @@ class Protocol(unittest.TestCase):
             with self.assertRaises(ValueError): self.service.validate_action(args)
         for args in ({'kind':'key','key':'enter','frames':120},{'kind':'click','button_id':'123'}, {'kind':'mouse','x':10,'y':20}):
             self.service.validate_action(args)
+    def test_duration_contract(self):
+        for duration in (1,100,1000):
+            self.service.validate_action({'kind':'key','key':'a','duration_ms':duration})
+        self.handshake()
+        for args in (
+            {'kind':'key','key':'a','duration_ms':True},
+            {'kind':'key','key':'a','duration_ms':0},
+            {'kind':'key','key':'a','duration_ms':1001},
+            {'kind':'key','key':'a','duration_ms':1.5},
+            {'kind':'key','key':'a','duration_ms':100,'frames':1},
+            {'kind':'mouse','x':1,'y':1,'duration_ms':100},
+        ):
+            with self.assertRaises(ValueError): self.service.validate_action(args)
+            result=self.rpc('tools/call',{'name':'action','arguments':args})['result']
+            self.assertTrue(result['isError'],result)
+        variants=next(t for t in self.rpc('tools/list')['result']['tools'] if t['name']=='action')['inputSchema']['oneOf']
+        timed=next(v for v in variants if 'duration_ms' in v['properties'])
+        self.assertEqual(timed['required'],['kind','key','duration_ms'])
+        self.assertFalse(timed['additionalProperties'])
+        self.assertNotIn('frames',timed['properties'])
     def test_stdio_real_process(self):
         requests = [b'bad json\n', b'x'*65537+b'\n',json.dumps({'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-03-26'}}).encode()+b'\n', b'{"jsonrpc":"2.0","method":"notifications/initialized"}\n', b'{"jsonrpc":"2.0","id":2,"method":"tools/list"}\n', b'{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"catalog","arguments":{}}}\n']
         proc = subprocess.run([sys.executable,str(Path(__file__).with_name('server.py'))],input=b''.join(requests),capture_output=True,timeout=10)
