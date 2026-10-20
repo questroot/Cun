@@ -65,6 +65,9 @@ try:
     if args.boat_approach:
         go(700,330);key('e');click('许宁独有：踏上');deck=obs();assert deck['visible'][0]['location']=='夜船·靠岸侧舷',deck
         go(685,440);key('e');click('听沈渡说明');assert 'visible_ferry_tag' in obs()['visible'][0],obs()
+        key('e');click('还没决定');assert 'visible_ferry_tag' not in obs()['visible'][0] and any(o['title']=='舷边刻着字的木渡牌' for o in obs()['visible'][0]['objects']),obs()
+        click('保存');click('读取');click('确认');assert 'visible_ferry_tag' not in obs()['visible'][0],obs()
+        key('e');click('听沈渡说明');assert 'visible_ferry_tag' in obs()['visible'][0],obs()
         click('保存');click('读取');click('确认');assert obs()['visible'][0]['location']=='夜船·靠岸侧舷' and 'visible_ferry_tag' in obs()['visible'][0],obs()
         go(450,540);key('e');back_on_bank=obs();assert back_on_bank['visible'][0]['location']=='旧石阶' and any(o['title']=='靠岸夜船' for o in back_on_bank['visible'][0]['objects']),back_on_bank
         assert '次日尾声' not in '\n'.join(back_on_bank['texts']) and '侵入 0 / 2' in '\n'.join(back_on_bank['texts']),back_on_bank

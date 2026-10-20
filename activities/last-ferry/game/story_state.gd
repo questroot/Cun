@@ -453,6 +453,11 @@ func act(id: String) -> bool:
 			set_flag("swapped")
 			set_flag("shade_off")
 			note("阿禾把借来的黄灯安在等候的位置，白罩放在灯旁；周伯不再举白灯。" + ("铜舌已挂回钟里。黄灯尚未点亮，可以在底座旁等到入夜再点。" if flag("tongue_home") else "灯内的铜片还需取出，挂回铜钟。"))
+		"ferry_tag_put_back":
+			if p != "boat" or flag("released") or not item("旧渡牌") or Vector2(s.x,s.y).distance_to(Vector2(685,420)) >= 96: return false
+			take("旧渡牌")
+			s.flags["ferry_tag_taken"] = false
+			note("你把渡牌搁回舷边原处，说还没有决定要不要替他带回岸棚。沈渡点头，没把牌再塞进你手里。木牌仍在这里；这不是拒绝听他说话，也没有替任何人结束渡程。")
 		"ferry_tag_take":
 			if p != "boat" or s.identity != "xu" or flag("released") or flag("ferry_tag_taken") or Vector2(s.x,s.y).distance_to(Vector2(685,420)) >= 96: return false
 			set_flag("ferry_tag_taken")

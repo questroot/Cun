@@ -622,7 +622,7 @@ func update_world() -> void:
 			else: add_object("morning", "河面与普通渡船", Vector2(700, 295))
 			add_object("shelter_gate", "回候船棚", Vector2(115, 565), "gate")
 		"boat":
-			if not story.flag("ferry_tag_taken"): add_object("ferry_tag","舷边刻着字的木渡牌",Vector2(685,420))
+			if not story.flag("ferry_tag_returned"): add_object("ferry_tag","舷边可放回木牌的位置" if story.item("旧渡牌") else "舷边刻着字的木渡牌",Vector2(685,420))
 			solids.append(Rect2(260, 195, 240, 80))
 			add_object("voices", "旧物与河声", Vector2(570, 335))
 			add_object("back", "返回旧石阶（安全）", Vector2(450, 570), "gate")
@@ -790,7 +790,7 @@ func do_action(id: String) -> void:
 	if id == "roof_admit" and acted:
 		roof_guest_position = Vector2(500,550)
 		roof_guest_walking = true
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_admit", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update", "ferry_tag_take", "ferry_tag_return"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_admit", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update", "ferry_tag_take", "ferry_tag_return", "ferry_tag_put_back"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
@@ -855,7 +855,8 @@ func interact() -> void:
 	else:
 		match target:
 			"ferry_tag":
-				act_button("听沈渡说明这块木牌，接过他递来的牌", "ferry_tag_take")
+				if story.item("旧渡牌"): act_button("还没决定，把渡牌放回舷边", "ferry_tag_put_back")
+				else: act_button("听沈渡说明这块木牌，接过他递来的牌", "ferry_tag_take")
 			"ferry_tag_hook":
 				if story.item("旧渡牌"): act_button("把交班渡牌挂回岸棚木钩", "ferry_tag_return")
 				else: button(modal_body,"看看木钩",func(): close_modal();story.note("木钩钉在旧告示旁，外侧有一圈磨亮的痕迹。" );refresh_ui())
