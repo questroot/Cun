@@ -48,8 +48,10 @@ try:
         click('准备好了');click('确认');go(250,395);key('e');click('危险：举白灯');click('确认')
         invaded=obs();assert '侵入 1 / 2' in '\n'.join(invaded['texts']),invaded
         if not args.leave_stock:
-            go(365,410);key('e');click('托住箱底');assert 'carried_stock' in obs()['visible'][0],obs()
-            go(420,340);key('e');click('把手中的货箱');mistake=obs()
+            go(365,410);s.call('action',{'kind':'mouse','x':365,'y':365});assert 'carried_stock' in obs()['visible'][0],obs()
+            s.call('action',{'kind':'mouse','x':365,'y':365});assert 'carried_stock' not in obs()['visible'][0],obs()
+            s.call('action',{'kind':'mouse','x':365,'y':365});click('保存');click('读取');click('确认');assert 'carried_stock' in obs()['visible'][0],obs()
+            go(420,340);s.call('action',{'kind':'mouse','x':420,'y':300});mistake=obs()
             assert '侵入 1 / 2' in '\n'.join(mistake['texts']) and any(o['title']=='干台上的湿货箱' for o in mistake['visible'][0]['objects']),mistake
         else:
             mistake=invaded

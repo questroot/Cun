@@ -294,6 +294,11 @@ func show_items() -> void:
 func try_world_click(point: Vector2) -> bool:
 	if not started or modal_open or paused or story.s.left: return false
 	if story.s.phase == "epilogue": return false
+	if story.s.place == "street" and story.s.phase == "night" and story.s.pollution == 1 and not story.flag("stock_dried"):
+		if point.distance_to(Vector2(420,300)) < 28 and player.distance_to(Vector2(420,300)) < 82 and story.flag("stock_carried"):
+			do_action("move_wet_stock"); return true
+		if point.distance_to(Vector2(365,365)) < 28 and player.distance_to(Vector2(365,365)) < 82:
+			do_action("stock_put_back" if story.flag("stock_carried") else "stock_take"); return true
 	if comparing_photo and story.s.place == "steps":
 		if point.distance_to(Vector2(460,295)) < 30 and player.distance_to(Vector2(460,295)) < 82:
 			story.note("这块石上磨的是缆绳槽，没有挂灯木柱的方形底脚。系船的位置能帮你定位河边，却还不能指出照片里的灯原来在哪。"); refresh_ui(); return true
@@ -428,7 +433,7 @@ func update_world() -> void:
 		"street":
 			solids.append(Rect2(145, 190, 235, 95))
 			if story.s.pollution == 1:
-				add_object("wet_stock", "干台上的湿货箱" if story.flag("stock_dried") else ("陶婶摊开的湿货" if story.s.phase == "epilogue" else "门边被水浸到的货箱"), Vector2(420,300) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))
+				add_object("wet_stock", "干台上的湿货箱" if story.flag("stock_dried") else ("陶婶摊开的湿货" if story.s.phase == "epilogue" else ("货箱原来放的位置" if story.flag("stock_carried") else "门边被水浸到的货箱")), Vector2(420,300) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))
 			if story.s.pollution == 1 and story.s.phase == "night" and not story.flag("stock_dried"): add_object("dry_stock", "柜台边的干台", Vector2(420,300))
 			add_object("tao", "陶婶", Vector2(260, 330), "npc")
 			add_object("ledger", "铺内账本", Vector2(420, 235))
