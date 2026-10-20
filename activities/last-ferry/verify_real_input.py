@@ -60,6 +60,11 @@ try:
         s.call('action',{'kind':'key','key':'d','duration_ms':250});moving=next(o for o in obs()['visible'][0]['objects'] if '夜船' in o['title']);assert approaching['y']<moving['y']<295,(approaching,moving)
         click('保存');click('读取');click('确认');assert any('正靠近' in o['title'] for o in obs()['visible'][0]['objects']),obs()
         s.call('action',{'kind':'key','key':'a','duration_ms':1000});s.call('action',{'kind':'key','key':'d','duration_ms':300});assert any(o['title']=='靠岸夜船' and o['y']==295 for o in obs()['visible'][0]['objects']),obs()
+    if args.boat_approach:
+        go(700,330);key('e');click('许宁独有：踏上');deck=obs();assert deck['visible'][0]['location']=='夜船·靠岸侧舷',deck
+        click('保存');click('读取');click('确认');assert obs()['visible'][0]['location']=='夜船·靠岸侧舷',obs()
+        go(450,540);key('e');back_on_bank=obs();assert back_on_bank['visible'][0]['location']=='旧石阶' and any(o['title']=='靠岸夜船' for o in back_on_bank['visible'][0]['objects']),back_on_bank
+        assert '次日尾声' not in '\n'.join(back_on_bank['texts']) and '侵入 0 / 2' in '\n'.join(back_on_bank['texts']),back_on_bank
     go(460,335);click('先站在干阶听河声');key('1');key('1');key('2');key('3')
     river=obs();assert not river['visible'][0]['modal_open'] and '我以为你听不出来了' in json.dumps(river,ensure_ascii=False),river
     key('e');click('问他：你希望')
