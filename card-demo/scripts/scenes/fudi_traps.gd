@@ -18,6 +18,18 @@ var canvas: Control
 var status_label: Label
 var initialized := false
 
+func play_visible() -> Array:
+	var result: Array = []
+	if not initialized or game._paused() or game.finished: return result
+	for hazard: Dictionary in hazards:
+		var config: Dictionary = Catalog.TRAPS[hazard.kind]
+		var center: Vector2 = game.ARENA.position+hazard.position-game.camera_origin
+		var radius := float(config.radius)
+		var bounds: Rect2 = game.ARENA.intersection(Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2))
+		if not bounds.has_area(): continue
+		result.append({"appearance":"红色爆发圈" if float(hazard.age)>=float(config.warning) else "黄色预警圈","visible_bounds":{"x":bounds.position.x,"y":bounds.position.y,"width":bounds.size.x,"height":bounds.size.y}})
+	return result
+
 func _ready() -> void:
 	process_priority = 20
 	call_deferred("initialize")
