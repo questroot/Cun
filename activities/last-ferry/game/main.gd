@@ -682,6 +682,7 @@ func load_game() -> void:
 		close_modal()
 		update_world()
 		if not walkable(player): player = Vector2(450, 440)
+		settle_shelter_entry()
 		reset_actor_motion()
 		refresh_ui()
 	else:
@@ -1122,7 +1123,7 @@ func refresh_ui() -> void:
 	if not wait.is_empty() and story.s.ending.is_empty():
 		foot_hint.text += "\n" + ("托着矮凳 · E或点击脚前轮廓原地放下；可继续走动。" if wait.carried else "走近矮凳按E抬起；棚绳仍可照常握住后向下退拉。")
 	if pulling_cart and story.s.place == "lane": foot_hint.text = "正握住车把 · 左方向键逐步拉出 · E或底部交互按钮松手\n车停在哪就在哪挡路；松手后可自由走动。"
-	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
+	if story.s.place == "house" and story.s.phase != "epilogue" and (player.distance_to(Vector2(600,250)) < 100 or player.distance_to(Vector2(450,340)) < 100 or story.flag("basin_carried")): foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
 	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light") and not story.flag("closing_release"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
 	if story.s.phase != "epilogue" and story.flag("ge_met") and not story.flag("tool_returned"):
 		if story.s.place == "steps" and not story.item("老葛的工具袋"): foot_hint.text += "\n老葛说的布袋在湿阶低处；走近后点击，用竹竿挑回，不必涉水（E也可）。"
@@ -1179,6 +1180,10 @@ func show_spoiler_help() -> void:
 	open_modal("路线提示（不授予证据）", text)
 	button(modal_body, "回到探索", close_modal)
 
+func show_current_response(title: String) -> void:
+	open_modal(title,story.notice)
+	button(modal_body,"返回探索",close_modal)
+
 func act_button(text: String, id: String) -> void:
 	button(modal_body, text, func():
 		if conversation_target == "zhou" and id in ["deliver", "verify", "zhou_memory", "signal_guess", "promise_forever", "waiting_plan", "force", "apologize", "hypothesis_voices", "hypothesis_brightness", "hypothesis_signals", "wick_explain", "photo_zhou"]:
@@ -1198,8 +1203,13 @@ func act_button(text: String, id: String) -> void:
 		elif conversation_target in ["mooring", "voices"] and id in ["photo_same", "photo_shift", "listen_river", "call_paper", "answer_whistle", "ask_roof", "ask_departure", "xiaoman", "shen", "whistle_short", "whistle_long", "whistle_listen", "whistle_reset", "xiaoman_recognize", "xiaoman_wait", "xiaoman_ask"]:
 			continue_river(id)
 		else:
+			var source := modal_header.text
+			var place: String = story.s.place
 			close_modal()
-			do_action(id))
+			do_action(id)
+			if story.s.place == place:
+				open_modal(source,story.notice)
+				button(modal_body,"返回探索",close_modal))
 
 func continue_river(id: String) -> void:
 	var target := conversation_target
@@ -1232,6 +1242,31 @@ func continue_zhou(id: String) -> void:
 	interact()
 	refresh_ui()
 
+func settle_shelter_entry() -> void:
+	if story.s.place != "shelter": return
+	# Check physical occupancy without walkable's intentional overlap-escape exception.
+	var blocked := false
+	for r in solids:
+		if r.grow(13).has_point(player): blocked = true
+	var wait := shelter_wait_scene()
+	if not wait.is_empty():
+		blocked = blocked or zhou_bounds(wait.zhou).grow(13).has_point(player)
+		if not wait.carried: blocked = blocked or chair_bounds(wait.chair).grow(13).has_point(player)
+	if blocked:
+		for candidate in [Vector2(450,495),Vector2(520,495),Vector2(550,530),Vector2(100,530)]:
+			var clear := Rect2(40,175,780,445).has_point(candidate)
+			for r in solids:
+				if r.grow(13).has_point(candidate): clear = false
+			if not wait.is_empty():
+				if zhou_bounds(wait.zhou).grow(13).has_point(candidate): clear = false
+				if not wait.carried and chair_bounds(wait.chair).grow(13).has_point(candidate): clear = false
+			if clear:
+				player = candidate
+				break
+	story.s.x = player.x
+	story.s.y = player.y
+	reset_actor_motion()
+
 func travel(place: String) -> void:
 	pulling_cart = false
 	pulling_awning = false
@@ -1262,6 +1297,7 @@ func travel(place: String) -> void:
 	last_place = ""
 	close_modal()
 	update_world()
+	settle_shelter_entry()
 	refresh_ui()
 
 func do_action(id: String) -> void:
@@ -1269,7 +1305,7 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	var acted: bool = story.act(id)
-	if acted and id in ["chair_take","basin_take","take_basin","stock_take","take_wet_stock","evac_pack_take","chair_place","basin_place","move_wet_stock","evac_pack_deliver"]:
+	if acted and id in ["chair_take","basin_take","take_basin","stock_take","take_wet_stock","evac_pack_take","chair_place","basin_place","move_wet_stock","evac_pack_deliver","stock_put_back","evac_pack_drop"]:
 		update_actor_motion(0.0,"take" if id in ["chair_take","basin_take","take_basin","stock_take","take_wet_stock","evac_pack_take"] else "place")
 	if id in ["chair_take","chair_place","basin_take","basin_place","stock_take","stock_put_back","tool_retrieve","tool_return","ferry_tag_take","ferry_tag_put_back"]:
 		action_age=0.0
@@ -1429,7 +1465,7 @@ func interact() -> void:
 			"toolbag": act_button("站在干阶上，用竹竿挑起布袋", "tool_retrieve")
 			"tao":
 				if story.flag("heard_drip"): act_button("旧屋还在漏水，问问能找谁看", "roof_help")
-				button(modal_body, "闲谈 · 门口那只杯子", func(): close_modal(); story.note("陶婶：门口那只杯子别收，接漏水的。喝水用柜子上那只。\n" + ("许宁想起从前赊账的橘子糖。陶婶说还卖，不过现在得自己付钱。" if story.s.identity == "xu" else "阿禾说杯沿缺了一角，明天换个盆吧。陶婶看了看天：盆接铺子里头那处漏，门口先用这个。")); refresh_ui())
+				button(modal_body, "闲谈 · 门口那只杯子", func(): close_modal(); story.note("陶婶：门口那只杯子别收，接漏水的。喝水用柜子上那只。\n" + ("许宁想起从前赊账的橘子糖。陶婶说还卖，不过现在得自己付钱。" if story.s.identity == "xu" else "阿禾说杯沿缺了一角，明天换个盆吧。陶婶看了看天：盆接铺子里头那处漏，门口先用这个。")); show_current_response("陶婶"))
 				if story.s.identity == "he": act_button("向陶婶借手提黄灯（物品）", "yellow")
 			"ledger":
 				if story.s.identity == "he":
