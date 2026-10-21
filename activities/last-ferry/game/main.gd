@@ -571,8 +571,15 @@ func _setup_ui() -> void:
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	modal_options_scroll = sc
 	modal_column.add_child(sc)
-	button(navigation,"正文 ↑",func(): modal_prose_scroll.scroll_vertical=maxi(0,modal_prose_scroll.scroll_vertical-170))
-	button(navigation,"正文 ↓",func(): modal_prose_scroll.scroll_vertical+=170)
+	var prose_up := button(navigation,"正文 ↑",func(): modal_prose_scroll.scroll_vertical=maxi(0,modal_prose_scroll.scroll_vertical-170))
+	var prose_down := button(navigation,"正文 ↓",func(): modal_prose_scroll.scroll_vertical+=170)
+	var prose_bar := modal_prose_scroll.get_v_scroll_bar()
+	var update_prose_paging := func():
+		prose_up.disabled = prose_bar.value <= prose_bar.min_value
+		prose_down.disabled = prose_bar.value+prose_bar.page >= prose_bar.max_value
+	prose_bar.changed.connect(update_prose_paging)
+	prose_bar.value_changed.connect(func(_value: float): update_prose_paging.call())
+	update_prose_paging.call()
 	var page_up := button(navigation, "向上翻阅", func(): sc.scroll_vertical = maxi(0, sc.scroll_vertical - 180))
 	var page_down := button(navigation, "向下翻阅", func(): sc.scroll_vertical += 260)
 	var bar := sc.get_v_scroll_bar()
@@ -739,9 +746,11 @@ func try_world_click(point: Vector2) -> bool:
 		handle_luggage(not story.flag("luggage_placed")); return true
 	if story.s.place == "house":
 		if story.flag("drawer_open") and point.distance_to(Vector2(350,375)) < 24 and player.distance_to(Vector2(350,375)) < 82:
-			do_action("handover_revisit" if story.flag("handover_updated") else "handover_read"); return true
+			read_handover_response(); return true
 		if not story.flag("drawer_open") and point.distance_to(Vector2(320,340)) < 27 and player.distance_to(Vector2(320,340)) < 82:
-			do_action("drawer_open"); return true
+			do_action("drawer_open")
+			show_current_response(object_title("drawer"))
+			return true
 	if story.s.place == "street" and story.s.phase == "night" and story.s.pollution == 1 and not story.flag("stock_dried"):
 		if point.distance_to(Vector2(420,300)) < 28 and player.distance_to(Vector2(420,300)) < 82 and story.flag("stock_carried"):
 			do_action("move_wet_stock"); return true
@@ -1180,6 +1189,14 @@ func show_spoiler_help() -> void:
 	open_modal("路线提示（不授予证据）", text)
 	button(modal_body, "回到探索", close_modal)
 
+func read_handover_response() -> void:
+	do_action("handover_revisit" if story.flag("handover_updated") else "handover_read")
+	show_current_response(object_title("handover"))
+	if story.s.phase == "epilogue":
+		act_button("看看这里今早怎样继续", "epilogue")
+		if story.flag("handover_discussed") and not story.flag("handover_updated"):
+			act_button("另附今日处理记录，不改旧单", "handover_update")
+
 func show_current_response(title: String) -> void:
 	open_modal(title,story.notice)
 	button(modal_body,"返回探索",close_modal)
@@ -1361,8 +1378,15 @@ func interact() -> void:
 	if target == "wait_chair":
 		do_action("chair_take")
 		return
+	if target == "handover" and story.s.place == "house" and story.flag("drawer_open"):
+		var visible_handover := false
+		for obj in scene_objects:
+			if obj.id == target and player.distance_to(obj.pos) < 82: visible_handover = true
+		if not visible_handover: return
+		read_handover_response()
+		return
 	conversation_target = target if target in ["zhou", "mooring", "voices", "closing_zhou", "release_scene"] else ""
-	open_modal(object_title(target), conversation_response if not conversation_target.is_empty() and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
+	open_modal(object_title(target), conversation_response if not conversation_target.is_empty() and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else (("与%s交谈；你也可以先离开。" % object_title(target)) if target in ["tao","ge","xu","roof_ge","roof_ge_door"] else "看看眼前的东西；你也可以先离开。")))
 	if story.s.phase == "epilogue":
 		open_modal(object_title(target), "天已经亮了。夜里的处理不会因为你走访而重来；看看人们各自准备做的事，再决定何时离开。")
 		act_button("看看这里今早怎样继续", "epilogue")
