@@ -1,5 +1,11 @@
 extends Node2D
 const Story = preload("res://story_state.gd")
+const Motion = preload("res://actor_motion.gd")
+var player_motion = Motion.new()
+var zhou_motion = Motion.new()
+var player_motion_view: Dictionary = {}
+var zhou_motion_view: Dictionary = {}
+var motion_place := ""
 const SHENDU_OFFER: Texture2D = preload("res://assets/encounter/shendu_offer.png")
 const SHENDU_REST: Texture2D = preload("res://assets/encounter/shendu_rest.png")
 const SHENDU_ANCHOR := Vector2(24,21)
@@ -55,6 +61,31 @@ var boat_approach_offset := 0.0
 # Transient walk presentation. Reload/travel resumes the already admitted visit at its destination.
 var roof_guest_position := Vector2(635,490)
 var roof_guest_walking := false
+# Transient presentation only: no saved rules, delayed inputs, or movement ownership.
+var presentation_time := 0.0
+var presentation_last_player := Vector2.ZERO
+var presentation_moving := false
+var step_marks: Array = []
+var step_distance := 0.0
+var action_age := 1.0
+var action_position := Vector2.ZERO
+var action_ok := true
+var action_caption := ""
+var pose_blend := 1.0
+var last_wait_pose := ""
+var details_visible := false
+var inventory_visible := false
+var inventory_caption: Label
+var details_toggle: Button
+var primary_action: Button
+var response_count := 0
+var modal_header: Label
+var modal_prose: RichTextLabel
+var hud_panel: PanelContainer
+var modal_prose_scroll: ScrollContainer
+var modal_options_scroll: ScrollContainer
+var context_caption: Label
+var modal_option_number := 0
 
 # Presentation helpers use backend-owned positions; the same rectangles feed drawing
 # and collision. Returning {} preserves original ending/absent-Zhou priorities.
@@ -154,12 +185,17 @@ func play_visible() -> Dictionary:
 	if not wait.is_empty():
 		var chair: Vector2 = wait.chair
 		var zhou: Vector2 = wait.zhou
-		result["visible_waiting"] = {"chair":{"x":chair.x,"y":chair.y,"bounds":rect_description(Rect2(chair-Vector2(20,14),Vector2(40,28))),"appearance":"托在手边的矮凳" if wait.carried else "地上的木矮凳"},"zhou":{"x":zhou.x,"y":zhou.y,"bounds":rect_description(Rect2(zhou-Vector2(24,40),Vector2(48,72)).merge(Rect2(zhou+Vector2(-64,59-font.get_ascent(17)),Vector2(font.get_string_size("周伯",HORIZONTAL_ALIGNMENT_LEFT,-1,17).x,font.get_height(17))))),"appearance":{"standing":"起身站着","dragging":"双手扶凳，慢慢拖动","walking":"向凳子走去","seated":"收脚坐着，望向河面"}.get(wait.pose,"站着")},"speech":wait.line,"drips":"右棚沿仍滴水" if not story.flag("awning_tied") else "棚沿抬高，水滴落到干处外侧","left_eave":{"x":330,"y":340,"width":110,"height":70,"appearance":"檐内窄处，石面无水滴"}}
+		result["visible_waiting"] = {"chair":{"x":chair.x,"y":chair.y,"bounds":rect_description(Rect2(chair-Vector2(20,14),Vector2(40,28))),"appearance":"托在手边的矮凳" if wait.carried else "地上的木矮凳"},"zhou":{"x":zhou.x,"y":zhou.y,"bounds":rect_description(Rect2(zhou-Vector2(24,40),Vector2(48,72)).grow(4).merge(Rect2(zhou+Vector2(-64,59-font.get_ascent(17)),Vector2(font.get_string_size("周伯",HORIZONTAL_ALIGNMENT_LEFT,-1,17).x,font.get_height(17))))),"appearance":{"standing":"起身站着","dragging":"双手扶凳，慢慢拖动","walking":"向凳子走去","seated":"收脚坐着，望向河面"}.get(wait.pose,"站着")},"speech":wait.line,"drips":"右棚沿仍滴水" if not story.flag("awning_tied") else "棚沿抬高，水滴落到干处外侧","left_eave":{"x":330,"y":340,"width":110,"height":70,"appearance":"檐内窄处，石面无水滴"}}
+		if not wait.line.is_empty(): result["visible_waiting"]["speech_bounds"] = rect_description(waiting_bubble(wait))
 		obstacles.append(rect_description(zhou_bounds(zhou)))
 		if not wait.carried: obstacles.append(rect_description(chair_bounds(chair)))
-		else: result["visible_chair_drop_outline"] = rect_description(chair_bounds(player+Vector2(0,22)))
+		else:
+			var foot := player+Vector2(0,22)
+			result["visible_chair_drop_outline"] = {"bounds":rect_description(chair_bounds(foot)),"appearance":"浅色落点轮廓" if Rect2(55,190,750,410).has_point(foot) and not Rect2(350,285,100,70).grow(12).has_point(foot) else "赭红落点轮廓，凳脚放不稳"}
 	var meet_scene := first_meet_scene()
 	if not meet_scene.is_empty(): result["visible_first_meet"] = first_meet_visible(meet_scene)
+	result["visible_player_pose"] = {"appearance":"俯身拿放" if not player_motion_view.get("segment","").is_empty() else ("托着物件" if player_carrying() else ("迈步" if player_motion_view.get("moving",false) else "站定")),"facing":{"x":face.x,"y":face.y},"bounds":rect_description(Rect2(player-Vector2(24,24),Vector2(48,54)))}
+	if action_age < 0.45: result["visible_action_feedback"]={"text":action_caption,"bounds":rect_description(Rect2(action_position-Vector2(55,52),Vector2(150,85)))}
 	result["objects"] = targets
 	result["obstacles"] = obstacles
 	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
@@ -215,6 +251,10 @@ func tile_visual(key: String, rect: Rect2) -> void:
 			draw_texture_rect_region(texture,part,Rect2(Vector2.ZERO,part.size))
 
 func visual_quad(key: String, quad: PackedVector2Array) -> void:
+	if key in ["awning","hem"]:
+		var sway := sin(presentation_time*0.8)*0.7
+		quad[2].x += sway
+		quad[3].x += sway
 	draw_polygon(quad,PackedColorArray([Color.WHITE]),PackedVector2Array([Vector2(0,0),Vector2(1,0),Vector2(1,1),Vector2(0,1)]),VISUAL[key])
 
 func draw_shelter_ground() -> void:
@@ -225,14 +265,72 @@ func draw_shelter_ground() -> void:
 		if story.flag("awning_tied"):
 			tile_visual("dry",Rect2(590,365,135,75))
 			tile_visual("edge",Rect2(590,432,135,16))
-		draw_texture(VISUAL.light,Vector2(250,360)-Vector2(48,48))
+		draw_texture(VISUAL.light,Vector2(250,360)-Vector2(48,48),Color(1,1,1,0.9+0.1*sin(presentation_time*1.1)))
 		if story.flag("yellow_lit"): draw_texture(VISUAL.light,Vector2(620,390)-Vector2(48,48))
 
+func player_carrying() -> bool:
+	return story.flag("basin_carried") or story.flag("stock_carried") or story.flag("evac_pack_carried") or shelter_wait_scene().get("carried",false)
+
+func reset_actor_motion() -> void:
+	motion_place = story.s.place
+	player_motion_view = player_motion.reset(player,face,player_carrying(),"player")
+	presentation_last_player = player
+	var wait := shelter_wait_scene()
+	zhou_motion_view = zhou_motion.reset(wait.get("zhou",Vector2(455,430)),Vector2.DOWN,false,wait.get("pose","standing"))
+
+func update_actor_motion(delta: float, event: String = "") -> void:
+	if motion_place != story.s.place or player_motion_view.is_empty(): reset_actor_motion()
+	player_motion_view = player_motion.step(delta,player,face,modal_open or paused,player_carrying(),event,"player")
+	var wait := shelter_wait_scene()
+	if not wait.is_empty(): zhou_motion_view = zhou_motion.step(delta,wait.zhou,Vector2.ZERO,modal_open or paused,false,"",wait.pose)
+
+func presentation_step(delta: float) -> void:
+	presentation_time += minf(delta,0.05)
+	action_age += minf(delta,0.05)
+	pose_blend = minf(1.0,pose_blend+delta*5.0)
+	var distance := player.distance_to(presentation_last_player)
+	presentation_moving = distance > 0.05 and distance < 40
+	if presentation_moving:
+		step_distance += distance
+		if step_distance > 22:
+			step_distance = 0
+			step_marks.append({"at":player+Vector2(0,20),"time":presentation_time})
+	presentation_last_player = player
+	while not step_marks.is_empty() and presentation_time-step_marks[0].time > 0.8: step_marks.pop_front()
+	var wait := shelter_wait_scene()
+	if not wait.is_empty() and wait.pose != last_wait_pose:
+		last_wait_pose = wait.pose
+		pose_blend = 0.0
+
+func draw_presentation_feedback() -> void:
+	for mark in step_marks:
+		var fade: float = 1.0-(presentation_time-float(mark.time))/0.8
+		draw_line(mark.at-Vector2(4,0),mark.at+Vector2(4,0),Color(0.8,0.76,0.62,fade*0.25),2)
+	for obj in scene_objects:
+		var pointed: bool = get_global_mouse_position().distance_to(obj.pos) < 28
+		if (obj.id == nearest or pointed) and player.distance_to(obj.pos) < 96:
+			draw_arc(obj.pos,36,0,TAU,36,Color("f2d68b"),2)
+			draw_line(obj.pos+Vector2(-8,-42),obj.pos+Vector2(0,-36),Color("f2d68b"),2)
+	if action_age < 0.45:
+		var color := Color("d7c6a0") if action_ok else Color("c9987f")
+		draw_arc(action_position,18+action_age*12,0,TAU,24,color,2)
+		draw_string(font,action_position+Vector2(-50,-34),action_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,16,color)
+
 func draw_player_body() -> void:
+	var segment: String = player_motion_view.get("segment","")
+	var lean := 5.0 if segment in ["bend","contact"] else (2.0 if segment == "rise" else 0.0)
+	var stride := sin(float(player_motion_view.get("walk_phase",0.0))*TAU)*4.0 if player_motion_view.get("moving",false) else 0.0
+	draw_line(player+Vector2(-6,15),player+Vector2(-7,24+stride),Color("554c3e"),4)
+	draw_line(player+Vector2(6,15),player+Vector2(7,24-stride),Color("554c3e"),4)
 	draw_circle(player+Vector2(0,14),18,Color(0,0,0,0.2))
 	draw_rect(Rect2(player-Vector2(10,3),Vector2(20,24)),Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
-	draw_circle(player-Vector2(0,10),10,Color("ead1ac"))
-	draw_line(player,player+face*20,Color("f1dbad"),3)
+	draw_circle(player-Vector2(0,10-lean),10,Color("ead1ac"))
+	draw_line(player-Vector2(0,10-lean),player-Vector2(0,10-lean)+face*8,Color("554c3e"),2)
+	if player_carrying() or not segment.is_empty():
+		var sockets: Dictionary = player_motion_view.get("hand_sockets",{"left":Vector2(-14,12),"right":Vector2(14,12)})
+		draw_line(player+Vector2(-9,1),player+sockets.left,Color("ead1ac"),3)
+		draw_line(player+Vector2(9,1),player+sockets.right,Color("ead1ac"),3)
+	else: draw_line(player,player+face*20,Color("f1dbad"),3)
 
 func draw_shelter_actors() -> void:
 	var wait := shelter_wait_scene()
@@ -248,13 +346,16 @@ func draw_shelter_actors() -> void:
 				if wait.wet and not wait.carried: draw_arc(wait.chair+Vector2(0,10),22,0,PI,12,Color("75a5bb"),2)
 				draw_texture(VISUAL.stool,wait.chair-Vector2(20,14))
 			"zhou":
-				draw_texture(VISUAL.get(wait.pose,VISUAL.standing),wait.zhou-Vector2(24,40))
+				var settling := -4.0*(1.0-float(zhou_motion_view.get("phase",1.0))) if zhou_motion_view.get("clip","") == "sit_down" else sin(float(zhou_motion_view.get("walk_phase",0.0))*TAU) if zhou_motion_view.get("moving",false) else 0.0
+				draw_texture(VISUAL.get(wait.pose,VISUAL.standing),wait.zhou-Vector2(24,40)+Vector2(0,settling))
 	if not wait.is_empty():
 		if wait.pose == "dragging":
 			draw_line(wait.zhou+Vector2(-16,5),wait.chair+Vector2(-14,0),Color("bba58c"),3)
 			draw_line(wait.zhou+Vector2(13,5),wait.chair+Vector2(14,0),Color("bba58c"),3)
 		if wait.carried:
-			draw_rect(chair_bounds(player+Vector2(0,22)),Color("d7c6a0"),false,2)
+			var foot := player+Vector2(0,22)
+			var legal := Rect2(55,190,750,410).has_point(foot) and not Rect2(350,285,100,70).grow(12).has_point(foot)
+			draw_rect(chair_bounds(foot),Color("d7c6a0") if legal else Color("c9987f"),false,2)
 			draw_line(player+Vector2(-9,7),wait.chair-Vector2(14,0),Color("ead1ac"),3)
 			draw_line(player+Vector2(9,7),wait.chair+Vector2(14,0),Color("ead1ac"),3)
 	# Same post texture is genuinely split, not drawn twice in full.
@@ -267,12 +368,17 @@ func draw_shelter_actors() -> void:
 		if obj.id == nearest: draw_arc(obj.pos,40,0,TAU,32,Color("f2d68b"),3)
 		draw_string(font,obj.pos+Vector2(-64,59),obj.title,HORIZONTAL_ALIGNMENT_LEFT,175,17,Color("ebe5d0"))
 
+func waiting_bubble(wait: Dictionary) -> Rect2:
+	return Rect2(Vector2(clampf(wait.zhou.x-180,55,365),clampf(wait.zhou.y-102,180,500)),Vector2(450,37))
+
 func draw_waiting() -> void:
 	var wait := shelter_wait_scene()
 	if wait.is_empty(): return
 	if not wait.line.is_empty():
-		draw_rect(Rect2(275,470,480,37),Color("25363c"))
-		draw_string(font,Vector2(286,495),"周伯："+wait.line,HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf"))
+		var bubble := waiting_bubble(wait)
+		draw_line(wait.zhou-Vector2(0,35),bubble.position+Vector2(20,bubble.size.y),Color("94aaa8"),1)
+		draw_rect(bubble,Color("25363c"))
+		draw_string(font,bubble.position+Vector2(10,25),"周伯："+wait.line,HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf"))
 
 func draw_first_meet(scene: Dictionary) -> void:
 	if scene.is_empty(): return
@@ -353,6 +459,7 @@ func _setup_ui() -> void:
 	theme.set_color("font_color","Button",Color("eee4c9"))
 	root_ui.theme = theme
 	var panel := PanelContainer.new()
+	hud_panel = panel
 	panel.position = Vector2(865, 12)
 	panel.size = Vector2(403, 776)
 	root_ui.add_child(panel)
@@ -363,14 +470,21 @@ func _setup_ui() -> void:
 	column.add_theme_constant_override("separation", 9)
 	margin.add_child(column)
 	hud = Label.new()
-	hud.add_theme_font_size_override("font_size",24)
+	hud.add_theme_font_size_override("font_size",22)
 	hud.add_theme_color_override("font_color",Color("eee4c9"))
 	hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(hud)
 	summary = Label.new()
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	summary.add_theme_color_override("font_color", Color("c8c4a9"))
+	summary.add_theme_font_size_override("font_size",16)
 	column.add_child(summary)
+	context_caption = Label.new()
+	context_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	context_caption.add_theme_font_size_override("font_size",20)
+	context_caption.add_theme_color_override("font_color",Color("eee4c9"))
+	column.add_child(HSeparator.new())
+	column.add_child(context_caption)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(scroll)
@@ -378,17 +492,19 @@ func _setup_ui() -> void:
 	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(inner)
 	inner.add_theme_constant_override("separation",12)
-	var experience_heading := Label.new()
-	experience_heading.text = "刚才的经历"
-	experience_heading.add_theme_font_size_override("font_size",16)
-	experience_heading.add_theme_color_override("font_color",Color("94aaa8"))
-	inner.add_child(experience_heading)
+	details_toggle = button(inner,"展开最近经历",func(): details_visible=not details_visible; message.visible=details_visible; details_toggle.text="收起最近经历" if details_visible else "展开最近经历")
 	message = RichTextLabel.new()
 	message.fit_content = true
 	message.custom_minimum_size = Vector2(342, 150)
 	message.bbcode_enabled = false
 	message.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	message.hide()
 	inner.add_child(message)
+	inventory_caption = Label.new()
+	inventory_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	inventory_caption.hide()
+	button(inner,"随身物品 · 展开/收起",func(): inventory_visible=not inventory_visible; inventory_caption.visible=inventory_visible)
+	inner.add_child(inventory_caption)
 	inner.add_child(HSeparator.new())
 	var action_heading := Label.new()
 	action_heading.text = "眼前可做"
@@ -397,7 +513,11 @@ func _setup_ui() -> void:
 	action_box = VBoxContainer.new()
 	action_box.add_theme_constant_override("separation", 6)
 	inner.add_child(action_box)
-	var menu := HFlowContainer.new()
+	column.add_child(HSeparator.new())
+	var menu := GridContainer.new()
+	menu.columns = 3
+	menu.add_theme_constant_override("h_separation",6)
+	menu.add_theme_constant_override("v_separation",6)
 	column.add_child(menu)
 	button(menu, "记录 [J]", show_journal)
 	button(menu, "物品 [I]", show_items)
@@ -405,6 +525,10 @@ func _setup_ui() -> void:
 	button(menu, "读取", func(): confirm("读取会替换当前未保存进度，继续？", load_game))
 	button(menu, "暂停 [Esc]", show_pause)
 	button(menu, "水声 开/关", toggle_sound)
+	primary_action = button(root_ui,"[E] 交互",interact)
+	primary_action.position = Vector2(595,650)
+	primary_action.custom_minimum_size = Vector2(240,55)
+	primary_action.size = Vector2(240,55)
 	foot_hint = Label.new()
 	foot_hint.position = Vector2(22, 716)
 	foot_hint.size = Vector2(820, 73)
@@ -419,14 +543,37 @@ func _setup_ui() -> void:
 	for side in ["left", "right", "top", "bottom"]: mm.add_theme_constant_override("margin_" + side, 24)
 	overlay.add_child(mm)
 	var modal_column := VBoxContainer.new()
+	modal_column.add_theme_constant_override("separation",12)
 	mm.add_child(modal_column)
+	modal_header = Label.new()
+	modal_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	modal_header.add_theme_font_size_override("font_size",26)
+	modal_header.add_theme_color_override("font_color",Color("eee4c9"))
+	modal_column.add_child(modal_header)
+	modal_column.add_child(HSeparator.new())
+	modal_prose_scroll = ScrollContainer.new()
+	modal_prose_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	modal_prose_scroll.custom_minimum_size.y = 170
+	modal_column.add_child(modal_prose_scroll)
+	modal_prose = RichTextLabel.new()
+	modal_prose.bbcode_enabled = false
+	modal_prose.fit_content = true
+	modal_prose.scroll_active = false
+	modal_prose.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	modal_prose.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	modal_prose.custom_minimum_size.x = 665
+	modal_prose.add_theme_constant_override("line_spacing",5)
+	modal_prose_scroll.add_child(modal_prose)
 	var navigation := HBoxContainer.new()
 	modal_column.add_child(navigation)
 	var sc := ScrollContainer.new()
+	sc.custom_minimum_size.y = 210
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	sc.custom_minimum_size.y = 480
+	modal_options_scroll = sc
 	modal_column.add_child(sc)
-	var page_up := button(navigation, "向上翻阅", func(): sc.scroll_vertical = maxi(0, sc.scroll_vertical - 260))
+	button(navigation,"正文 ↑",func(): modal_prose_scroll.scroll_vertical=maxi(0,modal_prose_scroll.scroll_vertical-170))
+	button(navigation,"正文 ↓",func(): modal_prose_scroll.scroll_vertical+=170)
+	var page_up := button(navigation, "向上翻阅", func(): sc.scroll_vertical = maxi(0, sc.scroll_vertical - 180))
 	var page_down := button(navigation, "向下翻阅", func(): sc.scroll_vertical += 260)
 	var bar := sc.get_v_scroll_bar()
 	var update_paging := func():
@@ -445,7 +592,14 @@ func _setup_ui() -> void:
 func button(parent: Node, text: String, callback: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 40
+	if parent == modal_body:
+		modal_option_number += 1
+		var number := Label.new()
+		number.text = "选项 %02d" % modal_option_number
+		number.add_theme_font_size_override("font_size",14)
+		number.add_theme_color_override("font_color",Color("94aaa8"))
+		parent.add_child(number)
+	b.custom_minimum_size.y = 44
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.pressed.connect(callback)
@@ -460,16 +614,15 @@ func clear_children(node: Node) -> void:
 func open_modal(title: String, body: String) -> void:
 	clear_children(modal_body)
 	modal_open = true
+	hud_panel.hide()
+	primary_action.hide()
+	foot_hint.hide()
 	overlay.show()
-	var title_label := Label.new()
-	title_label.text = title
-	title_label.add_theme_font_size_override("font_size", 26)
-	modal_body.add_child(title_label)
-	var text := Label.new()
-	text.text = body
-	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size.x = 665
-	modal_body.add_child(text)
+	modal_option_number = 0
+	modal_header.text = title + (" · 回应 %d" % response_count if not conversation_target.is_empty() and not conversation_response.is_empty() else "")
+	modal_prose.text = body
+	modal_prose_scroll.scroll_vertical = 0
+	modal_options_scroll.scroll_vertical = 0
 
 func close_modal() -> void:
 	if not started: return
@@ -478,6 +631,8 @@ func close_modal() -> void:
 	conversation_response = ""
 	paused = false
 	overlay.hide()
+	hud_panel.show()
+	foot_hint.show()
 	refresh_ui()
 
 func confirm(text: String, callback: Callable) -> void:
@@ -486,7 +641,7 @@ func confirm(text: String, callback: Callable) -> void:
 	button(modal_body, "取消，回到探索", close_modal)
 
 func show_title() -> void:
-	open_modal("末班渡船", "俯视探索 · 独立活动首版\n\n在回水埠，一个傍晚，两种处境。选择身份后本次固定；你不必重演既定结局。\n\nWASD / 方向键自由走动，靠近发光圆环后按 E 打开交互，也可点击右侧按钮。走到路口，交互前往相邻地点。J 记录，I 物品，Esc 暂停。鼠标可点击场地下方方向按钮移动。\n\n探索、交谈、暂停和读记录都不会增加污染。入夜由你主动确认，没有倒计时。危险动作会再次确认，取消没有惩罚。所有图形与水声由本项目自制，无闪烁、跳吓或截图采集。")
+	open_modal("末班渡船", "俯视探索 · 独立活动首版\n\n在回水埠，一个傍晚，两种处境。选择身份后本次固定；你不必重演既定结局。\n\nWASD / 方向键自由走动，靠近发光圆环后按 E 打开交互，也可点击底部交互按钮。走到路口，交互前往相邻地点。J 记录，I 物品，Esc 暂停。鼠标可点击场地下方方向按钮移动。\n\n探索、交谈、暂停和读记录都不会增加污染。入夜由你主动确认，没有倒计时。危险动作会再次确认，取消没有惩罚。所有图形与水声由本项目自制，无闪烁、跳吓或截图采集。")
 	button(modal_body, "许宁 · 返乡者｜离家多年，回来处理旧屋", func(): start_game("xu"))
 	button(modal_body, "阿禾 · 学徒｜杂货铺帮工，熟悉这条街的人", func(): start_game("he"))
 	button(modal_body, "许宁到埠前段 · 从桥头走回旧屋", func(): start_game("xu"); story.set_flag("arrival_started"); story.change_place("arrival"); player = Vector2(450,440); story.note("班车在桥头放下你和一只行李箱。司机还在栏边收好行李舱的搭扣，抬头问：‘这几年巷口改过，要指一下路吗？’旧屋钥匙在你的口袋里。"); last_place = ""; update_world(); refresh_ui())
@@ -499,6 +654,7 @@ func start_game(identity: String) -> void:
 	story.fresh(identity)
 	started = true
 	player = Vector2(story.s.x, story.s.y)
+	reset_actor_motion()
 	last_place = ""
 	close_modal()
 	update_world()
@@ -526,6 +682,7 @@ func load_game() -> void:
 		close_modal()
 		update_world()
 		if not walkable(player): player = Vector2(450, 440)
+		reset_actor_motion()
 		refresh_ui()
 	else:
 		open_modal("读取未完成", story.notice + "\n存档没有被删除或覆盖。")
@@ -675,7 +832,9 @@ func _process(delta: float) -> void:
 			audio_time += 1.0 / 22050.0
 			var wave := sin(audio_time * 130.0) * 0.05 + sin(audio_time * 173.0) * 0.025 + rng.randf_range(-0.018, 0.018)
 			playback.push_frame(Vector2(wave, wave))
+	if started: update_actor_motion(delta)
 	if not started or modal_open or paused or story.s.left: return
+	presentation_step(delta)
 	# World geometry rebuilds clear nearest; compare against the frame's actual
 	# interaction context, not that temporary empty value, before rebuilding UI.
 	var previous := nearest
@@ -951,12 +1110,18 @@ func refresh_ui() -> void:
 		summary.text += "\n" + ("船已离岸；可再陪站，或确认迎天明。" if story.flag("released") else "答复已带回；在旧阶看沈渡自己解缆。")
 	if story.flag("closing_light") and story.s.phase == "night":
 		summary.text += "\n" + ("周伯已敲钟；可再陪站，或由你确认迎接天明。" if story.flag("closing_rang") else "黄灯已亮；周伯在旧阶等你，一起把钟敲完。")
-	message.text = "最近经历（不是持续现场对白）\n" + story.notice
-	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
+	context_caption.text = "现场 · " + ("把矮凳放在脚前" if shelter_wait_scene().get("carried",false) else ("握绳退拉 · E系住或松手" if pulling_awning else (object_title(nearest) if not nearest.is_empty() else "走近物件或人物")))
+	message.text = story.notice
+	inventory_caption.text = "随身：" + ("、".join(story.s.items) if not story.s.items.is_empty() else "无")
+	primary_action.visible = not modal_open and not story.s.left
+	var carried_wait := shelter_wait_scene()
+	primary_action.disabled = nearest.is_empty() and not pulling_cart and not pulling_awning and not carried_wait.get("carried",false)
+	primary_action.text = "[E] 放下矮凳" if carried_wait.get("carried",false) else ("[E] 系住 / 松手" if pulling_awning else ("[E] 松开车把" if pulling_cart else ("[E] " + object_title(nearest) if not nearest.is_empty() else "走近物件或人物")))
+	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击底部交互按钮" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
 	var wait := shelter_wait_scene()
 	if not wait.is_empty() and story.s.ending.is_empty():
 		foot_hint.text += "\n" + ("托着矮凳 · E或点击脚前轮廓原地放下；可继续走动。" if wait.carried else "走近矮凳按E抬起；棚绳仍可照常握住后向下退拉。")
-	if pulling_cart and story.s.place == "lane": foot_hint.text = "正握住车把 · 左方向键逐步拉出 · E或右侧交互松手\n车停在哪就在哪挡路；松手后可自由走动。"
+	if pulling_cart and story.s.place == "lane": foot_hint.text = "正握住车把 · 左方向键逐步拉出 · E或底部交互按钮松手\n车停在哪就在哪挡路；松手后可自由走动。"
 	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
 	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light") and not story.flag("closing_release"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
 	if story.s.phase != "epilogue" and story.flag("ge_met") and not story.flag("tool_returned"):
@@ -973,9 +1138,9 @@ func refresh_ui() -> void:
 		button(action_box, "退出游戏", func(): get_tree().quit())
 		return
 	if not wait.is_empty() and wait.carried:
-		button(action_box,"[E] 把矮凳放在脚前",interact)
+		pass # The persistent bottom primary_action is the single E control.
 	elif not nearest.is_empty():
-		button(action_box, "[E] 交互：" + object_title(nearest), interact)
+		pass
 	if story.s.phase == "dusk" and story.s.place not in ["arrival", "lane"]:
 		button(action_box, "准备好了 · 进入入夜", func(): confirm("进入入夜？人物将开始赴约；必要线索和工具仍可补查。没有自动倒计时。", func(): do_action("night")))
 	if story.s.phase == "night" and story.s.place == "steps" and nearest == "mooring" and not story.flag("released"):
@@ -1025,6 +1190,7 @@ func act_button(text: String, id: String) -> void:
 				last_place = ""
 				update_world()
 			conversation_response = story.notice
+			response_count += 1
 			modal_open = false
 			nearest = target
 			interact()
@@ -1043,6 +1209,7 @@ func continue_river(id: String) -> void:
 	if player.distance_to(location) >= 96: return
 	story.act(id)
 	conversation_response = story.notice
+	response_count += 1
 	modal_open = false
 	nearest = target
 	interact()
@@ -1059,6 +1226,7 @@ func continue_zhou(id: String) -> void:
 		return
 	story.act(id)
 	conversation_response = story.notice
+	response_count += 1
 	modal_open = false
 	nearest = "zhou"
 	interact()
@@ -1090,6 +1258,7 @@ func travel(place: String) -> void:
 		story.set_flag("shoe_collected")
 		story.note("你再回街口，鞋主正把修好的鞋拎走。他把旧鞋踩在脚下试了两步，跟老葛争一句‘这回别再开线’，两人都笑了一下。\n老葛把空纸折平，凳子往檐下收。陶婶喊的馒头还没凉。")
 	player = Vector2(story.s.x, story.s.y)
+	reset_actor_motion()
 	last_place = ""
 	close_modal()
 	update_world()
@@ -1100,6 +1269,13 @@ func do_action(id: String) -> void:
 	story.s.x = player.x
 	story.s.y = player.y
 	var acted: bool = story.act(id)
+	if acted and id in ["chair_take","basin_take","take_basin","stock_take","take_wet_stock","evac_pack_take","chair_place","basin_place","move_wet_stock","evac_pack_deliver"]:
+		update_actor_motion(0.0,"take" if id in ["chair_take","basin_take","take_basin","stock_take","take_wet_stock","evac_pack_take"] else "place")
+	if id in ["chair_take","chair_place","basin_take","basin_place","stock_take","stock_put_back","tool_retrieve","tool_return","ferry_tag_take","ferry_tag_put_back"]:
+		action_age=0.0
+		action_position=player+Vector2(0,22)
+		action_ok=acted
+		action_caption=("抬起" if id.ends_with("take") else "放稳") if acted else "这里放不稳"
 	if id == "roof_admit" and acted:
 		roof_guest_position = Vector2(500,550)
 		roof_guest_walking = true
@@ -1465,7 +1641,9 @@ func _draw() -> void:
 			draw_string(font,Vector2(710,450),"系绳桩",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c4b294"))
 			if story.flag("awning_tied") and story.s.ending != "flood": draw_rect(Rect2(590,365,135,75),Color("77745c"),false,2)
 			elif not story.flag("awning_tied"):
-				for drop in range(3): draw_line(Vector2(610+drop*32,285-tension*40),Vector2(610+drop*32,305-tension*40),Color("75a5bb"),2)
+				for drop in range(3):
+					var fall := fmod(presentation_time*22+drop*7,20)
+					draw_line(Vector2(610+drop*32,285-tension*40+fall),Vector2(610+drop*32,291-tension*40+fall),Color("75a5bb"),2)
 			draw_rect(Rect2(350, 285, 100, 70), Color("5f4e3e"))
 			draw_texture(VISUAL.beam,Vector2(72,180))
 			for x in [80,770]: draw_texture_rect_region(VISUAL.post,Rect2(x-8,184,16,146),Rect2(0,0,16,146))
@@ -1567,7 +1745,14 @@ func _draw() -> void:
 		draw_line(Vector2(110,583),Vector2(110,550),Color("6e5a43"),4)
 		draw_circle(Vector2(110,550),5,Color("a68b55"))
 		draw_string(font,Vector2(63,609),"旧照 · 新棚启用前",HORIZONTAL_ALIGNMENT_LEFT,185,15,Color("3e443e"))
-	for i in range(4):
+	if not modal_open:
+		draw_presentation_feedback()
+		if story.s.place in ["steps","boat"]:
+			for wave in range(4):
+				var wx := 590.0+wave*45.0
+				var wy := 210.0+sin(presentation_time*0.7+wave)*2.0
+				draw_line(Vector2(wx,wy),Vector2(wx+24,wy),Color(0.46,0.65,0.73,0.3),1)
+	for i in range(0 if modal_open else 4):
 		var r := Rect2(280 + i * 70, 650, 65, 55)
 		draw_rect(r, Color("384c54"))
 		draw_string(font, r.position + Vector2(23, 36), ["←", "↑", "↓", "→"][i], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("ddd8bc"))
