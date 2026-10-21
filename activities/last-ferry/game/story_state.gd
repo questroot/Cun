@@ -21,6 +21,8 @@ var notice := ""
 var save_path := "user://journey.json"
 
 func fresh(identity: String) -> void:
+	_wait_rope = false
+	_wait_blocks = []
 	s = {"version":VERSION, "identity":identity, "phase":"dusk", "place":"house" if identity == "xu" else "street", "x":450.0, "y":410.0, "evidence":[], "items":["铜哨"] if identity == "xu" else ["新灯芯"], "flags":{}, "pollution":0, "ending":"", "journal":[], "left":false}
 	note("你体验%s的处境，为其作决定；当地人有自己的生活，并非被你接管的躯壳。" % who())
 	if identity == "xu":
@@ -39,6 +41,7 @@ func flag(id: String) -> bool:
 
 func set_flag(id: String) -> void:
 	s.flags[id] = true
+	if id in ["closing_light","closing_release","released"]: _wait_drop()
 
 func item(id: String) -> bool:
 	return id in s.items
@@ -77,6 +80,13 @@ func lane_water_description() -> String:
 func roof_visit_active() -> bool:
 	return s.phase == "epilogue" and s.ending != "flood" and flag("roof_visit_arranged")
 
+## Internal scene presentation only; reading never starts or advances the encounter.
+## Older night saves without meet_on retain their existing experience.
+func first_meet_view() -> Dictionary:
+	if s.is_empty(): return {}
+	if s.identity != "xu" or s.phase != "night" or s.left or not s.ending.is_empty() or flag("released") or not flag("meet_on"): return {}
+	return {"active":true, "identified":flag("xu_identified"), "settled":flag("meet_done")}
+
 func current_questions() -> String:
 	if s.phase == "epilogue": return "天已亮，可以走访当地人，再从街口确认离开。借来的物品仍可亲手归还。"
 	var lines: Array[String] = []
@@ -103,10 +113,119 @@ func current_questions() -> String:
 func farewell_ready() -> bool:
 	return core() and has("xu_wish") and has("xiaoman_wish") and has("shen_wish") and flag("returned") and flag("zhou_farewell")
 
+# Shelter life event: positions are persisted, presentation is derived without mutation.
+var _wait_rope := false
+var _wait_blocks: Array = []
+
+func _wait_default() -> Dictionary:
+	return {"stage":"idle", "chair":[455.0,430.0], "zhou":[455.0,430.0], "carried":false, "route":"none"}
+
+func _wait_present() -> bool:
+	return not s.left and s.ending != "flood" and s.ending != "untie" and not flag("closing_light") and not flag("closing_release")
+
+func _wait_enabled() -> bool:
+	return s.place == "shelter" and s.ending.is_empty() and _wait_present()
+
+func _wait_init() -> void:
+	if not s.has("shelter_wait"): s["shelter_wait"] = _wait_default()
+
+func _wait_pos(pair: Array) -> Vector2:
+	return Vector2(float(pair[0]),float(pair[1]))
+
+func _wait_pair(pos: Vector2) -> Array:
+	return [pos.x,pos.y]
+
+func _wait_ground(pos: Vector2) -> bool:
+	if not pos.is_finite() or not Rect2(55,190,750,410).has_point(pos): return false
+	if Rect2(350,285,100,70).grow(12).has_point(pos): return false
+	for rect in _wait_blocks:
+		if rect is Rect2 and rect.grow(12).has_point(pos): return false
+	return true
+
+func _wait_busy() -> bool:
+	return flag("basin_carried") or flag("stock_carried") or flag("evac_pack_carried") or (flag("luggage_taken") and not flag("luggage_placed"))
+
+func _wait_drop() -> void:
+	if s.has("shelter_wait"): s.shelter_wait.carried = false
+	_wait_rope = false
+
+func wait_view() -> Dictionary:
+	var w: Dictionary = s.get("shelter_wait",_wait_default())
+	var chair := _wait_pos(w.chair)
+	var zhou := _wait_pos(w.zhou)
+	var present := _wait_present()
+	var wet := not (Rect2(330,340,110,70).has_point(chair) or (flag("awning_tied") and Rect2(590,365,135,75).has_point(chair)))
+	var pose := "standing"
+	if not present: pose = "absent"
+	elif w.stage == "settled" or (w.stage == "idle" and not w.carried): pose = "seated"
+	elif not w.carried:
+		if w.stage == "offer" or (w.route == "awning" and zhou.distance_to(chair) < 0.1): pose = "dragging"
+		elif zhou.distance_to(chair) > 0.1: pose = "walking"
+	var line := ""
+	if w.stage == "offer" or (w.stage == "working" and w.route == "none"): line = "这边又滴了，凳脚先别泡着。"
+	elif w.stage == "settled" and w.route != "none": line = "日渡收了，要看河，沿那头去旧阶。"
+	return {"stage":w.stage,"chair":chair,"zhou":zhou,"carried":w.carried,"route":w.route,"pose":pose,"line":line if present else "","wet":wet,"present":present}
+
+# blocked carries current rope ownership and static Rect2 obstacles, not actor solids.
+func wait_step(delta: float, player: Vector2, blocked: Dictionary) -> void:
+	_wait_rope = bool(blocked.get("rope",false))
+	_wait_blocks = blocked.get("rects",[])
+	if not _wait_enabled():
+		_wait_drop()
+		return
+	if not is_finite(delta) or delta <= 0 or not player.is_finite(): return
+	if not s.has("shelter_wait"): return
+	var w: Dictionary = s.shelter_wait
+	if w.carried:
+		if _wait_rope or _wait_busy():
+			_wait_drop()
+			return
+		var foot := player + Vector2(0,22)
+		if _wait_ground(foot): w.chair = _wait_pair(foot)
+		return
+	if w.stage == "idle": return
+	if w.stage == "settled":
+		if flag("awning_tied") and w.route == "move": w.stage = "working"
+		else: return
+	var chair := _wait_pos(w.chair)
+	var zhou := _wait_pos(w.zhou)
+	var dragging := false
+	var target := chair
+	if flag("awning_tied"):
+		w.route = "awning"
+		w.stage = "working"
+		# Approach the actual chair before starting to drag it.
+		if zhou.distance_to(chair) < 0.1:
+			dragging = true
+			target = Vector2(640,400)
+	elif w.stage == "offer":
+		dragging = true
+		target = Vector2(505,430)
+	elif Rect2(330,340,110,70).has_point(chair):
+		w.route = "move"
+	else:
+		w.route = "none"
+	# Fixed short orthogonal legs keep the path outside the table footprint.
+	var waypoint := target
+	if absf(zhou.x-target.x) > 0.1 and absf(zhou.y-430) > 0.1:
+		waypoint = Vector2(zhou.x,430)
+	elif absf(zhou.x-target.x) > 0.1:
+		waypoint = Vector2(target.x,430)
+	var next := zhou.move_toward(waypoint,minf(delta,0.05)*75.0)
+	if next.distance_to(player) < 28 or not _wait_ground(next): return
+	w.zhou = _wait_pair(next)
+	if dragging: w.chair = _wait_pair(next)
+	if next.distance_to(target) > 0.1: return
+	if w.stage == "offer":
+		w.stage = "working"
+	elif w.route == "move" or (w.route == "awning" and _wait_pos(w.chair).distance_to(Vector2(640,400)) < 0.1):
+		w.stage = "settled"
+
 func change_place(place: String) -> void:
 	if not PLACES.has(place): return
 	if place == "boat" and (s.identity != "xu" or s.phase != "night"): return
 	if s.ending == "flood" and place in ["steps", "boat"]: return
+	if s.place == "shelter" and place != "shelter": _wait_drop()
 	s.place = place
 	s.x = 450.0
 	s.y = 440.0
@@ -115,6 +234,42 @@ func change_place(place: String) -> void:
 ## Each consequential action still checks its own location, phase and prerequisites.
 func act(id: String) -> bool:
 	var p: String = s.place
+	if id in ["wait_offer","chair_take","chair_place","awning_grip"]:
+		if not _wait_enabled(): return false
+		_wait_init()
+		var w: Dictionary = s.shelter_wait
+		var player := Vector2(s.x,s.y)
+		if id == "wait_offer":
+			if w.stage != "idle": return false
+			w.stage = "settled" if flag("awning_tied") else "offer"
+			return true
+		if id == "awning_grip":
+			if w.carried or _wait_busy(): return refuse("手上还托着东西，先放稳，再握棚绳。")
+			if flag("awning_tied") or player.distance_to(Vector2(690,350+float(s.get("awning_pull",0.0)))) > 96: return false
+			_wait_rope = true
+			return true
+		if id == "chair_take":
+			if w.carried or _wait_busy() or _wait_rope: return refuse("先把手上的东西放稳、松开绳，再抬凳子。")
+			if player.distance_to(_wait_pos(w.chair)) > 64: return false
+			w.carried = true
+			w.stage = "working"
+			w.route = "none"
+			return true
+		if not w.carried: return false
+		var foot := player + Vector2(0,22)
+		if not _wait_ground(foot): return refuse("凳脚放不稳，换到空地再放。")
+		w.chair = _wait_pair(foot)
+		w.carried = false
+		w.stage = "working"
+		w.route = "none"
+		return true
+	if id in ["basin_take","stock_take","evac_pack_take"] and s.get("shelter_wait",{}).get("carried",false): return refuse("先把凳子放稳，再腾手搬别的东西。")
+	if id == "meet_retreat":
+		if s.left or s.identity != "xu" or s.phase != "night" or p != "steps" or not flag("meet_on") or not flag("xu_identified") or flag("meet_done") or flag("released") or not s.ending.is_empty(): return false
+		if not Rect2(70,515,240,90).has_point(Vector2(s.x,s.y)): return false
+		set_flag("meet_done")
+		note("你退到旧阶后方的干地。许澄没有催：‘慢点走。’沈渡仍扶着船舷，守在靠岸处。")
+		return true
 	if id == "shelter_dry_stand":
 		if s.left or p != "shelter" or s.ending == "flood" or not flag("awning_tied") or flag("shelter_dry_stood") or not Rect2(590,365,135,75).has_point(Vector2(s.x,s.y)): return false
 		set_flag("shelter_dry_stood")
@@ -277,10 +432,12 @@ func act(id: String) -> bool:
 		return refuse("船已离岸。不能隔着已经结束的渡程继续索要回答；仍可陪岸上的人站一会儿，再迎接天明。")
 	match id:
 		"awning_tie":
+			_wait_rope = false
+			if s.get("shelter_wait",{}).get("carried",false) or _wait_busy(): return refuse("先把手上的东西放稳，再系棚绳。")
 			if p != "shelter" or flag("awning_tied") or Vector2(s.x,s.y).distance_to(Vector2(690,350+float(s.get("awning_pull",0.0)))) > 100: return false
 			if float(s.get("awning_pull",0.0)) < 85: return refuse("绳端还没拉到木桩旁，你暂时松手；棚布仍低垂，可以再握住继续拉。")
 			set_flag("awning_tied")
-			note("你把拉紧的绳绕在木桩上，低垂的棚布抬起，积水从外侧落下。棚下多出一块可站的干处。" + ("周伯的凳子空着，他还在旧阶；你把凳脚挪离积水，没喊他回来。" if flag("closing_light") or flag("closing_release") else "周伯挪了挪凳脚：‘这边不滴了。你歇脚就站这里。’") + "灯与钟仍是原来的样子。")
+			note("你把拉紧的绳绕在木桩上，低垂的棚布抬起，积水从外侧落下。棚下多出一块可站的干处。" + ("周伯的凳子空着，他还在旧阶；你把凳脚挪离积水，没喊他回来。" if flag("closing_light") or flag("closing_release") else ("周伯望了望撑起的棚沿，伸手扶住凳背。" if s.has("shelter_wait") else "周伯挪了挪凳脚：‘这边不滴了。你歇脚就站这里。’")) + "灯与钟仍是原来的样子。")
 		"lane_old_level":
 			if p != "lane" or flag("lane_old_level") or Vector2(s.x,s.y).distance_to(Vector2(200,300)) >= 48: return false
 			set_flag("lane_old_level")
@@ -482,6 +639,7 @@ func act(id: String) -> bool:
 		"night":
 			if s.phase != "dusk": return false
 			s.phase = "night"
+			if s.identity == "xu": set_flag("meet_on")
 			set_flag("boat_arrival_pending")
 			note("你确认结束傍晚。风向变了，夜船靠近旧阶。人物可能移动；遗漏的核心线索和工具仍可补查，没有倒计时。")
 		"swap":
@@ -514,7 +672,10 @@ func act(id: String) -> bool:
 			note("许宁在旧桌边轻吹半哨。小时候她总吹两短一长，叫许澄回来；弟弟嫌她催，偏要回一长两短，再说‘又慢了’。\n这不是一句神奇口令。她怕自己记错，重试了一遍，最后一声仍有点破。")
 		"call_paper":
 			if s.phase != "night" or not p in ["steps", "boat"] or not flag("river_heard"): return false
-			note("你照着湿纸问要带什么。河上好几处一起回答‘过来’，没有一个先叫你的名字。你停住，没有往前走。\n那张没有署名的纸至少不能替任何一个人表达意愿。回应一次普通问话没有增加侵入。")
+			if has("invitation"):
+				note("你照着湿纸问要带什么。河上好几处一起回答‘过来’，没有一个先叫你的名字。你停住，没有往前走。\n那张没有署名的纸至少不能替任何一个人表达意愿。回应一次普通问话没有增加侵入。")
+			else:
+				note("你朝刚才喊‘把东西带来’的方向问：‘带什么？’河上好几处一起回答‘过来’，没有一个先叫你的名字。你停在原处，没往前走。\n几处声音叠在一起，仍听不清是谁在要什么。")
 		"whistle_short", "whistle_long":
 			if s.identity != "xu" or not item("铜哨") or s.phase != "night" or not p in ["steps", "boat"]: return refuse("这不是你手里的物品；阿禾可以请许宁自己回应，不必模仿她的回忆。")
 			if not flag("river_heard"): return refuse("先听一听，再决定朝哪个方向吹。")
@@ -577,7 +738,10 @@ func act(id: String) -> bool:
 			if p != "steps" or s.phase != "night" or not flag("consent"): return refuse("先与周伯谈妥，他才愿意到旧阶核实女儿的声音。")
 			learn("xiaoman_wish")
 		"shen":
-			if not p in ["steps", "boat"] or s.phase != "night" or not has("covenant"): return refuse("先核实旧约，才知道要向摆渡人询问什么。")
+			if not p in ["steps", "boat"] or s.phase != "night": return false
+			if not has("covenant"):
+				note(("你在干阶上朝船边问：‘你还在等什么？’" if p == "steps" else "你站在侧舷问：‘你还在等什么？’") + "\n沈渡扶住舷边：‘我守船，等岸上把话说清。也想有个收班的时候，不是把还没说完的人撇下。’\n他朝候船棚的灯指了指：‘旧话刻在那盏黄灯底座上。周伯在岸上经管这些年，你可以找他问问。’\n他把滑下去的缆绳提回舷内，继续守着。")
+				return true
 			if s.identity == "he" and (not flag("xu_help") or not has("xu_wish")): return refuse("先主动与许宁合作，并请她携问题核实后回报。阿禾不能读取船上对白。")
 			learn("shen_wish")
 			if s.identity == "he": note("许宁自愿从靠岸侧舷核实，归岸后明确转述沈渡的答复：愿意结束，但要两岸归还旧物、解除未接到便不能走的约。你只记录她已说出的信息。")
@@ -705,6 +869,7 @@ func refuse(text: String) -> bool:
 
 func finish(result: String) -> void:
 	if not s.ending.is_empty(): return
+	_wait_drop()
 	s.flags["boat_arrival_pending"] = false
 	s.ending = result
 	s.phase = "epilogue"
@@ -746,6 +911,8 @@ func load_game() -> bool:
 	data.version = int(data.version)
 	data.pollution = int(data.pollution)
 	s = data
+	_wait_drop()
+	_wait_blocks = []
 	notice = "已读取独立活动存档。"
 	return true
 
@@ -771,6 +938,24 @@ func valid_save(data: Variant) -> bool:
 	if data.identity == "he" and "铜哨" in data.items: return false
 	for line in data.journal:
 		if not line is String: return false
+	if data.has("shelter_wait"):
+		var w = data.shelter_wait
+		if not w is Dictionary or w.size() != 5: return false
+		for key in ["stage","chair","zhou","carried","route"]:
+			if not w.has(key): return false
+		if not w.stage is String or not w.stage in ["idle","offer","working","settled"]: return false
+		if not w.route is String or not w.route in ["none","awning","move"] or not w.carried is bool: return false
+		for key in ["chair","zhou"]:
+			if not w[key] is Array or w[key].size() != 2: return false
+			for value in w[key]:
+				if not (value is float or value is int) or not is_finite(float(value)): return false
+			var point := _wait_pos(w[key])
+			if not Rect2(55,190,750,410).has_point(point) or Rect2(350,285,100,70).grow(12).has_point(point): return false
+		if w.carried:
+			if data.place != "shelter" or not data.ending.is_empty() or w.stage != "working": return false
+			for id in ["basin_carried","stock_carried","evac_pack_carried","closing_light","closing_release","released"]:
+				if data.flags.get(id,false): return false
+			if data.flags.get("luggage_taken",false) and not data.flags.get("luggage_placed",false): return false
 	if data.has("awning_pull"):
 		if not (data.awning_pull is float or data.awning_pull is int) or not is_finite(float(data.awning_pull)) or data.awning_pull < 0 or data.awning_pull > 90: return false
 	if data.has("cart_x"):

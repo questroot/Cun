@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "scope": "Shelter visual upgrade first pack: actor/prop actual assets, environment pending frontend coordinate confirmation",
+  "logical_canvas": [
+    1280,
+    800
+  ],
+  "world_rect": [
+    40,
+    175,
+    780,
+    445
+  ],
+  "render_scale": 1,
+  "filter": "nearest",
+  "assets": [
+    {
+      "png": "stool.png",
+      "svg": "stool.svg",
+      "size": [
+        40,
+        28
+      ],
+      "anchor": [
+        20,
+        14
+      ],
+      "state": "Any pose: positioned at wait.chair; carried uses same image",
+      "alpha_bounds": [
+        1,
+        3,
+        39,
+        27
+      ],
+      "colors": 6
+    },
+    {
+      "png": "zhou_standing.png",
+      "svg": "zhou_standing.svg",
+      "size": [
+        48,
+        72
+      ],
+      "anchor": [
+        24,
+        40
+      ],
+      "state": "wait.pose == standing",
+      "alpha_bounds": [
+        6,
+        6,
+        39,
+        61
+      ],
+      "colors": 15
+    },
+    {
+      "png": "zhou_walking.png",
+      "svg": "zhou_walking.svg",
+      "size": [
+        48,
+        72
+      ],
+      "anchor": [
+        24,
+        40
+      ],
+      "state": "wait.pose == walking",
+      "alpha_bounds": [
+        6,
+        6,
+        39,
+        62
+      ],
+      "colors": 15
+    },
+    {
+      "png": "zhou_dragging.png",
+      "svg": "zhou_dragging.svg",
+      "size": [
+        48,
+        72
+      ],
+      "anchor": [
+        24,
+        40
+      ],
+      "state": "wait.pose == dragging",
+      "alpha_bounds": [
+        5,
+        8,
+        42,
+        61
+      ],
+      "colors": 15
+    },
+    {
+      "png": "zhou_seated.png",
+      "svg": "zhou_seated.svg",
+      "size": [
+        48,
+        72
+      ],
+      "anchor": [
+        24,
+        40
+      ],
+      "state": "wait.pose == seated",
+      "alpha_bounds": [
+        11,
+        10,
+        37,
+        59
+      ],
+      "colors": 15
+    }
+  ],
+  "collision": "Keep chair36x20 centered at wait.chair and Zhou24x32 centered at wait.zhou; alpha silhouette is NOT collision.",
+  "dragging": "Dynamic arms must join sleeve hand pads at local (-16,5)/(13,5) to actual chair ends; never bake chair into actor.",
+  "layering": "Floor/light; chair and actor feet-sorted; independent foreground; runtime marks/text; HUD separate. Seated: chair first then actor.",
+  "palette": [
+    "#293b42",
+    "#354c54",
+    "#556d70",
+    "#586a67",
+    "#819087",
+    "#79908d",
+    "#bba58c",
+    "#ead1ac",
+    "#927965",
+    "#8e7757",
+    "#554c3e",
+    "#b7a07b",
+    "#7a7968",
+    "#45616a",
+    "#75a5bb",
+    "#e9bd5d"
+  ],
+  "origin": {
+    "author": "art operator, original hand-authored pixel clusters",
+    "tools": "Existing local Python/Pillow/pixelstudio; editable SVG polygon source",
+    "external_images": false,
+    "fonts_embedded": false,
+    "cost": "No paid service, download, installation or network image generation",
+    "rights": "Original project art; external distribution subject to project owner rights confirmation"
+  },
+  "source_note": "SVG polygon coordinates editable; PNG authoritative pixelstudio inclusive-boundary raster. Re-export via build script may differ 1px from generic SVG renderer.",
+  "qc": {
+    "png": "RGBA with transparent0/opaque255 alpha; sizes and bounds recorded per asset",
+    "integration_tested": false
+  },
+  "sha256": {
+    "build_visual.py": "fea26c7a8c4e1d432341bf974acd006a4e9117dbbfb5a63a69fbad4aad1f3e26",
+    "stool.png": "788d05453e365c0c51257181f453f5e8ca25d2ad4363ca304ff82832f11b69b3",
+    "stool.svg": "7614db25d25623e6c7c10a9d959d006231e5dec2a48e47fcfd908bc38648f247",
+    "zhou_dragging.png": "6b72a10a78a7bc5c6cb0d3e2e51e446304078e2ab32b55e88ffc87ed81087730",
+    "zhou_dragging.svg": "efc9e737c86fcad268a2e7419bb7e128ba00657d3b8ac99aa4e2259b60fa2b38",
+    "zhou_seated.png": "1514bd99651f83900be033b347a7a4dc762c023ffd5bba3fd4eab6a441e92572",
+    "zhou_seated.svg": "c942b23b2f147fb41b6c1b995aaed461f73ebe7bd18bfaf204d3a825aad3595b",
+    "zhou_standing.png": "756ae93539f591c3f7845f71fa5ddd106010b2f930ba2f8e225d8812c05a3aa9",
+    "zhou_standing.svg": "94ad80994de840a76f3f9302e151fb93ae0095b7c273d04f52f7c6a73ee2d445",
+    "zhou_walking.png": "0a433e619414742ac56ab79cc488450fb2b22fc6fe760a1829c429492b0a3497",
+    "zhou_walking.svg": "79173dda4ba6b8cb71c411f155dcad1b3ac8e0ae940b310653e78301342d85c6"
+  }
+}

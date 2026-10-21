@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "character": "沈渡",
+  "canvas": [
+    48,
+    64
+  ],
+  "anchor_px": [
+    24,
+    21
+  ],
+  "scale": 1,
+  "poses": {
+    "offer": "未quiet且未持有/归还旧渡牌：摊掌向左",
+    "rest": "quiet或已持有/归还旧渡牌：屈臂收手"
+  },
+  "placement": {
+    "steps_pos": [
+      765,
+      265
+    ],
+    "boat_pos": [
+      790,
+      365
+    ],
+    "texture_top_left": "pos - Vector2(24,21)",
+    "legacy_bounds_including_label": [
+      -25,
+      -21,
+      50,
+      72
+    ],
+    "body_local_contract": [
+      -11,
+      3,
+      22,
+      27
+    ]
+  },
+  "layers": "Replace Shendu body/gesture only in existing actor pass. Keep name, plaque, rings and dialogue as runtime drawing. Frontend owns integration/occlusion/collision.",
+  "source": {
+    "author": "art operator, project-directed original polygon/pixel drawing",
+    "date": "2026-10-21",
+    "tools": "Bundled Python + Pillow + installed pixelstudio.py; editable SVG polygons; no downloaded or generated third-party images",
+    "license": "Original project-commissioned artwork; no third-party image inputs. External publication rights remain subject to project owner confirmation."
+  },
+  "svg_note": "Editable integer polygon source uses crispEdges; PNG is authoritative pixelstudio raster (inclusive boundary). No font/text/image nodes.",
+  "validation": {
+    "png_checks": {
+      "offer": {
+        "mode": "RGBA",
+        "size": [
+          48,
+          64
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "opaque_bounds": [
+          0,
+          1,
+          38,
+          52
+        ],
+        "palette_colors": 9
+      },
+      "rest": {
+        "mode": "RGBA",
+        "size": [
+          48,
+          64
+        ],
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "opaque_bounds": [
+          2,
+          1,
+          38,
+          52
+        ],
+        "palette_colors": 9
+      }
+    },
+    "differing_pixels": 147,
+    "game_integration_tested": false
+  },
+  "sha256": {
+    "shendu_offer.png": "9f581ffe2eac0c9982c4f1d9b33f0bea7bce2781374875146eeadb74ae2da4da",
+    "shendu_rest.png": "d3f5ac66fb2298214a53063c4ca3885b7eba406a3eca5fb9f17b05a3dc37aae0",
+    "shendu_offer.svg": "6cd528dcba93fa36bb42016f7ea56c2d8e25354403c0a53c66cd724f5fd4e04a",
+    "shendu_rest.svg": "d82dd2dc21b660d458f4282b0173959d5afc9d36dc4431a9a5d1b81ea9dd5d65",
+    "build_shendu.py": "92cafcb2a603918aef7efd1f3bf69a7d6504d21fb2d8a3d0c170e02b15e3710d"
+  }
+}

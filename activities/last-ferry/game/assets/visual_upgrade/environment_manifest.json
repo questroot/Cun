@@ -1,0 +1,299 @@
+{
+  "schema": 1,
+  "frontend_confirmation": "PM relayed fixed main coordinates and tension contract, sessions-message-72c73de2-dbec-4754-b5f9-63d392f5e097",
+  "assets": [
+    {
+      "png": "stone_dry.png",
+      "svg": "stone_dry.svg",
+      "size": [
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ],
+      "placement": "Tile within world (40,175,780,445); wet/dry masks come ONLY from actual state",
+      "layer": "ground",
+      "alpha_bounds": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "sha256": "29be0f1a41efdd58557b6f409b6373f0fde6d7f7ce81e7f6678a16e3fc0d9a3b"
+    },
+    {
+      "png": "stone_wet.png",
+      "svg": "stone_wet.svg",
+      "size": [
+        64,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ],
+      "placement": "Tile within world (40,175,780,445); wet/dry masks come ONLY from actual state",
+      "layer": "ground",
+      "alpha_bounds": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "sha256": "100d55306946ddaf8a8b95837edc624fc54244feabb61c21b832d1fda45a7ae4"
+    },
+    {
+      "png": "wet_edge.png",
+      "svg": "wet_edge.svg",
+      "size": [
+        64,
+        16
+      ],
+      "anchor": [
+        0,
+        8
+      ],
+      "placement": "Optional only along true dry-region border; do not rotate into fake obstacles",
+      "layer": "ground_detail",
+      "alpha_bounds": [
+        0,
+        4,
+        64,
+        16
+      ],
+      "sha256": "0e72eeaa8fb767cb532573a502bc68f3bfaff9d5541c1e3635bb20a24af16a72"
+    },
+    {
+      "png": "shelter_beam.png",
+      "svg": "shelter_beam.svg",
+      "size": [
+        704,
+        20
+      ],
+      "anchor": [
+        4,
+        10
+      ],
+      "placement": "Anchor world(76,190), ends near x770",
+      "layer": "back_structure",
+      "alpha_bounds": [
+        0,
+        3,
+        704,
+        18
+      ],
+      "sha256": "8c43e96f8ebda94881ea15f66629087967be07babe3f07d7c33ecefd2db19ea3"
+    },
+    {
+      "png": "shelter_post.png",
+      "svg": "shelter_post.svg",
+      "size": [
+        16,
+        272
+      ],
+      "anchor": [
+        8,
+        6
+      ],
+      "placement": "Anchor(80,190)/(770,190); same PNG may be split by runtime into back/top and narrow front sections",
+      "layer": "split_structure",
+      "alpha_bounds": [
+        0,
+        0,
+        16,
+        272
+      ],
+      "sha256": "1d0735c13fc84cca37c748a87554644e5c0535bf24755d4e7aafa3798ef3b3aa"
+    },
+    {
+      "png": "awning_panel.png",
+      "svg": "awning_panel.svg",
+      "size": [
+        160,
+        64
+      ],
+      "anchor": [
+        0,
+        0
+      ],
+      "placement": "UV full image to quad (575,195),(735,195),(735,270-45t),(575,280-45t); t=awning_pull/90",
+      "layer": "back_fabric",
+      "alpha_bounds": [
+        0,
+        0,
+        160,
+        64
+      ],
+      "sha256": "0e459973cd89317925d73435307815e74b863fdd003305533500e0114d010819"
+    },
+    {
+      "png": "awning_hem.png",
+      "svg": "awning_hem.svg",
+      "size": [
+        160,
+        12
+      ],
+      "anchor": [
+        0,
+        0
+      ],
+      "placement": "Map top corners to dynamic lower edge of awning quad; extend down <=8px; never conceal rope end",
+      "layer": "front_fabric",
+      "alpha_bounds": [
+        0,
+        0,
+        160,
+        10
+      ],
+      "sha256": "1301ed6a06bdc09494a8c84f002be82a4cbe9c10c3e9ec6b4ea041a786480c59"
+    },
+    {
+      "png": "lamp_white.png",
+      "svg": "lamp_white.svg",
+      "size": [
+        40,
+        48
+      ],
+      "anchor": [
+        20,
+        24
+      ],
+      "placement": "white/warm at(250,360), yellow_off/on at(620,390). Keep tongue/shade states runtime; local sprite not collision",
+      "layer": "prop",
+      "alpha_bounds": [
+        8,
+        2,
+        33,
+        42
+      ],
+      "sha256": "9bedcc3c1dad20a145a8b23446dadf64a3686384306602e1962da92781532c09"
+    },
+    {
+      "png": "lamp_warm.png",
+      "svg": "lamp_warm.svg",
+      "size": [
+        40,
+        48
+      ],
+      "anchor": [
+        20,
+        24
+      ],
+      "placement": "white/warm at(250,360), yellow_off/on at(620,390). Keep tongue/shade states runtime; local sprite not collision",
+      "layer": "prop",
+      "alpha_bounds": [
+        8,
+        2,
+        33,
+        42
+      ],
+      "sha256": "89b06e9eca6669374dd319ec35ec8b55f0cb753db7807fdfba38999238f188dc"
+    },
+    {
+      "png": "lamp_yellow_off.png",
+      "svg": "lamp_yellow_off.svg",
+      "size": [
+        40,
+        48
+      ],
+      "anchor": [
+        20,
+        24
+      ],
+      "placement": "white/warm at(250,360), yellow_off/on at(620,390). Keep tongue/shade states runtime; local sprite not collision",
+      "layer": "prop",
+      "alpha_bounds": [
+        8,
+        2,
+        33,
+        42
+      ],
+      "sha256": "bcd33b6443121f4652bd68f6eeda4f7a7d7d829b30b8ef46425469390a2773d2"
+    },
+    {
+      "png": "lamp_yellow_on.png",
+      "svg": "lamp_yellow_on.svg",
+      "size": [
+        40,
+        48
+      ],
+      "anchor": [
+        20,
+        24
+      ],
+      "placement": "white/warm at(250,360), yellow_off/on at(620,390). Keep tongue/shade states runtime; local sprite not collision",
+      "layer": "prop",
+      "alpha_bounds": [
+        8,
+        2,
+        33,
+        42
+      ],
+      "sha256": "89b06e9eca6669374dd319ec35ec8b55f0cb753db7807fdfba38999238f188dc"
+    },
+    {
+      "png": "light_pool.png",
+      "svg": "light_pool.svg",
+      "size": [
+        96,
+        96
+      ],
+      "anchor": [
+        48,
+        48
+      ],
+      "placement": "Center at lit lamp only; under actors, alpha not additive flash",
+      "layer": "ground_light",
+      "alpha_bounds": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "sha256": "ff6c65442b443b042b53872154f7a711ddd1390dae337c94562824656394dc18"
+    }
+  ],
+  "source": "Original hand-authored pixel polygons, existing local pixelstudio/Pillow; no third-party images/fonts, downloads/install/fees. Same palette as Shendu and Zhou.",
+  "rules": "All independent. No baked UI/collision/actors in background. Rope/drops/water-level/sealed-state remain runtime. Clamp tile and light rendering to world.",
+  "qc": "RGBA dimensions checked; actual resources read_image reviewed separately; game integration NOT tested",
+  "sha256": {
+    "awning_hem.png": "1301ed6a06bdc09494a8c84f002be82a4cbe9c10c3e9ec6b4ea041a786480c59",
+    "awning_hem.svg": "01a6314507cb26648d3b004f00d89923ea575bd833dd473c66dc5f97bb438f12",
+    "awning_panel.png": "0e459973cd89317925d73435307815e74b863fdd003305533500e0114d010819",
+    "awning_panel.svg": "a4b48238db5bee00dc0a4e9486ada2d1b8c1a6ff512a76f4dd793cfe83f90fbf",
+    "build_environment.py": "253a7bdb6a3d529e8b54e3a7d64381272c710beec95931faebe500b414cf89ba",
+    "build_visual.py": "fea26c7a8c4e1d432341bf974acd006a4e9117dbbfb5a63a69fbad4aad1f3e26",
+    "lamp_warm.png": "89b06e9eca6669374dd319ec35ec8b55f0cb753db7807fdfba38999238f188dc",
+    "lamp_warm.svg": "5fccf84c7552f48dd54afbf31cbe00eea02708422a428aedc05761d654c3af79",
+    "lamp_white.png": "9bedcc3c1dad20a145a8b23446dadf64a3686384306602e1962da92781532c09",
+    "lamp_white.svg": "2c8c7cf053603adfe451647ff7d9ec30a160594d11b30f38ed35c3726272ddd1",
+    "lamp_yellow_off.png": "bcd33b6443121f4652bd68f6eeda4f7a7d7d829b30b8ef46425469390a2773d2",
+    "lamp_yellow_off.svg": "26546de32112d63b33fb84e7f948e2dd2c2d9a87922804f98f0cb91ffddc70dc",
+    "lamp_yellow_on.png": "89b06e9eca6669374dd319ec35ec8b55f0cb753db7807fdfba38999238f188dc",
+    "lamp_yellow_on.svg": "5fccf84c7552f48dd54afbf31cbe00eea02708422a428aedc05761d654c3af79",
+    "light_pool.png": "ff6c65442b443b042b53872154f7a711ddd1390dae337c94562824656394dc18",
+    "light_pool.svg": "6dd91ce350140a1b4a5d42d563eb23c6d6ad8bf15edcc7339dfc2c7bbe287913",
+    "shelter_beam.png": "8c43e96f8ebda94881ea15f66629087967be07babe3f07d7c33ecefd2db19ea3",
+    "shelter_beam.svg": "c9aa480acd27771f219f946f06e58126e29e447b894a856b5c607e61be852641",
+    "shelter_post.png": "1d0735c13fc84cca37c748a87554644e5c0535bf24755d4e7aafa3798ef3b3aa",
+    "shelter_post.svg": "6d92d021d2ab1221fec4dfbf6c487c04141b3319ffb6edd944d8aee5256f60f2",
+    "stone_dry.png": "29be0f1a41efdd58557b6f409b6373f0fde6d7f7ce81e7f6678a16e3fc0d9a3b",
+    "stone_dry.svg": "0e5e2fb80c670a7a2b05a791bc0d949c158577752b03c8058a527260849128fc",
+    "stone_wet.png": "100d55306946ddaf8a8b95837edc624fc54244feabb61c21b832d1fda45a7ae4",
+    "stone_wet.svg": "086dc6894e963e1c19c63b63f5d5f3d4248b562164be448fd5594ab3096a1c0f",
+    "stool.png": "788d05453e365c0c51257181f453f5e8ca25d2ad4363ca304ff82832f11b69b3",
+    "stool.svg": "7614db25d25623e6c7c10a9d959d006231e5dec2a48e47fcfd908bc38648f247",
+    "wet_edge.png": "0e72eeaa8fb767cb532573a502bc68f3bfaff9d5541c1e3635bb20a24af16a72",
+    "wet_edge.svg": "9249e56d19eab67f3ab4df9ff5dd52c34fc99d9ed25eef16327a61ab86feb644",
+    "zhou_dragging.png": "6b72a10a78a7bc5c6cb0d3e2e51e446304078e2ab32b55e88ffc87ed81087730",
+    "zhou_dragging.svg": "efc9e737c86fcad268a2e7419bb7e128ba00657d3b8ac99aa4e2259b60fa2b38",
+    "zhou_seated.png": "1514bd99651f83900be033b347a7a4dc762c023ffd5bba3fd4eab6a441e92572",
+    "zhou_seated.svg": "c942b23b2f147fb41b6c1b995aaed461f73ebe7bd18bfaf204d3a825aad3595b",
+    "zhou_standing.png": "756ae93539f591c3f7845f71fa5ddd106010b2f930ba2f8e225d8812c05a3aa9",
+    "zhou_standing.svg": "94ad80994de840a76f3f9302e151fb93ae0095b7c273d04f52f7c6a73ee2d445",
+    "zhou_walking.png": "0a433e619414742ac56ab79cc488450fb2b22fc6fe760a1829c429492b0a3497",
+    "zhou_walking.svg": "79173dda4ba6b8cb71c411f155dcad1b3ac8e0ae940b310653e78301342d85c6"
+  }
+}

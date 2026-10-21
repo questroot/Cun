@@ -1,5 +1,27 @@
 extends Node2D
 const Story = preload("res://story_state.gd")
+const SHENDU_OFFER: Texture2D = preload("res://assets/encounter/shendu_offer.png")
+const SHENDU_REST: Texture2D = preload("res://assets/encounter/shendu_rest.png")
+const SHENDU_ANCHOR := Vector2(24,21)
+const VISUAL := {
+	"standing":preload("res://assets/visual_upgrade/zhou_standing.png"),
+	"walking":preload("res://assets/visual_upgrade/zhou_walking.png"),
+	"dragging":preload("res://assets/visual_upgrade/zhou_dragging.png"),
+	"seated":preload("res://assets/visual_upgrade/zhou_seated.png"),
+	"stool":preload("res://assets/visual_upgrade/stool.png"),
+	"dry":preload("res://assets/visual_upgrade/stone_dry.png"),
+	"wet":preload("res://assets/visual_upgrade/stone_wet.png"),
+	"edge":preload("res://assets/visual_upgrade/wet_edge.png"),
+	"beam":preload("res://assets/visual_upgrade/shelter_beam.png"),
+	"post":preload("res://assets/visual_upgrade/shelter_post.png"),
+	"awning":preload("res://assets/visual_upgrade/awning_panel.png"),
+	"hem":preload("res://assets/visual_upgrade/awning_hem.png"),
+	"white":preload("res://assets/visual_upgrade/lamp_white.png"),
+	"warm":preload("res://assets/visual_upgrade/lamp_warm.png"),
+	"yellow_off":preload("res://assets/visual_upgrade/lamp_yellow_off.png"),
+	"yellow_on":preload("res://assets/visual_upgrade/lamp_yellow_on.png"),
+	"light":preload("res://assets/visual_upgrade/light_pool.png")
+}
 var story = Story.new()
 var player := Vector2(450, 440)
 var face := Vector2.DOWN
@@ -34,6 +56,27 @@ var boat_approach_offset := 0.0
 var roof_guest_position := Vector2(635,490)
 var roof_guest_walking := false
 
+# Presentation helpers use backend-owned positions; the same rectangles feed drawing
+# and collision. Returning {} preserves original ending/absent-Zhou priorities.
+func shelter_wait_scene() -> Dictionary:
+	if not started or story.s.place != "shelter": return {}
+	if story.s.ending == "flood" or (story.s.phase == "night" and (story.flag("closing_light") or story.flag("closing_release"))): return {}
+	var view: Dictionary = story.wait_view()
+	return view if view.get("present",false) and (story.s.phase != "epilogue" or story.s.ending == "light") else {}
+
+func rect_description(rect: Rect2) -> Dictionary:
+	return {"x":rect.position.x,"y":rect.position.y,"width":rect.size.x,"height":rect.size.y}
+
+func chair_bounds(pos: Vector2) -> Rect2:
+	return Rect2(pos-Vector2(18,10),Vector2(36,20))
+
+func zhou_bounds(pos: Vector2) -> Rect2:
+	return Rect2(pos-Vector2(12,16),Vector2(24,32))
+
+func zhou_position() -> Vector2:
+	var view := shelter_wait_scene()
+	return view.zhou if not view.is_empty() else Vector2(455,430)
+
 func cart_position() -> Vector2:
 	if story.flag("lane_cart_moved") and not story.s.has("cart_x"): return Vector2(520,260)
 	return Vector2(float(story.s.get("cart_x",430.0)),400)
@@ -41,6 +84,7 @@ func cart_position() -> Vector2:
 func _ready() -> void:
 	add_to_group("cun_play_visible")
 	font = ThemeDB.fallback_font
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_setup_ui()
 	_setup_sound()
 	show_title()
@@ -104,10 +148,161 @@ func play_visible() -> Dictionary:
 		result["visible_step_water"] = {"x":40,"y":310,"width":780,"height":34,"appearance":"水越过最低一层阶，上一层仍露出；湿面不代表可登船"}
 	if story.s.place == "steps" and story.s.phase == "night" and not shore_heard_excerpt().is_empty():
 		result["visible_shore_heard"] = {"x":55,"y":185,"width":520,"height":62,"text":shore_heard_excerpt()}
+	if story.s.place == "shelter":
+		result["visible_shelter_materials"] = {"floor":{"appearance":"湿石地面；材质不是额外障碍" if story.s.ending == "flood" else "湿石地面，棚檐内干石窄带；材质不是额外障碍","bounds":rect_description(Rect2(40,175,780,445))},"beam":rect_description(Rect2(72,180,704,20)),"posts":[rect_description(Rect2(72,184,16,272)),rect_description(Rect2(762,184,16,272))]}
+	var wait := shelter_wait_scene()
+	if not wait.is_empty():
+		var chair: Vector2 = wait.chair
+		var zhou: Vector2 = wait.zhou
+		result["visible_waiting"] = {"chair":{"x":chair.x,"y":chair.y,"bounds":rect_description(Rect2(chair-Vector2(20,14),Vector2(40,28))),"appearance":"托在手边的矮凳" if wait.carried else "地上的木矮凳"},"zhou":{"x":zhou.x,"y":zhou.y,"bounds":rect_description(Rect2(zhou-Vector2(24,40),Vector2(48,72)).merge(Rect2(zhou+Vector2(-64,59-font.get_ascent(17)),Vector2(font.get_string_size("周伯",HORIZONTAL_ALIGNMENT_LEFT,-1,17).x,font.get_height(17))))),"appearance":{"standing":"起身站着","dragging":"双手扶凳，慢慢拖动","walking":"向凳子走去","seated":"收脚坐着，望向河面"}.get(wait.pose,"站着")},"speech":wait.line,"drips":"右棚沿仍滴水" if not story.flag("awning_tied") else "棚沿抬高，水滴落到干处外侧","left_eave":{"x":330,"y":340,"width":110,"height":70,"appearance":"檐内窄处，石面无水滴"}}
+		obstacles.append(rect_description(zhou_bounds(zhou)))
+		if not wait.carried: obstacles.append(rect_description(chair_bounds(chair)))
+		else: result["visible_chair_drop_outline"] = rect_description(chair_bounds(player+Vector2(0,22)))
+	var meet_scene := first_meet_scene()
+	if not meet_scene.is_empty(): result["visible_first_meet"] = first_meet_visible(meet_scene)
 	result["objects"] = targets
 	result["obstacles"] = obstacles
 	result["walk_area"] = {"x":40,"y":175,"width":780,"height":445}
 	return result
+
+## Shared by drawing and observation: scene-local visible poses, never story flags.
+func first_meet_scene() -> Dictionary:
+	var view: Dictionary = story.first_meet_view()
+	if view.is_empty() or not view.get("active", false) or not view.get("identified", false): return {}
+	if story.s.place not in ["steps", "boat"] or story.flag("boat_arrival_pending"): return {}
+	var ashore: bool = story.s.place == "steps"
+	var quiet: bool = view.get("settled", false)
+	var actors: Array = []
+	actors.append({"name":"许澄", "pos":Vector2(615,265) if ashore else Vector2(575,370), "gesture":"望向许宁，手停在身侧" if quiet else "朝许宁偏过头，抬手回应私哨"})
+	var shendu_resting: bool = quiet or story.item("旧渡牌") or story.flag("ferry_tag_returned")
+	actors.append({"name":"沈渡", "pos":Vector2(765,265) if ashore else Vector2(790,365), "resting":shendu_resting, "gesture":"收手留在舷边守船" if shendu_resting else "一手摊向舷边，露出木牌的刻字面"})
+	var plaque := Rect2(667,281,110,26) if ashore else Rect2(646,405,110,28)
+	var has_plaque: bool = not story.item("旧渡牌") and not story.flag("ferry_tag_taken") and not story.flag("ferry_tag_returned")
+	# These are sustained on-screen lines, not a confirmation or a replayed journal event.
+	var lines: Array[String] = []
+	if not quiet:
+		lines.append("许澄：最后那声又破了。")
+		lines.append("许澄：屋顶还漏？")
+		if has_plaque: lines.append("沈渡：交班的。挂回岸棚。")
+	return {"actors":actors, "quiet":quiet, "plaque":plaque if has_plaque else Rect2(), "lines":lines, "speech":Rect2(400,490,405,112) if ashore else Rect2(65,485,350,115)}
+
+func first_meet_visible(scene: Dictionary) -> Dictionary:
+	var visible := {"actors":[], "fragments":[]}
+	for actor in scene.actors:
+		var pos: Vector2 = actor.pos
+		var bounds := Rect2(pos+Vector2(-25,-21),Vector2(50,72))
+		if actor.name == "沈渡":
+			var texture: Texture2D = SHENDU_REST if actor.resting else SHENDU_OFFER
+			bounds = Rect2(pos-SHENDU_ANCHOR,texture.get_size())
+		var label_size := Vector2(font.get_string_size(actor.name,HORIZONTAL_ALIGNMENT_LEFT,-1,17).x,font.get_height(17))
+		bounds = bounds.merge(Rect2(pos+Vector2(-20,49-font.get_ascent(17)),label_size))
+		visible.actors.append({"name":actor.name, "appearance":actor.gesture, "bounds":{"x":bounds.position.x,"y":bounds.position.y,"width":bounds.size.x,"height":bounds.size.y}})
+	if not scene.lines.is_empty():
+		var speech: Rect2 = scene.speech
+		visible.fragments.append({"text":"\n".join(scene.lines), "bounds":{"x":speech.position.x,"y":speech.position.y,"width":speech.size.x,"height":speech.size.y}})
+	var plaque: Rect2 = scene.plaque
+	if plaque.has_area():
+		visible["plaque"] = {"appearance":"舷边木牌，刻字面朝上", "text":"末班交回岸棚", "bounds":{"x":plaque.position.x,"y":plaque.position.y,"width":plaque.size.x,"height":plaque.size.y}}
+	if story.s.place == "steps" and not comparing_photo:
+		visible["dry_ground"] = {"appearance":"旧阶后方的干石地", "bounds":{"x":70,"y":515,"width":240,"height":90}}
+	return visible
+
+func tile_visual(key: String, rect: Rect2) -> void:
+	var texture: Texture2D = VISUAL[key]
+	for y in range(int(rect.position.y),int(rect.end.y),texture.get_height()):
+		for x in range(int(rect.position.x),int(rect.end.x),texture.get_width()):
+			var part := Rect2(Vector2(x,y),texture.get_size()).intersection(rect)
+			draw_texture_rect_region(texture,part,Rect2(Vector2.ZERO,part.size))
+
+func visual_quad(key: String, quad: PackedVector2Array) -> void:
+	draw_polygon(quad,PackedColorArray([Color.WHITE]),PackedVector2Array([Vector2(0,0),Vector2(1,0),Vector2(1,1),Vector2(0,1)]),VISUAL[key])
+
+func draw_shelter_ground() -> void:
+	tile_visual("wet",Rect2(40,175,780,445))
+	if story.s.ending != "flood":
+		tile_visual("dry",Rect2(330,340,110,70))
+		tile_visual("edge",Rect2(330,402,110,16))
+		if story.flag("awning_tied"):
+			tile_visual("dry",Rect2(590,365,135,75))
+			tile_visual("edge",Rect2(590,432,135,16))
+		draw_texture(VISUAL.light,Vector2(250,360)-Vector2(48,48))
+		if story.flag("yellow_lit"): draw_texture(VISUAL.light,Vector2(620,390)-Vector2(48,48))
+
+func draw_player_body() -> void:
+	draw_circle(player+Vector2(0,14),18,Color(0,0,0,0.2))
+	draw_rect(Rect2(player-Vector2(10,3),Vector2(20,24)),Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
+	draw_circle(player-Vector2(0,10),10,Color("ead1ac"))
+	draw_line(player,player+face*20,Color("f1dbad"),3)
+
+func draw_shelter_actors() -> void:
+	var wait := shelter_wait_scene()
+	var bodies: Array = [{"kind":"player","foot":player.y+21}]
+	if not wait.is_empty():
+		bodies.append({"kind":"chair","foot":wait.chair.y+14})
+		bodies.append({"kind":"zhou","foot":wait.zhou.y+20})
+	bodies.sort_custom(func(a,b): return a.foot < b.foot)
+	for body in bodies:
+		match body.kind:
+			"player": draw_player_body()
+			"chair":
+				if wait.wet and not wait.carried: draw_arc(wait.chair+Vector2(0,10),22,0,PI,12,Color("75a5bb"),2)
+				draw_texture(VISUAL.stool,wait.chair-Vector2(20,14))
+			"zhou":
+				draw_texture(VISUAL.get(wait.pose,VISUAL.standing),wait.zhou-Vector2(24,40))
+	if not wait.is_empty():
+		if wait.pose == "dragging":
+			draw_line(wait.zhou+Vector2(-16,5),wait.chair+Vector2(-14,0),Color("bba58c"),3)
+			draw_line(wait.zhou+Vector2(13,5),wait.chair+Vector2(14,0),Color("bba58c"),3)
+		if wait.carried:
+			draw_rect(chair_bounds(player+Vector2(0,22)),Color("d7c6a0"),false,2)
+			draw_line(player+Vector2(-9,7),wait.chair-Vector2(14,0),Color("ead1ac"),3)
+			draw_line(player+Vector2(9,7),wait.chair+Vector2(14,0),Color("ead1ac"),3)
+	# Same post texture is genuinely split, not drawn twice in full.
+	for x in [80,770]: draw_texture_rect_region(VISUAL.post,Rect2(x-8,330,16,126),Rect2(0,146,16,126))
+	var t := float(story.s.get("awning_pull",0.0))/90.0
+	visual_quad("hem",PackedVector2Array([Vector2(575,280-t*45),Vector2(735,270-t*45),Vector2(735,278-t*45),Vector2(575,288-t*45)]))
+	# Marks and labels stay above actors and narrow foreground.
+	for obj in scene_objects:
+		draw_arc(obj.pos,33,0,TAU,32,Color(0.7,0.78,0.76,0.45),1.5)
+		if obj.id == nearest: draw_arc(obj.pos,40,0,TAU,32,Color("f2d68b"),3)
+		draw_string(font,obj.pos+Vector2(-64,59),obj.title,HORIZONTAL_ALIGNMENT_LEFT,175,17,Color("ebe5d0"))
+
+func draw_waiting() -> void:
+	var wait := shelter_wait_scene()
+	if wait.is_empty(): return
+	if not wait.line.is_empty():
+		draw_rect(Rect2(275,470,480,37),Color("25363c"))
+		draw_string(font,Vector2(286,495),"周伯："+wait.line,HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf"))
+
+func draw_first_meet(scene: Dictionary) -> void:
+	if scene.is_empty(): return
+	if story.s.place == "steps":
+		draw_rect(Rect2(70,515,240,90),Color("77745c"),false,2)
+		draw_string(font,Vector2(177,538),"阶后干地",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("d4c8a9"))
+	for actor in scene.actors:
+		var pos: Vector2 = actor.pos
+		if actor.name == "沈渡":
+			# The PNG replaces the entire old body/head/hand pass; never overpaint its face.
+			draw_texture(SHENDU_REST if actor.resting else SHENDU_OFFER,pos-SHENDU_ANCHOR)
+		else:
+			var looking := (player-pos).normalized()
+			draw_rect(Rect2(pos+Vector2(-11,3),Vector2(22,27)),Color("7c8073"))
+			draw_circle(pos-Vector2(0,10),10,Color("bba58c"))
+			draw_line(pos-Vector2(0,10),pos-Vector2(0,10)+looking*8,Color("eee0bd"),3)
+			var hand := pos+Vector2(-20,23) if scene.quiet else pos+Vector2(-23,-5)
+			draw_line(pos+Vector2(-9,7),hand,Color("bba58c"),4)
+			draw_circle(hand,3,Color("ead1ac"))
+		draw_string(font,pos+Vector2(-20,49),actor.name,HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("e5d6b4"))
+	var plaque: Rect2 = scene.plaque
+	if plaque.has_area():
+		draw_rect(plaque,Color("b19a70"))
+		draw_rect(plaque.grow(-3),Color("6d5b43"),false,1)
+		draw_string(font,plaque.position+Vector2(7,19),"末班交回岸棚",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("342f29"))
+	if not scene.lines.is_empty():
+		var speech: Rect2 = scene.speech
+		draw_rect(speech,Color("25363c"))
+		for i in range(scene.lines.size()):
+			draw_string(font,speech.position+Vector2(12,26+i*30),scene.lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf"))
 
 func _setup_sound() -> void:
 	# Locally generated quiet, continuous river bed: no samples, network, peaks or scares.
@@ -136,6 +331,26 @@ func _setup_ui() -> void:
 	canvas.add_child(root_ui)
 	var theme := Theme.new()
 	theme.default_font_size = 18
+	theme.set_color("font_color","Label",Color("dccfaf"))
+	theme.set_color("default_color","RichTextLabel",Color("dccfaf"))
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color("172830")
+	panel_style.border_color = Color("647878")
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(8)
+	theme.set_stylebox("panel","PanelContainer",panel_style)
+	for state in ["normal","hover","pressed","focus"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("354c54") if state in ["hover","focus"] else Color("25363c")
+		style.border_color = Color("b7a07b") if state in ["hover","focus"] else Color("556d70")
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(5)
+		style.content_margin_left = 10
+		style.content_margin_right = 10
+		style.content_margin_top = 8
+		style.content_margin_bottom = 8
+		theme.set_stylebox(state,"Button",style)
+	theme.set_color("font_color","Button",Color("eee4c9"))
 	root_ui.theme = theme
 	var panel := PanelContainer.new()
 	panel.position = Vector2(865, 12)
@@ -148,6 +363,8 @@ func _setup_ui() -> void:
 	column.add_theme_constant_override("separation", 9)
 	margin.add_child(column)
 	hud = Label.new()
+	hud.add_theme_font_size_override("font_size",24)
+	hud.add_theme_color_override("font_color",Color("eee4c9"))
 	hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(hud)
 	summary = Label.new()
@@ -160,12 +377,23 @@ func _setup_ui() -> void:
 	var inner := VBoxContainer.new()
 	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(inner)
+	inner.add_theme_constant_override("separation",12)
+	var experience_heading := Label.new()
+	experience_heading.text = "刚才的经历"
+	experience_heading.add_theme_font_size_override("font_size",16)
+	experience_heading.add_theme_color_override("font_color",Color("94aaa8"))
+	inner.add_child(experience_heading)
 	message = RichTextLabel.new()
 	message.fit_content = true
 	message.custom_minimum_size = Vector2(342, 150)
 	message.bbcode_enabled = false
 	message.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	inner.add_child(message)
+	inner.add_child(HSeparator.new())
+	var action_heading := Label.new()
+	action_heading.text = "眼前可做"
+	action_heading.add_theme_font_size_override("font_size",20)
+	inner.add_child(action_heading)
 	action_box = VBoxContainer.new()
 	action_box.add_theme_constant_override("separation", 6)
 	inner.add_child(action_box)
@@ -384,6 +612,14 @@ func try_world_click(point: Vector2) -> bool:
 		do_action("tool_return")
 		return true
 	if story.s.place == "shelter":
+		var wait := shelter_wait_scene()
+		if not wait.is_empty() and story.s.ending.is_empty():
+			if wait.carried and point.distance_to(player+Vector2(0,22)) < 35:
+				do_action("chair_place"); return true
+			if point.distance_to(wait.zhou-Vector2(0,23)) < 14 and player.distance_to(wait.zhou) < 96:
+				nearest="zhou"; interact(); return true
+			if not wait.carried and chair_bounds(wait.chair).grow(4).has_point(point) and player.distance_to(wait.chair) <= 64:
+				do_action("chair_take"); return true
 		if player.distance_to(point) > 82: return false
 		if point.distance_to(Vector2(250, 360)) < 35 and story.flag("consent"):
 			if not story.flag("shade_off"): do_action("remove_shade")
@@ -440,6 +676,22 @@ func _process(delta: float) -> void:
 			var wave := sin(audio_time * 130.0) * 0.05 + sin(audio_time * 173.0) * 0.025 + rng.randf_range(-0.018, 0.018)
 			playback.push_frame(Vector2(wave, wave))
 	if not started or modal_open or paused or story.s.left: return
+	# World geometry rebuilds clear nearest; compare against the frame's actual
+	# interaction context, not that temporary empty value, before rebuilding UI.
+	var previous := nearest
+	var previous_title := object_title(nearest)
+	if story.s.place == "shelter":
+		var before_wait := shelter_wait_scene()
+		story.s.x = player.x
+		story.s.y = player.y
+		if not before_wait.is_empty() and before_wait.stage == "idle" and story.s.ending.is_empty(): story.act("wait_offer")
+		story.wait_step(delta,player,{"rope":pulling_awning,"rects":[Rect2(350,285,100,70)]})
+		var after_wait := shelter_wait_scene()
+		if not after_wait.is_empty():
+			# Updating geometry must not churn button identity on every NPC step.
+			last_place = ""
+			update_world()
+			if before_wait.is_empty() or before_wait.pose != after_wait.pose or before_wait.carried != after_wait.carried or before_wait.line != after_wait.line: refresh_ui()
 	if story.s.place == "steps" and story.s.phase == "night" and story.flag("boat_arrival_pending") and not story.flag("released"):
 		if boat_approach_offset <= 0: boat_approach_offset = 75.0
 		boat_approach_offset = maxf(0.0,boat_approach_offset-minf(delta,0.05)*65)
@@ -506,15 +758,23 @@ func _process(delta: float) -> void:
 	if movement != Vector2.ZERO:
 		face = movement.normalized()
 		move_player(face * minf(delta, 0.05) * 200.0)
-	var previous := nearest
+	# Only actual presence in this screen's dry ground ends the encounter.
+	# Board -> back is not itself a retreat, nor is any modal/menu action.
+	if story.s.place == "steps" and Rect2(70,515,240,90).has_point(player):
+		var meet: Dictionary = story.first_meet_view()
+		if meet.get("active",false) and meet.get("identified",false) and not meet.get("settled",false):
+			story.s.x = player.x
+			story.s.y = player.y
+			if story.act("meet_retreat"): refresh_ui()
 	nearest = ""
 	var distance := 96.0
 	for obj in scene_objects:
 		var d := player.distance_to(obj.pos)
-		if d < distance:
+		if obj.id == "wait_chair" and d > 64: continue
+		if d < distance or (obj.id == "wait_chair" and d <= 64):
 			distance = d
 			nearest = obj.id
-	if previous != nearest: refresh_ui()
+	if previous != nearest or previous_title != object_title(nearest): refresh_ui()
 	queue_redraw()
 
 func move_player(offset: Vector2) -> void:
@@ -552,6 +812,14 @@ func walkable(pos: Vector2) -> bool:
 	if not Rect2(40, 175, 780, 445).has_point(pos): return false
 	for r in solids:
 		if r.grow(13).has_point(pos): return false
+	var wait := shelter_wait_scene()
+	if not wait.is_empty():
+		for body in [zhou_bounds(wait.zhou),chair_bounds(wait.chair) if not wait.carried else Rect2()]:
+			if not body.has_area() or not body.grow(13).has_point(pos): continue
+			# Legacy entrances can overlap the old fixed seat. Allow walking out,
+			# never further in; do not teleport either participant to resolve it.
+			if body.grow(13).has_point(player) and pos.distance_to(body.get_center()) > player.distance_to(body.get_center()): continue
+			return false
 	return true
 
 func add_object(id: String, title: String, pos: Vector2, kind: String = "thing") -> void:
@@ -632,10 +900,12 @@ func update_world() -> void:
 			add_object("inscription", "黄灯底座", Vector2(620, 390))
 			if story.s.phase == "night" and (story.flag("closing_light") or story.flag("closing_release")):
 				add_object("zhou_absent", "周伯留下的空凳（他去了旧阶）", Vector2(455,430))
-			elif story.s.phase != "epilogue" or story.s.ending == "light": add_object("zhou", "周伯", Vector2(455, 430), "npc")
+			elif story.s.phase != "epilogue" or story.s.ending == "light": add_object("zhou", "周伯", zhou_position(), "npc")
 			else: add_object("morning", "渡口次日告示", Vector2(455, 430))
 			add_object("street_gate", "回街口", Vector2(95, 570), "gate")
 			add_object("steps_gate", "去旧石阶", Vector2(750, 570), "gate")
+			var wait := shelter_wait_scene()
+			if not wait.is_empty() and not wait.carried and story.s.ending.is_empty(): add_object("wait_chair","矮凳 · 近处E抬起",wait.chair)
 		"steps":
 			add_object("old_root", "斜柳老根", Vector2(165,445))
 			add_object("old_stairs", "三道矮阶", Vector2(330,470))
@@ -683,6 +953,9 @@ func refresh_ui() -> void:
 		summary.text += "\n" + ("周伯已敲钟；可再陪站，或由你确认迎接天明。" if story.flag("closing_rang") else "黄灯已亮；周伯在旧阶等你，一起把钟敲完。")
 	message.text = "最近经历（不是持续现场对白）\n" + story.notice
 	foot_hint.text = "WASD / 方向键移动　E 交互　J 记录　I 物品　Esc 暂停\n" + ("靠近「%s」· E 或点击右侧交互" % object_title(nearest) if not nearest.is_empty() else "走近有圆环的物件或人物，再交互。鼠标可按住下方方向键。")
+	var wait := shelter_wait_scene()
+	if not wait.is_empty() and story.s.ending.is_empty():
+		foot_hint.text += "\n" + ("托着矮凳 · E或点击脚前轮廓原地放下；可继续走动。" if wait.carried else "走近矮凳按E抬起；棚绳仍可照常握住后向下退拉。")
 	if pulling_cart and story.s.place == "lane": foot_hint.text = "正握住车把 · 左方向键逐步拉出 · E或右侧交互松手\n车停在哪就在哪挡路；松手后可自由走动。"
 	if story.s.place == "house" and story.s.phase != "epilogue": foot_hint.text += "\n鼠标：走近盆点击拿起，再走近湿痕点击放下（也可E交互）。"
 	if story.s.place == "shelter" and story.flag("consent") and story.s.phase != "epilogue" and not story.flag("closing_light") and not story.flag("closing_release"): foot_hint.text += "\n可走近后直接点击灯罩、铜钟或黄灯操作；E交互仍可用。"
@@ -690,11 +963,18 @@ func refresh_ui() -> void:
 		if story.s.place == "steps" and not story.item("老葛的工具袋"): foot_hint.text += "\n老葛说的布袋在湿阶低处；走近后点击，用竹竿挑回，不必涉水（E也可）。"
 		if story.s.place == "street" and story.item("老葛的工具袋"): foot_hint.text += "\n带回了工具袋，走近老葛点击交还，或按E交谈。"
 	if story.s.place == "street" and story.item("新灯芯") and story.s.phase != "epilogue": foot_hint.text += "\n灯芯可送给周伯，或走近账本点击确认留店；决定由阿禾自己解释。"
+	# Match interact() ownership: held props/rope take E before the nearest NPC.
+	if not wait.is_empty() and wait.carried:
+		foot_hint.text = "WASD / 方向键移动　J 记录　I 物品　Esc 暂停\n托着矮凳 · E把矮凳放在脚前，或点击脚前轮廓；可继续走动。"
+	elif pulling_awning and story.s.place == "shelter":
+		foot_hint.text = "正握住棚绳 · 向下退拉棚布\nE系住或松手；绳端未到木桩时可松手再续。"
 	if story.s.left:
 		button(action_box, "本活动首版到此 · 返回身份选择", func(): started = false; show_title())
 		button(action_box, "退出游戏", func(): get_tree().quit())
 		return
-	if not nearest.is_empty():
+	if not wait.is_empty() and wait.carried:
+		button(action_box,"[E] 把矮凳放在脚前",interact)
+	elif not nearest.is_empty():
 		button(action_box, "[E] 交互：" + object_title(nearest), interact)
 	if story.s.phase == "dusk" and story.s.place not in ["arrival", "lane"]:
 		button(action_box, "准备好了 · 进入入夜", func(): confirm("进入入夜？人物将开始赴约；必要线索和工具仍可补查。没有自动倒计时。", func(): do_action("night")))
@@ -771,7 +1051,7 @@ func continue_river(id: String) -> void:
 func continue_zhou(id: String) -> void:
 	# Keep the actual interlocutor nearby; never move or acquire evidence off-screen.
 	if not started or story.s.place != "shelter": return
-	if player.distance_to(Vector2(455,430)) >= 96:
+	if player.distance_to(zhou_position()) >= 96:
 		conversation_response = "隔得有些远，周伯没有听清。先结束谈话，走近一点再说。"
 		modal_open = false
 		nearest = "zhou"
@@ -823,13 +1103,19 @@ func do_action(id: String) -> void:
 	if id == "roof_admit" and acted:
 		roof_guest_position = Vector2(500,550)
 		roof_guest_walking = true
-	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_admit", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update", "ferry_tag_take", "ferry_tag_return", "ferry_tag_put_back", "evac_pack_take", "evac_pack_drop", "evac_pack_deliver"]: last_place = ""
+	if before_phase != story.s.phase or id in ["tool_retrieve", "tool_return", "remove_shade", "retrieve_tongue", "install_tongue", "swap", "light_yellow", "begin_release", "release_rope", "roof_commission", "roof_admit", "roof_inspect", "move_wet_stock", "stock_take", "stock_put_back", "drawer_open", "handover_update", "ferry_tag_take", "ferry_tag_return", "ferry_tag_put_back", "evac_pack_take", "evac_pack_drop", "evac_pack_deliver", "chair_take", "chair_place", "wait_offer"]: last_place = ""
 	if last_place != story.s.place:
 		player = Vector2(story.s.x, story.s.y)
 		update_world()
 	refresh_ui()
 
 func interact() -> void:
+	if not started or modal_open or paused: return
+	var wait := shelter_wait_scene()
+	if not wait.is_empty() and wait.carried:
+		story.wait_step(0.0,player,{"rope":pulling_awning,"rects":[Rect2(350,285,100,70)]})
+		do_action("chair_place")
+		return
 	if pulling_awning:
 		pulling_awning = false
 		story.s.x = player.x
@@ -860,6 +1146,9 @@ func interact() -> void:
 		travel(dest)
 		return
 	if target == "back": travel("steps"); return
+	if target == "wait_chair":
+		do_action("chair_take")
+		return
 	conversation_target = target if target in ["zhou", "mooring", "voices", "closing_zhou", "release_scene"] else ""
 	open_modal(object_title(target), conversation_response if not conversation_target.is_empty() and not conversation_response.is_empty() else ("周伯扶着灯等你开口。你可以谈眼前的装置，也可以先问他为什么守在这里；不用许诺自己做不到的事。" if target == "zhou" else "看看眼前的东西；你也可以先离开。"))
 	if story.s.phase == "epilogue":
@@ -906,7 +1195,7 @@ func interact() -> void:
 				else: button(modal_body,"看看木钩",func(): close_modal();story.note("木钩钉在旧告示旁，外侧有一圈磨亮的痕迹。" );refresh_ui())
 			"awning_rope":
 				if story.flag("awning_tied"): button(modal_body,"棚绳已系稳，下面留出一块干处",close_modal)
-				else: button(modal_body,"握住绳端，向下退拉棚布；E系住或松手",func(): close_modal(); pulling_awning=true; story.note("你握住棚绳。向下后退，绳端与棚布会跟着移动；拉到木桩旁按E系住，不够长则只是松手。没有倒计时。" );refresh_ui())
+				else: button(modal_body,"握住绳端，向下退拉棚布；E系住或松手",func(): close_modal(); story.s.x=player.x; story.s.y=player.y; pulling_awning=story.act("awning_grip"); refresh_ui())
 			"lane_cart":
 				if story.flag("lane_cart_moved"):
 					button(modal_body,"空车已靠墙停稳，缺口可通行",close_modal)
@@ -1047,7 +1336,7 @@ func interact() -> void:
 					else:
 						act_button("听父女谈来年怎样等、怎样过日子", "xiaoman_wait")
 						act_button("明确问她：愿不愿结束这一次渡程？", "xiaoman_ask")
-					act_button("询问沈渡是否愿意结束渡程", "shen")
+					act_button("询问沈渡是否愿意结束渡程" if story.has("covenant") else "问摆渡人：你在这里做什么？", "shen")
 					if not story.flag("closing_light"):
 						act_button("经本人同意归还旧物（不销毁）", "return")
 						if not story.flag("closing_release"): act_button("把两岸的答复带给沈渡，请他自己解缆", "begin_release")
@@ -1062,14 +1351,14 @@ func interact() -> void:
 				else: button(modal_body, "留在岸上", func(): close_modal(); story.note("夜船不公开卖票。阿禾不能凭身份登船；可以调查灯钟，在岸上恢复边界，或明确请许宁协助传话。"); refresh_ui())
 			"voices":
 				add_river_choices()
-				act_button("询问沈渡的摆渡约定与意愿", "shen")
+				act_button("询问沈渡的摆渡约定与意愿" if story.has("covenant") else "问摆渡人：你在这里做什么？", "shen")
 			"departure": button(modal_body, "尚未天亮，继续本段体验", close_modal)
 	button(modal_body, "先不做，回到探索", close_modal)
 
 func add_river_choices() -> void:
 	act_button("先站住，听河上有什么声音", "listen_river")
 	if story.flag("river_heard"):
-		act_button("问那张湿纸到底要带什么", "call_paper")
+		act_button("问那张湿纸到底要带什么" if story.has("invitation") else "追问：带什么？", "call_paper")
 		if story.s.identity == "he":
 			act_button("请许宁按她记得的方式回应，自己留在岸上", "answer_whistle")
 		elif not story.flag("xu_identified"):
@@ -1168,8 +1457,9 @@ func _draw() -> void:
 			draw_circle(Vector2(450, 340), 10, Color("5a777b"))
 			draw_line(Vector2(445, 187), Vector2(450, 325), Color(0.7, 0.8, 0.8, 0.45), 1)
 		"shelter":
+			draw_shelter_ground()
 			var tension := float(story.s.get("awning_pull",0.0))/90.0
-			draw_colored_polygon(PackedVector2Array([Vector2(575,195),Vector2(735,195),Vector2(735,270-tension*45),Vector2(575,280-tension*45)]),Color("526b70"))
+			visual_quad("awning",PackedVector2Array([Vector2(575,195),Vector2(735,195),Vector2(735,270-tension*45),Vector2(575,280-tension*45)]))
 			draw_line(Vector2(690,245-tension*40),Vector2(690,350+tension*90),Color("b8a279"),3)
 			draw_line(Vector2(700,420),Vector2(700,455),Color("8d7250"),7)
 			draw_string(font,Vector2(710,450),"系绳桩",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c4b294"))
@@ -1177,12 +1467,10 @@ func _draw() -> void:
 			elif not story.flag("awning_tied"):
 				for drop in range(3): draw_line(Vector2(610+drop*32,285-tension*40),Vector2(610+drop*32,305-tension*40),Color("75a5bb"),2)
 			draw_rect(Rect2(350, 285, 100, 70), Color("5f4e3e"))
-			draw_line(Vector2(76, 190), Vector2(770, 190), Color("ad9672"), 10)
-			for x in [80, 770]: draw_line(Vector2(x, 190), Vector2(x, 450), Color("6b5a46"), 12)
-			var lamp_color := Color("e9bd5d") if story.flag("shade_off") or story.flag("swapped") else Color("e5edf0")
-			draw_circle(Vector2(250, 360), 45, Color(lamp_color, 0.08))
-			draw_circle(Vector2(250, 360), 14, lamp_color)
-			draw_circle(Vector2(620, 390), 12, Color("f7d276") if story.flag("yellow_lit") else Color("77654a"))
+			draw_texture(VISUAL.beam,Vector2(72,180))
+			for x in [80,770]: draw_texture_rect_region(VISUAL.post,Rect2(x-8,184,16,146),Rect2(0,0,16,146))
+			draw_texture(VISUAL.warm if story.flag("shade_off") or story.flag("swapped") else VISUAL.white,Vector2(230,336))
+			draw_texture(VISUAL.yellow_on if story.flag("yellow_lit") else VISUAL.yellow_off,Vector2(600,366))
 			draw_arc(Vector2(550, 240), 22, PI, TAU, 24, Color("b49b6c"), 4)
 			if story.flag("tongue_home"): draw_line(Vector2(550, 223), Vector2(550, 253), Color("c4a26a"), 5)
 			if story.item("拆下的铜舌"): draw_line(player + Vector2(12, -8), player + Vector2(12, 12), Color("c4a26a"), 4)
@@ -1219,16 +1507,18 @@ func _draw() -> void:
 			for i in range(10): draw_line(Vector2(55 + i * 80, 180), Vector2(55 + i * 80, 610), Color("746957"), 2)
 			draw_rect(Rect2(260, 195, 240, 80), Color("353733"))
 			for i in range(6): draw_circle(Vector2(290 + i * 35, 220), 7, Color("9a8c71"))
+	if story.s.place == "shelter": draw_shelter_actors()
 	for obj in scene_objects:
+		if story.s.place == "shelter": continue # markers are drawn after the sorted actor pass
 		var pos: Vector2 = obj.pos
 		var color := Color("9ba89c")
 		if obj.kind == "gate":
 			color = Color("a9bdc0")
 			draw_rect(Rect2(pos - Vector2(22, 24), Vector2(44, 48)), Color("4e6268"), false, 3)
-		elif obj.kind == "npc":
+		elif obj.kind == "npc" and not (obj.id == "zhou" and not shelter_wait_scene().is_empty()):
 			draw_circle(pos - Vector2(0, 9), 11, Color("bba58c"))
 			draw_rect(Rect2(pos + Vector2(-12, 4), Vector2(24, 25)), Color("556d70"))
-		else:
+		elif obj.id not in ["zhou", "wait_chair"]:
 			draw_circle(pos, 7, Color("c1b18a"))
 		draw_arc(pos, 33, 0, TAU, 32, Color(color, 0.6), 1.5)
 		if obj.id == nearest: draw_arc(pos, 40, 0, TAU, 32, Color("f2d68b"), 3)
@@ -1243,14 +1533,11 @@ func _draw() -> void:
 			draw_string(font,tag_pos+Vector2(4,17),"河街十二号 · 陈家 · 被褥一包",HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("343c39"))
 	elif story.s.ending == "flood" and ((story.s.place == "street" and not story.flag("evac_pack_delivered")) or (story.s.place == "arrival" and story.flag("evac_pack_delivered"))): draw_rect(Rect2(Vector2(635,455) if story.s.place == "street" else Vector2(590,350),Vector2(34,26)),Color("929581"))
 	if story.item("旧渡牌"): draw_rect(Rect2(player+Vector2(12,-3),Vector2(14,22)),Color("b19a70"))
-	if story.s.place == "boat" and not story.flag("ferry_tag_taken"): draw_rect(Rect2(678,405,14,22),Color("b19a70"))
+	if story.s.place == "boat" and not story.flag("ferry_tag_taken") and not story.flag("ferry_tag_returned") and not story.item("旧渡牌") and first_meet_scene().is_empty(): draw_rect(Rect2(678,405,14,22),Color("b19a70"))
 	if story.s.place == "shelter":
 		draw_arc(Vector2(175,320),6,0,PI,10,Color("aa9573"),3)
 		if story.flag("ferry_tag_returned"): draw_rect(Rect2(168,322,14,22),Color("b19a70"))
-	draw_circle(player + Vector2(0, 14), 18, Color(0, 0, 0, 0.2))
-	draw_rect(Rect2(player - Vector2(10, 3), Vector2(20, 24)), Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
-	draw_circle(player - Vector2(0, 10), 10, Color("ead1ac"))
-	draw_line(player, player + face * 20, Color("f1dbad"), 3)
+	if story.s.place != "shelter": draw_player_body()
 	var wick_pos := player+Vector2(-18,7) if story.item("新灯芯") else (Vector2(420,250) if story.flag("wick_kept") and story.s.place == "street" else Vector2.ZERO)
 	if wick_pos != Vector2.ZERO:
 		draw_rect(Rect2(wick_pos-Vector2(12,6),Vector2(24,12)),Color("d7c7a3"))
@@ -1267,6 +1554,10 @@ func _draw() -> void:
 		draw_rect(Rect2(55,185,520,62),Color("25363c"))
 		var heard_lines := shore_heard_excerpt().split("\n")
 		for i in range(heard_lines.size()): draw_string(font,Vector2(65,209+i*24),heard_lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("dccfaf"))
+	if not modal_open: draw_waiting()
+	# Draw above the ordinary object markers, with matching provider geometry.
+	# Modal content occludes this presentation and never advances it.
+	if not modal_open: draw_first_meet(first_meet_scene())
 	if comparing_photo and story.s.place == "steps":
 		draw_rect(Rect2(50,510,210,110),Color("d4c9a7"))
 		draw_rect(Rect2(60,520,190,29),Color("72827f"))

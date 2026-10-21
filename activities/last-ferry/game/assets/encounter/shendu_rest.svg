@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="64" viewBox="0 0 48 64" shape-rendering="crispEdges">
+<title>Original Shendu rest pose; anchor 24,21</title>
+<polygon id="cluster-00" fill="#293b42" points="15,46 22,46 22,51 15,51"/>
+<polygon id="cluster-01" fill="#293b42" points="26,46 33,46 33,51 26,51"/>
+<polygon id="cluster-02" fill="#354c54" points="16,44 22,44 22,48 16,48"/>
+<polygon id="cluster-03" fill="#354c54" points="26,44 32,44 32,48 26,48"/>
+<polygon id="cluster-04" fill="#293b42" points="17,23 30,23 35,28 35,48 31,51 14,50 13,29"/>
+<polygon id="cluster-05" fill="#556d70" points="17,24 29,24 33,29 33,47 29,49 15,48 15,30"/>
+<polygon id="cluster-06" fill="#79908d" points="17,25 21,25 20,44 16,46 16,29"/>
+<polygon id="cluster-07" fill="#354c54" points="28,26 32,29 32,47 28,48 26,30"/>
+<polygon id="cluster-08" fill="#aa9677" points="17,39 31,39 31,41 17,41"/>
+<polygon id="cluster-09" fill="#354c54" points="24,28 26,28 26,39 24,39"/>
+<polygon id="cluster-10" fill="#293b42" points="31,26 36,29 37,39 34,44 30,42"/>
+<polygon id="cluster-11" fill="#556d70" points="32,28 34,30 35,38 33,41 31,40"/>
+<polygon id="cluster-12" fill="#bba58c" points="32,40 35,40 35,44 32,44"/>
+<polygon id="cluster-13" fill="#ead1ac" points="32,40 34,40 34,42 32,42"/>
+<polygon id="cluster-14" fill="#293b42" points="15,26 18,31 11,37 13,42 7,46 3,44 5,38 10,30"/>
+<polygon id="cluster-15" fill="#556d70" points="14,28 16,31 9,37 11,41 7,43 5,42 7,37"/>
+<polygon id="cluster-16" fill="#79908d" points="13,29 14,31 7,38 7,41 5,41 6,37"/>
+<polygon id="cluster-17" fill="#bba58c" points="4,41 7,42 8,45 6,48 3,47 2,44"/>
+<polygon id="cluster-18" fill="#ead1ac" points="3,42 5,42 5,46 3,46"/>
+<polygon id="cluster-19" fill="#927965" points="6,44 7,44 7,47 6,47"/>
+<polygon id="cluster-20" fill="#927965" points="21,20 27,20 27,26 21,26"/>
+<polygon id="cluster-21" fill="#293b42" points="18,4 28,4 33,9 33,16 29,22 21,23 17,19 14,14 16,10"/>
+<polygon id="cluster-22" fill="#bba58c" points="18,7 28,7 31,10 31,16 27,21 21,21 18,18 16,14"/>
+<polygon id="cluster-23" fill="#ead1ac" points="17,10 24,10 24,17 21,19 18,17 15,14"/>
+<polygon id="cluster-24" fill="#927965" points="26,15 30,15 30,19 26,19"/>
+<polygon id="cluster-25" fill="#293b42" points="17,12 19,12 19,13 17,13"/>
+<polygon id="cluster-26" fill="#293b42" points="17,2 28,1 33,5 33,9 13,10 11,8 15,6"/>
+<polygon id="cluster-27" fill="#3f535b" points="17,3 27,2 31,5 31,7 15,8"/>
+<polygon id="cluster-28" fill="#79908d" points="19,3 26,3 26,4 19,4"/>
+<polygon id="cluster-29" fill="#aa9677" points="16,7 31,7 31,8 16,8"/>
+<polygon id="cluster-30" fill="#354c54" points="12,8 28,8 26,10 13,10"/>
+</svg>

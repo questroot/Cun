@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="64" viewBox="0 0 160 64" shape-rendering="crispEdges">
+<polygon id="cluster-0" fill="#354c54" points="0,0 159,0 159,63 0,63"/>
+<polygon id="cluster-1" fill="#526b70" points="2,2 157,2 157,60 2,60"/>
+<polygon id="cluster-2" fill="#79908d" points="4,3 4,3 4,56 4,56"/>
+<polygon id="cluster-3" fill="#405961" points="6,3 6,3 6,58 6,58"/>
+<polygon id="cluster-4" fill="#79908d" points="42,3 42,3 42,56 42,56"/>
+<polygon id="cluster-5" fill="#405961" points="44,3 44,3 44,58 44,58"/>
+<polygon id="cluster-6" fill="#79908d" points="82,3 82,3 82,56 82,56"/>
+<polygon id="cluster-7" fill="#405961" points="84,3 84,3 84,58 84,58"/>
+<polygon id="cluster-8" fill="#79908d" points="122,3 122,3 122,56 122,56"/>
+<polygon id="cluster-9" fill="#405961" points="124,3 124,3 124,58 124,58"/>
+<polygon id="cluster-10" fill="#79908d" points="155,3 155,3 155,56 155,56"/>
+<polygon id="cluster-11" fill="#405961" points="157,3 157,3 157,58 157,58"/>
+<polygon id="cluster-12" fill="#91a29a" points="3,2 156,2 156,2 3,2"/>
+<polygon id="cluster-13" fill="#354c54" points="2,58 157,58 157,60 2,60"/>
+<polygon id="cluster-14" fill="#5f7879" points="20,20 27,20 27,21 20,21"/>
+<polygon id="cluster-15" fill="#5f7879" points="98,35 105,35 105,36 98,36"/>
+<polygon id="cluster-16" fill="#5f7879" points="142,15 149,15 149,16 142,16"/>
+</svg>
