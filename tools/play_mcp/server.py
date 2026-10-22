@@ -24,6 +24,7 @@ KEYS = ['up','down','left','right','enter','escape','esc','space','tab','w','a',
 PROJECTS = {
     'card-demo': ('card-demo', '灵伴回合冒险 MVP', 'scripts/ai_play_bridge.gd'),
     'last-ferry': ('activities/last-ferry/game', '末班渡船', 'ai_play_bridge.gd'),
+    'atmosphere-demo': ('shared/godot/atmosphere2d', '公共2D环境氛围演示', 'scripts/ai_play_bridge.gd'),
 }
 
 def schema(props=None, required=None):
