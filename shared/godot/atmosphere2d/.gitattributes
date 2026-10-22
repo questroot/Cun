@@ -1,0 +1,5 @@
+# Keep verified source bytes identical across Windows clones.
+*.gd text eol=lf
+*.tscn text eol=lf
+*.godot text eol=lf
+*.md text eol=lf

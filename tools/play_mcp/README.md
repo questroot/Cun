@@ -6,7 +6,7 @@ Python 标准库实现，默认使用 **标准 MCP stdio（逐行 UTF-8 JSON-RPC
 
 | 名称 | 参数 | 结果 |
 | --- | --- | --- |
-| `catalog` | `{}` | 白名单入口列表，本分支为 `card-demo` 与 `last-ferry` |
+| `catalog` | `{}` | 白名单入口列表：`card-demo`、`last-ferry`、`atmosphere-demo`（公共独立氛围演示） |
 | `launch` | `{"project":"card-demo","headless":false}` | 自有 PID、隔离运行目录、初始 observation |
 | `observe` | `{}` | 标题、当前场景名、可见 Label/RichTextLabel 文本、可见按钮（id/text/disabled/rect）、viewport |
 | `action` | `{"kind":"click","button_id":"…"}` | 实际鼠标输入后 observation；按钮必须仍可见且启用 |
@@ -46,7 +46,7 @@ AIPlayBridge="*res://scripts/ai_play_bridge.gd"
 
 桥协议是私有 loopback JSON Lines，**不是 MCP**：请求 `{"token":"…","method":"observe|action","params":{…}}`，响应 `{"ok":true,"result":{…}}` 或 `{"ok":false,"error":"…"}`。一次 TCP 连接一条请求，64KiB 上限，最多4连接，空闲连接8秒关闭，客户端6秒超时。bridge 未配置不监听。游戏卡顿超时是失败，不被认作动作成功。
 
-launch 只允许仓库固定 card-demo 和固定 `.local/godot/Godot_v4.7.2-stable_win64_console.exe`；复制到本目录 `.runtime/<uuid>/project` 后导入再启动，不运行源工程，不读取原玩家存档。副本 override 指定唯一 custom user dir `CunPlay/<uuid>`，环境同时设置独立 APPDATA/LOCALAPPDATA/XDG/HOME/USERPROFILE；但 **Windows Godot 的 user:// 使用系统 known-folder API，实测仍位于 `%APPDATA%/CunPlay/<uuid>`，不会被环境变量重定向到工具目录**，不读取原玩家存档。绝对 custom dir 也被Godot净化为相对路径，不能借此重定向。日志和副本留在 `.runtime`（gitignore）；运行时的独立 user:// 存档目录是明确的目录外副作用，不属于仓库交付文件。不自动删除证据。服务器退出/stdio EOF 会清理自有游戏，stop 不枚举/终止其他用户进程。该工具不是 OS 沙箱：被白名单游戏自身具有当前用户原有权限，因此只应运行仓库受信任代码，不是执行不可信游戏的安全容器。
+launch 只允许PROJECTS表固定的card-demo、last-ferry、atmosphere-demo三个仓库工程及固定 `.local/godot/Godot_v4.7.2-stable_win64_console.exe`；复制到本目录 `.runtime/<uuid>/project` 后导入再启动，不运行源工程，不读取原玩家存档。副本 override 指定唯一 custom user dir `CunPlay/<uuid>`，环境同时设置独立 APPDATA/LOCALAPPDATA/XDG/HOME/USERPROFILE；但 **Windows Godot 的 user:// 使用系统 known-folder API，实测仍位于 `%APPDATA%/CunPlay/<uuid>`，不会被环境变量重定向到工具目录**，不读取原玩家存档。绝对 custom dir 也被Godot净化为相对路径，不能借此重定向。日志和副本留在 `.runtime`（gitignore）；运行时的独立 user:// 存档目录是明确的目录外副作用，不属于仓库交付文件。不自动删除证据。服务器退出/stdio EOF 会清理自有游戏，stop 不枚举/终止其他用户进程。该工具不是 OS 沙箱：被白名单游戏自身具有当前用户原有权限，因此只应运行仓库受信任代码，不是执行不可信游戏的安全容器。
 
 默认 launch 创建普通游戏窗口，可用 `headless:true` 做非渲染回归。不使用桌面捕获，未实现截图工具，不产生捕获边框闪烁。headless 的真实引擎执行并非图像/体验验收。
 
@@ -64,6 +64,12 @@ python tools/play_mcp/client.py launch '{"project":"card-demo","headless":true}'
 python tools/play_mcp/client.py observe
 python tools/play_mcp/client.py stop
 ```
+
+## 公共氛围独立玩家入口
+
+使用同一stdio MCP服务：`catalog {}` → `launch {"project":"atmosphere-demo","headless":false}` → `observe {}` → `action {"kind":"key","key":"d","duration_ms":150}` 或当前可见button_id点击 → `stop {}`。入口固定映射shared/godot/atmosphere2d，资源场景demo/main.tscn，桥scripts/ai_play_bridge.gd与公共bridge.gd逐字节相同；同步时只复制公共源，不添加内部方法。provider仅描述当下绘制的角色/墙/门/箱/天气标签；无任意path、状态写入或GM。原card-demo/last-ferry映射不变。
+
+2026-10-22 的开发者有限 smoke 完成一次普通 render 启动、短移动、晴日按钮及 stop，也确认额外路径/方法参数被拒绝。Godot4.7.2/OpenGL3.3 实启；Windows stop 后 exit1 来自主动 terminate，不是自然退出或崩溃。首次系统 Python 别名调用失败、未启动引擎，后使用已有 Python 成功，原失败保留。原始回执、日志及开发检查脚本保留在本机证据目录，不是公共工具的运行依赖，不以不会随仓库分发的日志链接作为使用说明。独立玩家后来完成室内外搬箱，但发现放箱后自锁，修复版正在独立复验；详见 [演示交付边界](../../shared/godot/atmosphere2d/manifest.md)。这些记录均不代表像素视觉验收。
 
 ## 验证
 
