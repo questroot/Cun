@@ -348,7 +348,9 @@ func draw_presentation_feedback() -> void:
 func draw_player_body() -> void:
 	if story.s.place == "shelter":
 		var direction: String = player_motion_view.get("direction","S")
-		if player_carrying() or not player_motion_view.get("segment","").is_empty():
+		# No authored pickup/putdown frames: never hold an empty carry pose.
+		# Authority changes atomically; the artwork follows the same carry state.
+		if player_carrying():
 			cohesive_kit.keypose(self,"protagonist_carry_"+("E" if direction == "W" else direction),player+Vector2(0,24),false,direction == "W")
 		else: cohesive_kit.actor(self,"protagonist_"+direction,player+Vector2(0,24))
 		return # Genuine keyposes, not generated animation frames.
@@ -368,16 +370,24 @@ func draw_player_body() -> void:
 	else: record_draw("draw_line",[player,player+face*20,Color("f1dbad"),3])
 
 func draw_shelter_actors() -> void:
+	world_renderer.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	var wait := shelter_wait_scene()
+	var direction: String = player_motion_view.get("direction","S")
+	var carried: bool = not wait.is_empty() and wait.carried
 	var bodies: Array = [{"kind":"table","foot":355.0},{"kind":"player","foot":player.y+24}]
 	if not wait.is_empty():
-		bodies.append({"kind":"chair","foot":wait.chair.y+8})
+		if not carried: bodies.append({"kind":"chair","foot":wait.chair.y+11})
 		bodies.append({"kind":"zhou","foot":wait.zhou.y+20})
 	bodies.sort_custom(func(a,b): return a.foot < b.foot)
 	for body in bodies:
 		match body.kind:
 			"table": cohesive_kit.prop(self,"table",Vector2(400,355),100)
-			"player": draw_player_body()
+			"player":
+				if carried and direction == "N": cohesive_kit.carried_stool(self,player,direction)
+				draw_player_body()
+				if carried and direction != "N":
+					cohesive_kit.carried_stool(self,player,direction)
+					# Do not paste disconnected palm rectangles onto the stool surface.
 			"chair":
 				if wait.wet and not wait.carried: record_draw("draw_arc",[wait.chair+Vector2(0,10),22,0,PI,12,Color("75a5bb"),2])
 				cohesive_kit.stool(self,wait.chair)
@@ -387,7 +397,12 @@ func draw_shelter_actors() -> void:
 					continue
 				if wait.pose == "seated":
 					var clip: String = zhou_motion_view.get("clip","")
-					cohesive_kit.keypose(self,"zhou_half_squat_E" if clip == "sit_down" and float(zhou_motion_view.get("phase",1.0))<0.5 else "zhou_seated_E",cohesive_kit.stool_seat(wait.chair),true)
+					var phase := clampf(float(zhou_motion_view.get("phase",1.0))*2.0,0.0,1.0)
+					if clip == "sit_down" and phase < 1.0:
+						var pose: Dictionary = cohesive_kit.layers.zhou_half_squat_E
+						var from: Vector2 = wait.zhou+Vector2(0,20)+(Vector2(pose.seat_anchor[0],pose.seat_anchor[1])-Vector2(pose.foot_anchor[0],pose.foot_anchor[1]))*float(pose.scale)
+						cohesive_kit.keypose(self,"zhou_half_squat_E",from.lerp(cohesive_kit.stool_seat(wait.chair),smoothstep(0.0,1.0,phase)),true)
+					else: cohesive_kit.keypose(self,"zhou_seated_E",cohesive_kit.stool_seat(wait.chair),true)
 				elif wait.pose == "dragging": cohesive_kit.keypose(self,"zhou_drag_E",wait.zhou+Vector2(0,20))
 				else: cohesive_kit.actor(self,"zhou_"+zhou_motion_view.get("direction","S"),wait.zhou+Vector2(0,20))
 	if not wait.is_empty():
@@ -1658,6 +1673,7 @@ func _draw() -> void:
 	interface_renderer.submit(interface_commands)
 
 func build_presentation_commands() -> void:
+	world_renderer.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if started and story.s.place == "shelter" else CanvasItem.TEXTURE_FILTER_NEAREST
 	var night: bool = started and story.s.phase == "night"
 	var sky := Color("111f2b") if night else Color("516069")
 	record_draw("draw_rect",[Rect2(0, 0, 855, 800), sky])
