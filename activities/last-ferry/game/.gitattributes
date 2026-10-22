@@ -1,0 +1,6 @@
+# Preserve verified vendor/source hashes across Windows clones.
+*.gd text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.png binary

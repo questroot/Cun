@@ -1,0 +1,1246 @@
+{
+  "schema": "cohesive-neutral-kit-v1",
+  "status": "PARTIALLY_INTEGRATED_VISUAL_REVIEW_REQUIRED",
+  "integrated": true,
+  "integration_note": "Runtime kit loads approved layers plus stool/neutral white lamp with explicit anchor/tint adaptation. NOT_READY beam/post remain excluded. This records actual partial integration, not blanket asset approval or pixel/aesthetic acceptance. Sitting/carrying keyposes come from the separate cohesive_actions_v1 kit; identity and camera mismatches remain.",
+  "generation_calls": 3,
+  "receipts": [
+    {
+      "id": "background",
+      "imageRequestId": "image-e0aa28f0-edbf-433f-88b1-350d2959e3d4",
+      "sha256": "9ff4b7de31b1e3010111895c38d362a457a58abf4bcbef26fd1e9282937b80f5",
+      "size": [
+        1448,
+        1086
+      ],
+      "bytes": 2263667,
+      "provider": "gpt",
+      "model": "gpt-image-2.5",
+      "path": "background_source.png",
+      "attachmentId": "sha256:9ff4b7de31b1e3010111895c38d362a457a58abf4bcbef26fd1e9282937b80f5"
+    },
+    {
+      "id": "props",
+      "imageRequestId": "image-2f200457-ff68-4398-9060-431b56cec6cd",
+      "sha256": "e0cd48623258611d526f932029519fbbbb66c004ea713af201aa7ebfddc0544a",
+      "size": [
+        1536,
+        1024
+      ],
+      "bytes": 1555362,
+      "provider": "gpt",
+      "model": "gpt-image-2.5",
+      "path": "props_source.png",
+      "attachmentId": "sha256:e0cd48623258611d526f932029519fbbbb66c004ea713af201aa7ebfddc0544a"
+    },
+    {
+      "id": "actors",
+      "imageRequestId": "image-9504e817-1a00-493f-9bb0-ec0eb20f8a73",
+      "sha256": "d8888dfba3bee00ad8a31d2c1f12cdfe5216a804be5ce3fc95b4a4a5a11e9fff",
+      "size": [
+        1536,
+        1024
+      ],
+      "bytes": 1807655,
+      "provider": "gpt",
+      "model": "gpt-image-2.5",
+      "path": "actors_source.png",
+      "attachmentId": "sha256:d8888dfba3bee00ad8a31d2c1f12cdfe5216a804be5ce3fc95b4a4a5a11e9fff"
+    }
+  ],
+  "background": {
+    "path": "background_source.png",
+    "size": [
+      1448,
+      1086
+    ],
+    "display_rect": [
+      0,
+      0,
+      855,
+      640
+    ],
+    "scale_xy": [
+      0.5904696132596685,
+      0.5893186003683242
+    ],
+    "walk_rect": [
+      40,
+      175,
+      780,
+      445
+    ],
+    "status": "READY_CANDIDATE_NOT_INTEGRATED",
+    "occlusion": "none; static margin structures not runtime collision",
+    "defects": [
+      "Fixed side timber strips and top-center steps baked into static margin; not runtime structures. Steps lie above walk y175.",
+      "Slightly anisotropic mapping from4:3 source to855x640; no optical projection calibration.",
+      "Neutral base improved but painterly stone mottling remains; no claim of physically pure albedo."
+    ]
+  },
+  "postprocess": {
+    "script": "build_kit.py",
+    "alpha_cutoff": 200,
+    "operations": [
+      "byte-identical original copy with SHA256 assertion",
+      "manual independent-object crop windows",
+      "remove alpha<200; preserve all remaining RGB/native alpha",
+      "tight alpha crop; no resampling in delivered cutouts",
+      "single shared actor display scale"
+    ],
+    "note": "Threshold cleanup can lose soft edges; every cutout needs read_image QC. No chromakey, no geometric drawing."
+  },
+  "layers": [
+    {
+      "id": "post",
+      "path": "post.png",
+      "source": "props_source.png",
+      "source_window": [
+        140,
+        15,
+        230,
+        355
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        21,
+        13,
+        75,
+        331
+      ],
+      "size": [
+        54,
+        318
+      ],
+      "sha256": "e4840d39a75530030fffab8f31740d526a7fc30903bab3cf60878dce05ef9f28",
+      "removed_alpha_pixels": 3271,
+      "status": "NOT_READY_PROPORTION_MISMATCH",
+      "target_size": [
+        16,
+        260
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": false,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Generated aspect ratio does not match16x260 post /694x20 beam; stretching to target would distort brush/outline. Do not silently fit."
+      ],
+      "anchor": [
+        27.0,
+        318
+      ],
+      "suggested_uniform_scale": 0.2962962962962963,
+      "suggested_display_size": [
+        16,
+        94.2222
+      ]
+    },
+    {
+      "id": "beam",
+      "path": "beam.png",
+      "source": "props_source.png",
+      "source_window": [
+        375,
+        160,
+        770,
+        220
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        8,
+        12,
+        386,
+        47
+      ],
+      "size": [
+        378,
+        35
+      ],
+      "sha256": "f30ea02284043bd9fbbf31aea5d1b1285cb21fb653f76d81bab167efb0145462",
+      "removed_alpha_pixels": 3705,
+      "status": "NOT_READY_PROPORTION_MISMATCH",
+      "target_size": [
+        694,
+        20
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": false,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Generated aspect ratio does not match16x260 post /694x20 beam; stretching to target would distort brush/outline. Do not silently fit."
+      ],
+      "anchor": [
+        189.0,
+        35
+      ],
+      "suggested_uniform_scale": 1.835978835978836,
+      "suggested_display_size": [
+        694,
+        64.2593
+      ]
+    },
+    {
+      "id": "table",
+      "path": "table.png",
+      "source": "props_source.png",
+      "source_window": [
+        805,
+        85,
+        1120,
+        305
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        11,
+        15,
+        303,
+        206
+      ],
+      "size": [
+        292,
+        191
+      ],
+      "sha256": "644d171060b13b762d39131063ef99fc85ea19455473eb44c57cc57561c7a8f3",
+      "removed_alpha_pixels": 6183,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        100,
+        70
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static single view; exact final camera/footprint and sockets need placement verification.",
+        "At100px width visible height65.41px; collision remains100x70, not inferred from alpha."
+      ],
+      "anchor": [
+        146.0,
+        191
+      ],
+      "suggested_uniform_scale": 0.3424657534246575,
+      "suggested_display_size": [
+        100,
+        65.411
+      ],
+      "world_anchor": [
+        400,
+        355
+      ],
+      "collision_rect": [
+        350,
+        285,
+        100,
+        70
+      ],
+      "ground_contact_y": 355
+    },
+    {
+      "id": "stool",
+      "path": "stool.png",
+      "source": "props_source.png",
+      "source_window": [
+        1270,
+        140,
+        1410,
+        275
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        10,
+        13,
+        132,
+        121
+      ],
+      "size": [
+        122,
+        108
+      ],
+      "sha256": "409feae42db3fae53b659a16ff3ed95a86b8e0953dccb5cef13448063dd3bdae",
+      "removed_alpha_pixels": 3090,
+      "status": "CONDITIONAL_SEAT_SOCKET_REVIEW",
+      "target_size": [
+        40,
+        28
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": false,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static single view; exact final camera/footprint and sockets need placement verification.",
+        "At40px width visible height35.41px rather than28; seat/grips estimated from art require real carry/sit verification."
+      ],
+      "anchor": [
+        61.0,
+        45.36
+      ],
+      "suggested_uniform_scale": 0.32786885245901637,
+      "suggested_display_size": [
+        40,
+        35.4098
+      ],
+      "seat_anchor": [
+        61.0,
+        45.36
+      ],
+      "grip_anchors": [
+        [
+          14.639999999999999,
+          45.36
+        ],
+        [
+          107.36,
+          45.36
+        ]
+      ],
+      "foot_contacts": [
+        [
+          14.639999999999999,
+          102.6
+        ],
+        [
+          103.7,
+          102.6
+        ]
+      ],
+      "collision_size": [
+        36,
+        20
+      ]
+    },
+    {
+      "id": "awning",
+      "path": "awning.png",
+      "source": "props_source.png",
+      "source_window": [
+        10,
+        430,
+        390,
+        620
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        9,
+        14,
+        374,
+        174
+      ],
+      "size": [
+        365,
+        160
+      ],
+      "sha256": "ca51cec70eb3e830203fe1303f6a06c8f65d174ab7ea360680929a1ae7e1daef",
+      "removed_alpha_pixels": 7375,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        160,
+        85
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static single view; exact final camera/footprint and sockets need placement verification."
+      ],
+      "anchor": [
+        0,
+        0
+      ],
+      "suggested_uniform_scale": 0.4383561643835616,
+      "suggested_display_size": [
+        160,
+        70.137
+      ],
+      "deform_to": "runtime authoritative four-corner quadrilateral; source includes edge rods; not a rigid rect collider"
+    },
+    {
+      "id": "white_lamp",
+      "path": "white_lamp.png",
+      "source": "props_source.png",
+      "source_window": [
+        515,
+        365,
+        690,
+        640
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        15,
+        15,
+        165,
+        260
+      ],
+      "size": [
+        150,
+        245
+      ],
+      "sha256": "7f1142092bb7bd900655f1662291d09e76413c5d7f23aabf330b8fd3eeaf523e",
+      "removed_alpha_pixels": 3182,
+      "status": "CONDITIONAL_STATIC_ONLY",
+      "target_size": [
+        40,
+        48
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": false,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Pale/yellow glass has painted value highlight; not an independent emissive mask. No glow pool baked but cannot prove truly unlit.",
+        "White/warm are different hood colors, not verified full story swapped/shade state set."
+      ],
+      "anchor": [
+        75.0,
+        245
+      ],
+      "suggested_uniform_scale": 0.26666666666666666,
+      "suggested_display_size": [
+        40,
+        65.3333
+      ]
+    },
+    {
+      "id": "warm_lamp",
+      "path": "warm_lamp.png",
+      "source": "props_source.png",
+      "source_window": [
+        900,
+        365,
+        1075,
+        640
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        12,
+        15,
+        162,
+        261
+      ],
+      "size": [
+        150,
+        246
+      ],
+      "sha256": "c12dd9f79723a5ceebc9234bdb934715edf8b5fb48357d3e11eb29e1f9853001",
+      "removed_alpha_pixels": 3648,
+      "status": "CONDITIONAL_STATIC_ONLY",
+      "target_size": [
+        40,
+        48
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": false,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Pale/yellow glass has painted value highlight; not an independent emissive mask. No glow pool baked but cannot prove truly unlit.",
+        "White/warm are different hood colors, not verified full story swapped/shade state set."
+      ],
+      "anchor": [
+        75.0,
+        246
+      ],
+      "suggested_uniform_scale": 0.26666666666666666,
+      "suggested_display_size": [
+        40,
+        65.6
+      ]
+    },
+    {
+      "id": "yellow_lamp",
+      "path": "yellow_lamp.png",
+      "source": "props_source.png",
+      "source_window": [
+        1305,
+        405,
+        1430,
+        615
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        16,
+        12,
+        109,
+        195
+      ],
+      "size": [
+        93,
+        183
+      ],
+      "sha256": "99760e212cb6ba6c88c15d27ccbfe5950aa88166c361fb52f3893fead048a86b",
+      "removed_alpha_pixels": 3350,
+      "status": "CONDITIONAL_STATIC_ONLY",
+      "target_size": [
+        40,
+        48
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": false,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Pale/yellow glass has painted value highlight; not an independent emissive mask. No glow pool baked but cannot prove truly unlit.",
+        "White/warm are different hood colors, not verified full story swapped/shade state set."
+      ],
+      "anchor": [
+        46.5,
+        183
+      ],
+      "suggested_uniform_scale": 0.43010752688172044,
+      "suggested_display_size": [
+        40,
+        78.7097
+      ]
+    },
+    {
+      "id": "bell",
+      "path": "bell.png",
+      "source": "props_source.png",
+      "source_window": [
+        120,
+        715,
+        320,
+        960
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        10,
+        10,
+        190,
+        234
+      ],
+      "size": [
+        180,
+        224
+      ],
+      "sha256": "db73e5e73fced055955e44bb98897ffba3d4012512e6b78d1dae29cb35c9b1ce",
+      "removed_alpha_pixels": 3091,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        44,
+        38
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static single view; exact final camera/footprint and sockets need placement verification."
+      ],
+      "anchor": [
+        90.0,
+        224
+      ],
+      "suggested_uniform_scale": 0.24444444444444444,
+      "suggested_display_size": [
+        44,
+        54.7556
+      ]
+    },
+    {
+      "id": "rope",
+      "path": "rope.png",
+      "source": "props_source.png",
+      "source_window": [
+        575,
+        675,
+        625,
+        1000
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        8,
+        10,
+        39,
+        317
+      ],
+      "size": [
+        31,
+        307
+      ],
+      "sha256": "d3ee7ef3fa4a4018aeb893df4dabcedc720dc533ed03f2373974d9c618cbbf33",
+      "removed_alpha_pixels": 4734,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        4,
+        195
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static single view; exact final camera/footprint and sockets need placement verification."
+      ],
+      "anchor": [
+        15.5,
+        307
+      ],
+      "suggested_uniform_scale": 0.12903225806451613,
+      "suggested_display_size": [
+        4,
+        39.6129
+      ]
+    },
+    {
+      "id": "shade",
+      "path": "shade.png",
+      "source": "props_source.png",
+      "source_window": [
+        875,
+        745,
+        1065,
+        985
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        16,
+        10,
+        177,
+        225
+      ],
+      "size": [
+        161,
+        215
+      ],
+      "sha256": "bf6da8d82e08eb321a5ccc6a79f2a4880eee06b75d4d07651e9e5bcc8c7532f6",
+      "removed_alpha_pixels": 3430,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        28,
+        36
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static single view; exact final camera/footprint and sockets need placement verification."
+      ],
+      "anchor": [
+        80.5,
+        215
+      ],
+      "suggested_uniform_scale": 0.17391304347826086,
+      "suggested_display_size": [
+        28,
+        37.3913
+      ]
+    },
+    {
+      "id": "hook",
+      "path": "hook.png",
+      "source": "props_source.png",
+      "source_window": [
+        1300,
+        730,
+        1425,
+        950
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        14,
+        11,
+        110,
+        205
+      ],
+      "size": [
+        96,
+        194
+      ],
+      "sha256": "7681d6b5bdae705cfa01d3c22c2f1b638d64295e960c18a3560b4eda0b748b02",
+      "removed_alpha_pixels": 2498,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        16,
+        30
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static single view; exact final camera/footprint and sockets need placement verification."
+      ],
+      "anchor": [
+        48.0,
+        194
+      ],
+      "suggested_uniform_scale": 0.16666666666666666,
+      "suggested_display_size": [
+        16,
+        32.3333
+      ]
+    },
+    {
+      "id": "protagonist_S",
+      "path": "protagonist_S.png",
+      "source": "actors_source.png",
+      "source_window": [
+        0,
+        0,
+        384,
+        512
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        124,
+        19,
+        326,
+        492
+      ],
+      "size": [
+        202,
+        473
+      ],
+      "sha256": "f2cf83e3553582f58a50324741b675935ac1d8630ce28ecdc3e62979b8491521",
+      "removed_alpha_pixels": 7973,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "S",
+      "actor": "protagonist",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        101.0,
+        473
+      ],
+      "world_foot_offset": [
+        0,
+        24
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        32.4567,
+        76.0
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        101.0,
+        473
+      ]
+    },
+    {
+      "id": "protagonist_E",
+      "path": "protagonist_E.png",
+      "source": "actors_source.png",
+      "source_window": [
+        384,
+        0,
+        768,
+        512
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        156,
+        21,
+        267,
+        490
+      ],
+      "size": [
+        111,
+        469
+      ],
+      "sha256": "ca0ec1c95b0915c0e052d63fbe53cc132d8341bc23423edc0c1192305812671f",
+      "removed_alpha_pixels": 7052,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "E",
+      "actor": "protagonist",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        55.5,
+        469
+      ],
+      "world_foot_offset": [
+        0,
+        24
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        17.8351,
+        75.3573
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        55.5,
+        469
+      ]
+    },
+    {
+      "id": "protagonist_N",
+      "path": "protagonist_N.png",
+      "source": "actors_source.png",
+      "source_window": [
+        768,
+        0,
+        1152,
+        512
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        73,
+        19,
+        273,
+        488
+      ],
+      "size": [
+        200,
+        469
+      ],
+      "sha256": "d907af3082118896a635aafb35b13ccb5b4e7347c1fd665b4aa48b3000b06e72",
+      "removed_alpha_pixels": 8217,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "N",
+      "actor": "protagonist",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        100.0,
+        469
+      ],
+      "world_foot_offset": [
+        0,
+        24
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        32.1353,
+        75.3573
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        100.0,
+        469
+      ]
+    },
+    {
+      "id": "protagonist_W",
+      "path": "protagonist_W.png",
+      "source": "actors_source.png",
+      "source_window": [
+        1152,
+        0,
+        1536,
+        512
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        94,
+        22,
+        204,
+        493
+      ],
+      "size": [
+        110,
+        471
+      ],
+      "sha256": "a1436be8b3937a8f3fcc4dd9720c669ea32c8be02bb0424780fc9c962867cf0f",
+      "removed_alpha_pixels": 5902,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "W",
+      "actor": "protagonist",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        55.0,
+        471
+      ],
+      "world_foot_offset": [
+        0,
+        24
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        17.6744,
+        75.6786
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        55.0,
+        471
+      ]
+    },
+    {
+      "id": "zhou_S",
+      "path": "zhou_S.png",
+      "source": "actors_source.png",
+      "source_window": [
+        0,
+        512,
+        384,
+        1024
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        129,
+        20,
+        330,
+        466
+      ],
+      "size": [
+        201,
+        446
+      ],
+      "sha256": "5ff1bf52499080e843dead0b39c9e65b891a6b7e7d68a6df05c2ea7b515ab4e0",
+      "removed_alpha_pixels": 7851,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "S",
+      "actor": "zhou",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        100.5,
+        446
+      ],
+      "world_foot_offset": [
+        0,
+        20
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        32.296,
+        71.6617
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        100.5,
+        446
+      ]
+    },
+    {
+      "id": "zhou_E",
+      "path": "zhou_E.png",
+      "source": "actors_source.png",
+      "source_window": [
+        384,
+        512,
+        768,
+        1024
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        141,
+        18,
+        276,
+        469
+      ],
+      "size": [
+        135,
+        451
+      ],
+      "sha256": "987dd512442a42f45839daca52a5139de3254eefaa352416ab7de5034a26926f",
+      "removed_alpha_pixels": 6180,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "E",
+      "actor": "zhou",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        67.5,
+        451
+      ],
+      "world_foot_offset": [
+        0,
+        20
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        21.6913,
+        72.4651
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        67.5,
+        451
+      ]
+    },
+    {
+      "id": "zhou_N",
+      "path": "zhou_N.png",
+      "source": "actors_source.png",
+      "source_window": [
+        768,
+        512,
+        1152,
+        1024
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        68,
+        20,
+        272,
+        465
+      ],
+      "size": [
+        204,
+        445
+      ],
+      "sha256": "039aea6f570527567cc7135cdbc847190a6ff55101b1e4582e0a67dc8ed33cd9",
+      "removed_alpha_pixels": 7067,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "N",
+      "actor": "zhou",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        102.0,
+        445
+      ],
+      "world_foot_offset": [
+        0,
+        20
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        32.778,
+        71.5011
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        102.0,
+        445
+      ]
+    },
+    {
+      "id": "zhou_W",
+      "path": "zhou_W.png",
+      "source": "actors_source.png",
+      "source_window": [
+        1152,
+        512,
+        1536,
+        1024
+      ],
+      "alpha_threshold": 200,
+      "crop_in_window": [
+        86,
+        23,
+        233,
+        465
+      ],
+      "size": [
+        147,
+        442
+      ],
+      "sha256": "d804a5eef22f69212d942385e9967254778eca1cb4e07e0eafd2648460eae8d2",
+      "removed_alpha_pixels": 6378,
+      "status": "READY_STATIC_CANDIDATE",
+      "target_size": [
+        null,
+        76
+      ],
+      "occlusion": "alpha silhouette only; shadows supplied by runtime",
+      "direction": "W",
+      "actor": "zhou",
+      "clip": "stand_static",
+      "frames": 1,
+      "loop": false,
+      "foot_anchor": [
+        73.5,
+        442
+      ],
+      "world_foot_offset": [
+        0,
+        20
+      ],
+      "uniform_scale": 0.160676532769556,
+      "display_size": [
+        23.6195,
+        71.019
+      ],
+      "ready": true,
+      "ready_for": "PM/frontend static placement review only; not full game integration",
+      "defects": [
+        "Static pose only; no walk/carry/drag/sit frames.",
+        "Apparent overhead angle shallower than70deg and viewpoint differs by facing; review against background.",
+        "Shoulder silhouette near32 logical px; coat/arms can extend beyond34, do not enlarge collision."
+      ],
+      "anchor": [
+        73.5,
+        442
+      ]
+    }
+  ],
+  "animation": "Only 8 generated static standing directions. No walking/carry/drag/sit frames. Motion module may move static art but cannot claim full animation.",
+  "reference_conditioning": false,
+  "sampling_recommendation": "linear filtering at common logical scale; no nearest pseudo-pixelation",
+  "contact_shadows": "NOT BAKED; runtime separate ellipses, actor24x7 alpha<=.22; stool feet5x2",
+  "missing": [
+    "walk/carry/drag/sit animations",
+    "runtime ground wetness/reflection mask",
+    "occluder polygons validated against actual art",
+    "emissive masks",
+    "notice paper"
+  ],
+  "engine_tested": false,
+  "human_accepted": false,
+  "registration": {
+    "mapping": "identity logical coords",
+    "points": [
+      [
+        95,
+        570
+      ],
+      [
+        750,
+        570
+      ],
+      [
+        400,
+        355
+      ],
+      [
+        250,
+        360
+      ],
+      [
+        385,
+        375
+      ],
+      [
+        657.5,
+        402.5
+      ]
+    ],
+    "table_collision": [
+      350,
+      285,
+      100,
+      70
+    ],
+    "awning_corners": [
+      [
+        575,
+        195
+      ],
+      [
+        735,
+        195
+      ],
+      [
+        735,
+        270
+      ],
+      [
+        575,
+        280
+      ]
+    ],
+    "beam": [
+      [
+        76,
+        190
+      ],
+      [
+        770,
+        190
+      ]
+    ],
+    "posts": [
+      [
+        80,
+        190
+      ],
+      [
+        80,
+        450
+      ],
+      [
+        770,
+        190
+      ],
+      [
+        770,
+        450
+      ]
+    ]
+  },
+  "verification": {
+    "raw_images_read": 3,
+    "cutout_contact_sheet_read": true,
+    "native_alpha_present": true,
+    "fake_checkerboard": false,
+    "alpha_cleanup_note": "Raw contains low-alpha horizontal streaks. Threshold200 removes these; on neutral contact sheet no connecting streaks visible. Hardens soft silhouette edges; not a general segmentation proof.",
+    "independent_sources": true,
+    "image_reference_input_supported": false,
+    "shared_style": "text prompts only; approximate gouache palette/outline consistency, not guaranteed identical conditioning",
+    "engine_import": false,
+    "gameplay": false
+  }
+}

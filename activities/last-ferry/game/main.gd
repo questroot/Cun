@@ -1,5 +1,23 @@
 extends Node2D
 const Story = preload("res://story_state.gd")
+const CohesiveKit = preload("res://ferry_cohesive_kit.gd")
+var cohesive_kit = CohesiveKit.new()
+const FerryAtmosphere = preload("res://ferry_atmosphere.gd")
+var ferry_atmosphere = FerryAtmosphere.new()
+const Renderer = preload("res://ferry_world_renderer.gd")
+var world_renderer: Node2D
+var interface_renderer: Node2D
+var world_commands: Array = []
+var interface_commands: Array = []
+
+func environment_world() -> Node2D:
+	return world_renderer
+
+func record_draw(method: String, arguments: Array, interface: bool = false) -> void:
+	var command := {"method":method,"arguments":arguments}
+	if interface: interface_commands.append(command)
+	else: world_commands.append(command)
+
 const Motion = preload("res://actor_motion.gd")
 var player_motion = Motion.new()
 var zhou_motion = Motion.new()
@@ -116,7 +134,14 @@ func _ready() -> void:
 	add_to_group("cun_play_visible")
 	font = ThemeDB.fallback_font
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	world_renderer = Renderer.new()
+	world_renderer.name = "FerryWorld"
+	add_child(world_renderer)
 	_setup_ui()
+	interface_renderer = Renderer.new()
+	interface_renderer.name = "FerryInterfaceDrawing"
+	root_ui.add_child(interface_renderer)
+	root_ui.move_child(interface_renderer,0)
 	_setup_sound()
 	show_title()
 
@@ -248,25 +273,29 @@ func tile_visual(key: String, rect: Rect2) -> void:
 	for y in range(int(rect.position.y),int(rect.end.y),texture.get_height()):
 		for x in range(int(rect.position.x),int(rect.end.x),texture.get_width()):
 			var part := Rect2(Vector2(x,y),texture.get_size()).intersection(rect)
-			draw_texture_rect_region(texture,part,Rect2(Vector2.ZERO,part.size))
+			record_draw("draw_texture_rect_region",[texture,part,Rect2(Vector2.ZERO,part.size)])
 
 func visual_quad(key: String, quad: PackedVector2Array) -> void:
 	if key in ["awning","hem"]:
 		var sway := sin(presentation_time*0.8)*0.7
 		quad[2].x += sway
 		quad[3].x += sway
-	draw_polygon(quad,PackedColorArray([Color.WHITE]),PackedVector2Array([Vector2(0,0),Vector2(1,0),Vector2(1,1),Vector2(0,1)]),VISUAL[key])
+	record_draw("draw_polygon",[quad,PackedColorArray([Color.WHITE]),PackedVector2Array([Vector2(0,0),Vector2(1,0),Vector2(1,1),Vector2(0,1)]),cohesive_kit.textures.awning if key in ["awning","hem"] else VISUAL[key]])
+
+func shelter_ground_tint() -> Color:
+	return Color.WHITE # Ambient now belongs exclusively to the world atmosphere.
 
 func draw_shelter_ground() -> void:
-	tile_visual("wet",Rect2(40,175,780,445))
+	# Base art drawn before titles/actors; retain authoritative dry overlays below.
+	if story.s.ending == "flood":
+		record_draw("draw_rect",[Rect2(40,175,780,445),Color(0.12,0.32,0.40,0.52)])
 	if story.s.ending != "flood":
 		tile_visual("dry",Rect2(330,340,110,70))
 		tile_visual("edge",Rect2(330,402,110,16))
 		if story.flag("awning_tied"):
 			tile_visual("dry",Rect2(590,365,135,75))
 			tile_visual("edge",Rect2(590,432,135,16))
-		draw_texture(VISUAL.light,Vector2(250,360)-Vector2(48,48),Color(1,1,1,0.9+0.1*sin(presentation_time*1.1)))
-		if story.flag("yellow_lit"): draw_texture(VISUAL.light,Vector2(620,390)-Vector2(48,48))
+		# Textured PointLight2D replaces the old painted light pools.
 
 func player_carrying() -> bool:
 	return story.flag("basin_carried") or story.flag("stock_carried") or story.flag("evac_pack_carried") or shelter_wait_scene().get("carried",false)
@@ -305,68 +334,76 @@ func presentation_step(delta: float) -> void:
 func draw_presentation_feedback() -> void:
 	for mark in step_marks:
 		var fade: float = 1.0-(presentation_time-float(mark.time))/0.8
-		draw_line(mark.at-Vector2(4,0),mark.at+Vector2(4,0),Color(0.8,0.76,0.62,fade*0.25),2)
+		record_draw("draw_line",[mark.at-Vector2(4,0),mark.at+Vector2(4,0),Color(0.8,0.76,0.62,fade*0.25),2])
 	for obj in scene_objects:
 		var pointed: bool = get_global_mouse_position().distance_to(obj.pos) < 28
 		if (obj.id == nearest or pointed) and player.distance_to(obj.pos) < 96:
-			draw_arc(obj.pos,36,0,TAU,36,Color("f2d68b"),2)
-			draw_line(obj.pos+Vector2(-8,-42),obj.pos+Vector2(0,-36),Color("f2d68b"),2)
+			record_draw("draw_arc",[obj.pos,36,0,TAU,36,Color("f2d68b"),2],true)
+			record_draw("draw_line",[obj.pos+Vector2(-8,-42),obj.pos+Vector2(0,-36),Color("f2d68b"),2],true)
 	if action_age < 0.45:
 		var color := Color("d7c6a0") if action_ok else Color("c9987f")
-		draw_arc(action_position,18+action_age*12,0,TAU,24,color,2)
-		draw_string(font,action_position+Vector2(-50,-34),action_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,16,color)
+		record_draw("draw_arc",[action_position,18+action_age*12,0,TAU,24,color,2])
+		record_draw("draw_string",[font,action_position+Vector2(-50,-34),action_caption,HORIZONTAL_ALIGNMENT_LEFT,-1,16,color],true)
 
 func draw_player_body() -> void:
+	if story.s.place == "shelter":
+		var direction: String = player_motion_view.get("direction","S")
+		if player_carrying() or not player_motion_view.get("segment","").is_empty():
+			cohesive_kit.keypose(self,"protagonist_carry_"+("E" if direction == "W" else direction),player+Vector2(0,24),false,direction == "W")
+		else: cohesive_kit.actor(self,"protagonist_"+direction,player+Vector2(0,24))
+		return # Genuine keyposes, not generated animation frames.
 	var segment: String = player_motion_view.get("segment","")
 	var lean := 5.0 if segment in ["bend","contact"] else (2.0 if segment == "rise" else 0.0)
 	var stride := sin(float(player_motion_view.get("walk_phase",0.0))*TAU)*4.0 if player_motion_view.get("moving",false) else 0.0
-	draw_line(player+Vector2(-6,15),player+Vector2(-7,24+stride),Color("554c3e"),4)
-	draw_line(player+Vector2(6,15),player+Vector2(7,24-stride),Color("554c3e"),4)
-	draw_circle(player+Vector2(0,14),18,Color(0,0,0,0.2))
-	draw_rect(Rect2(player-Vector2(10,3),Vector2(20,24)),Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0"))
-	draw_circle(player-Vector2(0,10-lean),10,Color("ead1ac"))
-	draw_line(player-Vector2(0,10-lean),player-Vector2(0,10-lean)+face*8,Color("554c3e"),2)
+	record_draw("draw_line",[player+Vector2(-6,15),player+Vector2(-7,24+stride),Color("554c3e"),4])
+	record_draw("draw_line",[player+Vector2(6,15),player+Vector2(7,24-stride),Color("554c3e"),4])
+	record_draw("draw_circle",[player+Vector2(0,14),18,Color(0,0,0,0.2)])
+	record_draw("draw_rect",[Rect2(player-Vector2(10,3),Vector2(20,24)),Color("bf8f62") if story.s.identity == "xu" else Color("7eb2a0")])
+	record_draw("draw_circle",[player-Vector2(0,10-lean),10,Color("ead1ac")])
+	record_draw("draw_line",[player-Vector2(0,10-lean),player-Vector2(0,10-lean)+face*8,Color("554c3e"),2])
 	if player_carrying() or not segment.is_empty():
 		var sockets: Dictionary = player_motion_view.get("hand_sockets",{"left":Vector2(-14,12),"right":Vector2(14,12)})
-		draw_line(player+Vector2(-9,1),player+sockets.left,Color("ead1ac"),3)
-		draw_line(player+Vector2(9,1),player+sockets.right,Color("ead1ac"),3)
-	else: draw_line(player,player+face*20,Color("f1dbad"),3)
+		record_draw("draw_line",[player+Vector2(-9,1),player+sockets.left,Color("ead1ac"),3])
+		record_draw("draw_line",[player+Vector2(9,1),player+sockets.right,Color("ead1ac"),3])
+	else: record_draw("draw_line",[player,player+face*20,Color("f1dbad"),3])
 
 func draw_shelter_actors() -> void:
 	var wait := shelter_wait_scene()
-	var bodies: Array = [{"kind":"player","foot":player.y+21}]
+	var bodies: Array = [{"kind":"table","foot":355.0},{"kind":"player","foot":player.y+24}]
 	if not wait.is_empty():
-		bodies.append({"kind":"chair","foot":wait.chair.y+14})
+		bodies.append({"kind":"chair","foot":wait.chair.y+8})
 		bodies.append({"kind":"zhou","foot":wait.zhou.y+20})
 	bodies.sort_custom(func(a,b): return a.foot < b.foot)
 	for body in bodies:
 		match body.kind:
+			"table": cohesive_kit.prop(self,"table",Vector2(400,355),100)
 			"player": draw_player_body()
 			"chair":
-				if wait.wet and not wait.carried: draw_arc(wait.chair+Vector2(0,10),22,0,PI,12,Color("75a5bb"),2)
-				draw_texture(VISUAL.stool,wait.chair-Vector2(20,14))
+				if wait.wet and not wait.carried: record_draw("draw_arc",[wait.chair+Vector2(0,10),22,0,PI,12,Color("75a5bb"),2])
+				cohesive_kit.stool(self,wait.chair)
 			"zhou":
-				var settling := -4.0*(1.0-float(zhou_motion_view.get("phase",1.0))) if zhou_motion_view.get("clip","") == "sit_down" else sin(float(zhou_motion_view.get("walk_phase",0.0))*TAU) if zhou_motion_view.get("moving",false) else 0.0
-				draw_texture(VISUAL.get(wait.pose,VISUAL.standing),wait.zhou-Vector2(24,40)+Vector2(0,settling))
+				if wait.pose == "standing":
+					cohesive_kit.actor(self,"zhou_"+zhou_motion_view.get("direction","S"),wait.zhou+Vector2(0,20))
+					continue
+				if wait.pose == "seated":
+					var clip: String = zhou_motion_view.get("clip","")
+					cohesive_kit.keypose(self,"zhou_half_squat_E" if clip == "sit_down" and float(zhou_motion_view.get("phase",1.0))<0.5 else "zhou_seated_E",cohesive_kit.stool_seat(wait.chair),true)
+				elif wait.pose == "dragging": cohesive_kit.keypose(self,"zhou_drag_E",wait.zhou+Vector2(0,20))
+				else: cohesive_kit.actor(self,"zhou_"+zhou_motion_view.get("direction","S"),wait.zhou+Vector2(0,20))
 	if not wait.is_empty():
-		if wait.pose == "dragging":
-			draw_line(wait.zhou+Vector2(-16,5),wait.chair+Vector2(-14,0),Color("bba58c"),3)
-			draw_line(wait.zhou+Vector2(13,5),wait.chair+Vector2(14,0),Color("bba58c"),3)
 		if wait.carried:
 			var foot := player+Vector2(0,22)
 			var legal := Rect2(55,190,750,410).has_point(foot) and not Rect2(350,285,100,70).grow(12).has_point(foot)
-			draw_rect(chair_bounds(foot),Color("d7c6a0") if legal else Color("c9987f"),false,2)
-			draw_line(player+Vector2(-9,7),wait.chair-Vector2(14,0),Color("ead1ac"),3)
-			draw_line(player+Vector2(9,7),wait.chair+Vector2(14,0),Color("ead1ac"),3)
+			record_draw("draw_rect",[chair_bounds(foot),Color("d7c6a0") if legal else Color("c9987f"),false,2])
 	# Same post texture is genuinely split, not drawn twice in full.
-	for x in [80,770]: draw_texture_rect_region(VISUAL.post,Rect2(x-8,330,16,126),Rect2(0,146,16,126))
+	# No duplicate pixel posts: baked margin timber is background only; replacement silhouettes missing.
 	var t := float(story.s.get("awning_pull",0.0))/90.0
 	visual_quad("hem",PackedVector2Array([Vector2(575,280-t*45),Vector2(735,270-t*45),Vector2(735,278-t*45),Vector2(575,288-t*45)]))
 	# Marks and labels stay above actors and narrow foreground.
 	for obj in scene_objects:
-		draw_arc(obj.pos,33,0,TAU,32,Color(0.7,0.78,0.76,0.45),1.5)
-		if obj.id == nearest: draw_arc(obj.pos,40,0,TAU,32,Color("f2d68b"),3)
-		draw_string(font,obj.pos+Vector2(-64,59),obj.title,HORIZONTAL_ALIGNMENT_LEFT,175,17,Color("ebe5d0"))
+		record_draw("draw_arc",[obj.pos,33,0,TAU,32,Color(0.7,0.78,0.76,0.45),1.5],true)
+		if obj.id == nearest: record_draw("draw_arc",[obj.pos,40,0,TAU,32,Color("f2d68b"),3],true)
+		record_draw("draw_string",[font,obj.pos+Vector2(-64,59),obj.title,HORIZONTAL_ALIGNMENT_LEFT,175,17,Color("ebe5d0")],true)
 
 func waiting_bubble(wait: Dictionary) -> Rect2:
 	return Rect2(Vector2(clampf(wait.zhou.x-180,55,365),clampf(wait.zhou.y-102,180,500)),Vector2(450,37))
@@ -376,39 +413,39 @@ func draw_waiting() -> void:
 	if wait.is_empty(): return
 	if not wait.line.is_empty():
 		var bubble := waiting_bubble(wait)
-		draw_line(wait.zhou-Vector2(0,35),bubble.position+Vector2(20,bubble.size.y),Color("94aaa8"),1)
-		draw_rect(bubble,Color("25363c"))
-		draw_string(font,bubble.position+Vector2(10,25),"周伯："+wait.line,HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf"))
+		record_draw("draw_line",[wait.zhou-Vector2(0,35),bubble.position+Vector2(20,bubble.size.y),Color("94aaa8"),1],true)
+		record_draw("draw_rect",[bubble,Color("25363c")],true)
+		record_draw("draw_string",[font,bubble.position+Vector2(10,25),"周伯："+wait.line,HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf")],true)
 
 func draw_first_meet(scene: Dictionary) -> void:
 	if scene.is_empty(): return
 	if story.s.place == "steps":
-		draw_rect(Rect2(70,515,240,90),Color("77745c"),false,2)
-		draw_string(font,Vector2(177,538),"阶后干地",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("d4c8a9"))
+		record_draw("draw_rect",[Rect2(70,515,240,90),Color("77745c"),false,2])
+		record_draw("draw_string",[font,Vector2(177,538),"阶后干地",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("d4c8a9")],true)
 	for actor in scene.actors:
 		var pos: Vector2 = actor.pos
 		if actor.name == "沈渡":
 			# The PNG replaces the entire old body/head/hand pass; never overpaint its face.
-			draw_texture(SHENDU_REST if actor.resting else SHENDU_OFFER,pos-SHENDU_ANCHOR)
+			record_draw("draw_texture",[SHENDU_REST if actor.resting else SHENDU_OFFER,pos-SHENDU_ANCHOR])
 		else:
 			var looking := (player-pos).normalized()
-			draw_rect(Rect2(pos+Vector2(-11,3),Vector2(22,27)),Color("7c8073"))
-			draw_circle(pos-Vector2(0,10),10,Color("bba58c"))
-			draw_line(pos-Vector2(0,10),pos-Vector2(0,10)+looking*8,Color("eee0bd"),3)
+			record_draw("draw_rect",[Rect2(pos+Vector2(-11,3),Vector2(22,27)),Color("7c8073")])
+			record_draw("draw_circle",[pos-Vector2(0,10),10,Color("bba58c")])
+			record_draw("draw_line",[pos-Vector2(0,10),pos-Vector2(0,10)+looking*8,Color("eee0bd"),3])
 			var hand := pos+Vector2(-20,23) if scene.quiet else pos+Vector2(-23,-5)
-			draw_line(pos+Vector2(-9,7),hand,Color("bba58c"),4)
-			draw_circle(hand,3,Color("ead1ac"))
-		draw_string(font,pos+Vector2(-20,49),actor.name,HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("e5d6b4"))
+			record_draw("draw_line",[pos+Vector2(-9,7),hand,Color("bba58c"),4])
+			record_draw("draw_circle",[hand,3,Color("ead1ac")])
+		record_draw("draw_string",[font,pos+Vector2(-20,49),actor.name,HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("e5d6b4")],true)
 	var plaque: Rect2 = scene.plaque
 	if plaque.has_area():
-		draw_rect(plaque,Color("b19a70"))
-		draw_rect(plaque.grow(-3),Color("6d5b43"),false,1)
-		draw_string(font,plaque.position+Vector2(7,19),"末班交回岸棚",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("342f29"))
+		record_draw("draw_rect",[plaque,Color("b19a70")],true)
+		record_draw("draw_rect",[plaque.grow(-3),Color("6d5b43"),false,1],true)
+		record_draw("draw_string",[font,plaque.position+Vector2(7,19),"末班交回岸棚",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("342f29")],true)
 	if not scene.lines.is_empty():
 		var speech: Rect2 = scene.speech
-		draw_rect(speech,Color("25363c"))
+		record_draw("draw_rect",[speech,Color("25363c")],true)
 		for i in range(scene.lines.size()):
-			draw_string(font,speech.position+Vector2(12,26+i*30),scene.lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf"))
+			record_draw("draw_string",[font,speech.position+Vector2(12,26+i*30),scene.lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("dccfaf")],true)
 
 func _setup_sound() -> void:
 	# Locally generated quiet, continuous river bed: no samples, network, peaks or scares.
@@ -842,6 +879,7 @@ func _process(delta: float) -> void:
 			audio_time += 1.0 / 22050.0
 			var wave := sin(audio_time * 130.0) * 0.05 + sin(audio_time * 173.0) * 0.025 + rng.randf_range(-0.018, 0.018)
 			playback.push_frame(Vector2(wave, wave))
+	ferry_atmosphere.update(self)
 	if started: update_actor_motion(delta)
 	if not started or modal_open or paused or story.s.left: return
 	presentation_step(delta)
@@ -1613,138 +1651,149 @@ func shore_heard_excerpt() -> String:
 	return "\n".join(lines)
 
 func _draw() -> void:
+	world_commands = []
+	interface_commands = []
+	build_presentation_commands()
+	world_renderer.submit(world_commands)
+	interface_renderer.submit(interface_commands)
+
+func build_presentation_commands() -> void:
 	var night: bool = started and story.s.phase == "night"
 	var sky := Color("111f2b") if night else Color("516069")
-	draw_rect(Rect2(0, 0, 855, 800), sky)
-	draw_rect(Rect2(20, 155, 820, 480), Color("383f3f") if night else Color("75756a"))
-	draw_rect(Rect2(40, 175, 780, 445), Color("363c39") if night else Color("858373"))
+	record_draw("draw_rect",[Rect2(0, 0, 855, 800), sky])
+	record_draw("draw_rect",[Rect2(20, 155, 820, 480), Color("383f3f") if night else Color("75756a")])
+	record_draw("draw_rect",[Rect2(40, 175, 780, 445), Color("363c39") if night else Color("858373")])
 	for i in range(10):
-		draw_line(Vector2(50, 190 + i * 44), Vector2(810, 190 + i * 44), Color(0.8, 0.82, 0.74, 0.07), 1)
-	draw_string(font, Vector2(30, 45), "末班渡船", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color("eee4c9"))
+		record_draw("draw_line",[Vector2(50, 190 + i * 44), Vector2(810, 190 + i * 44), Color(0.8, 0.82, 0.74, 0.07), 1])
+	if started and story.s.place == "shelter":
+		record_draw("draw_texture_rect",[cohesive_kit.textures.background,Rect2(0,0,855,640),false])
+		# Readable title backing only above walk y175; never covers walk geometry.
+		record_draw("draw_rect",[Rect2(0,0,855,151),Color(0.04,0.08,0.11,0.74)],true)
+	record_draw("draw_string",[font, Vector2(30, 45), "末班渡船", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color("eee4c9")],true)
 	if not started:
-		draw_string(font, Vector2(32, 98), "河岸不催你作答。先走近，看看他们的生活。", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color("bfcac7"))
+		record_draw("draw_string",[font, Vector2(32, 98), "河岸不催你作答。先走近，看看他们的生活。", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color("bfcac7")],true)
 		return
-	draw_string(font, Vector2(32, 95), Story.PLACES[story.s.place], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e0d5b4"))
-	draw_string(font, Vector2(32, 130), "道路范围：石色地面　圆环：可交互　门形：地点连接", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("bac5c3"))
+	record_draw("draw_string",[font, Vector2(32, 95), Story.PLACES[story.s.place], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e0d5b4")],true)
+	record_draw("draw_string",[font, Vector2(32, 130), "道路范围：石色地面　圆环：可交互　门形：地点连接", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("bac5c3")],true)
 	match story.s.place:
 		"lane":
 			if story.s.ending == "flood":
-				draw_rect(Rect2(95,510,660,60),Color("9b977c"))
-				draw_string(font,Vector2(270,560),"← 桥头接应　　干路　　许家 →",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("353c35"))
-			draw_rect(Rect2(390,280,80,80),Color("736f65"))
-			draw_rect(Rect2(390,440,80,60),Color("736f65"))
-			draw_rect(Rect2(180,200,40,100),Color("676f70"))
-			draw_line(Vector2(180,240),Vector2(220,240),Color("9f7351"),5)
-			draw_string(font,Vector2(150,220),"旧年洪痕",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c8a883"))
-			draw_line(Vector2(650,220),Vector2(650,305),Color("d2d2b9"),7)
-			for tick in range(5): draw_line(Vector2(642,230+tick*15),Vector2(660,230+tick*15),Color("8ea4a7"),2)
+				record_draw("draw_rect",[Rect2(95,510,660,60),Color("9b977c")])
+				record_draw("draw_string",[font,Vector2(270,560),"← 桥头接应　　干路　　许家 →",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("353c35")],true)
+			record_draw("draw_rect",[Rect2(390,280,80,80),Color("736f65")])
+			record_draw("draw_rect",[Rect2(390,440,80,60),Color("736f65")])
+			record_draw("draw_rect",[Rect2(180,200,40,100),Color("676f70")])
+			record_draw("draw_line",[Vector2(180,240),Vector2(220,240),Color("9f7351"),5])
+			record_draw("draw_string",[font,Vector2(150,220),"旧年洪痕",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c8a883")],true)
+			record_draw("draw_line",[Vector2(650,220),Vector2(650,305),Color("d2d2b9"),7])
+			for tick in range(5): record_draw("draw_line",[Vector2(642,230+tick*15),Vector2(660,230+tick*15),Color("8ea4a7"),2])
 			var water_y := 220.0 if story.s.ending == "flood" or story.s.pollution >= 2 else (260.0 if story.s.pollution == 1 else 290.0)
-			draw_line(Vector2(638,290),Vector2(664,290),Color("4a96bb"),2)
-			draw_line(Vector2(635,water_y),Vector2(668,water_y),Color("82bcdd"),5)
-			draw_string(font,Vector2(580,210),"今日 · " + ("越上格" if water_y == 220 else ("升中格" if water_y == 260 else "低格")),HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("82bcdd"))
+			record_draw("draw_line",[Vector2(638,290),Vector2(664,290),Color("4a96bb"),2])
+			record_draw("draw_line",[Vector2(635,water_y),Vector2(668,water_y),Color("82bcdd"),5])
+			record_draw("draw_string",[font,Vector2(580,210),"今日 · " + ("越上格" if water_y == 220 else ("升中格" if water_y == 260 else "低格")),HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("82bcdd")],true)
 			var cart := cart_position()
-			draw_rect(Rect2(cart-Vector2(32,30),Vector2(64,60)),Color("927b58"))
-			draw_circle(cart+Vector2(-28,28),8,Color("333d40"))
-			draw_circle(cart+Vector2(28,28),8,Color("333d40"))
-			draw_line(cart-Vector2(32,0),cart-Vector2(80,0),Color("b1a18a"),5)
-			draw_string(font,Vector2(280,255),"修桥备料 · 南侧绕行",HORIZONTAL_ALIGNMENT_LEFT,-1,20,Color("ddcca5"))
-			draw_line(Vector2(100,550),Vector2(740,550),Color("9b947f"),3)
+			record_draw("draw_rect",[Rect2(cart-Vector2(32,30),Vector2(64,60)),Color("927b58")])
+			record_draw("draw_circle",[cart+Vector2(-28,28),8,Color("333d40")])
+			record_draw("draw_circle",[cart+Vector2(28,28),8,Color("333d40")])
+			record_draw("draw_line",[cart-Vector2(32,0),cart-Vector2(80,0),Color("b1a18a"),5])
+			record_draw("draw_string",[font,Vector2(280,255),"修桥备料 · 南侧绕行",HORIZONTAL_ALIGNMENT_LEFT,-1,20,Color("ddcca5")],true)
+			record_draw("draw_line",[Vector2(100,550),Vector2(740,550),Color("9b947f"),3])
 		"arrival":
-			draw_rect(Rect2(40,175,780,100),Color("3b5057"))
-			draw_line(Vector2(80,290),Vector2(790,290),Color("a9a18e"),8)
+			record_draw("draw_rect",[Rect2(40,175,780,100),Color("3b5057")])
+			record_draw("draw_line",[Vector2(80,290),Vector2(790,290),Color("a9a18e"),8])
 			if story.s.ending == "flood":
-				draw_string(font,Vector2(490,305),"河街住户：被褥　｜　六码头商铺：工具",HORIZONTAL_ALIGNMENT_LEFT,-1,15,Color("e3d4ad"))
-				draw_rect(Rect2(580,372,110,12),Color("887659"))
-				draw_line(Vector2(590,384),Vector2(590,405),Color("71644f"),6)
-				draw_line(Vector2(680,384),Vector2(680,405),Color("71644f"),6)
+				record_draw("draw_string",[font,Vector2(490,305),"河街住户：被褥　｜　六码头商铺：工具",HORIZONTAL_ALIGNMENT_LEFT,-1,15,Color("e3d4ad")],true)
+				record_draw("draw_rect",[Rect2(580,372,110,12),Color("887659")])
+				record_draw("draw_line",[Vector2(590,384),Vector2(590,405),Color("71644f"),6])
+				record_draw("draw_line",[Vector2(680,384),Vector2(680,405),Color("71644f"),6])
 			else:
-				if not story.flag("luggage_taken"): draw_rect(Rect2(290,345,30,28),Color("785c49"))
+				if not story.flag("luggage_taken"): record_draw("draw_rect",[Rect2(290,345,30,28),Color("785c49")])
 		"street":
 			if story.s.pollution == 1:
 				var stock_pos := player+Vector2(15,10) if story.flag("stock_carried") else (Vector2(420,300) if story.flag("stock_dried") or story.s.phase == "epilogue" else Vector2(365,365))
-				draw_rect(Rect2(185,375,270,24),Color("456777"))
-				draw_rect(Rect2(stock_pos-Vector2(20,14),Vector2(40,28)),Color("9a8057"))
-				draw_line(stock_pos-Vector2(15,0),stock_pos+Vector2(15,0),Color("665643"),3)
-			draw_rect(Rect2(130, 175, 265, 120), Color("554b44"))
-			draw_rect(Rect2(138, 165, 250, 25), Color("4e645d"))
-			draw_string(font, Vector2(175, 228), "陶记杂货", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e1cfa6"))
+				record_draw("draw_rect",[Rect2(185,375,270,24),Color("456777")])
+				record_draw("draw_rect",[Rect2(stock_pos-Vector2(20,14),Vector2(40,28)),Color("9a8057")])
+				record_draw("draw_line",[stock_pos-Vector2(15,0),stock_pos+Vector2(15,0),Color("665643"),3])
+			record_draw("draw_rect",[Rect2(130, 175, 265, 120), Color("554b44")])
+			record_draw("draw_rect",[Rect2(138, 165, 250, 25), Color("4e645d")])
+			record_draw("draw_string",[font, Vector2(175, 228), "陶记杂货", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("e1cfa6")],true)
 			if story.flag("street_evening_seen") and not story.flag("shoe_collected") and story.s.phase == "dusk":
-				draw_rect(Rect2(657,449,36,22),Color("b5a17a"))
-				draw_line(Vector2(675,449),Vector2(675,471),Color("71634c"),2)
+				record_draw("draw_rect",[Rect2(657,449,36,22),Color("b5a17a")])
+				record_draw("draw_line",[Vector2(675,449),Vector2(675,471),Color("71634c"),2])
 			if story.s.ending == "flood":
-				draw_rect(Rect2(695, 315, 18, 160), Color("b68a59"))
-				draw_string(font, Vector2(550, 180), "渡口停航 · 安全撤离", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("e3c29f"))
+				record_draw("draw_rect",[Rect2(695, 315, 18, 160), Color("b68a59")])
+				record_draw("draw_string",[font, Vector2(550, 180), "渡口停航 · 安全撤离", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("e3c29f")],true)
 		"house":
-			draw_rect(Rect2(292,322,58,25),Color("655342"))
-			draw_line(Vector2(310,338),Vector2(332,338),Color("c0a97d"),3)
+			record_draw("draw_rect",[Rect2(292,322,58,25),Color("655342")])
+			record_draw("draw_line",[Vector2(310,338),Vector2(332,338),Color("c0a97d"),3])
 			if story.flag("drawer_open"):
-				draw_rect(Rect2(292,345,78,42),Color("473f36"))
-				if story.flag("handover_updated"): draw_rect(Rect2(315,353,26,18),Color("eee3c9"))
-				draw_rect(Rect2(337,365,26,18),Color("dfcfaa"))
-				draw_line(Vector2(350,366),Vector2(350,381),Color("99886a"),1)
-			draw_rect(Rect2(675,215,40,30),Color("d4c9a7"))
-			draw_line(Vector2(680,238),Vector2(709,238),Color("6a746b"),2)
-			draw_line(Vector2(687,218),Vector2(687,236),Color("72614a"),2)
-			draw_rect(Rect2(210, 185, 220, 110), Color("5b5045"))
-			draw_rect(Rect2(40, 175, 780, 12), Color("a29376"))
+				record_draw("draw_rect",[Rect2(292,345,78,42),Color("473f36")])
+				if story.flag("handover_updated"): record_draw("draw_rect",[Rect2(315,353,26,18),Color("eee3c9")])
+				record_draw("draw_rect",[Rect2(337,365,26,18),Color("dfcfaa")])
+				record_draw("draw_line",[Vector2(350,366),Vector2(350,381),Color("99886a"),1])
+			record_draw("draw_rect",[Rect2(675,215,40,30),Color("d4c9a7")])
+			record_draw("draw_line",[Vector2(680,238),Vector2(709,238),Color("6a746b"),2])
+			record_draw("draw_line",[Vector2(687,218),Vector2(687,236),Color("72614a"),2])
+			record_draw("draw_rect",[Rect2(210, 185, 220, 110), Color("5b5045")])
+			record_draw("draw_rect",[Rect2(40, 175, 780, 12), Color("a29376")])
 			var basin_pos := player + Vector2(15, -8) if story.flag("basin_carried") else (Vector2(450, 340) if story.flag("basin_placed") else Vector2(600, 250))
-			draw_circle(basin_pos, 24, Color("a5b4b5"))
-			draw_circle(basin_pos, 17, Color("515f64"))
-			draw_circle(Vector2(450, 340), 10, Color("5a777b"))
-			draw_line(Vector2(445, 187), Vector2(450, 325), Color(0.7, 0.8, 0.8, 0.45), 1)
+			record_draw("draw_circle",[basin_pos, 24, Color("a5b4b5")])
+			record_draw("draw_circle",[basin_pos, 17, Color("515f64")])
+			record_draw("draw_circle",[Vector2(450, 340), 10, Color("5a777b")])
+			record_draw("draw_line",[Vector2(445, 187), Vector2(450, 325), Color(0.7, 0.8, 0.8, 0.45), 1])
 		"shelter":
 			draw_shelter_ground()
 			var tension := float(story.s.get("awning_pull",0.0))/90.0
 			visual_quad("awning",PackedVector2Array([Vector2(575,195),Vector2(735,195),Vector2(735,270-tension*45),Vector2(575,280-tension*45)]))
-			draw_line(Vector2(690,245-tension*40),Vector2(690,350+tension*90),Color("b8a279"),3)
-			draw_line(Vector2(700,420),Vector2(700,455),Color("8d7250"),7)
-			draw_string(font,Vector2(710,450),"系绳桩",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c4b294"))
-			if story.flag("awning_tied") and story.s.ending != "flood": draw_rect(Rect2(590,365,135,75),Color("77745c"),false,2)
+			record_draw("draw_line",[Vector2(690,245-tension*40),Vector2(690,350+tension*90),Color("b8a279"),3])
+			record_draw("draw_line",[Vector2(700,420),Vector2(700,455),Color("8d7250"),7])
+			record_draw("draw_string",[font,Vector2(710,450),"系绳桩",HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("c4b294")],true)
+			if story.flag("awning_tied") and story.s.ending != "flood": record_draw("draw_rect",[Rect2(590,365,135,75),Color("77745c"),false,2])
 			elif not story.flag("awning_tied"):
 				for drop in range(3):
 					var fall := fmod(presentation_time*22+drop*7,20)
-					draw_line(Vector2(610+drop*32,285-tension*40+fall),Vector2(610+drop*32,291-tension*40+fall),Color("75a5bb"),2)
-			draw_rect(Rect2(350, 285, 100, 70), Color("5f4e3e"))
-			draw_texture(VISUAL.beam,Vector2(72,180))
-			for x in [80,770]: draw_texture_rect_region(VISUAL.post,Rect2(x-8,184,16,146),Rect2(0,0,16,146))
-			draw_texture(VISUAL.warm if story.flag("shade_off") or story.flag("swapped") else VISUAL.white,Vector2(230,336))
-			draw_texture(VISUAL.yellow_on if story.flag("yellow_lit") else VISUAL.yellow_off,Vector2(600,366))
-			draw_arc(Vector2(550, 240), 22, PI, TAU, 24, Color("b49b6c"), 4)
-			if story.flag("tongue_home"): draw_line(Vector2(550, 223), Vector2(550, 253), Color("c4a26a"), 5)
-			if story.item("拆下的铜舌"): draw_line(player + Vector2(12, -8), player + Vector2(12, 12), Color("c4a26a"), 4)
-			if story.flag("shade_off"): draw_rect(Rect2(275, 375, 28, 19), Color("d4d8d6"), false, 3)
+					record_draw("draw_line",[Vector2(610+drop*32,285-tension*40+fall),Vector2(610+drop*32,291-tension*40+fall),Color("75a5bb"),2])
+			# Table now participates in the actor foot-depth pass.
+			# Beam candidate rejected for proportions; no stretched/doubled pixel beam.
+
+			cohesive_kit.lamp(self,Vector2(250,360),story.s.ending != "flood",story.flag("shade_off") or story.flag("swapped"))
+			cohesive_kit.lamp(self,Vector2(620,390),story.flag("yellow_lit") and story.s.ending != "flood",true)
+			cohesive_kit.prop(self,"bell",Vector2(550,253),44)
+			if story.flag("tongue_home"): record_draw("draw_line",[Vector2(550, 223), Vector2(550, 253), Color("c4a26a"), 5])
+			if story.item("拆下的铜舌"): record_draw("draw_line",[player + Vector2(12, -8), player + Vector2(12, 12), Color("c4a26a"), 4])
+			if story.flag("shade_off"): record_draw("draw_rect",[Rect2(275, 375, 28, 19), Color("d4d8d6"), false, 3])
 			if story.s.ending == "flood":
-				draw_rect(Rect2(193,304,120,104),Color("53605a"))
-				draw_line(Vector2(193,345),Vector2(313,375),Color("b3a07c"),4)
-				draw_rect(Rect2(516,204,69,66),Color("53605a"))
-				draw_line(Vector2(516,224),Vector2(585,249),Color("b3a07c"),4)
-				draw_rect(Rect2(602,370,36,40),Color("53605a"))
-				draw_line(Vector2(705,522),Vector2(788,570),Color("98774e"),12)
-				draw_line(Vector2(705,570),Vector2(788,522),Color("98774e"),12)
-				draw_string(font,Vector2(340,470),"停航 · 灯钟封存",HORIZONTAL_ALIGNMENT_LEFT,260,20,Color("ddc9a5"))
-			if story.s.pollution > 0: draw_rect(Rect2(90, 478, 690, 100), Color(0.2, 0.36, 0.4, 0.55))
+				record_draw("draw_rect",[Rect2(193,304,120,104),Color("53605a")])
+				record_draw("draw_line",[Vector2(193,345),Vector2(313,375),Color("b3a07c"),4])
+				record_draw("draw_rect",[Rect2(516,204,69,66),Color("53605a")])
+				record_draw("draw_line",[Vector2(516,224),Vector2(585,249),Color("b3a07c"),4])
+				record_draw("draw_rect",[Rect2(602,370,36,40),Color("53605a")])
+				record_draw("draw_line",[Vector2(705,522),Vector2(788,570),Color("98774e"),12])
+				record_draw("draw_line",[Vector2(705,570),Vector2(788,522),Color("98774e"),12])
+				record_draw("draw_string",[font,Vector2(340,470),"停航 · 灯钟封存",HORIZONTAL_ALIGNMENT_LEFT,260,20,Color("ddc9a5")],true)
+			if story.s.pollution > 0: record_draw("draw_rect",[Rect2(90, 478, 690, 100), Color(0.2, 0.36, 0.4, 0.55)])
 		"steps":
-			draw_rect(Rect2(40, 175, 780, 135), Color("223d4a"))
+			record_draw("draw_rect",[Rect2(40, 175, 780, 135), Color("223d4a")])
 			for i in range(7):
-				draw_line(Vector2(55, 188 + i * 16), Vector2(805, 188 + i * 16), Color("36505b"), 2)
-			for i in range(4): draw_line(Vector2(60, 310 + i * 34), Vector2(810, 310 + i * 34), Color("a3a69b"), 3)
+				record_draw("draw_line",[Vector2(55, 188 + i * 16), Vector2(805, 188 + i * 16), Color("36505b"), 2])
+			for i in range(4): record_draw("draw_line",[Vector2(60, 310 + i * 34), Vector2(810, 310 + i * 34), Color("a3a69b"), 3])
 			if story.s.pollution == 1:
-				draw_rect(Rect2(40,310,780,34),Color("365864"))
-				draw_string(font,Vector2(75,335),"水已越最低阶 · 上一层仍露出",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("ccdee0"))
-			draw_line(Vector2(135,417),Vector2(178,450),Color("89785a"),10)
-			draw_line(Vector2(157,438),Vector2(192,429),Color("89785a"),5)
-			for step in range(3): draw_rect(Rect2(282,447+step*10,94,7),Color("81867d"))
-			draw_rect(Rect2(475,395,20,20),Color("141f23"))
-			draw_rect(Rect2(475,395,20,20),Color("ac9977"),false,2)
+				record_draw("draw_rect",[Rect2(40,310,780,34),Color("365864")])
+				record_draw("draw_string",[font,Vector2(75,335),"水已越最低阶 · 上一层仍露出",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("ccdee0")],true)
+			record_draw("draw_line",[Vector2(135,417),Vector2(178,450),Color("89785a"),10])
+			record_draw("draw_line",[Vector2(157,438),Vector2(192,429),Color("89785a"),5])
+			for step in range(3): record_draw("draw_rect",[Rect2(282,447+step*10,94,7),Color("81867d")])
+			record_draw("draw_rect",[Rect2(475,395,20,20),Color("141f23")])
+			record_draw("draw_rect",[Rect2(475,395,20,20),Color("ac9977"),false,2])
 			if story.s.phase == "night":
 				var drift := Vector2(0,-60) if story.flag("released") else Vector2(0,-boat_approach_offset)
-				draw_colored_polygon(PackedVector2Array([Vector2(565,230)+drift,Vector2(810,230)+drift,Vector2(777,300)+drift,Vector2(605,300)+drift]), Color("332e2b"))
-				if not story.flag("released") and not story.flag("boat_arrival_pending"): draw_line(Vector2(460, 295), Vector2(625, 275), Color("baab87"), 3)
+				record_draw("draw_colored_polygon",[PackedVector2Array([Vector2(565,230)+drift,Vector2(810,230)+drift,Vector2(777,300)+drift,Vector2(605,300)+drift]), Color("332e2b")])
+				if not story.flag("released") and not story.flag("boat_arrival_pending"): record_draw("draw_line",[Vector2(460, 295), Vector2(625, 275), Color("baab87"), 3])
 		"boat":
-			draw_rect(Rect2(40, 175, 780, 445), Color("403d37"))
-			for i in range(10): draw_line(Vector2(55 + i * 80, 180), Vector2(55 + i * 80, 610), Color("746957"), 2)
-			draw_rect(Rect2(260, 195, 240, 80), Color("353733"))
-			for i in range(6): draw_circle(Vector2(290 + i * 35, 220), 7, Color("9a8c71"))
+			record_draw("draw_rect",[Rect2(40, 175, 780, 445), Color("403d37")])
+			for i in range(10): record_draw("draw_line",[Vector2(55 + i * 80, 180), Vector2(55 + i * 80, 610), Color("746957"), 2])
+			record_draw("draw_rect",[Rect2(260, 195, 240, 80), Color("353733")])
+			for i in range(6): record_draw("draw_circle",[Vector2(290 + i * 35, 220), 7, Color("9a8c71")])
 	if story.s.place == "shelter": draw_shelter_actors()
 	for obj in scene_objects:
 		if story.s.place == "shelter": continue # markers are drawn after the sorted actor pass
@@ -1752,67 +1801,67 @@ func _draw() -> void:
 		var color := Color("9ba89c")
 		if obj.kind == "gate":
 			color = Color("a9bdc0")
-			draw_rect(Rect2(pos - Vector2(22, 24), Vector2(44, 48)), Color("4e6268"), false, 3)
+			record_draw("draw_rect",[Rect2(pos - Vector2(22, 24), Vector2(44, 48)), Color("4e6268"), false, 3])
 		elif obj.kind == "npc" and not (obj.id == "zhou" and not shelter_wait_scene().is_empty()):
-			draw_circle(pos - Vector2(0, 9), 11, Color("bba58c"))
-			draw_rect(Rect2(pos + Vector2(-12, 4), Vector2(24, 25)), Color("556d70"))
+			record_draw("draw_circle",[pos - Vector2(0, 9), 11, Color("bba58c")])
+			record_draw("draw_rect",[Rect2(pos + Vector2(-12, 4), Vector2(24, 25)), Color("556d70")])
 		elif obj.id not in ["zhou", "wait_chair"]:
-			draw_circle(pos, 7, Color("c1b18a"))
-		draw_arc(pos, 33, 0, TAU, 32, Color(color, 0.6), 1.5)
-		if obj.id == nearest: draw_arc(pos, 40, 0, TAU, 32, Color("f2d68b"), 3)
-		draw_string(font, pos + Vector2(-64, 59), obj.title, HORIZONTAL_ALIGNMENT_LEFT, 175, 17, Color("ebe5d0"))
-	if story.flag("luggage_taken") and not story.flag("luggage_placed"): draw_rect(Rect2(player+Vector2(12,0),Vector2(24,25)),Color("785c49"))
-	elif story.flag("luggage_placed") and story.s.place == "house": draw_rect(Rect2(578,498,24,25),Color("785c49"))
+			record_draw("draw_circle",[pos, 7, Color("c1b18a")])
+		record_draw("draw_arc",[pos, 33, 0, TAU, 32, Color(color, 0.6), 1.5],true)
+		if obj.id == nearest: record_draw("draw_arc",[pos, 40, 0, TAU, 32, Color("f2d68b"), 3],true)
+		record_draw("draw_string",[font, pos + Vector2(-64, 59), obj.title, HORIZONTAL_ALIGNMENT_LEFT, 175, 17, Color("ebe5d0")],true)
+	if story.flag("luggage_taken") and not story.flag("luggage_placed"): record_draw("draw_rect",[Rect2(player+Vector2(12,0),Vector2(24,25)),Color("785c49")])
+	elif story.flag("luggage_placed") and story.s.place == "house": record_draw("draw_rect",[Rect2(578,498,24,25),Color("785c49")])
 	if story.flag("evac_pack_carried"):
-		draw_rect(Rect2(player+Vector2(8,0),Vector2(34,26)),Color("929581"))
+		record_draw("draw_rect",[Rect2(player+Vector2(8,0),Vector2(34,26)),Color("929581")])
 		if story.flag("evac_pack_tag_read"):
 			var tag_pos := Vector2(clampf(player.x-85,45,590),clampf(player.y+35,180,590))
-			draw_rect(Rect2(tag_pos,Vector2(225,23)),Color("ded4b8"))
-			draw_string(font,tag_pos+Vector2(4,17),"河街十二号 · 陈家 · 被褥一包",HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("343c39"))
-	elif story.s.ending == "flood" and ((story.s.place == "street" and not story.flag("evac_pack_delivered")) or (story.s.place == "arrival" and story.flag("evac_pack_delivered"))): draw_rect(Rect2(Vector2(635,455) if story.s.place == "street" else Vector2(590,350),Vector2(34,26)),Color("929581"))
-	if story.item("旧渡牌"): draw_rect(Rect2(player+Vector2(12,-3),Vector2(14,22)),Color("b19a70"))
-	if story.s.place == "boat" and not story.flag("ferry_tag_taken") and not story.flag("ferry_tag_returned") and not story.item("旧渡牌") and first_meet_scene().is_empty(): draw_rect(Rect2(678,405,14,22),Color("b19a70"))
+			record_draw("draw_rect",[Rect2(tag_pos,Vector2(225,23)),Color("ded4b8")],true)
+			record_draw("draw_string",[font,tag_pos+Vector2(4,17),"河街十二号 · 陈家 · 被褥一包",HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("343c39")],true)
+	elif story.s.ending == "flood" and ((story.s.place == "street" and not story.flag("evac_pack_delivered")) or (story.s.place == "arrival" and story.flag("evac_pack_delivered"))): record_draw("draw_rect",[Rect2(Vector2(635,455) if story.s.place == "street" else Vector2(590,350),Vector2(34,26)),Color("929581")])
+	if story.item("旧渡牌"): record_draw("draw_rect",[Rect2(player+Vector2(12,-3),Vector2(14,22)),Color("b19a70")])
+	if story.s.place == "boat" and not story.flag("ferry_tag_taken") and not story.flag("ferry_tag_returned") and not story.item("旧渡牌") and first_meet_scene().is_empty(): record_draw("draw_rect",[Rect2(678,405,14,22),Color("b19a70")])
 	if story.s.place == "shelter":
-		draw_arc(Vector2(175,320),6,0,PI,10,Color("aa9573"),3)
-		if story.flag("ferry_tag_returned"): draw_rect(Rect2(168,322,14,22),Color("b19a70"))
+		cohesive_kit.prop(self,"hook",Vector2(175,326),14)
+		if story.flag("ferry_tag_returned"): record_draw("draw_rect",[Rect2(168,322,14,22),Color("b19a70")])
 	if story.s.place != "shelter": draw_player_body()
 	var wick_pos := player+Vector2(-18,7) if story.item("新灯芯") else (Vector2(420,250) if story.flag("wick_kept") and story.s.place == "street" else Vector2.ZERO)
 	if wick_pos != Vector2.ZERO:
-		draw_rect(Rect2(wick_pos-Vector2(12,6),Vector2(24,12)),Color("d7c7a3"))
-		draw_line(wick_pos-Vector2(0,6),wick_pos+Vector2(0,6),Color("8d7450"),2)
+		record_draw("draw_rect",[Rect2(wick_pos-Vector2(12,6),Vector2(24,12)),Color("d7c7a3")])
+		record_draw("draw_line",[wick_pos-Vector2(0,6),wick_pos+Vector2(0,6),Color("8d7450"),2])
 	var bag_pos := Vector2.ZERO
 	if story.item("老葛的工具袋"): bag_pos = player + Vector2(20,8)
 	elif story.flag("tool_returned") and story.s.place == "street": bag_pos = Vector2(650,490)
 	elif story.s.place == "steps" and not story.flag("tool_returned"): bag_pos = Vector2(235,355)
 	if bag_pos != Vector2.ZERO:
-		draw_rect(Rect2(bag_pos-Vector2(11,4),Vector2(22,19)),Color("8e7052"))
-		draw_arc(bag_pos-Vector2(0,5),8,PI,TAU,12,Color("cbb28b"),2)
-		draw_line(bag_pos+Vector2(-5,4),bag_pos+Vector2(6,8),Color("c3c2b6"),2)
+		record_draw("draw_rect",[Rect2(bag_pos-Vector2(11,4),Vector2(22,19)),Color("8e7052")])
+		record_draw("draw_arc",[bag_pos-Vector2(0,5),8,PI,TAU,12,Color("cbb28b"),2])
+		record_draw("draw_line",[bag_pos+Vector2(-5,4),bag_pos+Vector2(6,8),Color("c3c2b6"),2])
 	if story.s.place == "steps" and story.s.phase == "night" and not shore_heard_excerpt().is_empty():
-		draw_rect(Rect2(55,185,520,62),Color("25363c"))
+		record_draw("draw_rect",[Rect2(55,185,520,62),Color("25363c")],true)
 		var heard_lines := shore_heard_excerpt().split("\n")
-		for i in range(heard_lines.size()): draw_string(font,Vector2(65,209+i*24),heard_lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("dccfaf"))
+		for i in range(heard_lines.size()): record_draw("draw_string",[font,Vector2(65,209+i*24),heard_lines[i],HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("dccfaf")],true)
 	if not modal_open: draw_waiting()
 	# Draw above the ordinary object markers, with matching provider geometry.
 	# Modal content occludes this presentation and never advances it.
 	if not modal_open: draw_first_meet(first_meet_scene())
 	if comparing_photo and story.s.place == "steps":
-		draw_rect(Rect2(50,510,210,110),Color("d4c9a7"))
-		draw_rect(Rect2(60,520,190,29),Color("72827f"))
-		for step in range(3): draw_line(Vector2(130,558+step*7),Vector2(215,558+step*7),Color("6c6e60"),3)
-		draw_line(Vector2(225,587),Vector2(209,542),Color("655e44"),5)
-		draw_line(Vector2(212,551),Vector2(237,535),Color("655e44"),2)
-		draw_line(Vector2(110,583),Vector2(110,550),Color("6e5a43"),4)
-		draw_circle(Vector2(110,550),5,Color("a68b55"))
-		draw_string(font,Vector2(63,609),"旧照 · 新棚启用前",HORIZONTAL_ALIGNMENT_LEFT,185,15,Color("3e443e"))
+		record_draw("draw_rect",[Rect2(50,510,210,110),Color("d4c9a7")],true)
+		record_draw("draw_rect",[Rect2(60,520,190,29),Color("72827f")],true)
+		for step in range(3): record_draw("draw_line",[Vector2(130,558+step*7),Vector2(215,558+step*7),Color("6c6e60"),3])
+		record_draw("draw_line",[Vector2(225,587),Vector2(209,542),Color("655e44"),5])
+		record_draw("draw_line",[Vector2(212,551),Vector2(237,535),Color("655e44"),2])
+		record_draw("draw_line",[Vector2(110,583),Vector2(110,550),Color("6e5a43"),4])
+		record_draw("draw_circle",[Vector2(110,550),5,Color("a68b55")])
+		record_draw("draw_string",[font,Vector2(63,609),"旧照 · 新棚启用前",HORIZONTAL_ALIGNMENT_LEFT,185,15,Color("3e443e")],true)
 	if not modal_open:
 		draw_presentation_feedback()
 		if story.s.place in ["steps","boat"]:
 			for wave in range(4):
 				var wx := 590.0+wave*45.0
 				var wy := 210.0+sin(presentation_time*0.7+wave)*2.0
-				draw_line(Vector2(wx,wy),Vector2(wx+24,wy),Color(0.46,0.65,0.73,0.3),1)
+				record_draw("draw_line",[Vector2(wx,wy),Vector2(wx+24,wy),Color(0.46,0.65,0.73,0.3),1])
 	for i in range(0 if modal_open else 4):
 		var r := Rect2(280 + i * 70, 650, 65, 55)
-		draw_rect(r, Color("384c54"))
-		draw_string(font, r.position + Vector2(23, 36), ["←", "↑", "↓", "→"][i], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("ddd8bc"))
+		record_draw("draw_rect",[r, Color("384c54")],true)
+		record_draw("draw_string",[font, r.position + Vector2(23, 36), ["←", "↑", "↓", "→"][i], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("ddd8bc")],true)
