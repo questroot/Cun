@@ -255,12 +255,12 @@ func acknowledge_animation(action_id: int, phase: String) -> void:
 	if running and action_id == expected_action_id and phase == expected_phase:
 		acknowledged = true
 
-func wait_for_animation(action_id: int, phase: String, current_battle: int) -> void:
+func wait_for_animation(action_id: int, phase: String, current_battle: int, warn_on_timeout: bool = true) -> void:
 	var elapsed := 0.0
 	while not acknowledged and elapsed < ANIMATION_TIMEOUT and running and current_battle == battle_serial:
 		await get_tree().process_frame
 		elapsed += get_process_delta_time()
-	if not acknowledged and running and current_battle == battle_serial:
+	if not acknowledged and running and current_battle == battle_serial and warn_on_timeout:
 		push_warning("战斗演出回执超时: %s #%d" % [phase, action_id])
 	if current_battle == battle_serial and expected_action_id == action_id and expected_phase == phase:
 		expected_action_id = -1
