@@ -29,10 +29,12 @@
 
 配置：[chest_catalog.gd](../card-demo/scripts/scenes/chest_catalog.gd)。宝箱与守卫模块：[fudi_chests.gd](../card-demo/scripts/scenes/fudi_chests.gd)。品质登记：[loot_catalog.gd](../card-demo/scripts/scenes/loot_catalog.gd)。属性计算：[equipment_catalog.gd](../card-demo/scripts/scenes/equipment_catalog.gd)。
 
+2026-10-25 起，普通箱与异变箱各状态改用透明细绘图：普通箱关闭/打开，异变箱关闭/守卫中/已净化/已领取。原代码方块造型仅保留在旧像素草稿目录，不再由运行时绘制。运行映射见 [fudi_material_art.gd](../card-demo/scripts/scenes/fudi_material_art.gd)，素材与复现说明见 [card-demo/assets/fudi/fine/README.md](../card-demo/assets/fudi/fine/README.md)。
+
 真实引擎隔离验证：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tests/chests.tests.ps1 -Render
 ```
 
-在独立副本和测试存档中覆盖十图箱子与安全落点、真实E开箱、守卫生成/削弱/预警/闪避、概率掉落正反分支、防重复、全套强化属性、实际穿戴与攻击、套装/武器兼容、暂停/旅行/天气/结算/重开以及存档逐字不变。结果见[共享项目状态](../PROJECT_STATUS.md)。宝箱使用代码绘制，守卫复用现有素材；数值和手感仍待人工试玩。
+在独立副本和测试存档中覆盖十图箱子与安全落点、真实E开箱、守卫生成/削弱/预警/闪避、概率掉落正反分支、防重复、全套强化属性、实际穿戴与攻击、套装/武器兼容、暂停/旅行/天气/结算/重开以及存档逐字不变。结果见[共享项目状态](../PROJECT_STATUS.md)。宝箱已使用细绘图，守卫复用现有素材；数值和手感仍待人工试玩。

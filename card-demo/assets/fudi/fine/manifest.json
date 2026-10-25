@@ -1,0 +1,293 @@
+{
+  "version": 1,
+  "style": "Fudi fine pixel art; chroma-keyed transparent runtime PNGs",
+  "source_directory": "output/imagegen/fudi-fine",
+  "assets": {
+    "chests": [
+      {
+        "id": "normal_closed",
+        "path": "card-demo/assets/fudi/fine/chests/normal_closed.png",
+        "size": [
+          256,
+          256
+        ],
+        "source": "21_chests_normal_closed.png",
+        "sha256": "f02a105ee51cf106e77e00f950b5d464996cd9bc82bee56058840a79ba60364f"
+      },
+      {
+        "id": "normal_open",
+        "path": "card-demo/assets/fudi/fine/chests/normal_open.png",
+        "size": [
+          256,
+          256
+        ],
+        "source": "22_chests_normal_open.png",
+        "sha256": "e488d260eea0b4a62070c9659bdba6afe9e936ddc1bd375b548c7e113bede956"
+      },
+      {
+        "id": "mutated_closed",
+        "path": "card-demo/assets/fudi/fine/chests/mutated_closed.png",
+        "size": [
+          256,
+          256
+        ],
+        "source": "23_chests_mutated_closed.png",
+        "sha256": "72a116213614e08b1c9efb0af40cf63fffbdbbe1b5a3a45fcfef45f2d1e3fd49"
+      },
+      {
+        "id": "mutated_guarding",
+        "path": "card-demo/assets/fudi/fine/chests/mutated_guarding.png",
+        "size": [
+          256,
+          256
+        ],
+        "source": "24_chests_mutated_guarding.png",
+        "sha256": "24a3bd098b5dbcfba354741337dec1db99a93f49fae4372ad92e3deb77ae0a95"
+      },
+      {
+        "id": "mutated_cleared",
+        "path": "card-demo/assets/fudi/fine/chests/mutated_cleared.png",
+        "size": [
+          256,
+          256
+        ],
+        "source": "25_chests_mutated_cleared.png",
+        "sha256": "828d8ece0e85f9095868e7854a79f8995a3445e29e97fec01d3beb5d1c09b0b4"
+      },
+      {
+        "id": "mutated_open",
+        "path": "card-demo/assets/fudi/fine/chests/mutated_open.png",
+        "size": [
+          256,
+          256
+        ],
+        "source": "26_chests_mutated_open.png",
+        "sha256": "a07baa59fc21159e7afbb47fdba55bc01dc98e5931f63459add875562447f0ea"
+      }
+    ],
+    "herbs": [
+      {
+        "id": "bloodgrass",
+        "path": "card-demo/assets/fudi/fine/herbs/bloodgrass.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "27_herbs_bloodgrass.png",
+        "sha256": "3cef8b6a807119afac60400b71cb3cd64598d20d8a9f60b16d282e9e1003bce8"
+      },
+      {
+        "id": "dewleaf",
+        "path": "card-demo/assets/fudi/fine/herbs/dewleaf.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "28_herbs_dewleaf.png",
+        "sha256": "66e1ab201ce642ae7ea2e40ace6eded3b6dae54b46b43411dd623254fed7540d"
+      },
+      {
+        "id": "berry",
+        "path": "card-demo/assets/fudi/fine/herbs/berry.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "29_herbs_berry.png",
+        "sha256": "c9ff1e564de6a21ee9d882acbde474c869d288b92bb3571a45dca74418669566"
+      },
+      {
+        "id": "wakeleaf",
+        "path": "card-demo/assets/fudi/fine/herbs/wakeleaf.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "30_herbs_wakeleaf.png",
+        "sha256": "e588a50ee830a9156db2cd49aa3251686c1609e47efd2ccb18e438cccf2cdcf4"
+      },
+      {
+        "id": "restflower",
+        "path": "card-demo/assets/fudi/fine/herbs/restflower.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "31_herbs_restflower.png",
+        "sha256": "e22c25b4569b3ea84251e275c2e31f98046634d3b99835a0ddf14f8acfa36620"
+      },
+      {
+        "id": "herb",
+        "path": "card-demo/assets/fudi/fine/herbs/herb.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "32_herbs_herb.png",
+        "sha256": "54fbbdf2c619e0deee2f803725756ff144923513b7e4725f5e568d140a14f4dc"
+      },
+      {
+        "id": "warmflower",
+        "path": "card-demo/assets/fudi/fine/herbs/warmflower.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "33_herbs_warmflower.png",
+        "sha256": "785331e51e7bea6b735edb698d1d199751d2e3de1c37ac06c544d0fd5e9566f3"
+      },
+      {
+        "id": "moss",
+        "path": "card-demo/assets/fudi/fine/herbs/moss.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "34_herbs_moss.png",
+        "sha256": "b6f7ff2196f99a090b5921cf2ffeb570e9e726f02862b469696461fbd5c16583"
+      },
+      {
+        "id": "mint",
+        "path": "card-demo/assets/fudi/fine/herbs/mint.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "35_herbs_mint.png",
+        "sha256": "391e40b41c1155b9ba5348533a4b5b6cfd837fab3121d9e2c65f9f7676dcce48"
+      },
+      {
+        "id": "rush",
+        "path": "card-demo/assets/fudi/fine/herbs/rush.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "36_herbs_rush.png",
+        "sha256": "7cc590f6b2baf9120662e67a6299a265dc900f26aaa3edaa9db58bbdd679dcc7"
+      },
+      {
+        "id": "bitterroot",
+        "path": "card-demo/assets/fudi/fine/herbs/bitterroot.png",
+        "size": [
+          128,
+          128
+        ],
+        "source": "37_herbs_bitterroot.png",
+        "sha256": "79695bd7812ce34bc25730def5e755b6d83d278aeca306384ac4ec3613c86d94"
+      }
+    ],
+    "plants": [
+      {
+        "id": "bloodgrass",
+        "path": "card-demo/assets/fudi/fine/plants/bloodgrass.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "38_plants_bloodgrass.png",
+        "sha256": "6f1f1e0d4865ead66d4d8b5fa56de501bf1cec7ea31490ca49f38ebbb17e661c"
+      },
+      {
+        "id": "dewleaf",
+        "path": "card-demo/assets/fudi/fine/plants/dewleaf.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "39_plants_dewleaf.png",
+        "sha256": "8407220faaa0754fe414baf7bd23756c03395cfa763b266b96c4e03f9e8494e0"
+      },
+      {
+        "id": "berry",
+        "path": "card-demo/assets/fudi/fine/plants/berry.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "40_plants_berry.png",
+        "sha256": "4deb1a556d584c3f24e9c292c488c7b1b95a8f470a973f8179d2de245fc2cd6b"
+      },
+      {
+        "id": "wakeleaf",
+        "path": "card-demo/assets/fudi/fine/plants/wakeleaf.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "41_plants_wakeleaf.png",
+        "sha256": "d13be0d27b5cf5e351b7e296a63d884fb2ced57b6ceb1e4e27e39695156e37da"
+      },
+      {
+        "id": "restflower",
+        "path": "card-demo/assets/fudi/fine/plants/restflower.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "42_plants_restflower.png",
+        "sha256": "627dcafab8b671fb1953b582f5c5e6e8233a1d4f828c42e74327c934770ac800"
+      },
+      {
+        "id": "herb",
+        "path": "card-demo/assets/fudi/fine/plants/herb.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "43_plants_herb.png",
+        "sha256": "dd5dcd767f8fbe411b3d6da26f80f6750b654e529c4750a4f7dbe0157daa1df8"
+      },
+      {
+        "id": "warmflower",
+        "path": "card-demo/assets/fudi/fine/plants/warmflower.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "44_plants_warmflower.png",
+        "sha256": "ca15003e43616299dae73c52caaef13586cfe9eccb6f28436ec56641a183247f"
+      },
+      {
+        "id": "moss",
+        "path": "card-demo/assets/fudi/fine/plants/moss.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "45_plants_moss.png",
+        "sha256": "17506aa0f837bd41de007a1ee2b578909c38573f463f192f1428480516225538"
+      },
+      {
+        "id": "mint",
+        "path": "card-demo/assets/fudi/fine/plants/mint.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "46_plants_mint.png",
+        "sha256": "dfdc8fbc3cddcd93586105a4960b77ac2b7b4e7039f411e90d53ce55a40c25a7"
+      },
+      {
+        "id": "rush",
+        "path": "card-demo/assets/fudi/fine/plants/rush.png",
+        "size": [
+          576,
+          192
+        ],
+        "frames": 3,
+        "source": "47_plants_rush.png",
+        "sha256": "4093f8d1f61fe752eb7110257fe77b0a7eb76cdb631bd470e40ae153771c90d4"
+      }
+    ]
+  }
+}

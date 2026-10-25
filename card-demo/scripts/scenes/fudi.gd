@@ -9,6 +9,7 @@ const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Landscape = preload("res://scripts/scenes/fudi_landscape.gd")
 const Bosses = preload("res://scripts/scenes/fudi_bosses.gd")
 const Loot = preload("res://scripts/scenes/loot_catalog.gd")
+const MaterialArt = preload("res://scripts/scenes/fudi_material_art.gd")
 const Equipment = preload("res://scripts/scenes/fudi_equipment.gd")
 const Buildings = preload("res://scripts/scenes/fudi_buildings.gd")
 const Chests = preload("res://scripts/scenes/fudi_chests.gd")
@@ -739,14 +740,16 @@ func _draw_world() -> void:
 	for pickup: Dictionary in states[region].pickups:
 		if pickup.get("weather_growth", false):
 			continue # Renewable plants are drawn by the weather module with growth rings.
-		var color := Color(Catalog.ITEMS[pickup.item].color)
+		var info: Dictionary = Catalog.ITEMS[pickup.item]
+		var color := Color(info.color)
+		var icon: Texture2D = info.get("icon")
 		canvas.draw_circle(pickup.position, 19, Color(color, 0.16))
-		if Loot.ITEMS.has(pickup.item):
+		if icon != null:
 			canvas.draw_arc(pickup.position, 24, 0, TAU, 32, color, 2, true)
-			canvas.draw_texture_rect(Loot.ITEMS[pickup.item].icon, Rect2(pickup.position - Vector2(22, 24), Vector2(44, 44)), false)
+			canvas.draw_texture_rect(icon, Rect2(pickup.position - Vector2(24, 26), Vector2(48, 48)), false)
 		else:
 			canvas.draw_circle(pickup.position, 7, color)
-		canvas.draw_string(font, pickup.position + Vector2(-18, 35), Catalog.ITEMS[pickup.item].name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
+		canvas.draw_string(font, pickup.position + Vector2(-18, 35), info.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
 	for enemy: Dictionary in states[region].enemies:
 		var point: Vector2 = enemy.position
 		canvas.draw_set_transform(point, 0, Vector2(1, 0.30))
@@ -886,7 +889,11 @@ func open_journal() -> void:
 			lines.append("[img=44x44]%s[/img]  %s × %d" % [Loot.ITEMS[item].icon.resource_path, Loot.ITEMS[item].name, inventory[item]])
 	for item: String in inventory:
 		if inventory[item] > 0 and not Loot.ITEMS.has(item):
-			lines.append("%s × %d" % [Catalog.ITEMS[item].name, inventory[item]])
+			var info: Dictionary = Catalog.ITEMS[item]
+			if info.has("icon"):
+				lines.append("[img=44x44]%s[/img]  %s × %d" % [info.icon.resource_path, info.name, inventory[item]])
+			else:
+				lines.append("%s × %d" % [info.name, inventory[item]])
 	var chests := get_node_or_null("Chests")
 	if chests != null:
 		lines.append("\n宝箱 · 金色方块为普通箱，紫色方块为异变箱；靠近按E开启。")

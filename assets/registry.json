@@ -2328,6 +2328,502 @@
       "status": "review",
       "notes": "User-requested NPC placements and quest markers, 2026-10-21. Native transparent PNG, no image model. See docs/fudi-npcs.md.",
       "sha256": "a5b10eb0326b397ee312021175cb23b7c4242d749b06e16d7bbb360d21f4dd79"
+    },
+    {
+      "id": "asset_424e0a378f59a46f",
+      "name": "chest-mutated-cleared",
+      "path": "card-demo/assets/fudi/fine/chests/mutated_cleared.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "chest",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine chest state art from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "828d8ece0e85f9095868e7854a79f8995a3445e29e97fec01d3beb5d1c09b0b4"
+    },
+    {
+      "id": "asset_7d4ef23ee3ea3c80",
+      "name": "chest-mutated-closed",
+      "path": "card-demo/assets/fudi/fine/chests/mutated_closed.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "chest",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine chest state art from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "72a116213614e08b1c9efb0af40cf63fffbdbbe1b5a3a45fcfef45f2d1e3fd49"
+    },
+    {
+      "id": "asset_e10afbb793c73b12",
+      "name": "chest-mutated-guarding",
+      "path": "card-demo/assets/fudi/fine/chests/mutated_guarding.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "chest",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine chest state art from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "24a3bd098b5dbcfba354741337dec1db99a93f49fae4372ad92e3deb77ae0a95"
+    },
+    {
+      "id": "asset_eda5bd5a55cfb9df",
+      "name": "chest-mutated-open",
+      "path": "card-demo/assets/fudi/fine/chests/mutated_open.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "chest",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine chest state art from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "a07baa59fc21159e7afbb47fdba55bc01dc98e5931f63459add875562447f0ea"
+    },
+    {
+      "id": "asset_65892586373cf47a",
+      "name": "chest-normal-closed",
+      "path": "card-demo/assets/fudi/fine/chests/normal_closed.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "chest",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine chest state art from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "f02a105ee51cf106e77e00f950b5d464996cd9bc82bee56058840a79ba60364f"
+    },
+    {
+      "id": "asset_a7eaac94f1985f10",
+      "name": "chest-normal-open",
+      "path": "card-demo/assets/fudi/fine/chests/normal_open.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "chest",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine chest state art from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "e488d260eea0b4a62070c9659bdba6afe9e936ddc1bd375b548c7e113bede956"
+    },
+    {
+      "id": "asset_441e7e0e634c3d54",
+      "name": "herb-berry",
+      "path": "card-demo/assets/fudi/fine/herbs/berry.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "c9ff1e564de6a21ee9d882acbde474c869d288b92bb3571a45dca74418669566"
+    },
+    {
+      "id": "asset_1f83723b97061e90",
+      "name": "herb-bitterroot",
+      "path": "card-demo/assets/fudi/fine/herbs/bitterroot.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "79695bd7812ce34bc25730def5e755b6d83d278aeca306384ac4ec3613c86d94"
+    },
+    {
+      "id": "asset_2764500586048c56",
+      "name": "herb-bloodgrass",
+      "path": "card-demo/assets/fudi/fine/herbs/bloodgrass.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "3cef8b6a807119afac60400b71cb3cd64598d20d8a9f60b16d282e9e1003bce8"
+    },
+    {
+      "id": "asset_e81b46f0a4c76be5",
+      "name": "herb-dewleaf",
+      "path": "card-demo/assets/fudi/fine/herbs/dewleaf.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "66e1ab201ce642ae7ea2e40ace6eded3b6dae54b46b43411dd623254fed7540d"
+    },
+    {
+      "id": "asset_a3d149bc5a84bf78",
+      "name": "herb-herb",
+      "path": "card-demo/assets/fudi/fine/herbs/herb.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "54fbbdf2c619e0deee2f803725756ff144923513b7e4725f5e568d140a14f4dc"
+    },
+    {
+      "id": "asset_ba729f2b25189e48",
+      "name": "herb-mint",
+      "path": "card-demo/assets/fudi/fine/herbs/mint.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "391e40b41c1155b9ba5348533a4b5b6cfd837fab3121d9e2c65f9f7676dcce48"
+    },
+    {
+      "id": "asset_077c8e990fcd6474",
+      "name": "herb-moss",
+      "path": "card-demo/assets/fudi/fine/herbs/moss.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "b6f7ff2196f99a090b5921cf2ffeb570e9e726f02862b469696461fbd5c16583"
+    },
+    {
+      "id": "asset_46ba86f647da00ea",
+      "name": "herb-restflower",
+      "path": "card-demo/assets/fudi/fine/herbs/restflower.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "e22c25b4569b3ea84251e275c2e31f98046634d3b99835a0ddf14f8acfa36620"
+    },
+    {
+      "id": "asset_6191c63c379fd120",
+      "name": "herb-rush",
+      "path": "card-demo/assets/fudi/fine/herbs/rush.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "7cc590f6b2baf9120662e67a6299a265dc900f26aaa3edaa9db58bbdd679dcc7"
+    },
+    {
+      "id": "asset_66f781e1973da94d",
+      "name": "herb-wakeleaf",
+      "path": "card-demo/assets/fudi/fine/herbs/wakeleaf.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "e588a50ee830a9156db2cd49aa3251686c1609e47efd2ccb18e438cccf2cdcf4"
+    },
+    {
+      "id": "asset_3e423a0b134fa2fd",
+      "name": "herb-warmflower",
+      "path": "card-demo/assets/fudi/fine/herbs/warmflower.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "herb",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine herb icon from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "785331e51e7bea6b735edb698d1d199751d2e3de1c37ac06c544d0fd5e9566f3"
+    },
+    {
+      "id": "asset_a67735f17461aa3b",
+      "name": "plant-berry",
+      "path": "card-demo/assets/fudi/fine/plants/berry.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "4deb1a556d584c3f24e9c292c488c7b1b95a8f470a973f8179d2de245fc2cd6b"
+    },
+    {
+      "id": "asset_495f913287da9085",
+      "name": "plant-bloodgrass",
+      "path": "card-demo/assets/fudi/fine/plants/bloodgrass.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "6f1f1e0d4865ead66d4d8b5fa56de501bf1cec7ea31490ca49f38ebbb17e661c"
+    },
+    {
+      "id": "asset_1f0b9191c75e08ff",
+      "name": "plant-dewleaf",
+      "path": "card-demo/assets/fudi/fine/plants/dewleaf.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "8407220faaa0754fe414baf7bd23756c03395cfa763b266b96c4e03f9e8494e0"
+    },
+    {
+      "id": "asset_e597e1f62b3af60f",
+      "name": "plant-herb",
+      "path": "card-demo/assets/fudi/fine/plants/herb.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "dd5dcd767f8fbe411b3d6da26f80f6750b654e529c4750a4f7dbe0157daa1df8"
+    },
+    {
+      "id": "asset_5c66f48c28c30d15",
+      "name": "plant-mint",
+      "path": "card-demo/assets/fudi/fine/plants/mint.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "dfdc8fbc3cddcd93586105a4960b77ac2b7b4e7039f411e90d53ce55a40c25a7"
+    },
+    {
+      "id": "asset_ea194b90d5ca4231",
+      "name": "plant-moss",
+      "path": "card-demo/assets/fudi/fine/plants/moss.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "17506aa0f837bd41de007a1ee2b578909c38573f463f192f1428480516225538"
+    },
+    {
+      "id": "asset_5ab33c6a58eb3a08",
+      "name": "plant-restflower",
+      "path": "card-demo/assets/fudi/fine/plants/restflower.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "627dcafab8b671fb1953b582f5c5e6e8233a1d4f828c42e74327c934770ac800"
+    },
+    {
+      "id": "asset_7b2d5fcb6b36f067",
+      "name": "plant-rush",
+      "path": "card-demo/assets/fudi/fine/plants/rush.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "4093f8d1f61fe752eb7110257fe77b0a7eb76cdb631bd470e40ae153771c90d4"
+    },
+    {
+      "id": "asset_c6bf2d65e4b48aae",
+      "name": "plant-wakeleaf",
+      "path": "card-demo/assets/fudi/fine/plants/wakeleaf.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "d13be0d27b5cf5e351b7e296a63d884fb2ced57b6ceb1e4e27e39695156e37da"
+    },
+    {
+      "id": "asset_faa73d8d52ceeb96",
+      "name": "plant-warmflower",
+      "path": "card-demo/assets/fudi/fine/plants/warmflower.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "plant",
+        "growth-sheet",
+        "pixel-art",
+        "generated"
+      ],
+      "source": "User-provided gpt-image-2 gateway generation; originals in output/imagegen/fudi-fine/; transparent runtime derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
+      "sha256": "ca15003e43616299dae73c52caaef13586cfe9eccb6f28436ec56641a183247f"
     }
   ]
 }

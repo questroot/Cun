@@ -1,5 +1,6 @@
 extends RefCounted
 const FUDI_REGIONS = preload("res://scripts/scenes/fudi_maps.gd").IDS
+const MaterialArt = preload("res://scripts/scenes/fudi_material_art.gd")
 ## Resource counts are the actual fixed pickups created by Fudi each round.
 const MATERIALS := {
 	"wood": {"name": "木料", "color": "#c99b69"},
@@ -32,6 +33,9 @@ static var ITEMS: Dictionary = _all_items()
 
 static func _all_items() -> Dictionary:
 	var items := MATERIALS.duplicate(true)
+	for id: String in MaterialArt.HERBS:
+		if items.has(id):
+			items[id]["icon"] = MaterialArt.HERBS[id]
 	items.merge(preload("res://scripts/scenes/loot_catalog.gd").ITEMS)
 	return items
 

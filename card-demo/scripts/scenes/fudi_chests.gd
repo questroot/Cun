@@ -7,6 +7,7 @@ const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Bosses = preload("res://scripts/scenes/boss_catalog.gd")
 const Skills = preload("res://scripts/scenes/boss_skills.gd")
 const VFX = preload("res://scripts/scenes/pixel_vfx.gd")
+const Art = preload("res://scripts/scenes/fudi_material_art.gd")
 const ENEMY_ART = preload("res://assets/characters/pet_enemy_stone.png")
 var game
 var rng := RandomNumberGenerator.new()
@@ -338,9 +339,8 @@ func draw_world() -> void:
 		if chest.state == "opened":
 			color = Color("#7b8c88")
 		canvas.draw_circle(point, 29, Color(color, 0.18))
-		canvas.draw_style_box(_box(Color("#46334e") if chest.mutated else Color("#513d29"), color), Rect2(point - Vector2(23, 22), Vector2(46, 34)))
-		canvas.draw_rect(Rect2(point - Vector2(24, 25 if chest.state == "opened" else 22), Vector2(48, 9)), color)
-		canvas.draw_rect(Rect2(point - Vector2(4, 13), Vector2(8, 12)), Color("#fff0bc"))
+		var tint := Color(0.72, 0.78, 0.75, 0.92) if chest.state == "opened" else Color.WHITE
+		Art.draw_chest(canvas, Art.chest_texture(chest.mutated, str(chest.state)), point, 160, tint)
 		var label := "异变宝箱" if chest.mutated else "普通宝箱"
 		match chest.state:
 			"guarding": label += " · 守卫中"
@@ -369,14 +369,6 @@ func draw_world() -> void:
 		if float(chest.warning) > 0:
 			canvas.draw_arc(point, 135, 0, TAU, 48, Color("#e3a3ff"), 4, true)
 			canvas.draw_string(font, point + Vector2(55, -55), "异变惊醒！准备迎战", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#e8c4ff"))
-
-func _box(fill: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = border
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(5)
-	return style
 
 func _draw_guard(canvas: Control, guard: Dictionary, art: Texture2D, extent: Vector2, name: String, width: float) -> void:
 	var point: Vector2 = guard.position
