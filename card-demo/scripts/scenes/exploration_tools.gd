@@ -12,7 +12,7 @@ func _ready() -> void:
 	var bar := HBoxContainer.new()
 	bar.position = Vector2(24, 158)
 	if region == "water_activity":
-		bar.position = Vector2(24, 665)
+		bar.position = Vector2(500, 23)
 	bar.add_theme_constant_override("separation", 8)
 	add_child(bar)
 	bar.add_child(UI.button("地图  M", open_map))
