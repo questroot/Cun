@@ -48,10 +48,17 @@ func _read_sea_text(text: String) -> Dictionary:
 	if not parsed is Dictionary or not parsed.get("state") is Dictionary:
 		return {}
 	var raw_version: Variant = parsed.get("version")
-	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0]:
+	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0]:
 		return {}
 	var state: Dictionary = parsed["state"]
 	var version: int = int(raw_version)
+	for key in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
+		if version < 5:
+			state[key] = false
+		elif not state.get(key) is bool:
+			return {}
+	if (state.dive_sonar and not state.dive_shoal) or (state.dive_core and not state.dive_sonar) or (state.dive_archived and not state.dive_core):
+		return {}
 	for key in ["wood", "scrap", "water", "fiber", "rope", "raft_tiles", "collectors", "orders_completed", "pending_water", "pending_fiber"]:
 		if not (state.get(key) is float or state.get(key) is int) or state[key] < 0 or state[key] > (1000002 if version >= 2 and key == "raft_tiles" else 1000000) or state[key] != floor(state[key]):
 			return {}
@@ -162,7 +169,7 @@ func load_sea_save() -> void:
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""
-	var text := JSON.stringify({"version": 4, "state": state})
+	var text := JSON.stringify({"version": 5, "state": state})
 	if _read_sea_text(text).is_empty():
 		sea_save_error = "海上存档数据无效，未保存。"
 		return false

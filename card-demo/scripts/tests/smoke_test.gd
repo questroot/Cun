@@ -524,7 +524,7 @@ func run_checks() -> void:
 			instance._tick_production(4.0)
 			check(game.water_activity_state.delegated and game.water_activity_state.neighbor_surveyed and instance.water >= 3, "委任岚增加每批清水且状态持久")
 			var committed_sea: Dictionary = game.water_activity_state.duplicate(true)
-			check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).get("version", 0)) == 4, "近岸和准备进度写入版本4海上独立档")
+			check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).get("version", 0)) == 5, "近岸和准备进度写入版本5海上独立档")
 			game.load_sea_save()
 			check(game.water_activity_state == game._read_sea_text(JSON.stringify({"version": 4, "state": committed_sea})) and game.water_activity_state.core_level == 3 and game.water_activity_state.filter_blueprint and game.water_activity_state.salt == 2 and game.water_activity_state.sail_loadout == "weapon", "版本4重读保留首探图纸、盐晶和准备")
 			var legacy_v3: Dictionary = committed_sea.duplicate(true)

@@ -52,10 +52,14 @@ func is_open() -> bool:
 	return atlas.visible or confirm.visible
 
 func open_map() -> void:
+	if modal_blocker.is_valid() and modal_blocker.call():
+		return
 	if not confirm.visible:
 		atlas.open(region)
 
 func switch_game() -> void:
+	if modal_blocker.is_valid() and modal_blocker.call():
+		return
 	if region in Atlas.Catalog.FUDI_REGIONS or region == "water_activity":
 		confirm.show()
 	else:

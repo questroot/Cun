@@ -1,6 +1,78 @@
 extends Control
 const ExplorationTools = preload("res://scripts/scenes/exploration_tools.gd")
 var exploration_tools: ExplorationTools
+const Underwater = preload("res://scripts/scenes/underwater_exploration.gd")
+var dive_shoal := false
+var dive_sonar := false
+var dive_core := false
+var dive_archived := false
+var dive_layer: CanvasLayer
+var dive_view: Control
+var dive_button: Button
+var records_button: Button
+var prior_focus: Control
+
+func _sea_window_open() -> bool:
+	for child in get_children():
+		if child is Window and child.visible:
+			return true
+	return false
+
+func _sea_modal() -> bool:
+	if is_instance_valid(dive_layer):
+		return true
+	if is_instance_valid(exploration_tools) and exploration_tools.is_open():
+		return true
+	for child in get_children():
+		if child is Window and child.visible:
+			return true
+	return false
+
+func _open_dive(records := false) -> void:
+	if _sea_modal() or at_salt or at_wreck or sailing:
+		return
+	prior_focus = get_viewport().gui_get_focus_owner()
+	moving = false
+	model.update_movement(Vector2.ZERO, 0.0)
+	exploration_tools.hide()
+	exploration_tools.set_process_input(false)
+	dive_layer = CanvasLayer.new()
+	dive_layer.layer = 100
+	add_child(dive_layer)
+	dive_view = Underwater.new()
+	dive_view.host = self
+	dive_view.read_only = records
+	dive_view.returned.connect(_close_dive)
+	dive_layer.add_child(dive_view)
+
+func _close_dive() -> void:
+	if not is_instance_valid(dive_layer):
+		return
+	dive_layer.remove_child(dive_view)
+	dive_view.queue_free()
+	remove_child(dive_layer)
+	dive_layer.queue_free()
+	dive_layer = null
+	dive_view = null
+	exploration_tools.show()
+	exploration_tools.set_process_input(true)
+	moving = false
+	result_label.text = "返回浮台：已调查线索保留。" + ("回声核心待归档，请打开探索记录。" if dive_core and not dive_archived else "可打开探索记录回看。")
+	if is_instance_valid(prior_focus):
+		prior_focus.grab_focus()
+	else:
+		dive_button.grab_focus()
+
+func _commit_dive(key: String) -> bool:
+	if key not in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
+		return false
+	if bool(get(key)):
+		return true
+	if (key == "dive_sonar" and not dive_shoal) or (key == "dive_core" and not dive_sonar) or (key == "dive_archived" and (not dive_core or not is_instance_valid(dive_view) or not dive_view.read_only)):
+		return false
+	set(key, true)
+	result_label.text = "探索记录已归档；深处信号仍未解。" if key == "dive_archived" else "海底发现已记录，返航不会丢失。"
+	return _cache_round()
 
 const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const SEA := Rect2(72, 238, 744, 414)
@@ -123,6 +195,7 @@ var slot_picker: OptionButton
 var guide_skipped := false
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	model = HeroWalkScript.new()
 	model.scale = Vector2(0.18, 0.18)
 	add_child(model)
@@ -226,13 +299,17 @@ func _ready() -> void:
 		initial_state = GameManager.water_activity_state.duplicate(true)
 	exploration_tools = ExplorationTools.new()
 	exploration_tools.region = "water_activity"
+	exploration_tools.modal_blocker = func() -> bool: return is_instance_valid(dive_layer) or _sea_window_open()
 	add_child(exploration_tools)
+	dive_button = _make_button("下潜 · 海底探索", Vector2(455, 204), Vector2(175, 30), func() -> void: _open_dive())
+	records_button = _make_button("探索记录 / 归档", Vector2(637, 204), Vector2(177, 30), func() -> void: _open_dive(true))
 
 func _exit_tree() -> void:
 	pass
 
 func _round_state() -> Dictionary:
 	return {
+		"dive_shoal": dive_shoal, "dive_sonar": dive_sonar, "dive_core": dive_core, "dive_archived": dive_archived,
 		"wood": wood, "scrap": scrap, "water": water, "fiber": fiber, "rope": rope,
 		"raft_tiles": raft_tiles, "core_level": core_level, "guide_seen_pickup": guide_seen_pickup, "guide_seen_claim": guide_seen_claim, "building_slots": building_slots.duplicate(), "collectors": collectors, "orders_completed": orders_completed,
 		"pending_water": pending_water, "pending_fiber": pending_fiber,
@@ -260,6 +337,10 @@ func _cache_round() -> bool:
 	return false
 
 func _restore_round(state: Dictionary) -> void:
+	dive_shoal = state.get("dive_shoal", false)
+	dive_sonar = state.get("dive_sonar", false)
+	dive_core = state.get("dive_core", false)
+	dive_archived = state.get("dive_archived", false)
 	wood = state["wood"]
 	scrap = state["scrap"]
 	water = state["water"]
@@ -317,11 +398,18 @@ func _make_button(text: String, position_value: Vector2, size_value: Vector2, ac
 	button.text = text
 	button.position = position_value
 	button.size = size_value
-	button.pressed.connect(action)
+	button.pressed.connect(func() -> void:
+		if not _sea_modal(): action.call()
+	)
 	add_child(button)
 	return button
 
 func _start_round() -> void:
+	_close_dive()
+	dive_shoal = false
+	dive_sonar = false
+	dive_core = false
+	dive_archived = false
 	resident = false
 	resident_working = false
 	partner = false
@@ -857,8 +945,8 @@ func _refresh_ui() -> void:
 		sea_panel.text = "潮测台已建 | 岚委任：%s\n盐雾滩%s | 过滤架：%s（每批清水+1）" % ["是" if delegated else "否", "已首探" if filter_blueprint else "待探索", "已建" if filter_built else "未建"]
 	queue_redraw()
 
-func _input(event: InputEvent) -> void:
-	if exploration_tools.is_open():
+func _unhandled_input(event: InputEvent) -> void:
+	if _sea_modal():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * (event as InputEventMouseButton).position
@@ -867,11 +955,11 @@ func _input(event: InputEvent) -> void:
 			moving = true
 
 func _process(delta: float) -> void:
-	processing_flash = maxf(0.0, processing_flash - delta)
-	if exploration_tools.is_open():
+	if _sea_modal():
 		model.update_movement(Vector2.ZERO, 0)
 		queue_redraw()
 		return
+	processing_flash = maxf(0.0, processing_flash - delta)
 	wave_elapsed += delta
 	if at_wreck:
 		wreck_elapsed += maxf(delta, 0.0)
