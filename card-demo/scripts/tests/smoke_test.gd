@@ -937,8 +937,11 @@ func run_checks() -> void:
 			hero.energy = 100
 			hero.cooldowns.erase("hero_strike")
 			battle.player_action("hero_strike", battle.valid_targets(hero, "hero_strike")[0])
+			var feedback_seen := false
 			for n in range(3000):
 				await process_frame
+				if animation_events > 0 and instance.last_hit_damage >= 0 and instance.focused_target != null and instance.target_label.text.contains(instance.focused_target.name) and instance.target_label.text.contains("命中"):
+					feedback_seen = true
 				for unit in battle.allies:
 					var model: BattleActor = instance.actor_for(unit)
 					if model != null and model.action_name != "idle":
@@ -972,7 +975,7 @@ func run_checks() -> void:
 			check(instance.active_fx == fx_cap and instance.fx_layer.get_node_or_null("PhaseAura_impact") == null, "特效密集时保留主体与浮字预算")
 			instance.active_fx = fx_before
 			check(chase_events > 0, "追打逐段动画回执")
-			check(instance.last_hit_damage >= 0 and instance.target_label.text != "", "战斗中逐段目标与伤害反馈实际更新")
+			check(feedback_seen, "战斗中逐段目标与伤害反馈实际更新")
 			check(model_motion_seen, "战斗角色独立运动")
 			check(premature_hits == 0 and started_events >= animation_events, "出手演出早于伤害结算")
 			# 停止自动推进后独立验证宠物技能从玩家入口进入原有结算链。
