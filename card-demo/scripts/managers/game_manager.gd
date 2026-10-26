@@ -5,6 +5,7 @@ var current_stage := "stage_1"
 var stage_pending := false
 var city_spawn := Vector2(334, 558)
 var last_result := ""
+const DiveCatalog = preload("res://scripts/scenes/underwater_catalog.gd")
 var water_activity_state: Dictionary = {}
 const SEA_SAVE := "user://sea_chapter_v1.json"
 const SEA_TEMP := "user://sea_chapter_v1.json.tmp"
@@ -48,10 +49,24 @@ func _read_sea_text(text: String) -> Dictionary:
 	if not parsed is Dictionary or not parsed.get("state") is Dictionary:
 		return {}
 	var raw_version: Variant = parsed.get("version")
-	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0]:
+	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]:
 		return {}
 	var state: Dictionary = parsed["state"]
 	var version: int = int(raw_version)
+	var has_equipment := state.has("equipment") or state.has("core_reward_claimed") or state.has("dive_workshop_unlocked") or state.has("dive_workshop_built")
+	if version < 6 or (version == 6 and not has_equipment):
+		state.equipment = DiveCatalog.equipment()
+		state.core_reward_claimed = false
+		state.dive_workshop_unlocked = false
+		state.dive_workshop_built = false
+	elif not DiveCatalog.valid_equipment(state):
+		return {}
+	if version < 6:
+		state.resources = DiveCatalog.resources()
+		state.node_states = DiveCatalog.defaults()
+		state.net_expansion = 0
+	elif not DiveCatalog.valid(state):
+		return {}
 	for key in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
 		if version < 5:
 			state[key] = false
@@ -169,7 +184,7 @@ func load_sea_save() -> void:
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""
-	var text := JSON.stringify({"version": 5, "state": state})
+	var text := JSON.stringify({"version": 6, "state": state})
 	if _read_sea_text(text).is_empty():
 		sea_save_error = "海上存档数据无效，未保存。"
 		return false

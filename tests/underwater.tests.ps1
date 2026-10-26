@@ -22,6 +22,8 @@ foreach ($file in (Get-ChildItem -LiteralPath $source -Recurse -File)) {
 }
 $configPath = Join-Path $testRoot 'project.godot'
 $config = [IO.File]::ReadAllText($configPath).Replace('[application]', "[application]`nconfig/use_custom_user_dir=true`nconfig/custom_user_dir_name=`"Cun-Underwater-$id`"")
+# Bound parallel asset import workers in the isolated copy to avoid native import crashes.
+$config += "`n[threading]`nworker_pool/max_threads=1`n`n[editor]`nimport/use_multiple_threads=false`n"
 [IO.File]::WriteAllText($configPath, $config, (New-Object Text.UTF8Encoding($false)))
 foreach ($name in @('import', 'underwater', 'smoke')) {
     $arguments = @('--headless', '--path', $testRoot)

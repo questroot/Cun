@@ -1,6 +1,141 @@
 extends Control
 const ExplorationTools = preload("res://scripts/scenes/exploration_tools.gd")
+const DiveCatalog = preload("res://scripts/scenes/underwater_catalog.gd")
+var resources := DiveCatalog.resources()
+var node_states := DiveCatalog.defaults()
+var net_expansion := 0
+var equipment := DiveCatalog.equipment()
+var core_reward_claimed := false
+var dive_workshop_unlocked := false
+var dive_workshop_built := false
+var dive_workshop_button: Button
+
+func equipment_level(slot: String) -> int:
+	return int(equipment[slot].level)
+
+func material_count(id: String) -> int:
+	return int(resources[id]) if resources.has(id) else int(get(id))
+
+func recipe_text(id: String) -> String:
+	var level := net_expansion if id == "net_expansion" else equipment_level(id)
+	if level >= 2: return "已达上限"
+	var parts := PackedStringArray()
+	for material in DiveCatalog.RECIPES[id][level]:
+		var need: int = DiveCatalog.RECIPES[id][level][material]
+		var name: String = DiveCatalog.ITEMS[material][0] if DiveCatalog.ITEMS.has(material) else {"wood": "木料", "scrap": "废料", "fiber": "纤维", "rope": "绳索"}[material]
+		parts.append("%s%d（缺%d）" % [name, need, maxi(0, need - material_count(material))])
+	return " / ".join(parts)
+
+func craft_equipment(id: String) -> bool:
+	if is_instance_valid(dive_layer) or at_salt or at_wreck or sailing or not dive_workshop_built or not DiveCatalog.RECIPES.has(id): return false
+	var level := net_expansion if id == "net_expansion" else equipment_level(id)
+	if level >= 2: return false
+	var recipe: Dictionary = DiveCatalog.RECIPES[id][level]
+	for material in recipe:
+		if material_count(material) < int(recipe[material]):
+			result_label.text = "缺少材料：" + recipe_text(id)
+			return false
+	for material in recipe:
+		if resources.has(material): resources[material] -= int(recipe[material])
+		else: set(material, int(get(material)) - int(recipe[material]))
+	if id == "net_expansion": net_expansion += 1
+	else: equipment[id].level = level + 1
+	var saved := _cache_round()
+	_refresh_ui()
+	return saved
+
+func build_dive_workshop() -> bool:
+	if is_instance_valid(dive_layer) or at_salt or at_wreck or sailing or not dive_workshop_unlocked or dive_workshop_built or wood < DiveCatalog.WORKSHOP_COST.x or scrap < DiveCatalog.WORKSHOP_COST.y: return false
+	wood -= DiveCatalog.WORKSHOP_COST.x
+	scrap -= DiveCatalog.WORKSHOP_COST.y
+	dive_workshop_built = true
+	# 核心附属工坊位不占旧槽，满布局也不拆除建筑。
+	var saved := _cache_round()
+	_refresh_ui()
+	return saved
+
+func _show_dive_workshop() -> void:
+	if _sea_modal(): return
+	if at_salt or at_wreck or sailing:
+		result_label.text = "请先返回浮台，再使用潜水工坊。"
+		return
+	var popup := AcceptDialog.new()
+	popup.title = "浮台 · 潜水工坊 / C"
+	popup.min_size = Vector2i(780, 500)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 14)
+	popup.add_child(box)
+	var info := Label.new()
+	info.text = "核心附属工坊位：" + ("已建成" if dive_workshop_built else ("已解锁 · 建造需木2废2" if dive_workshop_unlocked else "首次归档核心解锁并获木2废2")) + "\n面具照亮120→200→260；氧气90→120→150；脚蹼230→280→320；网袋8→12→16\n珍珠用于面具/氧气瓶二级；图鉴门槛后续整合，本轮不限制。"
+	box.add_child(info)
+	var build := Button.new()
+	build.text = "建造潜水工坊（核心附属位） · 木2 废2 · 缺木%d 废%d" % [maxi(0, 2 - wood), maxi(0, 2 - scrap)]
+	build.disabled = not dive_workshop_unlocked or dive_workshop_built or wood < 2 or scrap < 2
+	build.pressed.connect(func() -> void:
+		popup.hide()
+		popup.queue_free()
+		_open_build("dive_workshop"))
+	box.add_child(build)
+	for id in DiveCatalog.RECIPES:
+		var button := Button.new()
+		var level := net_expansion if id == "net_expansion" else equipment_level(id)
+		button.text = ("网袋扩容" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id]) + " · 当前%d级 · " % level + recipe_text(id)
+		button.disabled = not dive_workshop_built or level >= 2
+		button.pressed.connect(func() -> void:
+			craft_equipment(id)
+			popup.hide()
+			popup.queue_free()
+			_show_dive_workshop())
+		box.add_child(button)
+	add_child(popup)
+	popup.popup_centered()
+	popup.confirmed.connect(popup.queue_free)
+	popup.canceled.connect(popup.queue_free)
+var recoverable_drops: Array = []
+var last_dive_summary := ""
 var exploration_tools: ExplorationTools
+
+func gather_node(map: String, id: String, now: float = Time.get_unix_time_from_system()) -> bool:
+	if not is_finite(now) or now <= 0 or now > 253402300799.0: return false
+	if not node_states.has(map) or not node_states[map].has(id): return false
+	var entry: Dictionary = node_states[map][id]
+	DiveCatalog.recover(entry, now)
+	if int(entry.stock) <= 0: return false
+	entry.stock = int(entry.stock) - 1
+	return _cache_round()
+
+func settle_net(items: Array, lost: int) -> bool:
+	for id in items:
+		if int(resources[id]) >= DiveCatalog.RESOURCE_LIMIT:
+			result_label.text = "仓库达到上限，结算失败；请重试。"
+			return false
+	var gain := DiveCatalog.resources()
+	for id in items: gain[id] += 1
+	for id in gain:
+		if int(resources[id]) + int(gain[id]) > DiveCatalog.RESOURCE_LIMIT:
+			result_label.text = "仓库达到上限，结算失败；网袋保留。"
+			return false
+	for id in gain: resources[id] += gain[id]
+	if not _cache_round(): return false
+	var parts := PackedStringArray()
+	for id in gain:
+		if gain[id] > 0: parts.append("%s×%d" % [DiveCatalog.ITEMS[id][0], gain[id]])
+	last_dive_summary = "本潜收获：%s；损失%d件。" % ["、".join(parts) if not parts.is_empty() else "无", lost]
+	return true
+
+func _show_warehouse() -> void:
+	var popup := AcceptDialog.new()
+	popup.title = "海面仓库 / B"
+	var lines := PackedStringArray(["木%d 废%d 盐晶%d 清水%d 纤维%d 绳索%d" % [wood, scrap, salt, water, fiber, rope]])
+	lines.append("木料：扩建/建筑/面具L1；废料：建筑/氧气瓶L1；盐晶：过滤架供水")
+	lines.append("清水：订单；纤维：加工绳索/脚蹼L1；绳索：订单/脚蹼L2/网袋扩容")
+	for id in resources: lines.append("%s × %d → %s" % [DiveCatalog.ITEMS[id][0], resources[id], DiveCatalog.USES[id]])
+	for id in DiveCatalog.RECIPES: lines.append(("网袋" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id]) + "：" + recipe_text(id))
+	popup.dialog_text = "\n".join(lines)
+	add_child(popup)
+	popup.popup_centered()
+	popup.confirmed.connect(popup.queue_free)
+	popup.canceled.connect(popup.queue_free)
 const Underwater = preload("res://scripts/scenes/underwater_exploration.gd")
 var dive_shoal := false
 var dive_sonar := false
@@ -11,6 +146,25 @@ var dive_view: Control
 var dive_button: Button
 var records_button: Button
 var prior_focus: Control
+var dive_summary_label: Label
+
+func _dive_summary() -> String:
+	if dive_archived and not core_reward_claimed: return "旧记录奖励待领：打开探索记录补领工坊位＋木2废2。"
+	if dive_workshop_built: return "下一潜：珊瑚造面具/扩袋，贝群造脚蹼，铜件造氧气瓶；深处珍珠升二级。"
+	if dive_archived: return "家园成果：潜水工坊位已解锁！C建造（木2废2）；海底材料用于潜水装备。"
+	if dive_core: return "海底探索 · 待归档：安全光柱返航后在浮台探索记录归档，获工坊位＋木2废2。"
+	if dive_sonar: return "海底探索 · 海沟：寻找核心，安全光柱撤离；首次归档解锁家园潜水工坊。"
+	if dive_shoal: return "海底探索 · 沉船：浅滩已记录，从船尾进入并调查声呐台。"
+	return "海底探索 · 浅滩：下潜调查光迹，再前往沉船与海沟。"
+
+func _refresh_dive_ui() -> void:
+	if not is_instance_valid(dive_summary_label): return
+	dive_summary_label.text = "耗尽零收益/整袋及新核心丢失；宝箱暂存，安全光柱上浮才入库。\n" + _dive_summary()
+	if is_instance_valid(dive_workshop_button):
+		dive_workshop_button.text = "潜水工坊 · " + ("已建成 / C" if dive_workshop_built else ("建造 / C" if dive_workshop_unlocked else "核心解锁 / C"))
+	records_button.text = "奖励待补领！" if dive_archived and not core_reward_claimed else ("核心待归档！" if dive_core and not dive_archived else ("探索记录 · 已完成" if dive_archived else "探索记录 · 回看"))
+	dive_button.disabled = at_salt or at_wreck or sailing
+	records_button.disabled = dive_button.disabled
 
 func _sea_window_open() -> bool:
 	for child in get_children():
@@ -32,6 +186,7 @@ func _open_dive(records := false) -> void:
 	if _sea_modal() or at_salt or at_wreck or sailing:
 		return
 	prior_focus = get_viewport().gui_get_focus_owner()
+	if not records: last_dive_summary = ""
 	moving = false
 	model.update_movement(Vector2.ZERO, 0.0)
 	exploration_tools.hide()
@@ -48,6 +203,44 @@ func _open_dive(records := false) -> void:
 func _close_dive() -> void:
 	if not is_instance_valid(dive_layer):
 		return
+	if not dive_view.read_only:
+		dive_view.cancel_opening("请求关闭/上浮")
+		if dive_view.ascending > 0: return
+		if not dive_view.settling and not dive_view.at_safety():
+			dive_view.message = dive_view.safety_hint()
+			dive_view.refresh()
+			return
+		if dive_view.settlement_saved: return
+		if dive_view.settlement.is_empty():
+			var rescue: bool = dive_view.oxygen <= 0
+			dive_view.settlement = {"items": [] if rescue else dive_view.bag.duplicate(), "losses": dive_view.lost_items.duplicate(), "place": dive_view.place, "rescue": rescue}
+			if rescue:
+				dive_view.pending_core = false
+				dive_view.drops.clear()
+		dive_view.settling = true
+		dive_view.moving = false
+		dive_view.bag_open = false
+		var saved := true
+		if dive_view.settlement.rescue:
+			last_dive_summary = "氧气耗尽 · 本次失败零收益，收获全部丢失，不可拾回；本潜新核心未保留。"
+		else:
+			# 新核心与整袋入库共用一次保存；失败回滚后仍可按同一快照重试。
+			var prior_core := dive_core
+			if dive_view.pending_core: dive_core = true
+			saved = settle_net(dive_view.settlement.items, dive_view.lost_count)
+			if not saved: dive_core = prior_core
+		if saved:
+			recoverable_drops.clear()
+			dive_view.pending_core = false
+			dive_view.bag.clear()
+		dive_view.show_settlement(saved)
+		_refresh_dive_ui()
+		return
+	_dismiss_dive()
+
+func _dismiss_dive() -> void:
+	if not is_instance_valid(dive_layer): return
+	if not dive_view.read_only and not dive_view.settlement_saved: return
 	dive_layer.remove_child(dive_view)
 	dive_view.queue_free()
 	remove_child(dive_layer)
@@ -57,7 +250,8 @@ func _close_dive() -> void:
 	exploration_tools.show()
 	exploration_tools.set_process_input(true)
 	moving = false
-	result_label.text = "返回浮台：已调查线索保留。" + ("回声核心待归档，请打开探索记录。" if dive_core and not dive_archived else "可打开探索记录回看。")
+	result_label.text = last_dive_summary + "返回浮台：已调查线索保留。" + ("回声核心待归档，请打开探索记录。" if dive_core and not dive_archived else "可打开探索记录回看。")
+	_refresh_dive_ui()
 	if is_instance_valid(prior_focus):
 		prior_focus.grab_focus()
 	else:
@@ -66,13 +260,33 @@ func _close_dive() -> void:
 func _commit_dive(key: String) -> bool:
 	if key not in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
 		return false
+	if key == "dive_core" and not dive_core:
+		if not dive_sonar or not is_instance_valid(dive_view) or dive_view.read_only or dive_view.settling or dive_view.oxygen <= 0: return false
+		dive_view.pending_core = true
+		result_label.text = "核心暂存本潜；须安全上浮才能保留，耗尽救援不获核心或奖励。"
+		return true
+	if key == "dive_archived":
+		if not dive_core or not is_instance_valid(dive_view) or not dive_view.read_only: return false
+		if core_reward_claimed: return true
+		if wood > 999998 or scrap > 999998: return false
+		dive_archived = true
+		core_reward_claimed = true
+		dive_workshop_unlocked = true
+		wood += 2
+		scrap += 2
+		result_label.text = "核心首次归档：潜水工坊位已解锁，木2废2已入库。C建造。"
+		var claimed := _cache_round()
+		_refresh_dive_ui()
+		return claimed
 	if bool(get(key)):
 		return true
 	if (key == "dive_sonar" and not dive_shoal) or (key == "dive_core" and not dive_sonar) or (key == "dive_archived" and (not dive_core or not is_instance_valid(dive_view) or not dive_view.read_only)):
 		return false
 	set(key, true)
 	result_label.text = "探索记录已归档；深处信号仍未解。" if key == "dive_archived" else "海底发现已记录，返航不会丢失。"
-	return _cache_round()
+	var saved := _cache_round()
+	_refresh_dive_ui()
+	return saved
 
 const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
 const SEA := Rect2(72, 238, 744, 414)
@@ -217,12 +431,16 @@ func _ready() -> void:
 	status_label.add_theme_color_override("font_color", Color.WHITE)
 	add_child(status_label)
 	goal_label = Label.new()
-	goal_label.position = Vector2(75, 160)
+	goal_label.position = Vector2(75, 150)
+	goal_label.size = Vector2(740, 50)
+	goal_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	goal_label.add_theme_font_size_override("font_size", 19)
 	goal_label.add_theme_color_override("font_color", Color("#ffe5a0"))
 	add_child(goal_label)
 	result_label = Label.new()
-	result_label.position = Vector2(75, 194)
+	result_label.position = Vector2(82, 276)
+	result_label.size = Vector2(722, 54)
+	result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	result_label.add_theme_font_size_override("font_size", 17)
 	result_label.add_theme_color_override("font_color", Color("#d7f1f0"))
 	add_child(result_label)
@@ -303,12 +521,24 @@ func _ready() -> void:
 	add_child(exploration_tools)
 	dive_button = _make_button("下潜 · 海底探索", Vector2(455, 204), Vector2(175, 30), func() -> void: _open_dive())
 	records_button = _make_button("探索记录 / 归档", Vector2(637, 204), Vector2(177, 30), func() -> void: _open_dive(true))
+	dive_workshop_button = _make_button("潜水工坊 / C", Vector2(82, 204), Vector2(360, 30), _show_dive_workshop)
+	dive_summary_label = Label.new()
+	dive_summary_label.position = Vector2(82, 242)
+	dive_summary_label.size = Vector2(722, 48)
+	result_label.position.y = 300
+	dive_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dive_summary_label.add_theme_font_size_override("font_size", 16)
+	dive_summary_label.add_theme_color_override("font_color", Color("#ffe5a0"))
+	add_child(dive_summary_label)
+	_refresh_dive_ui()
 
 func _exit_tree() -> void:
 	pass
 
 func _round_state() -> Dictionary:
 	return {
+		"resources": resources.duplicate(true), "node_states": node_states.duplicate(true), "net_expansion": net_expansion,
+		"equipment": equipment.duplicate(true), "core_reward_claimed": core_reward_claimed, "dive_workshop_unlocked": dive_workshop_unlocked, "dive_workshop_built": dive_workshop_built,
 		"dive_shoal": dive_shoal, "dive_sonar": dive_sonar, "dive_core": dive_core, "dive_archived": dive_archived,
 		"wood": wood, "scrap": scrap, "water": water, "fiber": fiber, "rope": rope,
 		"raft_tiles": raft_tiles, "core_level": core_level, "guide_seen_pickup": guide_seen_pickup, "guide_seen_claim": guide_seen_claim, "building_slots": building_slots.duplicate(), "collectors": collectors, "orders_completed": orders_completed,
@@ -337,6 +567,13 @@ func _cache_round() -> bool:
 	return false
 
 func _restore_round(state: Dictionary) -> void:
+	resources = state.get("resources", DiveCatalog.resources()).duplicate(true)
+	node_states = state.get("node_states", DiveCatalog.defaults()).duplicate(true)
+	net_expansion = int(state.get("net_expansion", 0))
+	equipment = state.get("equipment", DiveCatalog.equipment()).duplicate(true)
+	core_reward_claimed = state.get("core_reward_claimed", false)
+	dive_workshop_unlocked = state.get("dive_workshop_unlocked", false)
+	dive_workshop_built = state.get("dive_workshop_built", false)
 	dive_shoal = state.get("dive_shoal", false)
 	dive_sonar = state.get("dive_sonar", false)
 	dive_core = state.get("dive_core", false)
@@ -405,7 +642,17 @@ func _make_button(text: String, position_value: Vector2, size_value: Vector2, ac
 	return button
 
 func _start_round() -> void:
+	if is_instance_valid(dive_view): dive_view.read_only = true
 	_close_dive()
+	resources = DiveCatalog.resources()
+	node_states = DiveCatalog.defaults()
+	net_expansion = 0
+	equipment = DiveCatalog.equipment()
+	core_reward_claimed = false
+	dive_workshop_unlocked = false
+	dive_workshop_built = false
+	recoverable_drops.clear()
+	last_dive_summary = ""
 	dive_shoal = false
 	dive_sonar = false
 	dive_core = false
@@ -743,7 +990,10 @@ func _fulfill_order() -> bool:
 
 func _build_reason(kind: String) -> String:
 	var missing := PackedStringArray()
-	if kind == "core":
+	if kind == "dive_workshop":
+		if dive_workshop_built: return "潜水工坊已建成"
+		if not dive_workshop_unlocked: missing.append("首次归档回声核心解锁附属位")
+	elif kind == "core":
 		if core_level >= 3:
 			return "核心已达3级"
 		if orders_completed < (1 if core_level == 1 else 2):
@@ -785,6 +1035,7 @@ func _build_reason(kind: String) -> String:
 
 func _build_cost(kind: String) -> Vector2i:
 	match kind:
+		"dive_workshop": return DiveCatalog.WORKSHOP_COST
 		"core": return Vector2i(CORE_WOOD, CORE_SCRAP)
 		"expand": return Vector2i(EXPAND_WOOD, EXPAND_SCRAP)
 		"collector": return Vector2i(COLLECTOR_WOOD, COLLECTOR_SCRAP)
@@ -797,7 +1048,7 @@ func _open_build(kind: String) -> void:
 	if sailing or at_salt or at_wreck:
 		return
 	build_kind = kind
-	var names := {"core": "航站核心", "expand": "扩建甲板", "collector": "集水打捞站", "workshop": "简易工坊", "tide": "潮测台", "filter": "盐雾过滤架"}
+	var names := {"dive_workshop": "潜水工坊（核心附属位，不占旧槽）", "core": "航站核心", "expand": "扩建甲板", "collector": "集水打捞站", "workshop": "简易工坊", "tide": "潮测台", "filter": "盐雾过滤架"}
 	var cost := _build_cost(kind)
 	var reason := _build_reason(kind)
 	slot_picker.visible = kind in ["collector", "workshop", "tide", "filter"]
@@ -812,7 +1063,12 @@ func _open_build(kind: String) -> void:
 
 func _confirm_build() -> void:
 	var kind := build_kind
-	if _build_reason(kind) != "" or sailing or at_salt or at_wreck:
+	if _build_reason(kind) != "" or sailing or at_salt or at_wreck or is_instance_valid(dive_layer):
+		return
+	if kind == "dive_workshop":
+		if build_dive_workshop():
+			build_dialog.hide()
+			_show_dive_workshop.call_deferred()
 		return
 	var slot := -1
 	if kind in ["collector", "workshop", "tide", "filter"]:
@@ -887,6 +1143,7 @@ func _show_guide() -> void:
 	popup.confirmed.connect(popup.queue_free)
 
 func _refresh_ui() -> void:
+	_refresh_dive_ui()
 	status_label.text = "木 %d   废 %d   盐晶 %d   清水 %d   纤维 %d   绳索 %d   待领水/纤维 %d/%d" % [wood, scrap, salt, water, fiber, rope, pending_water, pending_fiber]
 	core_button.text = "航站核心 %d级 · 点击预览升级" % core_level
 	core_button.disabled = sailing or at_salt or at_wreck
@@ -947,6 +1204,14 @@ func _refresh_ui() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _sea_modal():
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_C:
+		_show_dive_workshop()
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
+		_show_warehouse()
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * (event as InputEventMouseButton).position
@@ -1044,6 +1309,7 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#102e40"))
 	draw_rect(SEA.grow(7.0), Color("#d1b988"))
 	draw_rect(SEA, Color("#746f77") if at_salt else Color("#263f53") if at_wreck else Color("#176879"))
+	draw_rect(Rect2(76, 238, 736, 94), Color("#102e40"))
 	if at_wreck:
 		for i in 7:
 			var mast := Vector2(125 + i * 102, 310 + (i % 2) * 185)
@@ -1052,7 +1318,7 @@ func _draw() -> void:
 		for point in wreck_nodes:
 			draw_colored_polygon(PackedVector2Array([point + Vector2(-23, 10), point + Vector2(-14, -12), point + Vector2(18, -8), point + Vector2(23, 10)]), Color("#ac593d"))
 			draw_line(point + Vector2(-8, 0), point + Vector2(12, 0), Color("#e2a474"), 3.0)
-		draw_string(ThemeDB.fallback_font, Vector2(250, 325), "风障废船带 · 锈船废料 +2 · 阵风伤船", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(250, 350), "风障废船带 · 锈船废料 +2 · 阵风伤船", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
 		return
 	if at_salt:
 		for i in 9:
@@ -1061,7 +1327,7 @@ func _draw() -> void:
 		for point in salt_nodes:
 			draw_colored_polygon(PackedVector2Array([point + Vector2(-18, 12), point + Vector2(-8, -13), point + Vector2(0, 0), point + Vector2(9, -22), point + Vector2(18, 12)]), Color("#e9d9f5"))
 			draw_circle(point + Vector2(0, 5), 5, Color("#a579b5"))
-		draw_string(ThemeDB.fallback_font, Vector2(305, 326), "盐雾滩 · 紫白晶簇可采集", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(305, 350), "盐雾滩 · 紫白晶簇可采集", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
 		return
 	for row in 6:
 		for column in 9:
@@ -1074,6 +1340,7 @@ func _draw() -> void:
 		draw_rect(log_rect, Color("#9c6741"))
 		draw_rect(Rect2(log_rect.position + Vector2(3, 3), Vector2(28, 10)), Color("#bd9161"))
 		draw_line(point + Vector2(-10, bob), point + Vector2(10, bob), Color("#ead3a0"), 2.0)
+	draw_rect(Rect2(76, 238, 736, 94), Color("#102e40"))
 	for i in mini(raft_tiles, MAX_TILES):
 		var center := Vector2(360 + (i % 4) * 81, 374 + (i / 4) * 78)
 		draw_rect(Rect2(center, Vector2(72, 68)), Color("#745b40"))
@@ -1094,5 +1361,12 @@ func _draw() -> void:
 			draw_string(ThemeDB.fallback_font, center + Vector2(8, 42), "潮测台", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.WHITE)
 		else:
 			draw_string(ThemeDB.fallback_font, center + Vector2(19, 41), "空位%d" % i, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#625540"))
+	if dive_workshop_unlocked:
+		draw_line(Vector2(360, 408), Vector2(295, 408), Color("#d5b581"), 12)
+		draw_rect(Rect2(195, 365, 108, 86), Color("#745b40"))
+		draw_rect(Rect2(201, 371, 96, 74), Color("#398e9d") if dive_workshop_built else Color("#586776"))
+		draw_circle(Vector2(250, 392), 13, Color("#b5f5ef"))
+		draw_string(ThemeDB.fallback_font, Vector2(205, 424), "潜水工坊 / C", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(204, 441), "已建成" if dive_workshop_built else "已解锁·待建", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
 	if workshop_built and processing_flash > 0.0:
 		draw_string(ThemeDB.fallback_font, Vector2(492, 340), "工坊加工 +绳索", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#fff0a1"))
