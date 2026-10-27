@@ -1,6 +1,6 @@
 ﻿# Real Godot cold-start regression. Uses an isolated project and unique test save directory.
 [CmdletBinding()]
-param([string]$EnginePath = '')
+param([string]$EnginePath = '', [ValidateSet('Menu', 'Water')][string]$Game = 'Menu')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'launcher\Launcher.Core.ps1')
@@ -24,7 +24,10 @@ $config = [IO.File]::ReadAllText($paths.ProjectFile, [Text.Encoding]::UTF8)
 $saveName = 'Cun-Cold-Launch-' + (Split-Path -Leaf $base)
 $config = $config.Replace('[application]', "[application]`nconfig/use_custom_user_dir=true`nconfig/custom_user_dir_name=`"$saveName`"")
 [IO.File]::WriteAllText($paths.ProjectFile, $config, (New-Object Text.UTF8Encoding($false)))
-$city = Join-Path $paths.Project 'scripts\scenes\main_menu.gd'
+$config += "`n[threading]`nworker_pool/max_threads=1`n`n[editor]`nimport/use_multiple_threads=false`n"
+[IO.File]::WriteAllText($paths.ProjectFile, $config, (New-Object Text.UTF8Encoding($false)))
+$sceneScript = if ($Game -eq 'Water') { 'water_activity.gd' } else { 'main_menu.gd' }
+$city = Join-Path $paths.Project ('scripts\scenes\' + $sceneScript)
 $text = [IO.File]::ReadAllText($city, [Text.Encoding]::UTF8).Replace("`r`n", "`n")
 if (-not $text.Contains("func _ready() -> void:`n")) { throw 'Cannot attach isolated capture to actual main-scene startup.' }
 $text = $text.Replace("func _ready() -> void:`n", "func _ready() -> void:`n`tcall_deferred(`"_launcher_cold_capture`")`n")
@@ -39,9 +42,40 @@ func _launcher_cold_capture() -> void:
 	print("LAUNCHER_COLD_CAPTURE: %s %s" % ["PASS" if result == OK else "FAIL", ProjectSettings.globalize_path("user://launcher_cold_preview.png")])
 	get_tree().quit(0 if result == OK else 1)
 '@
+if ($Game -eq 'Water') {
+    $text = $text.Replace("`tget_tree().quit(0 if result == OK else 1)", @'
+	if result != OK or get_tree().current_scene.scene_file_path != "res://scenes/WaterActivity.tscn" or is_instance_valid(dive_layer):
+		get_tree().quit(1)
+		return
+	var spirit_before := FileAccess.get_file_as_string("user://spirit_save.json") if FileAccess.file_exists("user://spirit_save.json") else ""
+	if not _cache_round():
+		get_tree().quit(1)
+		return
+	var stored := GameManager.water_activity_state.duplicate(true)
+	GameManager.water_activity_state.clear()
+	GameManager.load_sea_save()
+	if JSON.parse_string(JSON.stringify(stored, "", true, true)) != JSON.parse_string(JSON.stringify(GameManager.water_activity_state, "", true, true)):
+		get_tree().quit(1)
+		return
+	dive_button.pressed.emit()
+	for i in range(5):
+		await get_tree().process_frame
+	if not is_instance_valid(dive_layer):
+		get_tree().quit(1)
+		return
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png("user://launcher_dive_preview.png")
+	var spirit_after := FileAccess.get_file_as_string("user://spirit_save.json") if FileAccess.file_exists("user://spirit_save.json") else ""
+	if spirit_before != spirit_after:
+		get_tree().quit(1)
+		return
+	print("LAUNCHER_WATER_ROUTE: PASS surface -> independent save/reload -> dive button -> underwater; user=" + OS.get_user_data_dir())
+	get_tree().quit(0)
+'@)
+}
 [IO.File]::WriteAllText($city, $text, (New-Object Text.UTF8Encoding($false)))
 if (Test-Path -LiteralPath (Join-Path $paths.Project '.godot')) { throw 'Cold project unexpectedly contains a cache.' }
-$run = Start-CunProject $paths $EnginePath 'Game'
+$run = Start-CunProject $paths $EnginePath 'Game' -Game $Game
 try {
     if (-not $run.Process.WaitForExit(45000)) { throw 'Cold game did not reach capture checkpoint within 45 seconds.' }
     $output = $run.Stdout.Result + "`n" + $run.Stderr.Result
@@ -49,7 +83,8 @@ try {
     if ($run.Process.ExitCode -ne 0 -or $output -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error|LAUNCHER_COLD_CAPTURE: FAIL)') { throw ('Cold game reported errors. ' + $output) }
     if ($output -notmatch '(?m)^LAUNCHER_COLD_CAPTURE: PASS (.+\.png)') { throw 'Actual main scene did not render a screenshot.' }
     $image = $Matches[1].Trim()
-    $destination = Join-Path $root '.local\launcher-cold-preview.png'
+    if ($Game -eq 'Water' -and $output -notmatch 'LAUNCHER_WATER_ROUTE: PASS') { throw 'Water route did not reach underwater/save checkpoint.' }
+    $destination = Join-Path $base ('launcher-' + $Game + '-preview.png')
     [IO.File]::Copy($image, $destination, $true)
     Write-Output 'REAL COLD START PASS: no initial cache -> launcher import -> actual main scene -> rendered screenshot -> normal exit.'
     Write-Output ('Evidence: ' + $destination)

@@ -184,7 +184,7 @@ func load_sea_save() -> void:
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""
-	var text := JSON.stringify({"version": 6, "state": state})
+	var text := JSON.stringify({"version": 6, "state": state}, "", true, true)
 	if _read_sea_text(text).is_empty():
 		sea_save_error = "海上存档数据无效，未保存。"
 		return false

@@ -15,6 +15,9 @@ func check(ok: bool, label: String) -> void:
 		failures += 1
 		print("FAIL: ", label)
 
+func json_state_equal(actual: Dictionary, expected: Dictionary) -> bool:
+	return JSON.parse_string(JSON.stringify(actual, "", true, true)) == JSON.parse_string(JSON.stringify(expected, "", true, true))
+
 func key(code: Key, shift := false, keep_settlement := false) -> void:
 	var event := InputEventKey.new()
 	event.shift_pressed = shift
@@ -196,14 +199,15 @@ func v2_checks() -> void:
 	view = sea.dive_view
 	view.set_process(false)
 	view.foot = Vector2(270, 300)
+	var abandoned_nodes: Dictionary = sea.node_states.duplicate(true)
 	view.interact()
-	stock = sea.node_states.shoal.s1.stock
+	check(sea.node_states.shoal.s1.stock == int(abandoned_nodes.shoal.s1.stock) - 1, "放弃前确实扣除宝箱库存")
 	sea.dive_layer.queue_free()
 	sea.dive_layer = null
 	sea.dive_view = null
 	await process_frame
 	game.load_sea_save()
-	check(game.water_activity_state.node_states.shoal.s1.stock == stock, "放弃下潜不回滚库存")
+	check(json_state_equal(game.water_activity_state.node_states, abandoned_nodes) and sea.node_states == abandoned_nodes, "放弃下潜恢复本潜库存与时钟且实际落盘")
 	for map in catalog.RATES:
 		sea._open_dive()
 		view = sea.dive_view
@@ -230,6 +234,149 @@ func v2_checks() -> void:
 	var stored: int = sea.resources.coral
 	await key(KEY_ESCAPE)
 	check(not is_instance_valid(sea.dive_view) and sea.resources.coral == stored, "耗尽确认关闭不入库任何收获")
+
+func rollback_chest(view: Control, map: String, index := 0) -> void:
+	var catalog = load("res://scripts/scenes/underwater_catalog.gd")
+	view.enter(map)
+	var node: Array = catalog.NODES[map][index]
+	view.foot = node[2]
+	var before: int = sea.node_states[map][node[0]].stock
+	view.start_chest(node)
+	view.tick_opening(float(catalog.CHESTS[catalog.chest_quality(map, node[0])].seconds))
+	check(sea.node_states[map][node[0]].stock == before - 1, "回滚专项实际完成开箱 " + map + "/" + node[0])
+
+func stock_rollback_checks() -> void:
+	var catalog = load("res://scripts/scenes/underwater_catalog.gd")
+	sea._start_round()
+	sea.node_states = catalog.defaults(floorf(Time.get_unix_time_from_system()) - 30.0 + 0.1234567)
+	check(sea._cache_round(), "V2.3独立全地点存量基线")
+	var baseline: Dictionary = sea.node_states.duplicate(true)
+	var warehouse: Dictionary = sea.resources.duplicate(true)
+	var expected_loot: Array = catalog.chest_loot("shoal", "s1", int(baseline.shoal.s1.stock), float(baseline.shoal.s1.timestamp))
+	game.load_sea_save()
+	var reloaded_entry: Dictionary = game.water_activity_state.node_states.shoal.s1
+	check(reloaded_entry.stock == baseline.shoal.s1.stock and reloaded_entry.timestamp == baseline.shoal.s1.timestamp and catalog.chest_loot("shoal", "s1", int(reloaded_entry.stock), float(reloaded_entry.timestamp)) == expected_loot, "保存重读精确保留stock与小数timestamp且chest_loot种子不变")
+	sea._open_dive(true)
+	check(sea.dive_node_snapshot.is_empty() and not sea.dive_stock_changed, "记录只读不建立下潜存量快照")
+	sea._close_dive()
+	sea._open_dive()
+	var view: Control = sea.dive_view
+	view.set_process(false)
+	check(sea.dive_node_snapshot == baseline, "开潜快照包含所有地点和时钟")
+	rollback_chest(view, "shoal")
+	var first_loot: Array = view.bag.duplicate()
+	check(first_loot == expected_loot, "真实开箱符合保存前后相同种子loot")
+	rollback_chest(view, "shoal")
+	rollback_chest(view, "shoal")
+	rollback_chest(view, "wreck")
+	rollback_chest(view, "trench")
+	check(sea.node_states.shoal.s1.stock == 0 and sea.node_states.shoal.s1.timestamp != baseline.shoal.s1.timestamp and sea.dive_node_snapshot == baseline and sea.dive_stock_changed, "多地点多次扣至空箱且快照深拷贝不随库存时钟变化")
+	var spent: Dictionary = sea.node_states.duplicate(true)
+	game.load_sea_save()
+	check(json_state_equal(game.water_activity_state.node_states, spent), "耗尽前各次实际扣箱已写盘")
+	var losses: Array = view.bag.duplicate()
+	view.tick_oxygen(1000)
+	check(view.settlement_saved and view.settlement.rescue and view.settlement.items.is_empty() and view.lost_items == losses and view.bag.is_empty(), "多地点收获耗尽后整袋损失且零入库")
+	check(sea.node_states == baseline and sea.resources == warehouse and sea.dive_node_snapshot.is_empty() and not sea.dive_stock_changed, "耗尽恢复全地点stock与timestamp并清快照")
+	game.load_sea_save()
+	check(json_state_equal(game.water_activity_state.node_states, baseline) and json_state_equal(game.water_activity_state.resources, warehouse), "耗尽回滚实际重读库存时钟与历史仓库一致")
+	var saved_text := FileAccess.get_file_as_string(game.SEA_SAVE)
+	check(sea.rollback_dive_stock() and sea.rollback_dive_stock() and sea.node_states == baseline and FileAccess.get_file_as_string(game.SEA_SAVE) == saved_text, "重复回滚无副作用且不重复写档")
+	await key(KEY_ESCAPE)
+	sea._open_dive()
+	view = sea.dive_view
+	view.set_process(false)
+	rollback_chest(view, "shoal")
+	check(view.bag == first_loot, "失败后下一潜同节点同代次实际loot一致不重抽")
+	var safe_nodes: Dictionary = sea.node_states.duplicate(true)
+	var safe_resources := warehouse.duplicate(true)
+	for id in view.bag: safe_resources[id] += 1
+	view.foot = view.safety_position()
+	sea._close_dive()
+	check(view.settlement_saved and sea.node_states == safe_nodes and sea.resources == safe_resources and sea.dive_node_snapshot.is_empty(), "安全入库保留已扣箱且清快照")
+	check(sea.rollback_dive_stock() and sea.node_states == safe_nodes and sea.resources == safe_resources, "安全结算后回滚不能恢复已入库宝箱")
+	await key(KEY_ESCAPE)
+	game.load_sea_save()
+	check(json_state_equal(game.water_activity_state.node_states, safe_nodes) and json_state_equal(game.water_activity_state.resources, safe_resources), "安全关闭view后实际重读仍保留入库和扣箱")
+	sea._open_dive()
+	view = sea.dive_view
+	view.set_process(false)
+	check(sea.dive_node_snapshot == safe_nodes, "下一潜以安全入库后的库存建立新快照")
+	rollback_chest(view, "shoal")
+	rollback_chest(view, "wreck")
+	view.tick_oxygen(1000)
+	game.load_sea_save()
+	check(view.settlement_saved and sea.node_states == safe_nodes and sea.resources == safe_resources and json_state_equal(game.water_activity_state.node_states, safe_nodes) and json_state_equal(game.water_activity_state.resources, safe_resources), "下一潜失败只回滚下一潜扣箱不撤销上一潜安全成果")
+	await key(KEY_ESCAPE)
+
+	sea._start_round()
+	check(sea._cache_round(), "回滚写失败独立基线")
+	baseline = sea.node_states.duplicate(true)
+	warehouse = sea.resources.duplicate(true)
+	sea._open_dive()
+	view = sea.dive_view
+	view.set_process(false)
+	rollback_chest(view, "shoal")
+	spent = sea.node_states.duplicate(true)
+	losses = view.bag.duplicate()
+	check(DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP)) == OK, "建立SEA_TEMP目录注入回滚写失败")
+	view.tick_oxygen(1000)
+	check(view.settling and not view.settlement_saved and view.settlement.rescue and view.lost_items == losses and view.bag.is_empty() and sea.resources == warehouse, "回滚写失败冻结救援且不入库不假成功")
+	check(view.settlement_text.text.contains("回滚保存失败") and view.settlement_text.text.contains("探索冻结") and not view.settlement_text.text.contains("入库成功") and not view.settlement_close.visible and view.settlement_retry.visible, "失败面板明确存量回滚失败且仅允许重试")
+	check(sea.dive_node_snapshot == baseline and sea.dive_stock_changed and sea.node_states == spent, "失败保留原始快照与重试标记且内存回到已扣存量")
+	game.load_sea_save()
+	check(json_state_equal(game.water_activity_state.node_states, spent) and json_state_equal(game.water_activity_state.resources, warehouse), "回滚失败实际重读仍为已扣存量无收益")
+	var panel: Control = view.settlement_panel
+	var settlement: Dictionary = view.settlement.duplicate(true)
+	var oxygen: float = view.oxygen
+	view._process(10)
+	check(not view.interact() and view.oxygen == oxygen, "失败面板自然逻辑不耗氧不可继续采集")
+	sea._dismiss_dive()
+	sea._open_dive()
+	check(sea.dive_view == view, "失败回滚不可关闭或覆盖本潜")
+	await key(KEY_ESCAPE, false, true)
+	check(not view.settlement_saved and view.settlement_panel == panel and view.settlement == settlement and sea.dive_node_snapshot == baseline and json_state_equal(sea.node_states, spent) and json_state_equal(sea.resources, warehouse), "故障未移除反复重试保持同一失败面板与快照")
+	check(DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP)) == OK, "移除SEA_TEMP回滚故障")
+	await key(KEY_SPACE, false, true)
+	check(view.settlement_saved and view.settlement_panel == panel and view.settlement == settlement and sea.node_states == baseline and json_state_equal(sea.resources, warehouse) and sea.dive_node_snapshot.is_empty() and not sea.dive_stock_changed, "移除故障后重试同一面板恢复全部存量而不入库")
+	check(view.settlement_text.text.contains("存量已回滚") and not view.settlement_text.text.contains("入库成功"), "回滚重试成功仍明确失败零收益")
+	game.load_sea_save()
+	check(json_state_equal(game.water_activity_state.node_states, baseline) and json_state_equal(game.water_activity_state.resources, warehouse), "回滚重试实际落盘且无收益")
+	sea._close_dive()
+	check(sea.rollback_dive_stock() and json_state_equal(sea.resources, warehouse), "重试成功后重复结算回滚不入库")
+	await key(KEY_ESCAPE)
+
+	for destroy_host in [false, true]:
+		sea._start_round()
+		check(sea._cache_round(), "中退独立基线 host=%s" % destroy_host)
+		baseline = sea.node_states.duplicate(true)
+		warehouse = sea.resources.duplicate(true)
+		sea._open_dive()
+		view = sea.dive_view
+		view.set_process(false)
+		rollback_chest(view, "shoal")
+		rollback_chest(view, "wreck")
+		spent = sea.node_states.duplicate(true)
+		game.load_sea_save()
+		check(json_state_equal(game.water_activity_state.node_states, spent), "中退前多地点扣箱确实落盘 host=%s" % destroy_host)
+		if destroy_host:
+			sea.queue_free()
+		else:
+			sea.dive_layer.queue_free()
+			sea.dive_layer = null
+			sea.dive_view = null
+		await process_frame
+		check(not is_instance_valid(view), "真实场景销毁触发退出 host=%s" % destroy_host)
+		game.load_sea_save()
+		check(json_state_equal(game.water_activity_state.node_states, baseline) and json_state_equal(game.water_activity_state.resources, warehouse), "view/host中退实际重读恢复本潜库存时钟且不入库 host=%s" % destroy_host)
+		if destroy_host:
+			check(not is_instance_valid(sea), "host场景实际销毁")
+			sea = load("res://scenes/WaterActivity.tscn").instantiate()
+			root.add_child(sea)
+			sea.set_process(false)
+			await process_frame
+		var host_restored: bool = json_state_equal(sea.node_states, baseline) and json_state_equal(sea.resources, warehouse) if destroy_host else sea.node_states == baseline and sea.resources == warehouse
+		check(host_restored and sea.rollback_dive_stock(), "中退后宿主状态恢复且再次回滚幂等 host=%s" % destroy_host)
 
 func settlement_checks() -> void:
 	sea._start_round()
@@ -861,6 +1008,7 @@ func run() -> void:
 	await workshop_checks()
 	await settlement_checks()
 	await chest_checks()
+	await stock_rollback_checks()
 	sea._start_round()
 	check(sea._cache_round(), "专项退出恢复新局供经营回归使用")
 	sea.queue_free()

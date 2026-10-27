@@ -84,7 +84,7 @@ func _ready() -> void:
 	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail.add_theme_constant_override("separation", 14)
 	scroll.add_child(detail)
-	travel_button = UI.button("前往此地", func() -> void: travel_requested.emit(selected_region); close())
+	travel_button = UI.button("前往此地", _request_travel)
 	travel_button.name = "TravelButton"
 	detail_column.add_child(travel_button)
 	travel_button.hide()
@@ -104,6 +104,8 @@ func _outer_radius() -> float:
 	return maxf(1.0, minf((map_surface.size.y - 100.0) * 0.5, (map_surface.size.x - 128.0) * 0.5))
 
 func _map_position(id: String) -> Vector2:
+	if current_region == "water_activity" and id == "water_activity":
+		return map_surface.size * 0.5
 	var inner := id in Maps.INNER_RING
 	var ring: Array = Maps.INNER_RING if inner else Maps.OUTER_RING
 	var index := ring.find(id)
@@ -120,7 +122,10 @@ func _boss_names(id: String) -> String:
 	return " / ".join(names)
 
 func _draw_map() -> void:
-	for pair: Array in [["city", "outskirts"], ["outskirts", "water_activity"]]:
+	if current_region == "water_activity":
+		map_surface.draw_string(ThemeDB.fallback_font, Vector2(24, 90), "海底水世界 · 海面浮台", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("#d7c18b"))
+		return
+	for pair: Array in [["city", "outskirts"]]:
 		map_surface.draw_line(_map_position(pair[0]), _map_position(pair[1]), Color("#557e75"), 2, true)
 	var center := _ring_center()
 	var radius := _outer_radius()
@@ -142,8 +147,20 @@ func _draw_map() -> void:
 
 func open(region: String) -> void:
 	current_region = region
+	for id: String in region_buttons:
+		region_buttons[id].visible = _region_available(id)
+	_place_regions()
 	show()
 	select_region(region)
+
+func _region_available(id: String) -> bool:
+	return (id == "water_activity") == (current_region == "water_activity")
+
+func _request_travel() -> void:
+	if not can_travel or not _region_available(selected_region) or selected_region not in Maps.IDS:
+		return
+	travel_requested.emit(selected_region)
+	close()
 
 func close() -> void:
 	hide()
@@ -155,7 +172,7 @@ func _line(text: String, font_size: int = 18, color: Color = Color("#dfebe3")) -
 	detail.add_child(node)
 
 func select_region(id: String) -> void:
-	if not Catalog.REGIONS.has(id):
+	if not Catalog.REGIONS.has(id) or not _region_available(id):
 		return
 	selected_region = id
 	for child in detail.get_children():

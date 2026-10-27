@@ -338,7 +338,7 @@ func run_checks() -> void:
 			check(instance.model != null and instance.player_foot.distance_to(Vector2(140, 576)) < 2.0, "邻接区域成功加载并显示人物")
 			check(instance.RETURN.has_point(Vector2(84, 570)), "邻接区域包含可返回主城的出口")
 			check(instance.model.texture.resource_path == "res://assets/characters/hero/idle/hero_idle.png" and instance.model.hframes == 1 and instance.model.vframes == 1, "外缘玩家使用完整的主角站立图")
-			check(instance.WATER_PORTAL.has_point(Vector2(1044, 560)), "外缘水门位于可移动区域")
+			check(not instance.play_visible().has("water_portal_screen"), "外缘不再暴露已停用的水门")
 		elif path.ends_with("WaterActivity.tscn"):
 			check(not game.water_activity_state.is_empty(), "新档初始化可提交版本3海上存档")
 			if game.water_activity_state.is_empty():
@@ -526,7 +526,7 @@ func run_checks() -> void:
 			var committed_sea: Dictionary = game.water_activity_state.duplicate(true)
 			check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).get("version", 0)) == 6, "近岸和准备进度写入版本6海上独立档")
 			game.load_sea_save()
-			check(game.water_activity_state == JSON.parse_string(JSON.stringify(committed_sea)), "版本6重读保留完整海上进度（按JSON精度）")
+			check(game.water_activity_state == JSON.parse_string(JSON.stringify(committed_sea, "", true, true)), "版本6重读保留完整海上进度（完整JSON精度）")
 			var migrated_v4: Dictionary = game._read_sea_text(JSON.stringify({"version": 4, "state": committed_sea}))
 			check(migrated_v4.core_level == 3 and migrated_v4.filter_blueprint and migrated_v4.salt == 2 and migrated_v4.sail_loadout == "weapon" and migrated_v4.resources.size() == 6 and migrated_v4.node_states.size() == 3, "版本4迁移保留首探图纸、盐晶和准备并初始化海底")
 			var legacy_v3: Dictionary = committed_sea.duplicate(true)
@@ -1118,11 +1118,23 @@ func run_checks() -> void:
 	check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "踏入东侧传送点实际切换到云庭外缘")
 	if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
 		var outskirts = current_scene
-		outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
+		outskirts.player_foot = Vector2(1044, 557.5)
 		outskirts._process(0.0)
 		for frame in range(4):
 			await process_frame
-		check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "外缘水门实际进入漂流浮台")
+		check(current_scene == outskirts and not outskirts.play_visible().has("water_portal_screen"), "原水门位置不再传送且不对外显示入口")
+		outskirts.player_foot = outskirts.RETURN.get_center()
+		outskirts._process(0.0)
+		for frame in range(4):
+			await process_frame
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn" and current_scene.player_foot.distance_to(Vector2(1900, 729)) < 2.0, "外缘返回主城及东侧落点不受影响")
+		game.goto_scene("menu")
+		for frame in range(4):
+			await process_frame
+		current_scene.find_child("EnterWater", true, false).pressed.emit()
+		for frame in range(4):
+			await process_frame
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "主界面海底水世界实际进入海面浮台")
 		if current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn":
 			var activity = current_scene
 			activity.wood = 5
@@ -1139,14 +1151,12 @@ func run_checks() -> void:
 			activity.get_node("ReturnButton").pressed.emit()
 			for frame in range(4):
 				await process_frame
-			check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "活动返回按钮实际回到外缘")
-			if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
-				outskirts = current_scene
-				outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
-				outskirts._process(0.0)
+			check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn", "水域返回按钮实际回到游戏选择")
+			if current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn":
+				current_scene.find_child("EnterWater", true, false).pressed.emit()
 				for frame in range(4):
 					await process_frame
-				check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "再次经水门进入活动")
+				check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "再次从游戏选择进入水世界")
 				if current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn":
 					activity = current_scene
 					check(activity.raft_tiles == 2 and activity.core_level == 1 and activity.building_slots == ["core", "collector"] and activity.collectors == 1 and activity.pending_water == 1 and activity.wood == 0 and activity.scrap == 0 and activity.debris == saved_debris, "离开后再进入保留经营资源、核心槽位及漂浮物")
@@ -1155,10 +1165,8 @@ func run_checks() -> void:
 					activity.get_node("ReturnButton").pressed.emit()
 					for frame in range(4):
 						await process_frame
-					if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
-						outskirts = current_scene
-						outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
-						outskirts._process(0.0)
+					if current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn":
+						current_scene.find_child("EnterWater", true, false).pressed.emit()
 						for frame in range(4):
 							await process_frame
 						check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn" and current_scene.raft_tiles == 1 and current_scene.collectors == 0 and current_scene.pending_water == 0, "重开后再次进入仍保持全新活动状态")
@@ -1166,18 +1174,7 @@ func run_checks() -> void:
 							current_scene.get_node("ReturnButton").pressed.emit()
 							for frame in range(4):
 								await process_frame
-		if current_scene == null or current_scene.scene_file_path != "res://scenes/Outskirts.tscn":
-			data.save_data["hero_skill"] = saved_hero_skill
-			quit(1)
-			return
-		outskirts = current_scene
-		outskirts.player_foot = outskirts.RETURN.get_center()
-		outskirts._process(0.0)
-		for frame in range(4):
-			await process_frame
-		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn", "外缘左侧传送点实际切换回主城")
-		if current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn":
-			check(current_scene.player_foot.distance_to(Vector2(1900, 729)) < 2.0, "返城到达点位于东侧道路")
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn", "海底水世界退出始终回到游戏选择")
 	data.save_data["hero_skill"] = saved_hero_skill
 	print("SMOKE RESULT: %s (%d failed)" % ["PASS" if failures == 0 else "FAIL", failures])
 	quit(0 if failures == 0 else 1)

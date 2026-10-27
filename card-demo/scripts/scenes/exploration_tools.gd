@@ -40,7 +40,7 @@ func _ready() -> void:
 	layout.add_theme_constant_override("separation", 18)
 	panel.add_child(layout)
 	layout.add_child(UI.label("返回游戏选择？", 26, Color("#f0d69a")))
-	var message := UI.label("离开后，本次游玩的采集、战斗或水域活动进度将重置。", 19)
+	var message := UI.label("海上进度已自动保存；返回后可从“海底水世界”继续。" if region == "water_activity" else "离开后，本次游玩的采集与战斗进度将重置。", 19)
 	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	layout.add_child(message)
 	confirm_ok = UI.button("返回游戏选择", func() -> void: GameManager.goto_scene("menu"))

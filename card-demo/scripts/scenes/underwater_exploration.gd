@@ -78,6 +78,8 @@ func tick_opening(delta: float) -> void:
 
 func _exit_tree() -> void:
 	cancel_opening("关闭场景")
+	if not read_only and not settlement_saved and is_instance_valid(host):
+		host.rollback_dive_stock()
 
 func has_core() -> bool:
 	return host.dive_core or pending_core
@@ -137,6 +139,8 @@ func show_settlement(saved: bool) -> void:
 	var lines := PackedStringArray([("耗尽救援 · 本次失败零收益" if settlement.rescue else "安全光柱上浮") + " · " + location, "", ("本次入库" if saved else "待入库网袋") + " · 共%d件：" % settlement.items.size(), settlement_items(settlement.items), "", "全部损失 · 共%d件（不可拾回）：" % settlement.losses.size(), settlement_items(settlement.losses), ""])
 	if settlement.rescue:
 		lines.append("未安全上浮：本次收获100%不入库，本潜新核心未保留，不能归档领奖；历史仓库、装备及已带回核心不受影响。")
+		lines.append("已扣宝箱存量已回滚；再次开启同代次不会重抽。" if saved else "宝箱存量回滚保存失败，探索冻结，请重试。\n" + host.result_label.text)
+		settlement_retry.text = "重试存量回滚"
 	else:
 		lines.append("入库成功 · 已保存，确认关闭不会重复入库。" if saved else "尚未入库 · 保存失败或仓库已满，网袋保留且探索冻结。请重试；不要退出游戏。\n" + host.result_label.text)
 	lines.append("线索：浅滩%s / 声呐%s" % ["已记录" if host.dive_shoal else "未调查", "已记录" if host.dive_sonar else "未调查"])

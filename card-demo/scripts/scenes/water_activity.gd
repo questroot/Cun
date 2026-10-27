@@ -3,6 +3,9 @@ const ExplorationTools = preload("res://scripts/scenes/exploration_tools.gd")
 const DiveCatalog = preload("res://scripts/scenes/underwater_catalog.gd")
 var resources := DiveCatalog.resources()
 var node_states := DiveCatalog.defaults()
+# 仅保留本潜内存快照；存量和时间戳一起恢复，避免失败重抽。
+var dive_node_snapshot: Dictionary = {}
+var dive_stock_changed := false
 var net_expansion := 0
 var equipment := DiveCatalog.equipment()
 var core_reward_claimed := false
@@ -102,7 +105,18 @@ func gather_node(map: String, id: String, now: float = Time.get_unix_time_from_s
 	DiveCatalog.recover(entry, now)
 	if int(entry.stock) <= 0: return false
 	entry.stock = int(entry.stock) - 1
-	return _cache_round()
+	var saved := _cache_round()
+	if saved and not dive_node_snapshot.is_empty(): dive_stock_changed = true
+	return saved
+
+func rollback_dive_stock() -> bool:
+	if dive_node_snapshot.is_empty(): return true
+	if dive_stock_changed:
+		node_states = dive_node_snapshot.duplicate(true)
+		if not _cache_round(): return false
+	dive_node_snapshot.clear()
+	dive_stock_changed = false
+	return true
 
 func settle_net(items: Array, lost: int) -> bool:
 	for id in items:
@@ -186,7 +200,11 @@ func _open_dive(records := false) -> void:
 	if _sea_modal() or at_salt or at_wreck or sailing:
 		return
 	prior_focus = get_viewport().gui_get_focus_owner()
-	if not records: last_dive_summary = ""
+	if not records:
+		if not rollback_dive_stock(): return
+		dive_node_snapshot = node_states.duplicate(true)
+		dive_stock_changed = false
+		last_dive_summary = ""
 	moving = false
 	model.update_movement(Vector2.ZERO, 0.0)
 	exploration_tools.hide()
@@ -222,7 +240,8 @@ func _close_dive() -> void:
 		dive_view.bag_open = false
 		var saved := true
 		if dive_view.settlement.rescue:
-			last_dive_summary = "氧气耗尽 · 本次失败零收益，收获全部丢失，不可拾回；本潜新核心未保留。"
+			saved = rollback_dive_stock()
+			last_dive_summary = "氧气耗尽 · 本次失败零收益，收获全部丢失，不可拾回；本潜新核心未保留。" + ("已扣宝箱存量已回滚。" if saved else "宝箱存量回滚保存失败，请重试。")
 		else:
 			# 新核心与整袋入库共用一次保存；失败回滚后仍可按同一快照重试。
 			var prior_core := dive_core
@@ -230,6 +249,8 @@ func _close_dive() -> void:
 			saved = settle_net(dive_view.settlement.items, dive_view.lost_count)
 			if not saved: dive_core = prior_core
 		if saved:
+			dive_node_snapshot.clear()
+			dive_stock_changed = false
 			recoverable_drops.clear()
 			dive_view.pending_core = false
 			dive_view.bag.clear()
@@ -414,7 +435,7 @@ func _ready() -> void:
 	model.scale = Vector2(0.18, 0.18)
 	add_child(model)
 	var title := Label.new()
-	title.text = "漂流浮台  /  水上经营"
+	title.text = "海底水世界 · 漂流浮台"
 	title.position = Vector2(72, 23)
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", Color("#f5efd7"))
@@ -449,7 +470,7 @@ func _ready() -> void:
 	reset_dialog.dialog_text = "只清除海上首章进度（包括蓝图）；灵伴存档与十关完全不变。确定重开？"
 	reset_dialog.confirmed.connect(_start_round)
 	add_child(reset_dialog)
-	var back := _make_button("返回外缘", Vector2(1070, 23), Vector2(138, 43), func() -> void: GameManager.goto_scene("outskirts"))
+	var back := _make_button("返回游戏选择", Vector2(1070, 23), Vector2(138, 43), func() -> void: GameManager.goto_scene("menu"))
 	back.name = "ReturnButton"
 	core_button = _make_button("航站核心", Vector2(858, 136), Vector2(345, 32), func() -> void: _open_build("core"))
 	guide_button = _make_button("查看任务板", Vector2(72, 204), Vector2(190, 30), _show_guide)
@@ -532,8 +553,13 @@ func _ready() -> void:
 	add_child(dive_summary_label)
 	_refresh_dive_ui()
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		rollback_dive_stock()
+
 func _exit_tree() -> void:
-	pass
+	if not rollback_dive_stock():
+		push_warning("放弃下潜时宝箱存量回滚保存失败；磁盘保留上次成功存量。")
 
 func _round_state() -> Dictionary:
 	return {
