@@ -4,6 +4,8 @@
 
 ## 当前阶段与范围
 
+- 仓库同步与出图农场接入（2026-10-27）：本机 main 由 `4ec19e1` 快进到 `2f39a51`（含 PR #3），新增分支 `codex/sea-chapter-and-battle-warning`；合并时本文件出现本地同步流水与远端记录冲突，按“保留远端更新记录、丢弃本机过期流水”处理，无其他文件冲突。另按用户授权接入团队出图农场（个人工具，不影响游戏代码）：账号 `quest` 注册成功并已登录，官方 `generate.py`/`boardtools.py` 下载后与本机配置放在用户目录外，不提交仓库；本机到服务器约三成请求超时，故在脚本的网络层加了有限次重试（只影响本机副本，未改上游）。实际 `--check` 通过（队列与出图机信息可读），提交测试任务 `20261027-c2b305e55e`（sdxl-txt2img，1024×1024）后出图机 `4080s-01` 离线，任务持续 queued，未取得图片、未做看图验收，故不记作出图成功。
+
 - 启动器大厅入口修复（2026-10-27，本地未提交）：真实入口为 `F:\Cun\Cun\Launch.cmd` → `launcher/Launcher.ps1`（WPF大厅）→ `Start-CunProject -Game Water` → Godot `--path card-demo res://scenes/WaterActivity.tscn`。此前仅改Godot main_menu未覆盖此层；现启动器下拉新增独立“海底水世界”及“海面浮台出发下潜 · 海上进度独立保存”项目卡片，直接进入既有海面浮台而非同游戏主菜单；灵伴/Fudi/Menu/Editor原映射不变，无需新增Godot业务路由，既有独立 `sea_chapter_v1.json`/备份不改。核对 `F:\Cun` 下其余入口为 `_sea_chapter_one/Launch.cmd`、`_water_main_integration/Launch.cmd`、`Cun/.local/sea-acceptance/Launch.cmd` 历史/隔离副本，均未同步；`F:\Cun\Launch.cmd` 不存在。
 - 本轮实际验证：`tests/launcher.tests.ps1` 40项通过（含Water真实进程参数；此处引擎为模拟夹具，不冒充游戏验证）；`launcher/Launcher.ps1 -SmokeTest` WPF实际渲染通过，核对四选项/海底卡片文字及说明不与启动按钮重叠，已查看 `.local/launcher-preview.png`。Godot4.7.2分别从无缓存UUID工程运行 `tests/launcher-cold.tests.ps1 -Game Water` 与 `-Game Menu` 均退出0；Water经过真实启动器导入/直达浮台/独立海上保存重读/下潜按钮进入水下，隔离灵伴档前后内容不变，日志含 `LAUNCHER_WATER_ROUTE: PASS`。证据 `.local/cold-launch-e2532b6756de41fc9f8e85ef4eb901dc/`、`.local/cold-launch-3500ed6c248c45c19a384acc78669f7c/`；已查看浮台截图。首次测试注入夹具多一层缩进导致45秒超时（0a475d0d），随后一次JSON数字序列化类型比较误报（aa7aeee5），修正夹具缩进/归一数值后完整通过，失败证据保留。diff空白检查通过，仅既有行尾提示。仅用UUID自定义用户目录，不触碰正式玩家档，不修改既有main_menu/exploration_smoke/underwater_smoke或.local探针；未新增文档、未提交/推送。未进行真人大厅点击完整试玩；原海底经济/操作手感等人工未验项仍保留，不将启动链验证当完整游戏验收。
 
