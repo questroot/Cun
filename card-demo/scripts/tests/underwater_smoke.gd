@@ -666,7 +666,7 @@ func workshop_checks() -> void:
 	await key(KEY_C)
 	check(sea._sea_window_open(), "海面真实C工坊")
 	for child in sea.get_children():
-		if child is AcceptDialog:
+		if child is AcceptDialog and child.visible:
 			child.hide()
 			child.queue_free()
 	await process_frame
@@ -786,6 +786,107 @@ func run() -> void:
 	sea.set_process(false)
 	var base: Dictionary = sea._round_state()
 	check(sea.dive_summary_label.text.contains("浅滩"), "浮台初始浅滩阶段")
+	check(sea.action_tabs.get_tab_count() == 4, "海面四类独立操作页")
+	var entries := [sea.guide_button, sea.dive_button, sea.records_button, sea.dive_workshop_button, sea.management_button, sea.backpack_button, sea.navigation_button, sea.get_node("ReturnButton"), sea.exploration_tools.get_child(0).get_child(0)]
+	check(sea.management_button.size == sea.backpack_button.size and sea.backpack_button.position.x - sea.management_button.get_rect().end.x >= 16, "经营背包统一尺寸且独立间隔至少16像素")
+	check(sea.management.min_size.x >= 620 and sea.action_tabs.custom_minimum_size.x >= 600, "经营面板加宽留出条件说明空间")
+	for entry in entries:
+		check(entry.get_global_rect().end.y <= sea.SEA_VIEW.position.y and not sea.goal_label.get_global_rect().intersects(entry.get_global_rect()), "双行导航与目标地图不占海面且不重叠")
+	for i in entries.size():
+		check(entries[i].size.y >= 40, "常用入口至少40像素高")
+		for j in range(i + 1, entries.size()):
+			check(not entries[i].get_global_rect().intersects(entries[j].get_global_rect()), "任务板下潜记录工坊入口不重叠")
+	check(not sea.management.visible and not sea.status_label.visible and not sea.dive_summary_label.visible, "主屏收起经营与材料明细")
+	check(sea.SEA_VIEW.get_area() > 1280 * 720 * 0.7, "海域占逻辑画布七成以上")
+	for point in [sea.SEA.position, sea.SEA.end, sea.player_foot, Vector2(500, 500)]:
+		check(sea.screen_to_world(sea.world_to_screen(point)).is_equal_approx(point), "世界映射可逆且兼容旧坐标")
+	check(sea.model.position.is_equal_approx(sea.world_to_screen(sea.player_foot)), "角色与世界统一映射")
+	var surface_click := InputEventMouseButton.new()
+	surface_click.button_index = MOUSE_BUTTON_LEFT
+	surface_click.pressed = true
+	surface_click.position = sea.world_to_screen(Vector2(600, 550))
+	sea._unhandled_input(surface_click)
+	check(sea.target.is_equal_approx(Vector2(600, 550)), "扩大海面点击反变换")
+	sea.management_button.pressed.emit()
+	var sea_clock: float = sea.wave_elapsed
+	sea._process(5)
+	sea.backpack_button.pressed.emit()
+	sea.exploration_tools.open_map()
+	sea.dive_button.pressed.emit()
+	check(sea.management.visible and sea.wave_elapsed == sea_clock and not sea.moving and not sea.exploration_tools.is_open() and not is_instance_valid(sea.dive_layer), "经营模态暂停世界并隔离外部入口")
+	sea.core_button.pressed.emit()
+	check(sea.build_dialog.visible, "经营内部业务按钮可打开建造预览")
+	sea.build_dialog.hide()
+	sea._show_management()
+	for page in range(4):
+		sea.action_tabs.current_tab = page
+		await process_frame
+		await process_frame
+		check(sea.action_pages[page].is_visible_in_tree(), "当前操作页可见%d" % page)
+		for other in range(4):
+			check(sea.action_pages[other].is_visible_in_tree() == (other == page), "操作页互斥%d/%d" % [page, other])
+		var bottom := 0.0
+		for child in sea.action_pages[page].get_children():
+			if not child.visible: continue
+			check(child.position.y >= bottom, "容器操作和提示互不覆盖%d" % page)
+			bottom = child.get_rect().end.y
+			if child is Button: check(child.size.y >= 40, "经营操作至少40像素高")
+		check(sea.action_pages[page].get_parent().get_parent().horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED, "长提示限宽换行%d" % page)
+	sea.action_tabs.current_tab = 0
+	await key(KEY_ESCAPE)
+	check(not sea.management.visible and root.gui_get_focus_owner() == sea.management_button, "Esc关闭经营并恢复入口焦点")
+	sea.backpack_button.pressed.emit()
+	await process_frame
+	await process_frame
+	var warehouse_found := false
+	for child in sea.get_children():
+		if child is AcceptDialog and child.visible:
+			warehouse_found = child.dialog_text.contains("待领产出") and child.dialog_text.contains("珊瑚枝")
+			var inventory: ScrollContainer = child.get_node("InventoryScroll")
+			check(inventory.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED and inventory.size.y <= 430 and child.size.y < 650, "背包内容限高可纵向滚动且不超画布")
+			var sections: VBoxContainer = inventory.get_child(0)
+			check(sections.get_child_count() == 4, "背包按海面材料待领海底材料装备配方四组展示")
+			var displayed := PackedStringArray()
+			for section in sections.get_children():
+				for row in section.get_children(): displayed.append(row.text)
+			var full_text := "\n".join(displayed)
+			for line in child.dialog_text.split("\n"):
+				if line.is_empty(): continue
+				var parts: PackedStringArray = line.split("：", true, 1)
+				check(full_text.contains(line) or (parts.size() == 2 and full_text.contains(parts[0]) and full_text.contains(parts[1])), "分组背包完整保留库存用途与配方：" + line)
+			var foot_before: Vector2 = sea.player_foot
+			var target_before: Vector2 = sea.target
+			sea._unhandled_input(surface_click)
+			sea._process(5)
+			sea.management_button.pressed.emit()
+			sea._show_guide()
+			check(sea.player_foot == foot_before and sea.target == target_before and not sea.management.visible and sea.wave_elapsed == sea_clock, "背包模态阻止移动点击与经营任务板穿透")
+			child.hide()
+			child.queue_free()
+	check(warehouse_found, "背包按钮包含全部材料与待领明细")
+	await process_frame
+	surface_click.position = sea.world_to_screen(Vector2(390, 400))
+	sea._unhandled_input(surface_click)
+	check(sea.build_dialog.visible and sea.build_kind == "core", "映射后核心建筑点击命中")
+	sea.build_dialog.hide()
+	var unlocked_before: bool = sea.dive_workshop_unlocked
+	sea.dive_workshop_unlocked = true
+	surface_click.position = sea.world_to_screen(Vector2(155, 410))
+	sea._unhandled_input(surface_click)
+	check(sea._sea_window_open(), "潜水工坊视觉位置与点击命中同步")
+	for child in sea.get_children():
+		if child is AcceptDialog and child.visible:
+			child.hide()
+			child.queue_free()
+	sea.dive_workshop_unlocked = unlocked_before
+	await process_frame
+	var original_feedback: String = sea.result_label.text
+	sea.result_label.text = "完整反馈滚动查看，不覆盖场景。".repeat(100)
+	await process_frame
+	await process_frame
+	check(sea.feedback_scroll.size.y == 48 and sea.result_label.size.y > 48 and sea.feedback_scroll.position.y >= sea.SEA_VIEW.end.y and sea.feedback_scroll.get_rect().end.y <= 720, "超长反馈在独立滚动区域保留全文")
+	sea.result_label.text = original_feedback
+	check(sea.SEA == Rect2(72, 238, 744, 414), "海面原场地碰撞不变")
 	sea._open_dive(true)
 	check(root.gui_get_focus_owner() == sea.dive_view.close_button and sea.dive_view.archive_button.disabled, "无核心记录聚焦关闭")
 	await key(KEY_TAB)
@@ -996,7 +1097,7 @@ func run() -> void:
 	check(not sea.dive_archived and game.water_activity_state == before and sea.dive_view.feedback.text.contains("失败"), "真实Enter归档失败回滚且记录明确提示")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
 	await key(KEY_ESCAPE)
-	check(sea.result_label.get_rect().position.y >= sea.records_button.get_rect().end.y and sea.goal_label.get_rect().end.y <= sea.records_button.position.y, "结果与目标布局不重叠按钮")
+	check(sea.feedback_scroll.get_rect().position.y >= sea.records_button.get_rect().end.y and not sea.goal_label.get_rect().intersects(sea.records_button.get_rect()), "结果与目标布局不重叠按钮")
 	sea.exploration_tools.open_map()
 	sea._open_dive()
 	check(not is_instance_valid(sea.dive_layer), "地图打开不能下潜")

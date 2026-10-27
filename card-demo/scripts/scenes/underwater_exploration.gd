@@ -6,6 +6,15 @@ const RADIUS := 12.0
 const SPEED := 230.0
 const Catalog = preload("res://scripts/scenes/underwater_catalog.gd")
 const BAG_RECT := Rect2(300, 220, 680, 310)
+const HeroWalk = preload("res://scripts/scenes/hero_walk_sprite.gd")
+const BACKDROPS := {
+	"shoal": preload("res://assets/backgrounds/fudi/wetland.webp"),
+	"wreck": preload("res://assets/backgrounds/fudi/causeway.webp"),
+	"trench": preload("res://assets/backgrounds/fudi/ruins.webp"),
+}
+const CHEST_ART := preload("res://assets/pixel/fudi/chests/normal_closed.png")
+const SITE_MARKER := preload("res://assets/ui/quest-markers/blue-question.png")
+var model: HeroWalk
 var oxygen := Catalog.OXYGEN
 var warned := false
 var warning_count := 0
@@ -93,6 +102,7 @@ var settlement_records: Button
 var settlement_retry: Button
 
 func show_settlement(saved: bool) -> void:
+	model.hide()
 	settlement_saved = saved
 	if not is_instance_valid(settlement_panel):
 		for child in get_children():
@@ -310,6 +320,10 @@ var close_button: Button
 var archive_button: Button
 
 func _ready() -> void:
+	model = HeroWalk.new()
+	model.scale = Vector2.ONE * 0.105
+	model.modulate = Color("#c5f7ff")
+	add_child(model)
 	oxygen = oxygen_max()
 	drops = host.recoverable_drops.duplicate(true) if not read_only else []
 	oxygen_label = _label(Vector2(70, 133), 16)
@@ -478,6 +492,10 @@ func enter(destination: String) -> void:
 	refresh()
 
 func refresh() -> void:
+	if is_instance_valid(model):
+		model.position = foot
+		model.visible = not read_only and settlement.is_empty() and not bag_open
+		if bag_open or settling or ascending > 0: model.update_movement(Vector2.ZERO, 0)
 	if not is_instance_valid(heading) or not settlement.is_empty(): return
 	oxygen_label.visible = not read_only
 	oxygen_label.text = "氧气 %.1f / %.0f 秒 ×%.2f  网袋 %d/%d · B查看 · 光柱附近Esc上浮" % [oxygen, oxygen_max(), Catalog.RATES[place], used_slots(), capacity()]
@@ -563,6 +581,7 @@ func _process(delta: float) -> void:
 	var motion := direction * minf(delta, 0.05) * swim_speed()
 	if moving: motion = motion.limit_length(foot.distance_to(target))
 	move_step(motion)
+	model.update_movement(foot - before, delta)
 	if moving and direction != Vector2.ZERO and foot.distance_to(before) < 0.01:
 		moving = false
 		message = "前方受阻，已停止；请用方向键或分段点击绕过缺口。"
@@ -575,11 +594,13 @@ func _draw() -> void:
 		var lines := ["珊瑚浅滩：" + ("船舷金属片，光迹指向船尾。" if host.dive_shoal else "尚未调查"), "侧倾沉船：" + ("声呐台记录间歇光带与海沟方向。" if host.dive_sonar else "尚未调查"), "发光海沟：" + ("唯一回声核心已带回。" if host.dive_core else "尚未发现"), "归档：" + ("浅滩 → 船尾声呐 → 海沟核心；深处信号仍未解。" if host.dive_archived else "待取得核心并在浮台归档")]
 		for i in lines.size(): draw_string(ThemeDB.fallback_font, Vector2(100, 230 + i * 85), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
 		return
-	draw_rect(FIELD, {"shoal": Color("#287b88"), "wreck": Color("#193b4a"), "trench": Color("#080e29")}[place])
+	# 福地背景仅作水下氛围；通行区域和真实障碍始终使用原矩形。
+	draw_texture_rect(BACKDROPS[place], FIELD, false, Color("#78cbdc"))
+	draw_rect(FIELD, {"shoal": Color(0.03, 0.28, 0.36, 0.72), "wreck": Color(0.02, 0.17, 0.26, 0.78), "trench": Color(0.01, 0.10, 0.22, 0.82)}[place])
 	for obstacle in obstacles():
-		draw_rect(obstacle, {"shoal": Color("#b86f86"), "wreck": Color("#68554e"), "trench": Color("#222940")}[place])
-		if place == "shoal":
-			for i in 5: draw_circle(obstacle.position + Vector2(32, 20 + i * 35), 23, Color("#d58c99"))
+		draw_rect(obstacle, {"shoal": Color("#365962"), "wreck": Color("#3a4855"), "trench": Color("#202d44")}[place])
+		for y in range(int(obstacle.position.y + 14), int(obstacle.end.y), 24):
+			draw_line(Vector2(obstacle.position.x + 4, y), Vector2(minf(obstacle.position.x + 20, obstacle.end.x - 4), minf(y + 12, obstacle.end.y - 3)), Color("#66828c"), 2)
 	if place == "shoal":
 		draw_colored_polygon(PackedVector2Array([Vector2(825, 235), Vector2(1120, 270), Vector2(1050, 315), Vector2(850, 290)]), Color("#17404f"))
 		draw_line(Vector2(960, 270), Vector2(940, 180), Color("#17404f"), 7)
@@ -601,6 +622,10 @@ func _draw() -> void:
 				var shade := clampf((distance - light_radius()) / 60.0, 0.0, 1.0) * 0.52
 				draw_rect(Rect2(x, y, 20, 20), Color(0, 0, 0.02, shade))
 		draw_arc(foot, light_radius(), 0, TAU, 64, Color(0.5, 0.9, 1, 0.25), 1)
+	# 暗区也保留碰撞边界，避免背景里的桥路被误认为实际通道。
+	draw_rect(FIELD, Color("#83bccb"), false, 2)
+	for obstacle in obstacles(): draw_rect(obstacle, Color("#8bb3bd"), false, 2)
+	draw_string(ThemeDB.fallback_font, Vector2(80, 178), "福地素材试景 · 背景仅氛围 / 实线框与斜纹为不可通行区", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#d0eef3"))
 	if not at_safety():
 		var arrow := (safety_position() - foot).normalized()
 		var tip := foot + arrow * 48
@@ -613,13 +638,21 @@ func _draw() -> void:
 	for site in sites():
 		if site[0] == "上浮出口":
 			draw_rect(Rect2(Vector2(site[1].x - 15, FIELD.position.y), Vector2(30, site[1].y - FIELD.position.y)), Color(0.5, 1.0, 0.9, 0.22))
-		draw_circle(site[1], 19, Color("#84e6d5"))
+		draw_circle(site[1], 19, Color(0.2, 0.8, 0.8, 0.25))
+		draw_arc(site[1], 19, 0, TAU, 32, Color("#84e6d5"), 2)
+		if site[0] == "上浮出口":
+			draw_arc(site[1], Catalog.SAFETY_RADIUS, 0, TAU, 48, Color(0.5, 1, 0.9, 0.6), 2)
+			draw_line(site[1] + Vector2(0, 10), site[1] - Vector2(0, 12), Color.WHITE, 3)
+			draw_line(site[1] - Vector2(0, 12), site[1] + Vector2(-8, -4), Color.WHITE, 3)
+			draw_line(site[1] - Vector2(0, 12), site[1] + Vector2(8, -4), Color.WHITE, 3)
+		else:
+			draw_texture_rect(SITE_MARKER, Rect2(site[1] - Vector2(10, 13), Vector2(20, 25)), false)
 		var text := site_text(site[0])
 		var width := ThemeDB.fallback_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 		var label_at := Vector2(clampf(site[1].x - width / 2, FIELD.position.x, FIELD.end.x - width), site[1].y - 30)
 		draw_string(ThemeDB.fallback_font, label_at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
-	draw_circle(foot, RADIUS, Color("#ffe6a4"))
-	draw_arc(foot, 20, 0, TAU, 24, Color("#fff4cf"), 2)
+	draw_circle(foot, RADIUS, Color(0.03, 0.12, 0.18, 0.65))
+	draw_arc(foot, RADIUS, 0, TAU, 24, Color("#fff4cf"), 2)
 	for node in Catalog.NODES[place]:
 		if place != "shoal" and foot.distance_to(node[2]) > light_radius():
 			if host.equipment_level("mask") >= 2:
@@ -629,10 +662,11 @@ func _draw() -> void:
 		var tint: Color = Catalog.CHESTS[quality].color
 		var empty := stock_text(node[0]).contains("(0)")
 		var p: Vector2 = node[2]
-		draw_rect(Rect2(p + Vector2(-19, -8), Vector2(38, 25)), Color("#4d555b") if empty else Color("#755039"))
-		draw_rect(Rect2(p + Vector2(-21, -17 if empty else -14), Vector2(42, 11)), tint, false, 3)
-		for x in [-13, 11]: draw_line(p + Vector2(x, -7), p + Vector2(x, 15), tint, 3)
-		draw_rect(Rect2(p + Vector2(-4, -3), Vector2(8, 9)), tint)
+		draw_texture_rect(CHEST_ART, Rect2(p + Vector2(-24, -24), Vector2(48, 48)), false, Color("#687980") if empty else Color.WHITE)
+		draw_rect(Rect2(p + Vector2(-25, -21), Vector2(50, 42)), tint, false, 2)
+		if empty:
+			draw_line(p + Vector2(-17, -15), p + Vector2(17, 15), Color("#d4dde1"), 3)
+			draw_line(p + Vector2(17, -15), p + Vector2(-17, 15), Color("#d4dde1"), 3)
 		draw_string(ThemeDB.fallback_font, p + Vector2(-53, -25), Catalog.CHESTS[quality].name + "宝箱 " + stock_text(node[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 		if not opening.is_empty() and opening.id == node[0]:
 			draw_rect(Rect2(p + Vector2(-25, 23), Vector2(50, 6)), Color("#18394a"))
