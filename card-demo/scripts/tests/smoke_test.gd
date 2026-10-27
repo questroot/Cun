@@ -158,7 +158,7 @@ func run_checks() -> void:
 	check(battle.acknowledged, "匹配动作与阶段的演出回执被接受")
 	battle.acknowledged = false
 	var timeout_started: int = Time.get_ticks_msec()
-	await battle.wait_for_animation(9021, "windup", battle.battle_serial)
+	await battle.wait_for_animation(9021, "windup", battle.battle_serial, false)
 	check(Time.get_ticks_msec() - timeout_started < 4000 and battle.expected_action_id == -1, "缺失演出回执后不永久卡住")
 	battle.running = false
 	battle.start("stage_5")
@@ -338,61 +338,254 @@ func run_checks() -> void:
 			check(instance.model != null and instance.player_foot.distance_to(Vector2(140, 576)) < 2.0, "邻接区域成功加载并显示人物")
 			check(instance.RETURN.has_point(Vector2(84, 570)), "邻接区域包含可返回主城的出口")
 			check(instance.model.texture.resource_path == "res://assets/characters/hero/idle/hero_idle.png" and instance.model.hframes == 1 and instance.model.vframes == 1, "外缘玩家使用完整的主角站立图")
-			check(instance.WATER_PORTAL.has_point(Vector2(1044, 560)), "外缘水门位于可移动区域")
+			check(not instance.play_visible().has("water_portal_screen"), "外缘不再暴露已停用的水门")
 		elif path.ends_with("WaterActivity.tscn"):
-			check(instance.raft_tiles == 1 and instance.collectors == 0 and instance.orders_completed == 0, "水上经营活动完成初始化")
-			check(instance.button_hints.size() == 7 and instance.expand_button.disabled and instance.button_hints[0].text.contains("缺木料 3、废料 2") and instance.button_hints[1].text.contains("先扩建") and instance.button_hints[2].text.contains("暂无待领") and instance.button_hints[3].text.contains("先建站") and instance.button_hints[4].text.contains("先升级") and instance.button_hints[5].text.contains("缺纤维 1") and instance.button_hints[6].text.contains("缺清水 2、绳索 2"), "七个禁用按钮旁展示资源缺口与前置条件")
-			check(not instance._expand_raft() and not instance._build_collector() and not instance._fulfill_order(), "资源不足不能扩建、造站或交付")
+			check(not game.water_activity_state.is_empty(), "新档初始化可提交版本3海上存档")
+			if game.water_activity_state.is_empty():
+				instance.queue_free()
+				print("SMOKE RESULT: FAIL (%d failed)" % failures)
+				quit(1)
+				return
+			check(instance.raft_tiles == 1 and instance.core_level == 1 and instance.building_slots == ["core"] and instance.collectors == 0 and instance.orders_completed == 0, "新档初始化核心1级与唯一核心槽位")
+			check(instance.goal_label.text.contains("打捞第一份") and instance.button_hints.size() == 7 and instance.button_hints[0].text.contains("缺木3、废2") and instance.button_hints[1].text.contains("无连接空位") and instance.button_hints[2].text.contains("暂无待领") and instance.button_hints[3].text.contains("先建站") and instance.button_hints[4].text.contains("核心2级") and instance.button_hints[5].text.contains("缺纤维 1") and instance.button_hints[6].text.contains("缺清水 2、绳索 2"), "新引导v2与七处建造缺口可见")
+			instance._open_build("expand")
+			check(instance.build_dialog.visible and instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("缺木3、废2"), "资源不足的建造预览不可确认")
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.raft_tiles == 1 and instance.wood == 0 and not instance._fulfill_order(), "锁定预览不能绕过建造或交付门槛")
 			check(instance.model.texture.resource_path == "res://assets/characters/hero/idle/hero_idle.png" and instance.model.hframes == 1 and instance.debris.size() == 5, "水域显示主角站立图及可拾取漂浮物")
 			for point in instance.debris.duplicate():
 				instance.player_foot = point
 				instance._collect_nearby()
-			check(instance.debris.is_empty() and instance.wood == 5 and instance.scrap == 5, "靠近漂浮物自动打捞并获得建造资源")
+			check(instance.debris.is_empty() and instance.wood == 5 and instance.scrap == 5 and instance.guide_seen_pickup and instance.goal_label.text.contains("扩建甲板"), "靠近漂浮物自动打捞并推进引导")
 			instance._process(6.0)
 			check(instance.debris.size() == 1, "漂浮物定时补充且不可无限点击获取")
-			check(instance._expand_raft() and instance.raft_tiles == 2, "消耗资源扩建浮台")
-			check(instance._build_collector() and instance.collectors == 1 and not instance._build_collector(), "空位建造资源站且不可超建")
-			check(not instance._claim_production() and not instance._upgrade_collector() and not instance._build_workshop(), "未产出或未达委托进度不能提前升级")
-			check(instance.button_hints[3].text.contains("首单") and instance.button_hints[4].text.contains("先升级"), "升级与工坊禁用原因显示在对应按钮旁")
+			var before_cancel: Dictionary = instance._round_state().duplicate(true)
+			instance._expand_raft()
+			check(instance.build_dialog.visible and not instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("取消不扣料"), "扩建先显示可确认的成本预览")
+			instance.build_dialog.get_cancel_button().pressed.emit()
+			check(instance._round_state() == before_cancel and game.water_activity_state == before_cancel, "真实取消按钮不扣料也不写入存档")
+			instance._open_build("expand")
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.raft_tiles == 2 and instance.building_slots == ["core", "empty"] and instance.wood == 2 and instance.scrap == 3 and instance.goal_label.text.contains("集水站"), "确认扩建增加真实连接空位并推进引导")
+			instance._build_collector()
+			check(instance.slot_picker.item_count == 1 and instance.slot_picker.get_item_id(0) == 1, "集水站预览仅列出空连接位")
+			instance.slot_picker.select(0)
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.collectors == 1 and instance.building_slots == ["core", "collector"] and instance.wood == 0 and instance.scrap == 0, "确认在选定连接位建站并扣除材料")
+			instance._build_collector()
+			check(instance.build_dialog.get_ok_button().disabled and instance.slot_picker.item_count == 0, "占用的连接位不可重复建站")
+			instance.build_dialog.hide()
+			check(not instance._claim_production() and not instance._upgrade_collector(), "未产出或未达委托进度不能提前升级")
+			instance._open_build("workshop")
+			check(instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("核心2级") and instance.build_dialog.dialog_text.contains("第二单") and instance.build_dialog.dialog_text.contains("无连接空位"), "工坊三级门槛在预览中可读")
+			instance.build_dialog.hide()
+			check(instance.button_hints[3].text.contains("首单") and instance.button_hints[4].text.contains("核心2级"), "升级与工坊禁用原因显示在对应按钮旁")
 			instance._tick_production(8.0)
 			check(instance.water == 0 and instance.fiber == 0 and instance.pending_water == 2 and instance.pending_fiber == 2, "初级设施产出须手动领取")
-			check(instance._claim_production() and instance.water == 2 and instance.fiber == 2 and not instance._claim_production(), "领取待产物且不能重复领取")
+			check(instance._claim_production() and instance.water == 2 and instance.fiber == 2 and instance.guide_seen_claim and not instance._claim_production(), "首次手领待产物并推进任务引导")
 			check(instance._process_fiber() and instance._process_fiber() and instance.rope == 2 and instance.fiber == 0, "纤维手动加工为绳索")
-			check(instance._fulfill_order() and instance.orders_completed == 1 and instance.wood == 2 and instance.scrap == 2, "首单奖励可升级站点")
+			check(instance._fulfill_order() and instance.orders_completed == 1 and instance.wood == 2 and instance.scrap == 2 and instance.goal_label.text.contains("核心升2级"), "首单奖励提示核心2级")
+			instance._open_build("core")
+			check(not instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("1→2级"), "首单后预览核心1升2")
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.core_level == 2 and instance.wood == 0 and instance.scrap == 0 and instance.building_slots == ["core", "collector"], "升2扣料且不改变设施连接位")
 			instance._tick_production(4.0)
-			check(instance._upgrade_collector() and instance.automated_collecting and instance.water == 1 and instance.fiber == 1 and instance.pending_water == 0, "首单解锁自动收取并接收已有待产物")
+			check(not instance._upgrade_collector() and instance.pending_water == 1, "核心升级后站点材料不足时暂不可升级")
+			for point in instance.debris.duplicate():
+				instance.player_foot = point
+				instance._collect_nearby()
+			instance._process(6.0)
+			for point in instance.debris.duplicate():
+				instance.player_foot = point
+				instance._collect_nearby()
+			check(instance._upgrade_collector() and instance.automated_collecting and instance.pending_water == 0 and instance.water >= 1 and instance.fiber >= 1, "再次打捞后自动收取升级接收已有待产物")
 			instance._tick_production(4.0)
-			check(instance.water == 2 and instance.fiber == 2 and not instance._claim_production(), "升级后自动入库无需反复领取")
-			check(instance._process_fiber() and instance._process_fiber() and instance._fulfill_order() and instance.orders_completed == 2, "第二单可凭持续产出完成")
-			check(instance._build_workshop() and instance.workshop_built and instance.wood == 0 and instance.scrap == 0, "第二单奖励可解锁自动加工且无需再次拾荒")
-			check(instance.processing_flash > 0.0 and instance.button_hints[4].text.contains("已建造"), "工坊建成后触发可见加工反馈并显示建造状态")
+			check(instance.water >= 2 and instance.fiber >= 2 and not instance._claim_production(), "升级后自动入库无需反复领取")
+			check(instance._process_fiber() and instance._process_fiber() and instance._fulfill_order() and instance.orders_completed == 2 and instance.goal_label.text.contains("核心3级"), "第二单凭持续产出完成并提示核心3级")
+			instance._open_build("core")
+			check(not instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("2→3级"), "第二单后预览核心2升3")
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.core_level == 3 and instance.wood >= 0 and instance.scrap >= 0 and instance._build_reason("core") == "核心已达3级", "核心3级达上限")
+			instance._open_build("tide")
+			check(instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("首航胜利蓝图") and instance.build_dialog.dialog_text.contains("无连接空位"), "核心3级但未首航且无空位时潮测台仍锁定")
+			instance.build_dialog.hide()
+			instance._open_build("workshop")
+			check(instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("无连接空位"), "第二单解锁工坊仍需空连接位")
+			instance.build_dialog.hide()
+			for salvage_round in range(5):
+				instance._process(6.0)
+				for point in instance.debris.duplicate():
+					instance.player_foot = point
+					instance._collect_nearby()
+			check(instance.wood >= 5 and instance.scrap >= 5, "额外甲板与工坊材料由近岸持续打捞取得")
+			instance._open_build("expand")
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			instance._open_build("workshop")
+			instance.slot_picker.select(0)
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.workshop_built and instance.building_slots[2] == "workshop" and instance.wood >= 0 and instance.scrap >= 0, "第二单、核心等级与空位满足后确认工坊")
+			check(instance.processing_flash > 0.0 and instance.button_hints[4].text.contains("已建成"), "工坊建成后触发可见加工反馈并显示建造状态")
 			instance.processing_flash = 0.0
+			var workshop_water: int = instance.water
+			var workshop_rope: int = instance.rope
 			instance._tick_production(8.0)
-			check(instance.water == 2 and instance.rope == 2 and instance.fiber == 0 and instance.processing_flash > 0.0 and instance._fulfill_order() and instance.orders_completed == 3, "工坊将新产出自动加工并支持后续循环委托")
-			check(not instance._recruit_partner() and not instance._begin_sail() and not instance._build_tide_table(), "居民岗位和首航蓝图不能越级")
+			check(instance.water == workshop_water + 2 and instance.rope == workshop_rope + 2 and instance.fiber == 0 and instance.processing_flash > 0.0 and instance._fulfill_order() and instance.orders_completed == 3, "工坊将新产出自动加工并支持后续循环委托")
+			check(not instance._recruit_partner() and not instance._begin_sail(), "居民岗位和首航蓝图不能越级")
+			instance._build_tide_table()
+			check(instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("蓝图"), "未获首航蓝图不能建潮测台")
+			instance.build_dialog.hide()
 			instance._tick_production(4.0)
 			check(instance._accept_resident() and instance._assign_resident() and instance._recruit_partner(), "居民供水、上岗和首单后保底伙伴加入")
 			instance._tick_production(4.0)
-			check(instance.water >= 2 and instance._begin_sail() and instance.sailing and game.water_activity_state.water == instance.water, "首航扣除补给并立即提交，航战不存中途战况")
+			check(not instance._begin_sail(), "未明确选择首航准备不得出发")
+			instance._choose_loadout("hull")
+			instance._open_sail_preview()
+			check(instance.sail_dialog.visible and instance.sail_dialog.dialog_text.contains("清水1、绳索1") and instance.sail_dialog.dialog_text.contains("反击4"), "首航预览补给及风险")
+			instance.sail_dialog.hide()
+			check(instance.water >= 2 and instance._begin_sail() and instance.sailing and instance.sail_hp == 14 and game.water_activity_state.water == instance.water, "稳固船体首航扣除补给并立即提交")
 			instance._sail_brace()
-			check(instance.sail_hp == 8 and not instance.blueprint, "防御减伤且胜利前不授蓝图")
+			check(instance.sail_hp == 13 and instance.result_label.text.contains("反击1") and not instance.blueprint, "防御减伤反馈且胜利前不授蓝图")
+			for brace_round in range(10):
+				instance._sail_brace()
 			instance._sail_attack()
-			instance._sail_attack()
-			check(not instance.sailing and not instance.blueprint, "攻击失败返港，已扣补给不返还")
+			check(not instance.sailing and not instance.blueprint and instance.result_label.text.contains("改选"), "攻击失败返港并可调整准备")
 			instance._tick_production(4.0)
-			check(instance._begin_sail(), "补给恢复后允许重试首航")
+			instance._choose_loadout("weapon")
+			check(instance._begin_sail() and instance.sail_hp == 9 and instance.sea_panel.text.contains("攻击造成5伤"), "失败后补给并改为攻击准备重试")
 			instance._sail_attack()
-			instance._sail_attack()
+			check(instance.enemy_hp == 4 and instance.sail_hp == 5 and instance.result_label.text.contains("攻击造成5伤害"), "攻击策略造成5伤且承受4点反击")
 			instance._sail_attack()
 			check(instance.blueprint and game.water_activity_state.blueprint and not instance.sailing, "首航胜利首次蓝图存档")
-			instance.wood = 3
-			instance.scrap = 3
-			check(instance._build_tide_table() and instance._toggle_delegate() and instance._survey_neighbor() and not instance._survey_neighbor(), "潮测台委任与邻区仅调查预告")
+			instance._tick_production(4.0)
+			check(instance._begin_sail(), "蓝图已领后仍可再次出航")
+			instance._sail_attack()
+			instance._sail_attack()
+			check(instance.blueprint and instance.result_label.text.contains("无重复奖励"), "重复胜利不重复授蓝图")
+			check(instance._enter_wreck() and instance.at_wreck and instance.wreck_nodes.size() == 3 and not instance._survey_neighbor(), "航图抵达独立废船带并阻止跨区动作")
+			check(instance.claim_button.disabled and instance.order_button.disabled and instance.filter_button.disabled and not instance._toggle_delegate(), "废船带禁用港口经营及跨区委任")
+			var wreck_wood: int = instance.wood
+			var wreck_scrap_before: int = instance.scrap
+			instance.player_foot = instance.wreck_nodes[0]
+			instance._collect_wreck()
+			check(instance.scrap == wreck_scrap_before + 2 and instance.wood == wreck_wood and instance.wreck_nodes.size() == 2, "锈船只拾取废料而非安全浅滩木废")
+			instance.player_foot = Vector2(180, 520)
+			instance._process(5.0)
+			check(instance.wreck_hp == 2 and instance.sea_panel.text.contains("船体2/3"), "阵风危险扣除废船带船体")
+			instance._process(7.0)
+			check(instance.wreck_nodes.size() == 3, "废船带资源重新出现")
+			check(instance._return_from_wreck() and not instance.at_wreck and instance.scrap == wreck_scrap_before + 2, "带废料返港保留库存")
+			check(instance._enter_wreck(), "废船带可再次进入")
+			for gust in range(3):
+				instance._process(5.0)
+			check(not instance.at_wreck and instance.result_label.text.contains("被迫返港") and instance.wreck_hp == 0, "船体耗尽自动返港并显示危险结果")
+			instance._process(6.0)
+			var safe_wood: int = instance.wood
+			for point in instance.debris.duplicate():
+				instance.player_foot = point
+				instance._collect_nearby()
+			check(instance.wood > safe_wood, "返港安全浅滩仍可重复获得木废")
+			for salvage_round in range(6):
+				instance._process(6.0)
+				for point in instance.debris.duplicate():
+					instance.player_foot = point
+					instance._collect_nearby()
+			instance._open_build("tide")
+			check(instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("无连接空位"), "取得蓝图且核心3级仍受连接位约束")
+			instance.build_dialog.hide()
+			instance._open_build("expand")
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			instance._build_tide_table()
+			check(instance.slot_picker.item_count == 1 and instance.slot_picker.get_item_id(0) == 3 and not instance.build_dialog.get_ok_button().disabled, "首航蓝图解锁空位3的潮测台预览")
+			instance.slot_picker.select(0)
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.tide_table and instance.building_slots[3] == "tide" and instance._toggle_delegate() and instance._survey_neighbor() and not instance._survey_neighbor(), "潮测台委任并开启盐雾滩，不能重复进入")
+			check(instance.at_salt and instance.salt_nodes.size() == 3 and instance.filter_button.disabled, "邻区可见独立晶簇且港口建造不可用")
+			check(instance._return_from_salt() and not instance.filter_blueprint and not instance._return_from_salt(), "空手返港不授图纸")
+			check(instance._survey_neighbor(), "允许反复进入盐雾滩")
+			instance.player_foot = instance.salt_nodes[0]
+			instance._collect_salt()
+			check(instance.salt == 1 and instance.salt_nodes.size() == 2, "靠近晶簇采盐且移除已采节点")
+			instance.player_foot = Vector2(180, 520)
+			instance._process(6.0)
+			check(instance.salt_nodes.size() == 3, "盐晶在邻区定时再生")
+			instance.player_foot = instance.salt_nodes[0]
+			instance._collect_salt()
+			check(instance._return_from_salt() and instance.filter_blueprint and instance.salt == 2 and game.water_activity_state.filter_blueprint, "首次携盐晶返港只授一次永久图纸")
+			check(instance._build_reason("filter").contains("无连接空位"), "过滤架缺空位仍锁定")
 			instance._tick_production(4.0)
 			check(game.water_activity_state.delegated and game.water_activity_state.neighbor_surveyed and instance.water >= 3, "委任岚增加每批清水且状态持久")
 			var committed_sea: Dictionary = game.water_activity_state.duplicate(true)
+			check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).get("version", 0)) == 6, "近岸和准备进度写入版本6海上独立档")
 			game.load_sea_save()
-			check(game.water_activity_state.get("blueprint") == true and game.water_activity_state.get("delegated") == true and game.water_activity_state.get("neighbor_surveyed") == true and game.water_activity_state.get("water") == committed_sea.water and game.water_activity_state.get("wood") == committed_sea.wood, "海上存档重新读取保持蓝图、委任及资源")
+			check(game.water_activity_state == JSON.parse_string(JSON.stringify(committed_sea, "", true, true)), "版本6重读保留完整海上进度（完整JSON精度）")
+			var migrated_v4: Dictionary = game._read_sea_text(JSON.stringify({"version": 4, "state": committed_sea}))
+			check(migrated_v4.core_level == 3 and migrated_v4.filter_blueprint and migrated_v4.salt == 2 and migrated_v4.sail_loadout == "weapon" and migrated_v4.resources.size() == 6 and migrated_v4.node_states.size() == 3, "版本4迁移保留首探图纸、盐晶和准备并初始化海底")
+			var legacy_v3: Dictionary = committed_sea.duplicate(true)
+			for new_key in ["at_wreck", "wreck_scrap", "wreck_nodes", "wreck_elapsed", "hazard_elapsed", "wreck_hp", "sail_loadout"]:
+				legacy_v3.erase(new_key)
+			var migrated_v3: Dictionary = game._read_sea_text(JSON.stringify({"version": 3, "state": legacy_v3}))
+			check(migrated_v3.filter_blueprint and migrated_v3.salt == 2 and not migrated_v3.at_wreck and migrated_v3.sail_loadout == "", "旧v3保留盐雾进度并默认新字段")
+			var legacy_v2: Dictionary = committed_sea.duplicate(true)
+			for new_key in ["at_salt", "salt", "filter_blueprint", "filter_built", "salt_nodes", "salt_elapsed"]:
+				legacy_v2.erase(new_key)
+			var migrated_v2: Dictionary = game._read_sea_text(JSON.stringify({"version": 2, "state": legacy_v2}))
+			check(migrated_v2.blueprint and migrated_v2.tide_table and migrated_v2.building_slots == legacy_v2.building_slots and not migrated_v2.filter_blueprint and migrated_v2.salt == 0, "旧v2进度兼容并仅默认新增字段")
+			var legacy: Dictionary = committed_sea.duplicate(true)
+			for legacy_key in ["core_level", "building_slots", "guide_seen_pickup", "guide_seen_claim"]:
+				legacy.erase(legacy_key)
+			var migrated: Dictionary = game._read_sea_text(JSON.stringify({"version": 1, "state": legacy}))
+			check(migrated.core_level == 3 and migrated.building_slots == ["core", "collector", "workshop", "tide"] and migrated.guide_seen_pickup and migrated.guide_seen_claim and migrated.blueprint and migrated.wood == legacy.wood, "有效旧v1档无损迁移核心、槽位、引导与蓝图")
+			var legacy_early: Dictionary = legacy.duplicate(true)
+			legacy_early.raft_tiles = 2
+			legacy_early.collectors = 1
+			legacy_early.workshop_built = false
+			legacy_early.tide_table = false
+			legacy_early.blueprint = false
+			legacy_early.orders_completed = 0
+			var migrated_early: Dictionary = game._read_sea_text(JSON.stringify({"version": 1, "state": legacy_early}))
+			check(migrated_early.core_level == 1 and migrated_early.building_slots == ["core", "collector"] and migrated_early.guide_seen_pickup, "旧v1初期档迁移保留集水站且核心不越级")
+			instance._open_build("filter")
+			check(instance.build_dialog.get_ok_button().disabled and instance.build_dialog.dialog_text.contains("无连接空位"), "过滤架预览严格检查空位")
+			instance.build_dialog.hide()
+			for salvage_round in range(6):
+				if instance.wood >= 5 and instance.scrap >= 4:
+					break
+				instance._process(6.0)
+				for point in instance.debris.duplicate():
+					instance.player_foot = point
+					instance._collect_nearby()
+			instance._open_build("expand")
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			for salvage_round in range(4):
+				if instance.wood >= 2 and instance.scrap >= 2:
+					break
+				instance._process(6.0)
+				for point in instance.debris.duplicate():
+					instance.player_foot = point
+					instance._collect_nearby()
+			instance._open_build("filter")
+			check(instance._build_reason("filter") == "", "过滤架木废与盐晶库存满足门槛")
+			check(instance.build_dialog.dialog_text.contains("盐晶2") and instance.slot_picker.item_count == 1 and instance.slot_picker.get_item_id(0) == 4 and not instance.build_dialog.get_ok_button().disabled, "盐2木2废2、核心3与图纸满足后可选择过滤架空位")
+			if instance.slot_picker.item_count > 0:
+				instance.slot_picker.select(0)
+			var salt_before_build: int = instance.salt
+			var water_before_filter: int = instance.water
+			instance._confirm_build()
+			instance.build_dialog.hide()
+			check(instance.filter_built and instance.building_slots[4] == "filter" and instance.salt == salt_before_build - 2 and game.water_activity_state.filter_built, "建造过滤架扣盐晶并持久化槽位")
+			instance._tick_production(4.0)
+			check(instance.water == water_before_filter + 4 and instance.sea_panel.text.contains("过滤架：已建"), "过滤架令每批实际清水多1且界面可见")
+			check(instance._survey_neighbor() and instance._return_from_salt() and instance.filter_blueprint and instance.filter_built, "再访返港不重复发首探奖励")
 			var sea_path: String = game.SEA_SAVE
 			var saved_text: String = FileAccess.get_file_as_string(sea_path)
 			var corrupt_file := FileAccess.open(sea_path, FileAccess.WRITE)
@@ -412,13 +605,21 @@ func run_checks() -> void:
 			DirAccess.make_dir_absolute(temp_path)
 			var before_failed_reset: Dictionary = game.water_activity_state.duplicate(true)
 			instance._start_round()
-			check(instance._round_state().wood == before_failed_reset.wood and instance.blueprint and game.water_activity_state == before_failed_reset and instance.result_label.text.contains("失败"), "重开旧档写失败回滚画面与内存并提示")
-			instance.player_foot = instance.debris[0]
-			instance._collect_nearby()
-			check(instance.wood == before_failed_reset.wood and instance.debris.size() == before_failed_reset.debris.size() and game.water_activity_state == before_failed_reset, "拾取存档失败不发放重复奖励")
+			check(instance._round_state().wood == before_failed_reset.wood and instance.core_level == 3 and instance.building_slots == before_failed_reset.building_slots and instance.blueprint and instance.filter_built and instance.filter_blueprint and instance.sail_loadout == "weapon" and instance.wreck_scrap == before_failed_reset.wreck_scrap and game.water_activity_state == before_failed_reset and instance.result_label.text.contains("失败"), "重开旧档写失败回滚核心槽位、画面与内存并提示")
+			if not instance.debris.is_empty():
+				instance.player_foot = instance.debris[0]
+				instance._collect_nearby()
+				check(instance.wood == before_failed_reset.wood and instance.debris.size() == before_failed_reset.debris.size() and game.water_activity_state == before_failed_reset, "拾取存档失败不发放重复奖励")
+			else:
+				instance._survey_neighbor()
+				if not instance.salt_nodes.is_empty():
+					instance.player_foot = instance.salt_nodes[0]
+					instance._collect_salt()
+				check(instance.salt == before_failed_reset.salt and game.water_activity_state == before_failed_reset, "采盐存档失败不发放重复奖励")
+			check(not instance._enter_wreck() and not instance.at_wreck and instance.wreck_scrap == before_failed_reset.wreck_scrap and game.water_activity_state == before_failed_reset, "废船带进入写失败回滚区域与库存")
 			DirAccess.remove_absolute(temp_path)
 			instance._start_round()
-			check(instance.wood == 0 and instance.rope == 0 and instance.raft_tiles == 1 and instance.orders_completed == 0 and not instance.automated_collecting and not instance.workshop_built and instance.pending_water == 0, "水上经营活动重开清空临时成长")
+			check(instance.wood == 0 and instance.rope == 0 and instance.raft_tiles == 1 and instance.core_level == 1 and instance.building_slots == ["core"] and not instance.guide_seen_pickup and not instance.guide_seen_claim and instance.orders_completed == 0 and not instance.automated_collecting and not instance.workshop_built and instance.pending_water == 0, "重开清空成长、核心槽位与引导进度")
 		elif path.ends_with("TeamSelect.tscn"):
 			check(instance.grid_buttons.size() == 9, "阵容九格可见")
 			var support_in_picker := false
@@ -738,8 +939,11 @@ func run_checks() -> void:
 			hero.energy = 100
 			hero.cooldowns.erase("hero_strike")
 			battle.player_action("hero_strike", battle.valid_targets(hero, "hero_strike")[0])
+			var feedback_seen := false
 			for n in range(3000):
 				await process_frame
+				if animation_events > 0 and instance.last_hit_damage >= 0 and instance.focused_target != null and instance.target_label.text.contains(instance.focused_target.name) and instance.target_label.text.contains("命中"):
+					feedback_seen = true
 				for unit in battle.allies:
 					var model: BattleActor = instance.actor_for(unit)
 					if model != null and model.action_name != "idle":
@@ -773,7 +977,7 @@ func run_checks() -> void:
 			check(instance.active_fx == fx_cap and instance.fx_layer.get_node_or_null("PhaseAura_impact") == null, "特效密集时保留主体与浮字预算")
 			instance.active_fx = fx_before
 			check(chase_events > 0, "追打逐段动画回执")
-			check(instance.last_hit_damage >= 0 and instance.target_label.text != "", "战斗中逐段目标与伤害反馈实际更新")
+			check(feedback_seen, "战斗中逐段目标与伤害反馈实际更新")
 			check(model_motion_seen, "战斗角色独立运动")
 			check(premature_hits == 0 and started_events >= animation_events, "出手演出早于伤害结算")
 			# 停止自动推进后独立验证宠物技能从玩家入口进入原有结算链。
@@ -914,42 +1118,55 @@ func run_checks() -> void:
 	check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "踏入东侧传送点实际切换到云庭外缘")
 	if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
 		var outskirts = current_scene
-		outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
+		outskirts.player_foot = Vector2(1044, 557.5)
 		outskirts._process(0.0)
 		for frame in range(4):
 			await process_frame
-		check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "外缘水门实际进入漂流浮台")
+		check(current_scene == outskirts and not outskirts.play_visible().has("water_portal_screen"), "原水门位置不再传送且不对外显示入口")
+		outskirts.player_foot = outskirts.RETURN.get_center()
+		outskirts._process(0.0)
+		for frame in range(4):
+			await process_frame
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn" and current_scene.player_foot.distance_to(Vector2(1900, 729)) < 2.0, "外缘返回主城及东侧落点不受影响")
+		game.goto_scene("menu")
+		for frame in range(4):
+			await process_frame
+		current_scene.find_child("EnterWater", true, false).pressed.emit()
+		for frame in range(4):
+			await process_frame
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "主界面海底水世界实际进入海面浮台")
 		if current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn":
 			var activity = current_scene
 			activity.wood = 5
 			activity.scrap = 5
-			activity._expand_raft()
-			activity._build_collector()
+			activity._open_build("expand")
+			activity._confirm_build()
+			activity.build_dialog.hide()
+			activity._open_build("collector")
+			activity.slot_picker.select(0)
+			activity._confirm_build()
+			activity.build_dialog.hide()
 			activity._tick_production(4.0)
 			var saved_debris: Array = activity.debris.duplicate()
 			activity.get_node("ReturnButton").pressed.emit()
 			for frame in range(4):
 				await process_frame
-			check(current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn", "活动返回按钮实际回到外缘")
-			if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
-				outskirts = current_scene
-				outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
-				outskirts._process(0.0)
+			check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn", "水域返回按钮实际回到游戏选择")
+			if current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn":
+				current_scene.find_child("EnterWater", true, false).pressed.emit()
 				for frame in range(4):
 					await process_frame
-				check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "再次经水门进入活动")
+				check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn", "再次从游戏选择进入水世界")
 				if current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn":
 					activity = current_scene
-					check(activity.raft_tiles == 2 and activity.collectors == 1 and activity.pending_water == 1 and activity.wood == 0 and activity.scrap == 0 and activity.debris == saved_debris, "离开后再进入保留经营资源、设施及漂浮物")
+					check(activity.raft_tiles == 2 and activity.core_level == 1 and activity.building_slots == ["core", "collector"] and activity.collectors == 1 and activity.pending_water == 1 and activity.wood == 0 and activity.scrap == 0 and activity.debris == saved_debris, "离开后再进入保留经营资源、核心槽位及漂浮物")
 					activity._start_round()
 					check(activity.wood == 0 and activity.collectors == 0 and activity.pending_water == 0 and game.water_activity_state["raft_tiles"] == 1, "重新开始立即清空内存进度")
 					activity.get_node("ReturnButton").pressed.emit()
 					for frame in range(4):
 						await process_frame
-					if current_scene != null and current_scene.scene_file_path == "res://scenes/Outskirts.tscn":
-						outskirts = current_scene
-						outskirts.player_foot = outskirts.WATER_PORTAL.get_center()
-						outskirts._process(0.0)
+					if current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn":
+						current_scene.find_child("EnterWater", true, false).pressed.emit()
 						for frame in range(4):
 							await process_frame
 						check(current_scene != null and current_scene.scene_file_path == "res://scenes/WaterActivity.tscn" and current_scene.raft_tiles == 1 and current_scene.collectors == 0 and current_scene.pending_water == 0, "重开后再次进入仍保持全新活动状态")
@@ -957,18 +1174,7 @@ func run_checks() -> void:
 							current_scene.get_node("ReturnButton").pressed.emit()
 							for frame in range(4):
 								await process_frame
-		if current_scene == null or current_scene.scene_file_path != "res://scenes/Outskirts.tscn":
-			data.save_data["hero_skill"] = saved_hero_skill
-			quit(1)
-			return
-		outskirts = current_scene
-		outskirts.player_foot = outskirts.RETURN.get_center()
-		outskirts._process(0.0)
-		for frame in range(4):
-			await process_frame
-		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn", "外缘左侧传送点实际切换回主城")
-		if current_scene != null and current_scene.scene_file_path == "res://scenes/MainCity.tscn":
-			check(current_scene.player_foot.distance_to(Vector2(1900, 729)) < 2.0, "返城到达点位于东侧道路")
+		check(current_scene != null and current_scene.scene_file_path == "res://scenes/MainMenu.tscn", "海底水世界退出始终回到游戏选择")
 	data.save_data["hero_skill"] = saved_hero_skill
 	print("SMOKE RESULT: %s (%d failed)" % ["PASS" if failures == 0 else "FAIL", failures])
 	quit(0 if failures == 0 else 1)

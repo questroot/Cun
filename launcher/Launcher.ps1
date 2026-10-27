@@ -38,11 +38,11 @@ try {
 <Style TargetType="TextBox"><Setter Property="Background" Value="#142537"/><Setter Property="Foreground" Value="#E8F0F8"/><Setter Property="BorderBrush" Value="#42627A"/><Setter Property="Padding" Value="10"/></Style>
 </Window.Resources>
 <Grid Margin="26"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-<StackPanel Margin="0,0,0,18"><TextBlock Text="CUN / PLAYTEST HUB" FontSize="13" Foreground="#8CD8C8"/><TextBlock Text="游戏启动器" FontSize="30" Margin="0,6,0,4"/><TextBlock Text="选择灵伴回合冒险或福地动作试玩；游戏内也可切换。" Foreground="#B0C4D5"/></StackPanel>
+<StackPanel Margin="0,0,0,18"><TextBlock Text="CUN / PLAYTEST HUB" FontSize="13" Foreground="#8CD8C8"/><TextBlock Text="游戏启动器" FontSize="30" Margin="0,6,0,4"/><TextBlock Text="选择灵伴回合冒险、福地或海底水世界；各项目独立进入。" Foreground="#B0C4D5"/></StackPanel>
 <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="1.05*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
 <Border CornerRadius="12" Background="#1C3043" Margin="0,0,20,0" Padding="18"><Grid><Grid.RowDefinitions><RowDefinition Height="190"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
 <Border CornerRadius="8" Background="#102231" ClipToBounds="True"><Image x:Name="Preview" Stretch="UniformToFill"/></Border>
-<StackPanel Grid.Row="1" Margin="0,16,0,0"><ComboBox x:Name="GameChoice" SelectedIndex="0" Foreground="#102231" FontSize="17" Padding="10,6" Margin="0,0,0,10"><ComboBoxItem Content="游戏选择大厅"/><ComboBoxItem Content="灵伴回合冒险"/><ComboBoxItem Content="福地"/></ComboBox><TextBlock x:Name="ProjectTitle" FontSize="22" TextWrapping="Wrap"/><TextBlock x:Name="GameDescription" Text="选择游戏，或进入大厅查看地图" Foreground="#8CD8C8" Margin="0,7,0,0"/><TextBlock Text="上方为仓库素材预览，不是本次实机截图。" Foreground="#A7BBCC" FontSize="12" Margin="0,5,0,0"/></StackPanel>
+<StackPanel Grid.Row="1" Margin="0,16,0,0"><ComboBox x:Name="GameChoice" SelectedIndex="0" Foreground="#102231" FontSize="17" Padding="10,6" Margin="0,0,0,10"><ComboBoxItem Content="游戏选择大厅"/><ComboBoxItem Content="灵伴回合冒险"/><ComboBoxItem Content="福地"/><ComboBoxItem Content="海底水世界"/></ComboBox><TextBlock x:Name="ProjectTitle" FontSize="22" TextWrapping="Wrap"/><TextBlock x:Name="GameDescription" Text="选择游戏，或进入大厅查看地图" Foreground="#8CD8C8" Margin="0,7,0,0"/><TextBlock Text="上方为仓库素材预览，不是本次实机截图。" Foreground="#A7BBCC" FontSize="12" Margin="0,5,0,0"/></StackPanel>
 <StackPanel Grid.Row="2" Margin="0,20,0,0"><Button x:Name="Play" Content="▶  启动游戏" FontSize="19" Background="#176A5B" BorderBrush="#4EB39C" HorizontalContentAlignment="Center"/><WrapPanel><Button x:Name="Editor" Content="在 Godot 编辑器打开"/><Button x:Name="Folder" Content="项目文件夹"/></WrapPanel></StackPanel>
 <TextBlock Grid.Row="3" Text="内置引擎在需要时校验解压。不联网下载，不改玩法或删除存档。" TextWrapping="Wrap" Foreground="#B0C4D5" FontSize="13" Margin="0,12,0,0"/>
 </Grid></Border>
@@ -63,11 +63,11 @@ try {
     $script:Window = [Windows.Markup.XamlReader]::Load($reader)
     $script:Controls = @{}
     foreach ($name in @('Preview','ProjectTitle','GameChoice','GameDescription','Play','Editor','Folder','Requirement','EngineText','Browse','Refresh','EnvironmentStatus','StatusDoc','Snapshot','AgentKit','Architecture','Discussion','Log','Feedback')) { $script:Controls[$name] = $script:Window.FindName($name) }
-    $script:Controls.ProjectTitle.Text = '灵伴 / 福地'
+    $script:Controls.ProjectTitle.Text = '灵伴 / 福地 / 海底水世界'
     $script:Controls.GameChoice.Add_SelectionChanged({
         $index = $script:Controls.GameChoice.SelectedIndex
-        $script:Controls.ProjectTitle.Text = @('灵伴 / 福地', '灵伴回合冒险', '福地')[$index]
-        $script:Controls.GameDescription.Text = @('选择游戏，或进入大厅查看地图', '主城探索 · 九宫格编队 · 回合战斗', 'WASD 移动 · J / K / L 攻击 · M 地图')[$index]
+        $script:Controls.ProjectTitle.Text = @('灵伴 / 福地 / 海底水世界', '灵伴回合冒险', '福地', '海底水世界')[$index]
+        $script:Controls.GameDescription.Text = @('选择游戏，或进入大厅查看地图', '主城探索 · 九宫格编队 · 回合战斗', 'WASD 移动 · J / K / L 攻击 · M 地图', '海面浮台出发下潜 · 海上进度独立保存')[$index]
     })
     $script:Controls.Requirement.Text = '项目声明 Godot ' + $project.RequiredVersion + ' / GL Compatibility'
     $previewPath = Join-Path $script:Paths.Root 'card-demo\assets\backgrounds\battle_courtyard_universal.png'
@@ -108,7 +108,7 @@ try {
                 . $CoreFile
                 Start-CunProject $Paths $Engine $Mode -Game $Game
             }
-            $game = @('Menu', 'Spirit', 'Fudi')[$script:Controls.GameChoice.SelectedIndex]
+            $game = @('Menu', 'Spirit', 'Fudi', 'Water')[$script:Controls.GameChoice.SelectedIndex]
             $shell.AddScript($task.ToString()).AddArgument($script:CoreFile).AddArgument($script:Paths).AddArgument($script:EnginePath).AddArgument($Mode).AddArgument($game) | Out-Null
             $script:Worker = @{ Shell = $shell; Async = $shell.BeginInvoke(); Mode = $Mode }
             $script:Controls.Feedback.Text = $(if ($Mode -eq 'Game') { '正在后台校验并导入资源/脚本，完成后才打开游戏；首次需等待，可查看日志。' } else { '正在准备编辑器，请稍候。' })
@@ -180,7 +180,12 @@ try {
     Write-CunLog $script:Paths 'Launcher opened; no gameplay changes.'
     if ($SmokeTest) {
         $script:Window.Show()
+        if ($script:Controls.GameChoice.Items.Count -ne 4 -or $script:Controls.GameChoice.Items[3].Content -ne '海底水世界') { throw 'Water project missing from launcher' }
+        $script:Controls.GameChoice.SelectedIndex = 3
         $script:Window.UpdateLayout()
+        if ($script:Controls.ProjectTitle.Text -ne '海底水世界' -or $script:Controls.GameDescription.Text -notlike '*海面浮台*') { throw 'Water project card mismatch' }
+        $cardBounds = $script:Controls.GameDescription.TransformToAncestor($script:Window).TransformBounds((New-Object Windows.Rect 0, 0, $script:Controls.GameDescription.ActualWidth, $script:Controls.GameDescription.ActualHeight))
+        if ($cardBounds.Bottom -gt $script:Controls.Play.TranslatePoint((New-Object Windows.Point 0, 0), $script:Window).Y) { throw 'Water description overlaps launch button' }
         $width = [int]$script:Window.ActualWidth; $height = [int]$script:Window.ActualHeight
         $target = New-Object Windows.Media.Imaging.RenderTargetBitmap $width, $height, 96, 96, ([Windows.Media.PixelFormats]::Pbgra32)
         $target.Render($script:Window)

@@ -88,11 +88,12 @@ foreach ($mode in @('Game', 'Editor')) {
 }
 Assert-Cun (Test-Path -LiteralPath (Join-Path $paths.Project '.godot\global_script_class_cache.cfg')) 'Game start prepared script cache before creating game process'
 [IO.File]::WriteAllText((Join-Path $paths.Project 'scenes\Fudi.tscn'), '[gd_scene format=3]', [Text.Encoding]::UTF8)
-foreach ($selection in @('Spirit', 'Fudi')) {
+[IO.File]::WriteAllText((Join-Path $paths.Project 'scenes\WaterActivity.tscn'), '[gd_scene format=3]', [Text.Encoding]::UTF8)
+foreach ($selection in @('Spirit', 'Fudi', 'Water')) {
     $run = Start-CunProject $paths $fixture 'Game' -Game $selection
     Assert-Cun ($run.Process.WaitForExit(5000)) ('Selected game starts: ' + $selection)
     $argv = [IO.File]::ReadAllLines($env:CUN_FIXTURE_ARGS)
-    $expected = if ($selection -eq 'Fudi') { 'res://scenes/Fudi.tscn' } else { 'res://scenes/MainCity.tscn' }
+    $expected = @{ Spirit = 'res://scenes/MainCity.tscn'; Fudi = 'res://scenes/Fudi.tscn'; Water = 'res://scenes/WaterActivity.tscn' }[$selection]
     Assert-Cun ($argv -contains $expected) ('Selected scene survives process arguments: ' + $selection)
     $run.Process.Dispose()
 }
