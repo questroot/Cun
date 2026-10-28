@@ -1,6 +1,7 @@
 class_name BattleActor
 extends Node2D
 const AtlasScript = preload("res://scripts/battle/sprite_atlas.gd")
+const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
 ## 独立 2D 立绘角色；在现有透明贴图上用轻量变形、位移和光效表达动作，贴图缺失时回退矢量部件。
 var unit: BattleUnit
 var home := Vector2.ZERO
@@ -55,6 +56,10 @@ func _draw() -> void:
 	if cast_charge > 0.01:
 		var pulse: float = sin(elapsed * 24.0) * 2.0
 		draw_arc(origin + Vector2(0, -37), 31.0 + cast_charge * 12.0 + pulse, -PI * 0.18, PI * 1.18, 24, Color(body_color.lightened(0.55), cast_charge * 0.8), 2.5)
+	# 状态光环取当前第一个生效状态；光环只是表现，回合数仍由战斗管理器结算。
+	var status_key: String = PixelVFX.status_for(unit)
+	if status_key != "":
+		PixelVFX.draw(self, status_key, origin + Vector2(0, -32), elapsed, Vector2.ONE, 0.0, Color(1, 1, 1, 0.8), true)
 	# 只镜像角色本体，不翻转接地阴影和场景 UI；PNG 原画统一以朝右为正面。
 	var t := Transform2D(Vector2(facing, 0.0), Vector2(lean * facing * 0.19, 1.0), origin + Vector2((lean * 12.0 - anticipation * 6.0 - impact_jolt * 5.0) * facing, -35 + anticipation * 5.0))
 	draw_set_transform_matrix(t)

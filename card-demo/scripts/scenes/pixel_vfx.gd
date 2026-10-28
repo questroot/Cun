@@ -5,9 +5,24 @@ const DURATIONS := [0.09,0.07,0.05,0.10,0.08,0.08,0.10,0.13]
 const LIFETIME := 0.70
 static var textures: Dictionary = {}
 
+## Which status aura stands for which battle effect key.
+const STATUS_BY_EFFECT := {"stun": "status-stun", "shield": "status-shield", "damage_up": "status-buff", "damage_down": "status-poison"}
+
+static func exists(key: String) -> bool:
+	return ResourceLoader.exists("res://assets/effects/pixel/%s.png" % key)
+
 static func texture(key: String) -> Texture2D:
 	if not textures.has(key): textures[key] = load("res://assets/effects/pixel/%s.png" % key)
 	return textures[key]
+
+## First active status on a battle unit, empty when nothing is applied.
+static func status_for(unit) -> String:
+	if unit == null:
+		return ""
+	for effect: String in STATUS_BY_EFFECT:
+		if unit.has_effect(effect):
+			return STATUS_BY_EFFECT[effect]
+	return ""
 
 static func frame_at(age: float) -> int:
 	var cursor := 0.0
@@ -16,7 +31,7 @@ static func frame_at(age: float) -> int:
 		if age < cursor: return i
 	return 7
 
-static func draw(canvas: Control, key: String, position: Vector2, age: float, scale: Vector2 = Vector2.ONE, angle: float = 0.0, tint: Color = Color.WHITE, loop: bool = false) -> void:
+static func draw(canvas: CanvasItem, key: String, position: Vector2, age: float, scale: Vector2 = Vector2.ONE, angle: float = 0.0, tint: Color = Color.WHITE, loop: bool = false) -> void:
 	var art := texture(key)
 	if art == null: return
 	var frame: int = int(floor(age / 0.12)) % 8 if loop else frame_at(age)

@@ -1,8 +1,11 @@
 # Cun 共享项目状态
 
-最近核对：2026-10-25。维护责任：实际承担本轮工作的成员/Agent。**每次工作先读本文件，结束核对并按事实更新**，规则见 [AGENTS.md](AGENTS.md)。这里只写现状，不把候选当批准、不复制私人对话或大段日志。
+最近核对：2026-10-28。维护责任：实际承担本轮工作的成员/Agent。**每次工作先读本文件，结束核对并按事实更新**，规则见 [AGENTS.md](AGENTS.md)。这里只写现状，不把候选当批准、不复制私人对话或大段日志。
 
 ## 当前阶段与范围
+
+- 特效扩到56组并接入运行（2026-10-28，本地完成）：在既有38组之上新增18组可运行特效——六首领各补第五招（共30招）、五把玩家武器打击、七种通用状态光环。均由 `pixel-art/combat-weather/build.py` 原生逐像素绘制，仍受8帧/≤7色/二值透明/2像素留白断言约束。玩家武器组按 `equipment_catalog.gd` 真实武器编号命名（`player-w01/w02/w03/w05/w06`），原「弓/法杖」两组因游戏中无对应武器已废弃；J/K/L 出手按当前武器取图集。状态光环分两处挂接：福地侧护盾/治疗/灼烧/缚根在 `equipment_effects.gd`，回合战斗侧眩晕/护盾/增伤/减攻在 `battle_actor.gd`，光环只做表现不改结算。详见[运行说明](docs/combat-weather-effects.md)与[素材源](pixel-art/combat-weather/README.md)。未提交/推送。
+- 本轮证据：Godot4.7.2隔离工程真实渲染，专项637项0失败（新增覆盖五把武器的图集键与出手挂接、七种状态光环的图集键与战斗映射），证据 `.local/pixel-vfx-test-20861f5ced954a2ca2071b97d95f746e`；Boss87、宝箱138均0失败。天气专项功能113项0失败但退出期音频资源泄漏文案被脚本判失败，串行复跑仍复现，经回退到未改动基线对比确认与本轮改动无关，属既有偶发；装备专项在本机60秒预算内超时，回退基线同样超时，亦与本轮无关，两项均未修复、待单独处理。美术第四轮查看修整记录见 [QA.md](pixel-art/combat-weather/QA.md)。
 
 - 福地细绘宝箱/药材/药圃替换（2026-10-25，本地完成）：按用户要求用新一批细绘素材替换当前场景的旧代码造型。普通箱关闭/打开、异变箱关闭/守卫中/已净化/已领取共6态；11种野外草药图标用于拾取与B行囊；10种药圃改为三阶段横向图集，牛蒡根暂无图集时退回单图随进度缩放。共交付27张透明运行图，原始生成图保留在 `output/imagegen/fudi-fine/`，抠像、去右下水印、裁边和缩放由 `tools/prepare_fudi_fine_materials.py` 复现；运行映射集中在 `card-demo/scripts/scenes/fudi_material_art.gd`。宝箱状态、采集距离、掉率、生长时间与玩家存档规则不变。
 - 替换运行证据：Godot4.7.2隔离工程真实渲染，宝箱142、天气136、探索299、行走46、GM29及smoke均为0失败；证据 `.local/chests-test-96b513d4ea23424792e0efcacff1ea4c`、`.local/weather-test-b244dcf95ab94f4db7924a9eddf8cae6`、`.local/exploration-test-ed2e8050738c4ad2bb23884f72049d6b`，相关截图已查看。天气首轮因退出期资源泄漏文案被脚本判失败，功能结果为136/0，立即串行复跑通过；既有无 author/license 警告仍在，不据此推断授权。素材清单已登记27项（`review / license unknown`），`tools/assets.py check` 为0错误；未提交/推送，手感与平衡未重新验收。详见[素材说明](card-demo/assets/fudi/fine/README.md)、[宝箱文档](docs/fudi-chests.md)与[天气文档](docs/weather-system.md)。

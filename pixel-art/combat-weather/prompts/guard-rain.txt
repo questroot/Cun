@@ -1,0 +1,24 @@
+Use case: pixel-vfx
+Asset type: finished pixel-art combat VFX key frame
+Effect: 沐雨石灵 · 水花 (guard-rain) | category: guard | telegraph shape: contact
+A single peak frame of a pixel-art water splash minion attack: five vertical streaks of rising water over a low elliptical ripple arc, each a tapered steel-blue drop with a sky blue body, a pale cyan cap and a small oval splash head, plus bright white glints.
+Composition:
+The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
+no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
+Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
+at least 2 pixels of clear margin on all four sides.
+Fixed three-quarter overhead RPG perspective. One key pose: the peak frame of an eight-frame cast.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
+no anti-aliasing, no blur, no smooth gradients, no painted edges.
+Self-illuminated energy: bright core clearly separated from cool dark edges,
+selective dark outlines only where they separate overlapping shapes.
+Palette, exactly seven colours maximum: navy #23374e, steel blue #395f84, sky blue #5f9fbd, pale cyan #93cee0, ice white #d5f3ed, bright white #f5fff7, blue-grey #779bb1.
+Dark base plus mid tones plus one bright accent, no extra hues.
+Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
+Background: solid perfectly flat bright magenta #ff00ff for clean keying,
+no ground, no shadow, no checkerboard, no baked glow fog outside the effect.
+Authentic game VFX asset, not vector art, not a flat geometric diagram,
+not a 3D render, not photorealistic.
+No labels, no letters, no numbers, no watermark, no logos, no signature.
+Maintain a consistent art direction across this set.

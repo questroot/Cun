@@ -1,10 +1,12 @@
 extends Node
 ## Combat-only timers use active game time; secondary damage never triggers procs.
 const Catalog = preload("res://scripts/scenes/equipment_catalog.gd")
+const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
 var gear
 var game
 var elapsed := 0.0
 var heal_ready := 0.0
+var heal_glow := 0.0
 var echo_ready := 0.0
 var shield_charge := 0.0
 var shield_points := 0
@@ -64,6 +66,7 @@ func after_hit(target: Dictionary, kind: String) -> void:
 		var healing := mini(4, 100 - int(game.health))
 		game.health = mini(100, game.health + 4)
 		heal_ready = elapsed + 1.0
+		heal_glow = 0.8
 		pulse(game.player_foot, "追归 +%d生命" % healing, Color("#9fe0ad"))
 	if int(target.hp) <= 0:
 		return
@@ -109,6 +112,7 @@ func clear_transients() -> void:
 		target.erase("gear_slow_until")
 	slowed.clear()
 	visuals.clear()
+	heal_glow = 0.0
 	notice_left = 0.0
 	if banner != null:
 		banner.text = ""
@@ -147,6 +151,7 @@ func tick(delta: float) -> void:
 		visuals[i].life -= delta
 		if float(visuals[i].life) <= 0:
 			visuals.remove_at(i)
+	heal_glow = maxf(0.0, heal_glow - delta)
 	notice_left = maxf(0.0, notice_left - delta)
 	banner.text = notice if notice_left > 0 else ("镜潮护盾 %d / 18" % shield_points if count("s3") >= 5 else "")
 	game._remove_dead()
@@ -169,8 +174,17 @@ func pulse(point: Vector2, label: String, color: Color, radius: float = 38.0) ->
 		banner.text = label
 
 func draw_world() -> void:
+	# Status auras: shield while it holds, heal on trigger, burn and root on their targets.
 	if shield_points > 0 and count("s3") >= 5:
-		game.world_canvas.draw_arc(game.player_foot - Vector2(0, 34), 48, 0, TAU, 48, Color("#9ae7ff", 0.7), 3.0, true)
+		PixelVFX.draw(game.world_canvas, "status-shield", game.player_foot - Vector2(0, 34), elapsed, Vector2.ONE * 1.7, 0.0, Color(1, 1, 1, 0.85), true)
+	if heal_glow > 0.0:
+		PixelVFX.draw(game.world_canvas, "status-heal", game.player_foot - Vector2(0, 34), elapsed, Vector2.ONE * 1.7, 0.0, Color(1, 1, 1, minf(1.0, heal_glow / 0.8)), true)
+	for burn: Dictionary in burns:
+		if int(burn.target.hp) > 0:
+			PixelVFX.draw(game.world_canvas, "status-burn", Vector2(burn.target.position) - Vector2(0, 24), elapsed, Vector2.ONE * 1.4, 0.0, Color(1, 1, 1, 0.85), true)
+	for target: Dictionary in slowed:
+		if float(target.get("gear_slow_until", 0.0)) > elapsed and int(target.hp) > 0:
+			PixelVFX.draw(game.world_canvas, "status-freeze", Vector2(target.position) - Vector2(0, 24), elapsed, Vector2.ONE * 1.4, 0.0, Color(1, 1, 1, 0.85), true)
 	for effect: Dictionary in visuals:
 		var color: Color = effect.color
 		color.a = clampf(float(effect.life) / 0.75, 0, 1)

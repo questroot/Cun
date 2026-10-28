@@ -1,0 +1,24 @@
+Use case: pixel-vfx
+Asset type: finished pixel-art combat VFX key frame
+Effect: 雾隐石灵 · 雾咒 (guard-fog) | category: guard | telegraph shape: contact
+A single peak frame of a pixel-art curse fog minion attack: three drifting horizontal mist bands in layered violet and grey-violet, plus a soft dark core orb with two small pale glints and a thin horizontal highlight, low wisps trailing below.
+Composition:
+The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
+no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
+Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
+at least 2 pixels of clear margin on all four sides.
+Fixed three-quarter overhead RPG perspective. One key pose: the peak frame of an eight-frame cast.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
+no anti-aliasing, no blur, no smooth gradients, no painted edges.
+Self-illuminated energy: bright core clearly separated from cool dark edges,
+selective dark outlines only where they separate overlapping shapes.
+Palette, exactly seven colours maximum: dark violet #302c4e, muted violet #514667, grey-violet #7a7291, pale lilac #afa1bd, mist #d8c9d8, near-white #f1e3ed, pale blue #7a9fb2.
+Dark base plus mid tones plus one bright accent, no extra hues.
+Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
+Background: solid perfectly flat bright green #00ff00 for clean keying,
+no ground, no shadow, no checkerboard, no baked glow fog outside the effect.
+Authentic game VFX asset, not vector art, not a flat geometric diagram,
+not a 3D render, not photorealistic.
+No labels, no letters, no numbers, no watermark, no logos, no signature.
+Maintain a consistent art direction across this set.

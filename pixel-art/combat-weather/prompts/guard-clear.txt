@@ -1,0 +1,24 @@
+Use case: pixel-vfx
+Asset type: finished pixel-art combat VFX key frame
+Effect: 逐光木灵 · 叶刃 (guard-clear) | category: guard | telegraph shape: contact
+A single peak frame of a pixel-art leaf-blade minion attack: five faceted leaf blades swirling in a ring around the centre, each blade olive to leaf green with a yellow-green lit face, a pale midrib and a thin highlight slash, with cream sparkles between them.
+Composition:
+The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
+no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
+Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
+at least 2 pixels of clear margin on all four sides.
+Fixed three-quarter overhead RPG perspective. One key pose: the peak frame of an eight-frame cast.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
+no anti-aliasing, no blur, no smooth gradients, no painted edges.
+Self-illuminated energy: bright core clearly separated from cool dark edges,
+selective dark outlines only where they separate overlapping shapes.
+Palette, exactly seven colours maximum: deep green-grey #2e3b3d, olive #626e50, leaf green #9eae64, yellow-green #cdd58a, pale straw #f1e4b1, cream #fff7d6, jade #6c9c88.
+Dark base plus mid tones plus one bright accent, no extra hues.
+Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
+Background: solid perfectly flat bright magenta #ff00ff for clean keying,
+no ground, no shadow, no checkerboard, no baked glow fog outside the effect.
+Authentic game VFX asset, not vector art, not a flat geometric diagram,
+not a 3D render, not photorealistic.
+No labels, no letters, no numbers, no watermark, no logos, no signature.
+Maintain a consistent art direction across this set.

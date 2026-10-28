@@ -301,7 +301,7 @@ func _tick_boss(boss: Dictionary, delta: float) -> void:
 			if Skills.hits(boss,game.player_foot):
 				_hurt(ceili(float(skill.damage)*Rules.BOSS_DAMAGE_SCALE))
 			boss.cooldown = skill.cooldown
-			boss.skill_index = (int(boss.skill_index)+1)%4
+			boss.skill_index = (int(boss.skill_index)+1)%5
 		return
 	boss.cooldown = maxf(0, float(boss.cooldown) - delta)
 	var offset: Vector2 = game.player_foot - boss.position

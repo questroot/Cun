@@ -519,16 +519,21 @@ func attack(kind: String) -> bool:
 	if equipment != null:
 		radius = equipment.effects.attack_radius(kind, radius)
 	var origin := player_foot - Vector2(0, 30)
+	# Swing art is keyed by the equipped weapon id; the arc stays as the range readout.
+	var swing: String = ""
+	if equipment != null:
+		swing = str(equipment.effects.weapon()).split("-")[0]
 	if kind == "k":
 		var angles: Array = [-0.18, 0.0, 0.18] if equipment != null and equipment.effects.weapon() == "w03-prism-saber" else [0.0]
 		for angle: float in angles:
 			projectiles.append({"position": origin + facing * 30, "velocity": facing.rotated(angle) * 620, "life": 0.85})
+		effects.append({"position": origin, "radius": radius, "life": PixelVFX.LIFETIME, "kind": kind, "facing": facing, "swing": swing})
 	else:
 		for enemy: Dictionary in combat_targets():
 			var offset: Vector2 = enemy.position - player_foot
 			if offset.length() <= radius and (kind == "l" or offset.length() < 25 or offset.normalized().dot(facing) >= 0.15):
 				_damage(enemy, int(config.damage), kind)
-		effects.append({"position": origin, "radius": radius, "life": 0.22, "kind": kind, "facing": facing})
+		effects.append({"position": origin, "radius": radius, "life": PixelVFX.LIFETIME, "kind": kind, "facing": facing, "swing": swing})
 	if equipment != null:
 		equipment.effects.after_attack(kind, radius)
 	_remove_dead()
@@ -770,6 +775,9 @@ func _draw_world() -> void:
 		color.a = clampf(float(effect.life) / 0.22, 0, 1)
 		var angle: float = effect.facing.angle()
 		canvas.draw_arc(effect.position, float(effect.radius), 0 if effect.kind == "l" else angle - 1.4, TAU if effect.kind == "l" else angle + 1.4, 48, color, 7, true)
+		var swing: String = str(effect.get("swing", ""))
+		if swing != "" and PixelVFX.exists("player-" + swing):
+			PixelVFX.draw(canvas, "player-" + swing, effect.position + effect.facing * 30, PixelVFX.LIFETIME - float(effect.life), Vector2.ONE * 2, angle, Color(1, 1, 1, 0.9))
 
 func _paused() -> bool:
 	return menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())

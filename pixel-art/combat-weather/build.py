@@ -23,6 +23,13 @@ PALETTES = {
  'heat': ['#40283d','#80414b','#bf624f','#ed9d63','#ffd88d','#fff1c1','#ad794f'],
  'storm': ['#2e2b50','#544580','#8273b4','#afa8e0','#ded9fb','#fff8ea','#669eb3'],
  'snow': ['#2a3550','#46658a','#739fc0','#abcfdf','#dceff1','#fbffff','#8f96bd'],
+ # Player kit and status sets stay visually apart from the six boss identities.
+ 'hero': ['#1e2a3a','#3f5a76','#7d9ab0','#c9d8e2','#f2f6f8','#e8b06a','#8a6a4a'],
+ 'heal': ['#1d3b34','#2f6b56','#4f9e78','#8fd6a8','#c9f0d4','#f2fff6','#6b8f7a'],
+ 'shield': ['#1f2c44','#38527a','#5f7fae','#93b3d6','#cfe3f2','#f4fbff','#c9a15a'],
+ 'buff': ['#33283c','#5f4a52','#9a7a5c','#d8ab63','#f4d79a','#fff3d2','#8a6fa0'],
+ 'poison': ['#241f3d','#4a3a63','#7a5f8a','#a98fb0','#d6c2c8','#f0e6ea','#6f9a5a'],
+ 'stun': ['#2e2a1e','#5c5230','#94823f','#c9b45c','#f2e39a','#fffbd0','#8a7ab0'],
 }
 NAMES = {
  'H01': ('残旗剑士','sword', [('slash','断旗斩'),('thrust','破阵穿刺'),('banner','血旗横扫'),('spin','回身剑轮')]),
@@ -34,6 +41,20 @@ NAMES = {
 }
 WEATHER_NAMES = dict(rain='润雨',clear='晴光',fog='灵雾',wind='疾风',heat='炎阳',storm='雷雨',snow='霜雪')
 MINION_NAMES = dict(rain='沐雨石灵',clear='逐光木灵',fog='雾隐石灵',wind='巡风石灵',heat='熔火石灵',storm='鸣雷石灵',snow='霜甲石灵')
+# Fifth boss moves reuse a shape the same boss does not already own, so dodging stays readable.
+NAMES5 = {
+ 'H01': ('残旗剑士','sword', ('flag','血旗三插','multi',105.0,300.0,1.45,20,4.0,'离开三面旗桩')),
+ 'H02': ('荆冠鹿骑','thorn', ('charge','荆冠冲撞','sector',175.0,200.0,1.35,19,3.9,'绕至鹿骑身后')),
+ 'H03': ('沉潜重装','water', ('surge','铁壁激流','sector',180.0,205.0,1.55,22,4.3,'绕到重装侧后')),
+ 'H04': ('灰翼审判者','holy', ('halo','裁决光环','ring',185.0,100.0,1.75,24,4.6,'贴近或远离审判者')),
+ 'H05': ('霜典记录者','ice', ('spike','霜钉标记','multi',62.0,330.0,1.5,20,4.2,'离开三处霜钉')),
+ 'H06': ('锈钟守望者','bell', ('pendulum','钟摆十字','cross',33.0,320.0,1.6,23,4.4,'走进十字夹角')),
+}
+# One swing per real weapon id in equipment_catalog.gd; nothing here can be un-triggerable.
+WEAPON_NAMES = [('w03','棱光横斩','sword'),('w02','裂墟劈砍','cleave'),('w05','骨枝突刺','halberd'),
+                ('w01','余烬回响','echo'),('w06','坠岩余震','crag')]
+STATUS_NAMES = [('heal','治疗','heal'),('shield','护盾','shield'),('buff','增益','buff'),
+                ('burn','灼烧','heat'),('poison','中毒','poison'),('freeze','冰冻','ice'),('stun','麻痹','stun')]
 
 def path(s, pts, c, thickness=1):
     for a,b in zip(pts,pts[1:]):
@@ -248,13 +269,197 @@ def weather(s,kind,f,p):
         star(s,48,47,p[4] if f in (2,3,4) else p[3],3+min(f,7-f))
         s.rect(29,62,31,64,p[2]); s.rect(65,29,67,31,p[3])
 
+def boss5(s,kind,f,p):
+    # Fifth moves: a silhouette the same boss does not already own, so dodging stays readable.
+    t=[.22,.38,.64,1,.92,.80,.63,.42][f]
+    if kind=='flag':
+        ring(s,f,p)
+        for i in range(3):
+            x=26+i*22; y=52-(6 if i==1 else 0); h=round((26+(8 if i==1 else 0))*t)
+            path(s,[(x,y+8),(x,y-h)],p[1],3)
+            s.polygon([(x+1,y-h),(x+10,y-h+5),(x+8,y-h+13),(x+1,y-h+9)],p[2])
+            s.line(x+2,y-h+2,x+8,y-h+8,p[4])
+            if f in (2,3): star(s,x+6,y-h+7,p[5],2)
+    elif kind=='charge':
+        start=-2.5+f*.15; end=start+2.9; r=14+int(t*26)
+        for band,c in [(0,p[1]),(-3,p[2]),(-6,p[4])]:
+            arc(s,48,48,r+band,(r+band)*.7,start,end,c,3 if band==0 else 2)
+        for i in range(5):
+            a=start+.35+i*.55; x=round(48+math.cos(a)*(r-2)); y=round(48+math.sin(a)*(r-2)*.7)
+            s.polygon([(x-4,y),(x-1,y-9),(x+3,y-7),(x+4,y+2)],p[3]); s.line(x-2,y,x+1,y-6,p[5])
+    elif kind=='surge':
+        start=-2.6+f*.14; end=start+3.0; r=16+int(t*26)
+        for band,c in [(0,p[1]),(-4,p[2]),(-7,p[3]),(-9,p[4])]:
+            arc(s,48,50,r+band,(r+band)*.72,start,end,c,4 if band==0 else 2)
+        for i in range(6):
+            a=start+.3+i*.5; x=round(48+math.cos(a)*(30*t)); y=round(48+math.sin(a)*(22*t))
+            s.polygon([(x-3,y+4),(x,y-7),(x+3,y+3)],p[3]); s.line(x-2,y,x+2,y-3,p[5])
+    elif kind=='halo':
+        ring(s,f,p,True)
+        for i in range(4):
+            x=26+i*15; h=round(30*t)
+            path(s,[(x,58),(x,58-h)],p[4],3); path(s,[(x,58),(x,58-h)],p[5],1); star(s,x,58-h,p[5],2)
+        star(s,48,44,p[5],round(9*t))
+    elif kind=='spike':
+        ring(s,f,p)
+        for i in range(3):
+            x=28+i*20; shard(s,x,56,round(30*t),p,6 if i!=1 else -6)
+            s.circle(x-1,58,max(2,round(7*t)),p[3])
+    elif kind=='pendulum':
+        r=round(34*t)
+        for a in (0,math.pi/2,math.pi,math.pi*1.5):
+            x=round(48+math.cos(a)*r); y=round(48+math.sin(a)*r)
+            path(s,[(48,48),(x,y)],p[2],4); path(s,[(48,47),(x,y-1)],p[4],2)
+            s.circle(x,y,4,p[1]); s.circle(x-1,y-1,2,p[3])
+        s.circle(48,48,5,p[1]); s.circle(47,47,3,p[4]); star(s,48,48,p[5],round(6*t))
+    else: raise ValueError(kind)
+    if f in (2,3): star(s,45,43,p[5],4)
+
+def weapon(s,kind,f,p):
+    # Player hits read lighter and tighter than boss casts: thinner bands, brighter steel.
+    t=[.25,.45,.7,1,.85,.65,.45,.3][f]
+    ph=math.tau*f/8
+    if kind=='sword':
+        start=-2.4+f*.18; end=start+2.4; r=13+int(t*22)
+        for band,c in [(0,p[2]),(-3,p[3]),(-5,p[4]),(-6,p[5])]:
+            arc(s,48,48,r+band,(r+band)*.72,start,end,c,3 if band==0 else 2)
+        for band,c in [(-9,p[3]),(-13,p[2])]:
+            arc(s,48,48,r+band,(r+band)*.72,start-.35,end-.5,c,2)
+        if f in (2,3): star(s,round(48+math.cos(end)*(r+2)),round(48+math.sin(end)*(r+2)*.72),p[5],3)
+    elif kind=='echo':
+        # Delayed aftershock: rings lagging behind each other, embers drifting off the hit.
+        for k in range(4):
+            tt=max(0.0,math.sin(ph-k*.55)); r=6+round(32*tt)
+            if r>8:
+                arc(s,48,48,r,round(r*.72),0,math.tau,[p[5],p[4],p[3],p[2]][k],[6,4,2,1][k])
+        for i in range(2):
+            rr=6+round(34*max(0.0,math.sin(ph-1.95)))
+            if rr>10: arc(s,48,48,rr,round(rr*.72),ph*.5+i*math.pi,ph*.5+i*math.pi+1.5,p[2],1)
+        for i in range(6):
+            a=ph*.7+i*math.tau/6; rr=16+10*math.sin(ph+i)
+            star(s,round(48+math.cos(a)*rr),round(48+math.sin(a)*rr*.72),p[5],3)
+        s.circle(48,48,max(3,round(7*t)),p[5],fill=True); s.circle(48,48,max(2,round(4*t)),p[4],fill=True)
+    elif kind=='cleave':
+        start=-2.3+f*.16; end=start+2.2; r=12+int(t*20)
+        for band,c in [(0,p[5]),(-3,p[4]),(-6,p[6])]:
+            arc(s,48,50,r+band,(r+band)*.75,start,end,c,4 if band==0 else 2)
+        for i in range(6):
+            a=start+.25+i*.36; x=round(48+math.cos(a)*(r+8)); y=round(50+math.sin(a)*(r+8)*.75)
+            s.polygon([(x-3,y),(x+2,y-4),(x+4,y+1),(x-1,y+4)],p[3]); s.line(x-2,y+1,x+2,y-2,p[5])
+    elif kind=='halberd':
+        x=16+int(t*60)
+        s.polygon([(5,52),(x-14,44),(x+8,52),(x-14,60)],p[2])
+        s.polygon([(13,49),(x-10,47),(x+6,52),(x-11,56)],p[4]); s.line(18,52,x+6,52,p[5])
+        s.polygon([(x-9,43),(x+7,52),(x-9,61),(x-2,52)],p[3])
+        # Bone shaft: knobs and joints, then forked twigs. A plain thrust never read as 骨枝.
+        for k in range(3):
+            bx=14+k*max(4,(x-22)//3)
+            s.ellipse(bx-4,45,bx+4,59,p[6]); s.ellipse(bx-2,47,bx+2,57,p[4]); s.line(bx,45,bx,59,p[2])
+        for side in (-1,1):
+            s.polygon([(x-6,52),(x-16,52+side*13),(x-9,52+side*15)],p[5])
+            s.line(x-4,52,x-14,52+side*10,p[4])
+        for k in range(3): arc(s,20+k*12,52,4,7,-1.5,1.5,p[3])
+    elif kind=='crag':
+        # Falling mass first, ground shock after; rings only once it lands.
+        cy=26+round(30*t)
+        s.polygon([(44,4),(52,4),(54,cy-14),(42,cy-14)],p[2])
+        for k in range(2): s.line(37+k*22,8,37+k*22,cy-16,p[3])
+        for i in range(3):
+            dy=(f*11+i*23)%40
+            s.polygon([(40+i*11,8+dy),(47+i*11,12+dy),(44+i*11,19+dy),(37+i*11,14+dy)],p[3])
+        s.polygon([(48,cy-18),(66,cy-4),(61,cy+13),(35,cy+13),(30,cy-4)],p[2])
+        s.polygon([(48,cy-13),(59,cy-3),(56,cy+9),(40,cy+9),(37,cy-3)],p[3])
+        s.polygon([(46,cy-8),(53,cy-2),(51,cy+5),(43,cy+5)],p[4])
+        if t>=.6:
+            for k in range(3):
+                rr=12+k*10+round(10*t)
+                arc(s,48,74,rr,max(3,round(rr*.30)),0,math.tau,[p[5],p[6],p[4]][k],4 if k==0 else 2)
+        for i in range(5):
+            a=math.tau*i/5+ph
+            star(s,round(48+math.cos(a)*32),round(74+math.sin(a)*9),p[5],2)
+    else: raise ValueError(kind)
+
+def status(s,kind,f,p):
+    # Looping auras: frame 7 must flow back into frame 0, so everything is driven by a phase.
+    ph=math.tau*f/8; t=.55+.45*math.sin(ph)
+    if kind=='heal':
+        # One big pulsing cross; four drifting motes on their own read as noise, not healing.
+        a=22+int(6*t); w=7
+        s.rect(48-w,48-a,48+w,48+a,p[2]); s.rect(48-a,48-w,48+a,48+w,p[2])
+        s.rect(48-w+2,48-a+2,48+w-2,48+a-2,p[3]); s.rect(48-a+2,48-w+2,48+a-2,48+w-2,p[3])
+        s.rect(48-w+4,48-a+4,48+w-4,48+a-4,p[4]); s.rect(48-a+4,48-w+4,48+a-4,48+w-4,p[4])
+        s.rect(48-2,48-a+6,48+2,48+a-6,p[5]); s.rect(48-a+6,48-2,48+a-6,48+2,p[5])
+        for i in range(4):
+            ang=ph+i*math.tau/4
+            star(s,round(48+math.cos(ang)*(a+8)),round(48+math.sin(ang)*(a+8)),p[4],2)
+    elif kind=='shield':
+        # Heraldic shield silhouette; a bare ring never read as "shield".
+        w=22+int(4*t); top=24; bot=76
+        s.polygon([(48-w,top),(48+w,top),(48+w,47),(48,bot),(48-w,47)],p[2])
+        s.polygon([(48-w+4,top+4),(48+w-4,top+4),(48+w-4,46),(48,bot-7),(48-w+4,46)],p[3])
+        s.polygon([(48-w+8,top+8),(48+w-8,top+8),(48+w-8,45),(48,bot-14),(48-w+8,45)],p[4])
+        s.rect(48-2,31,48+2,57,p[6]); s.rect(48-10,42,48+10,46,p[6])
+        for i in range(4):
+            a=ph+i*math.tau/4
+            star(s,round(48+math.cos(a)*(w+8)),round(50+math.sin(a)*(w+8)),p[5],2)
+    elif kind=='buff':
+        # Three fat rising chevrons; the old narrow arrows were too small to carry the frame.
+        for i in range(3):
+            y=64-((f*10+i*27)%48)
+            s.polygon([(48,y-11),(67,y+5),(48,y+1),(29,y+5)],p[3])
+            s.polygon([(48,y-6),(60,y+3),(48,y),(36,y+3)],p[4])
+        arc(s,48,70,24,8,0,math.tau,p[2],2)
+    elif kind=='burn':
+        # Three wide flame tongues; the old narrow ones left the frame half empty.
+        for i in range(3):
+            x=26+i*22; h=26+((f+i*3)%4)*6
+            s.polygon([(x-8,66),(x-6,66-h*.45),(x-1,66-h),(x+5,66-h*.5),(x+8,66)],p[2])
+            s.polygon([(x-4,66),(x-3,66-h*.5),(x+1,66-h*.72),(x+4,66)],p[3])
+            s.polygon([(x-2,66),(x-1,66-h*.4),(x+1,66-h*.5),(x+2,66)],p[4])
+        arc(s,48,70,30,8,math.pi,math.tau,p[3],2)
+    elif kind=='poison':
+        # A solid bubbling pool reads as poison; scattered dots did not.
+        s.ellipse(26,54,70,76,p[1]); s.ellipse(30,57,66,72,p[2]); s.ellipse(36,60,60,68,p[3])
+        s.line(32,60,64,60,p[4])
+        for i in range(4):
+            x=32+i*11; y=58-((f*9+i*17)%40); r=7-((i+f)%2)*2
+            s.circle(x,y,r,p[2],fill=True); s.circle(x-2,y-2,max(3,r-3),p[4],fill=True)
+            s.line(x-r,y+r-1,x+r,y+r-1,p[1])
+        for i in range(3):
+            a=ph*.5+i*math.tau/3; ex=round(48+math.cos(a)*16); ey=round(64+math.sin(a)*6)
+            s.ellipse(ex-11,ey-5,ex+11,ey+5,p[1])
+    elif kind=='freeze':
+        # A big frozen hex-crystal; small symmetric snowflakes collided with weather-snow.
+        r=24+int(5*t)
+        s.polygon([(round(48+math.cos(i*math.tau/6)*r),round(48+math.sin(i*math.tau/6)*r)) for i in range(6)],p[3])
+        s.polygon([(round(48+math.cos(i*math.tau/6)*(r-5)),round(48+math.sin(i*math.tau/6)*(r-5))) for i in range(6)],p[4])
+        for i in range(6):
+            a=i*math.tau/6; dx=math.cos(a); dy=math.sin(a)
+            s.line(48,48,round(48+dx*(r+6)),round(48+dy*(r+6)),p[2])
+            s.line(48,48,round(48+dx*(r+5)),round(48+dy*(r+5)),p[4])
+            s.line(round(48+dx*r),round(48+dy*r),round(48+dx*(r-7)-dy*6),round(48+dy*(r-7)+dx*6),p[5])
+            s.line(round(48+dx*r),round(48+dy*r),round(48+dx*(r-7)+dy*6),round(48+dy*(r-7)-dx*6),p[5])
+        star(s,48,48,p[5],3)
+    elif kind=='stun':
+        # One dominant bolt down the middle; three small ones scattered too thin to read.
+        sx=48+round(math.sin(ph)*3)
+        pts=[(sx+4,20),(sx-8,44),(sx+2,44),(sx-10,72)]
+        path(s,pts,p[3],5); path(s,pts,p[4],3); path(s,pts,p[5],1)
+        arc(s,48,48,30,19,0,math.tau,p[2],4); arc(s,48,48,30,19,0,math.tau,p[3],2)
+        for i in range(3):
+            a=ph+i*math.tau/3; star(s,round(48+math.cos(a)*28),round(48+math.sin(a)*17),p[4],2)
+    else: raise ValueError(kind)
+
+LOOPING = ('weather','status')
+
 def make(key,label,palette,draw,kind,category):
     s=Sprite(96,96,palette=palette)
+    looping = category in LOOPING
     for f in range(8):
         if f: s.add_frame(copy=False)
         draw(s,kind,f,palette)
-        s.set_duration(([90,70,50,100,80,80,100,130] if category!='weather' else [120]*8)[f])
-    s.tag('cast' if category!='weather' else 'loop',1,8)
+        s.set_duration(([120]*8 if looping else [90,70,50,100,80,80,100,130])[f])
+    s.tag('loop' if looping else 'cast',1,8)
     s.save_spritesheet(str(ROOT/f'{key}.png'),layout='horizontal')
     s.save_spritesheet(str(DEST/f'{key}.png'),layout='horizontal')
     s.save_png(str(ROOT/f'{key}-master.png'),frame=4)
@@ -294,21 +499,26 @@ def main():
     entries=[]
     for bid,(name,pal,kinds) in NAMES.items():
         for kind,label in kinds: entries.append(make(f'{bid}-{kind}',label,PALETTES[pal],boss,kind,'boss'))
+    for bid,(name,pal,spec) in NAMES5.items():
+        kind=spec[0]; entries.append(make(f'{bid}-{kind}',spec[1],PALETTES[pal],boss5,kind,'boss'))
+    for wid,label,kind in WEAPON_NAMES: entries.append(make(f'player-{wid}',label,PALETTES['hero'],weapon,kind,'player'))
     for kind,label in MINION_NAMES.items(): entries.append(make(f'guard-{kind}',label,PALETTES[kind],minion,kind,'guard'))
+    for kind,label,pal in STATUS_NAMES: entries.append(make(f'status-{kind}',label,PALETTES[pal],status,kind,'status'))
     for kind,label in WEATHER_NAMES.items(): entries.append(make(f'weather-{kind}',label,PALETTES[kind],weather,kind,'weather'))
     manifest={'version':1,'pixel_size':1,'filter':'nearest','frame_count':8,'frame_size':[96,96],
               'effects':[meta for meta,frames in entries]}
     for dest in (ROOT,DEST): (dest/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
-    plate(entries[:24],'boss-preview.png')
-    plate(entries[24:],'elements-preview.png',cols=4)
+    plate(entries[:30],'boss-preview.png')
+    plate(entries[30:35],'player-preview.png',cols=5)
+    plate(entries[35:],'elements-preview.png',cols=4)
     motion=Image.new('RGB',(8*192,3*192),'#172332')
-    for row,index in enumerate((0,25,34)):
+    for row,index in enumerate((0,30,35)):
         for f,im in enumerate(entries[index][1]):
             im=im.resize((192,192),Image.Resampling.NEAREST)
             motion.paste(im,(f*192,row*192),im)
     motion.save(ROOT/'motion-preview.png')
     # Combined animation is a preview, individual sheets are the runtime masters.
-    for label,group,cols in [('boss',entries[:24],6),('elements',entries[24:],7)]:
+    for label,group,cols in [('boss',entries[:30],6),('player',entries[30:35],5),('elements',entries[35:],7)]:
         animation=[]
         for f in range(8):
             im=Image.new('RGBA',(cols*96,math.ceil(len(group)/cols)*96),'#172332')
