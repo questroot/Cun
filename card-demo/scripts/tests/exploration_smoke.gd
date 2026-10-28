@@ -72,7 +72,22 @@ func run_checks() -> void:
 	var saved := FileAccess.get_file_as_string(data.SAVE_PATH)
 	var progress: Dictionary = data.save_data.duplicate(true)
 	var menu = await load_scene("res://scenes/MainMenu.tscn")
-	check(str(ProjectSettings.get_setting("application/run/main_scene")).ends_with("MainMenu.tscn"), "默认入口为双游戏选择")
+	check(str(ProjectSettings.get_setting("application/run/main_scene")).ends_with("MainMenu.tscn"), "默认入口为三游戏选择")
+	var backdrop: Control = menu.get_node("MenuBackdrop")
+	var content: Control = menu.get_node("MenuContent")
+	var viewport_bounds := Rect2(Vector2.ZERO, Vector2(1280, 720))
+	check(viewport_bounds.encloses(backdrop.get_global_rect()) and backdrop.get_global_rect().encloses(content.get_global_rect()), "720p菜单内容与背景均在屏内")
+	var previous_bottom := content.global_position.y
+	for child in content.get_children():
+		check(content.get_global_rect().encloses(child.get_global_rect()) and child.global_position.y >= previous_bottom, "菜单子项限宽且不重叠: " + str(child.name))
+		previous_bottom = child.get_global_rect().end.y
+		if child is Label and child != content.get_child(0):
+			check(child.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER and child.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART, "菜单说明居中并智能换行: " + str(child.name))
+	for entry_name: String in ["EnterSpirit", "EnterFudi", "EnterWater"]:
+		var entry: Button = content.get_node(entry_name)
+		check(entry.size == Vector2(440, 55) and entry.get_theme_font_size("font_size") == 20, "三个入口统一尺寸字体: " + entry_name)
+		for state: String in ["normal", "hover", "pressed", "focus"]:
+			check(entry.has_theme_stylebox_override(state), "入口具备明确交互状态: " + entry_name + "/" + state)
 	await capture("menu")
 	menu.atlas.open("city")
 	await frames()
@@ -242,10 +257,23 @@ func run_checks() -> void:
 		var foot: Vector2 = zone.player_foot
 		zone._process(1)
 		check(zone.player_foot == foot, "原有场景地图暂停移动: " + scene_name)
-		await click(zone.exploration_tools.atlas.region_buttons["water_activity"])
-		check(zone.exploration_tools.atlas.selected_region == "water_activity", "原有场景可点击查看浮台物品: " + scene_name)
+		var atlas = zone.exploration_tools.atlas
 		if scene_name == "WaterActivity":
+			check(atlas.region_buttons["water_activity"].visible and not atlas.region_buttons["city"].visible and not atlas.region_buttons["grove"].visible, "海域地图仅显示本世界，不显示冒险或福地入口")
+			atlas.select_region("grove")
+			check(atlas.selected_region == "water_activity" and not atlas.travel_button.visible, "海域地图拒绝选择冒险旅行目标")
+			var requests: Array = []
+			atlas.travel_requested.connect(func(id: String) -> void: requests.append(id))
+			atlas.can_travel = true
+			atlas.selected_region = "grove"
+			atlas.travel_button.pressed.emit()
+			check(requests.is_empty(), "即使直接触发隐藏旅行按钮也不跨出海域")
+			atlas.selected_region = "water_activity"
 			await capture("water_atlas")
+		else:
+			check(not atlas.region_buttons["water_activity"].visible, "冒险地图不显示水世界入口: " + scene_name)
+			atlas.select_region("water_activity")
+			check(atlas.selected_region == zone.exploration_tools.region, "冒险地图拒绝选择水世界: " + scene_name)
 		zone.exploration_tools.atlas.close()
 		if scene_name == "MainCity":
 			await capture("city_tools")

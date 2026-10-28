@@ -41,8 +41,8 @@ static func _all_items() -> Dictionary:
 
 const REGIONS := {
 	"city": {"name": "云庭主城", "game": "灵伴", "point": Vector2(0.18, 0.29), "note": "主城用于漫游、编队和培养，当前没有可采集物品。", "resources": {}},
-	"outskirts": {"name": "云庭外缘", "game": "灵伴", "point": Vector2(0.48, 0.22), "note": "外缘连接主城与水门，当前没有可采集物品。", "resources": {}},
-	"water_activity": {"name": "漂流浮台", "game": "灵伴", "point": Vector2(0.78, 0.34), "note": "物品随打捞、设施和加工获得，暂无随机掉落稀有度。", "resources": {"wood": "打捞漂浮物；每份 +1", "scrap": "打捞漂浮物；每份 +1", "water": "站点每4秒产出1份", "fiber": "站点每4秒产出1份；工坊建成后转为绳索", "rope": "1纤维加工1绳索；工坊可自动加工"}},
+	"outskirts": {"name": "云庭外缘", "game": "灵伴", "point": Vector2(0.48, 0.22), "note": "外缘连接主城，当前没有可采集物品。海底水世界请从游戏选择进入。", "resources": {}},
+	"water_activity": {"name": "漂流浮台", "game": "海底水世界", "point": Vector2(0.78, 0.34), "note": "海底水世界的海面宿主；从游戏选择进入浮台，再下潜探索。海上进度独立保存。物品随打捞、设施和加工获得。", "resources": {"wood": "打捞漂浮物；每份 +1", "scrap": "打捞漂浮物；每份 +1", "water": "站点每4秒产出1份", "fiber": "站点每4秒产出1份；工坊建成后转为绳索", "rope": "1纤维加工1绳索；工坊可自动加工"}},
 	"grove": {"name": "青岚灶街", "game": "福地", "point": Vector2(0.18, 0.59), "note": "祝婶 · 今天几个人吃饭。沿旧灶台、街坊药圃和迁灶落脚点找回街坊的记忆。", "resources": {"wood": 8, "herb": 5, "ore": 2, "crystal": 1, "resin": 5, "bloodgrass": 6, "dewleaf": 5, "bitterroot": 3, "berry": 4, "fiber": 4}, "enemies": 4, "color": "#253e35"},
 	"post": {"name": "旧城邮驿", "game": "福地", "point": Vector2(0.50, 0.59), "note": "阿缄 · 收件人尚未苏醒。穿过邮局与静默巷，前往寻人留言墙；书信不作为耗材。", "resources": {"wood": 4, "herb": 3, "paper_ash": 3, "iron": 5, "fiber": 6, "wakeleaf": 4, "restflower": 3, "berry": 3}, "enemies": 5, "color": "#3b3c35"},
 	"quarry": {"name": "赤岩钟楼", "game": "福地", "point": Vector2(0.82, 0.59), "note": "温砚 · 裂缝之下。修复师工坊、旧城钟楼与护像长廊相连。矿材来自岩层，石像受到保护。", "resources": {"wood": 2, "herb": 1, "ore": 8, "crystal": 3, "iron": 8, "copper": 4, "sand": 6, "moss": 4, "warmflower": 3}, "enemies": 5, "color": "#45392f"},
