@@ -1,18 +1,27 @@
 Use case: pixel-vfx
 Asset type: finished pixel-art combat VFX key frame
 Effect: 震钟回响 · 近身钟波 (H06-echo) | category: boss | telegraph shape: circle
-A single peak frame of a pixel-art bell echo VFX: a double concentric sound ring with three small bronze bells standing in a row, each bell a rounded dark bronze body with a copper lit band, a pale gold clapper below and a bright spark, plus expanding shock rings.
+Source frame: H06-echo-4x.png — the peak frame of the current eight-frame atlas, used as the base image
+Style anchor: showcase/H06-hammer.png — the approved redesign benchmark for this whole set
+Current build:
+A single peak frame of a pixel-art combat VFX: a double ring with three bell shapes across the upper area, each with a base line and a clapper.
+Redesign brief:
+One complete bronze bell as the central subject: a full rounded bell silhouette with the mouth facing down, and three thick concentric sound rings spreading out from the bell mouth, each with real thickness. Remove the ambiguous upper blocks and finish the bell shape.
 Composition:
 The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
 no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
 Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
 at least 2 pixels of clear margin on all four sides.
 Fixed three-quarter overhead RPG perspective. One key pose: the peak frame of an eight-frame cast.
+Silhouette rules:
+One dominant mass must read first. No scattered debris, no hollow rings with an empty interior,
+no floating fragments that do not connect to the main shape, no thin lines carrying the whole read.
 Style/medium:
 Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
-no anti-aliasing, no blur, no smooth gradients, no painted edges.
+no anti-aliasing, no blur, no smooth gradients, no painted edges, no feathered glow.
 Self-illuminated energy: bright core clearly separated from cool dark edges,
 selective dark outlines only where they separate overlapping shapes.
+Pixel density and tonal-step count must match the style anchor exactly.
 Palette, exactly seven colours maximum: dark bronze-violet #352d40, dark bronze #6b4a49, copper #a57350, gold #d8aa63, pale gold #f2d697, ivory #fff4ce, teal-grey #789a9d.
 Dark base plus mid tones plus one bright accent, no extra hues.
 Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.

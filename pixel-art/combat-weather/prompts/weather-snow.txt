@@ -1,0 +1,31 @@
+Use case: pixel-vfx
+Asset type: finished pixel-art combat VFX frame
+Effect: 霜雪 · 环境粒子 (weather-snow) | category: weather-particle | telegraph shape: ambient
+Source frame: weather-snow-4x.png — the peak frame of the current eight-frame atlas, used as the base image
+Style anchor: showcase/H06-hammer.png — the approved redesign benchmark for this whole set
+Current build:
+A single frame of a pixel-art combat VFX: a six-armed snowflake with barbed tips near each arm end and a centre star, drifting side to side.
+Redesign brief:
+Make the crystal clearly a snowflake with thicker arms and stronger barbs, and differentiate it from the frozen status crystal by keeping it lighter and more open in the centre.
+Composition:
+A small self-contained looping particle, filling roughly 40 to 50 percent of the cell, designed to repeat across the screen as ambient weather rather than to stand alone. At least 2 pixels of clear margin on all four sides.
+One frame of an eight-frame seamless loop; the first and last frame must connect.
+It is an ambient tile, not a one-off blast: keep the body compact so dozens on screen still read.
+Silhouette rules:
+One dominant mass must read first. No scattered debris, no hollow rings with an empty interior,
+no floating fragments that do not connect to the main shape, no thin lines carrying the whole read.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
+no anti-aliasing, no blur, no smooth gradients, no painted edges, no feathered glow.
+Self-illuminated energy: bright core clearly separated from cool dark edges,
+selective dark outlines only where they separate overlapping shapes.
+Pixel density and tonal-step count must match the style anchor exactly.
+Palette, exactly seven colours maximum: deep blue-slate #2a3550, steel blue #46658a, sky #739fc0, pale ice #abcfdf, frost #dceff1, white #fbffff, periwinkle #8f96bd.
+Dark base plus mid tones plus one bright accent, no extra hues.
+Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
+Background: solid perfectly flat bright magenta #ff00ff for clean keying,
+no ground, no shadow, no checkerboard, no baked glow fog outside the effect.
+Authentic game VFX asset, not vector art, not a flat geometric diagram,
+not a 3D render, not photorealistic.
+No labels, no letters, no numbers, no watermark, no logos, no signature.
+Maintain a consistent art direction across this set.

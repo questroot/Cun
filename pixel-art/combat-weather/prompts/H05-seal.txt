@@ -1,19 +1,28 @@
 Use case: pixel-vfx
 Asset type: finished pixel-art combat VFX key frame
 Effect: 霜文封印 · 锁定霜印 (H05-seal) | category: boss | telegraph shape: circle
-A single peak frame of a pixel-art frost seal VFX: a double concentric rune ring with six upright rectangular rune tablets standing around it, each tablet deep indigo with indigo sides and a pale sky-blue glyph stroke, and a glowing white star at the centre.
+Source frame: H05-seal-4x.png — the peak frame of the current eight-frame atlas, used as the base image
+Style anchor: showcase/H06-hammer.png — the approved redesign benchmark for this whole set
+Current build:
+A single peak frame of a pixel-art combat VFX: a double ring with six rune tablets spaced around it and a central star.
+Redesign brief:
+Keep the existing silhouette and bring it up to the anchor's mass and edge crispness. Do not change how the shape reads: same subject, same attack direction, only more body and harder edges.
 Composition:
 The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
 no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
 Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
 at least 2 pixels of clear margin on all four sides.
 Fixed three-quarter overhead RPG perspective. One key pose: the peak frame of an eight-frame cast.
+Silhouette rules:
+One dominant mass must read first. No scattered debris, no hollow rings with an empty interior,
+no floating fragments that do not connect to the main shape, no thin lines carrying the whole read.
 Style/medium:
 Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
-no anti-aliasing, no blur, no smooth gradients, no painted edges.
+no anti-aliasing, no blur, no smooth gradients, no painted edges, no feathered glow.
 Self-illuminated energy: bright core clearly separated from cool dark edges,
 selective dark outlines only where they separate overlapping shapes.
-Palette, exactly seven colours maximum: deep indigo #293251, indigo #435887, sky blue #5f94b8, ice cyan #92d6e0, pale ice #d6f4ef, white #fbffff, pale lilac #9b80c3.
+Pixel density and tonal-step count must match the style anchor exactly.
+Palette, exactly seven colours maximum: deep indigo #293251, steel blue #435887, sky blue #5f94b8, ice cyan #92d6e0, frost #d6f4ef, white #fbffff, lilac #9b80c3.
 Dark base plus mid tones plus one bright accent, no extra hues.
 Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
 Background: solid perfectly flat bright magenta #ff00ff for clean keying,

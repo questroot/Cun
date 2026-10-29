@@ -15,4 +15,14 @@
 python -W ignore pixel-art/combat-weather/build.py
 ```
 
-工作预览：[首领总览](boss-preview.png)、[玩家武器总览](player-preview.png)、[小怪状态与天气总览](elements-preview.png)、[动作帧检查](motion-preview.png)、[首领动画](boss-animation.gif)、[玩家武器动画](player-animation.gif)、[小怪状态与天气动画](elements-animation.gif)。可用游戏资产在 [effects/pixel](../../card-demo/assets/effects/pixel/)，技能与躲避方式见 [运行说明](../../docs/combat-weather-effects.md)。招式的提示词描述见 [prompts/](prompts/)。
+工作预览：[首领总览](boss-preview.png)、[玩家武器总览](player-preview.png)、[小怪状态与天气总览](elements-preview.png)、[动作帧检查](motion-preview.png)、[首领动画](boss-animation.gif)、[玩家武器动画](player-animation.gif)、[小怪状态与天气动画](elements-animation.gif)。可用游戏资产在 [effects/pixel](../../card-demo/assets/effects/pixel/)，技能与躲避方式见 [运行说明](../../docs/combat-weather-effects.md)。招式的提示词描述见 [prompts/](prompts/)：**56 条，与 56 组特效一一对应**——六首领各五招（30）、七属性小怪（7）、五把玩家武器（5）、七种通用状态（7）、七种天气（7）。
+
+每条都写明底图（该组现有的第 4 帧放大图）、风格锚点（`showcase/H06-hammer.png`）、现造型描述与改造处方，并共用一段 **Silhouette rules**（一个主导体量先被读到，禁止散碎、空洞圆环、无连接的漂浮碎片、细线扛全场）。三类模板有差异：招式与武器是单次播放的峰值帧；状态光环是套在角色身上的八帧循环，要求小尺寸仍可读；天气是满屏平铺的环境粒子，占格只 40–50% 且首尾帧必须接得上。
+
+专项处方共 21 条：13 条针对 boss 与小怪的弱项，8 条针对中毒/麻痹两个「够用」档状态与润雨/晴光/疾风/炎阳/灵雾/霜雪六个偏空的天气。其余用保形模板，只对齐锚点的体量与边缘硬度、不改造型读法。抠图背景按调色板分工：紫色系（sword / holy / fog / storm / poison）走绿幕 #00ff00，其余走品红 #ff00ff。
+
+## 单帧展示图（showcase/）
+
+`showcase/` 存放**单帧美术展示图**，用于对现有特效造型做强化重绘与美术参考。它**不是运行图集，不进游戏**：运行资产仍是 `effects/pixel` 下由 build.py 保证的 96×96、8 帧、≤7 色、alpha 仅 0/255 图集；AI 单帧图无法保证这三条，故不替换。
+
+命名沿用特效键（如 `H06-hammer.png`）；`contact-sheet.png` 为整批复核用的联系图。

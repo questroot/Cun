@@ -1,18 +1,27 @@
 Use case: pixel-vfx
 Asset type: finished pixel-art combat VFX key frame
-Effect: 巡风石灵 · 旋风 (guard-wind) | category: guard | telegraph shape: contact
-A single peak frame of a pixel-art gust minion attack: three curved wind streaks of layered sea green and sage sweeping across the cell, thin and light with pale mint highlight edges, plus a small tumbling leaf below.
+Effect: 巡风石灵 · 接触 (guard-wind) | category: guard | telegraph shape: contact
+Source frame: guard-wind-4x.png — the peak frame of the current eight-frame atlas, used as the base image
+Style anchor: showcase/H06-hammer.png — the approved redesign benchmark for this whole set
+Current build:
+A single peak frame of a pixel-art combat VFX: three curved wind streaks of layered sea green and sage sweeping across the cell, plus a small tumbling leaf.
+Redesign brief:
+Several thick curved wind blades cutting across the cell from one side, wide and sharp-edged, arranged in parallel layers with clear air-flow trails. Cutting and slicing, never coiling, so it stays visually distinct from the fog mass.
 Composition:
 The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
 no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
 Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
 at least 2 pixels of clear margin on all four sides.
 Fixed three-quarter overhead RPG perspective. One key pose: the peak frame of an eight-frame cast.
+Silhouette rules:
+One dominant mass must read first. No scattered debris, no hollow rings with an empty interior,
+no floating fragments that do not connect to the main shape, no thin lines carrying the whole read.
 Style/medium:
 Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
-no anti-aliasing, no blur, no smooth gradients, no painted edges.
+no anti-aliasing, no blur, no smooth gradients, no painted edges, no feathered glow.
 Self-illuminated energy: bright core clearly separated from cool dark edges,
 selective dark outlines only where they separate overlapping shapes.
+Pixel density and tonal-step count must match the style anchor exactly.
 Palette, exactly seven colours maximum: deep teal #263e46, sea green #40716d, sage #72a395, pale sage #a6cdb2, mint #d8e8cc, cream #f5f6df, blue-grey #96a7b5.
 Dark base plus mid tones plus one bright accent, no extra hues.
 Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
