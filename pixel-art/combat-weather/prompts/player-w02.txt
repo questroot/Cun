@@ -1,0 +1,34 @@
+Use case: pixel-vfx
+Asset type: finished pixel-art combat VFX frame
+Effect: 裂墟劈砍 · 劈砍 (player-w02) | category: player-weapon | telegraph shape: swing
+Source frame: player-w02-4x.png — the peak frame of the current eight-frame atlas, used as the base image
+Style anchor: showcase/H06-hammer.png — the approved redesign benchmark for this whole set
+Current build:
+A single frame of a pixel-art combat VFX: a crescent cleave arc of three concentric bands in warm amber, with six diamond debris shards along the outer edge.
+Redesign brief:
+Keep the existing silhouette and bring it up to the anchor's mass and edge crispness. Do not change how the shape reads: same subject, same direction, only more body and harder edges.
+Composition:
+The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
+no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
+Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
+at least 2 pixels of clear margin on all four sides.
+One key pose: the peak frame of an eight-frame cast.
+It plays once in front of the character, so the swing direction must read instantly.
+Silhouette rules:
+One dominant mass must read first. No scattered debris, no hollow rings with an empty interior,
+no floating fragments that do not connect to the main shape, no thin lines carrying the whole read.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
+no anti-aliasing, no blur, no smooth gradients, no painted edges, no feathered glow.
+Self-illuminated energy: bright core clearly separated from cool dark edges,
+selective dark outlines only where they separate overlapping shapes.
+Pixel density and tonal-step count must match the style anchor exactly.
+Palette, exactly seven colours maximum: steel navy #1e2a3a, steel blue #3f5a76, pale steel #7d9ab0, silver #c9d8e2, white #f2f6f8, amber #e8b06a, bronze #8a6a4a.
+Dark base plus mid tones plus one bright accent, no extra hues.
+Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
+Background: solid perfectly flat bright magenta #ff00ff for clean keying,
+no ground, no shadow, no checkerboard, no baked glow fog outside the effect.
+Authentic game VFX asset, not vector art, not a flat geometric diagram,
+not a 3D render, not photorealistic.
+No labels, no letters, no numbers, no watermark, no logos, no signature.
+Maintain a consistent art direction across this set.

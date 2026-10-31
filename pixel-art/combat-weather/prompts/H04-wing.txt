@@ -1,0 +1,33 @@
+Use case: pixel-vfx
+Asset type: finished pixel-art combat VFX key frame
+Effect: 灰翼肃清 · 前方扇形 (H04-wing) | category: boss | telegraph shape: sector
+Source frame: H04-wing-4x.png — the peak frame of the current eight-frame atlas, used as the base image
+Style anchor: showcase/H06-hammer.png — the approved redesign benchmark for this whole set
+Current build:
+A single peak frame of a pixel-art combat VFX: a wide crescent arc plus four layered wing feathers fanning outward on each side.
+Redesign brief:
+Keep the existing silhouette and bring it up to the anchor's mass and edge crispness. Do not change how the shape reads: same subject, same attack direction, only more body and harder edges.
+Composition:
+The effect alone, no character, no creature body, no wielder, no weapon held by anyone,
+no scenery, no ground texture beyond the implied impact ring, no interface, no frame.
+Centred on the effect anchor, filling roughly 70 to 80 percent of the cell,
+at least 2 pixels of clear margin on all four sides.
+Fixed three-quarter overhead RPG perspective. One key pose: the peak frame of an eight-frame cast.
+Silhouette rules:
+One dominant mass must read first. No scattered debris, no hollow rings with an empty interior,
+no floating fragments that do not connect to the main shape, no thin lines carrying the whole read.
+Style/medium:
+Premium hand-crafted 16-bit / 32-bit JRPG pixel VFX, crisp hard-edged square pixel clusters,
+no anti-aliasing, no blur, no smooth gradients, no painted edges, no feathered glow.
+Self-illuminated energy: bright core clearly separated from cool dark edges,
+selective dark outlines only where they separate overlapping shapes.
+Pixel density and tonal-step count must match the style anchor exactly.
+Palette, exactly seven colours maximum: dark violet #35334e, mauve #685469, taupe #ac8b82, sand gold #dbbd91, pale gold #f7e4b7, ivory #fff8e1, mist blue #a9bfd1.
+Dark base plus mid tones plus one bright accent, no extra hues.
+Warm top-left light on solid props; self-luminous energy for glows, sparks and cores.
+Background: solid perfectly flat bright green #00ff00 for clean keying,
+no ground, no shadow, no checkerboard, no baked glow fog outside the effect.
+Authentic game VFX asset, not vector art, not a flat geometric diagram,
+not a 3D render, not photorealistic.
+No labels, no letters, no numbers, no watermark, no logos, no signature.
+Maintain a consistent art direction across this set.

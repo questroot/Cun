@@ -118,7 +118,7 @@ func tick(delta: float) -> void:
 					game.health = maxi(0, game.health - game.incoming_damage(int(skill.damage)))
 					game.hurt_timer = 1.0
 				boss.cooldown = skill.cooldown
-				boss.skill_index = (int(boss.skill_index)+1)%4
+				boss.skill_index = (int(boss.skill_index)+1)%5
 			continue
 		boss.cooldown = maxf(0, float(boss.cooldown) - delta)
 		if offset.length() > 520 or game.player_foot.distance_to(boss.home) > 650:

@@ -4,6 +4,7 @@ const Loot = preload("res://scripts/scenes/loot_catalog.gd")
 const Gear = preload("res://scripts/scenes/equipment_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Bosses = preload("res://scripts/scenes/boss_catalog.gd")
+const MaterialArt = preload("res://scripts/scenes/fudi_material_art.gd")
 var game
 var chests
 var checks := 0
@@ -82,6 +83,13 @@ func run_checks() -> void:
 	var saved := FileAccess.get_file_as_string(data.SAVE_PATH)
 	await open_fudi()
 	check(chests.initialized and chests.remaining() == 0, "宝箱初始化且未开启不生成敌人")
+	check(MaterialArt.CHESTS.size() == 6
+		and MaterialArt.chest_texture(false, "sealed").resource_path.ends_with("normal_closed.png")
+		and MaterialArt.chest_texture(false, "opened").resource_path.ends_with("normal_open.png")
+		and MaterialArt.chest_texture(true, "sealed").resource_path.ends_with("mutated_closed.png")
+		and MaterialArt.chest_texture(true, "guarding").resource_path.ends_with("mutated_guarding.png")
+		and MaterialArt.chest_texture(true, "cleared").resource_path.ends_with("mutated_cleared.png")
+		and MaterialArt.chest_texture(true, "opened").resource_path.ends_with("mutated_open.png"), "六张细绘宝箱按普通/异变与状态映射")
 	var mutations := 0
 	for id: String in Maps.IDS:
 		var normal := 0

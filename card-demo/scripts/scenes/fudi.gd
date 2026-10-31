@@ -9,6 +9,7 @@ const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Landscape = preload("res://scripts/scenes/fudi_landscape.gd")
 const Bosses = preload("res://scripts/scenes/fudi_bosses.gd")
 const Loot = preload("res://scripts/scenes/loot_catalog.gd")
+const MaterialArt = preload("res://scripts/scenes/fudi_material_art.gd")
 const Equipment = preload("res://scripts/scenes/fudi_equipment.gd")
 const Buildings = preload("res://scripts/scenes/fudi_buildings.gd")
 const Chests = preload("res://scripts/scenes/fudi_chests.gd")
@@ -518,16 +519,21 @@ func attack(kind: String) -> bool:
 	if equipment != null:
 		radius = equipment.effects.attack_radius(kind, radius)
 	var origin := player_foot - Vector2(0, 30)
+	# Swing art is keyed by the equipped weapon id; the arc stays as the range readout.
+	var swing: String = ""
+	if equipment != null:
+		swing = str(equipment.effects.weapon()).split("-")[0]
 	if kind == "k":
 		var angles: Array = [-0.18, 0.0, 0.18] if equipment != null and equipment.effects.weapon() == "w03-prism-saber" else [0.0]
 		for angle: float in angles:
 			projectiles.append({"position": origin + facing * 30, "velocity": facing.rotated(angle) * 620, "life": 0.85})
+		effects.append({"position": origin, "radius": radius, "life": PixelVFX.LIFETIME, "kind": kind, "facing": facing, "swing": swing})
 	else:
 		for enemy: Dictionary in combat_targets():
 			var offset: Vector2 = enemy.position - player_foot
 			if offset.length() <= radius and (kind == "l" or offset.length() < 25 or offset.normalized().dot(facing) >= 0.15):
 				_damage(enemy, int(config.damage), kind)
-		effects.append({"position": origin, "radius": radius, "life": 0.22, "kind": kind, "facing": facing})
+		effects.append({"position": origin, "radius": radius, "life": PixelVFX.LIFETIME, "kind": kind, "facing": facing, "swing": swing})
 	if equipment != null:
 		equipment.effects.after_attack(kind, radius)
 	_remove_dead()
@@ -739,14 +745,16 @@ func _draw_world() -> void:
 	for pickup: Dictionary in states[region].pickups:
 		if pickup.get("weather_growth", false):
 			continue # Renewable plants are drawn by the weather module with growth rings.
-		var color := Color(Catalog.ITEMS[pickup.item].color)
+		var info: Dictionary = Catalog.ITEMS[pickup.item]
+		var color := Color(info.color)
+		var icon: Texture2D = info.get("icon")
 		canvas.draw_circle(pickup.position, 19, Color(color, 0.16))
-		if Loot.ITEMS.has(pickup.item):
+		if icon != null:
 			canvas.draw_arc(pickup.position, 24, 0, TAU, 32, color, 2, true)
-			canvas.draw_texture_rect(Loot.ITEMS[pickup.item].icon, Rect2(pickup.position - Vector2(22, 24), Vector2(44, 44)), false)
+			canvas.draw_texture_rect(icon, Rect2(pickup.position - Vector2(24, 26), Vector2(48, 48)), false)
 		else:
 			canvas.draw_circle(pickup.position, 7, color)
-		canvas.draw_string(font, pickup.position + Vector2(-18, 35), Catalog.ITEMS[pickup.item].name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
+		canvas.draw_string(font, pickup.position + Vector2(-18, 35), info.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, color)
 	for enemy: Dictionary in states[region].enemies:
 		var point: Vector2 = enemy.position
 		canvas.draw_set_transform(point, 0, Vector2(1, 0.30))
@@ -767,6 +775,9 @@ func _draw_world() -> void:
 		color.a = clampf(float(effect.life) / 0.22, 0, 1)
 		var angle: float = effect.facing.angle()
 		canvas.draw_arc(effect.position, float(effect.radius), 0 if effect.kind == "l" else angle - 1.4, TAU if effect.kind == "l" else angle + 1.4, 48, color, 7, true)
+		var swing: String = str(effect.get("swing", ""))
+		if swing != "" and PixelVFX.exists("player-" + swing):
+			PixelVFX.draw(canvas, "player-" + swing, effect.position + effect.facing * 30, PixelVFX.LIFETIME - float(effect.life), Vector2.ONE * 2, angle, Color(1, 1, 1, 0.9))
 
 func _paused() -> bool:
 	return menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
@@ -886,7 +897,11 @@ func open_journal() -> void:
 			lines.append("[img=44x44]%s[/img]  %s × %d" % [Loot.ITEMS[item].icon.resource_path, Loot.ITEMS[item].name, inventory[item]])
 	for item: String in inventory:
 		if inventory[item] > 0 and not Loot.ITEMS.has(item):
-			lines.append("%s × %d" % [Catalog.ITEMS[item].name, inventory[item]])
+			var info: Dictionary = Catalog.ITEMS[item]
+			if info.has("icon"):
+				lines.append("[img=44x44]%s[/img]  %s × %d" % [info.icon.resource_path, info.name, inventory[item]])
+			else:
+				lines.append("%s × %d" % [info.name, inventory[item]])
 	var chests := get_node_or_null("Chests")
 	if chests != null:
 		lines.append("\n宝箱 · 金色方块为普通箱，紫色方块为异变箱；靠近按E开启。")

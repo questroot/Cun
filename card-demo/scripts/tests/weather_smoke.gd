@@ -2,6 +2,7 @@ extends SceneTree
 const Ecology = preload("res://scripts/scenes/weather_ecology.gd")
 const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const MaterialArt = preload("res://scripts/scenes/fudi_material_art.gd")
 var checks := 0
 var failures := 0
 var game
@@ -54,6 +55,11 @@ func run_checks() -> void:
 	var progress: Dictionary = data.save_data.duplicate(true)
 	await open_fudi()
 	check(weather.initialized and weather.elapsed == 0, "独立天气模块初始化，暂停父场景不推进")
+	var art_ok := MaterialArt.HERBS.size() == 11 and MaterialArt.PLANTS.size() == 10
+	for item: String in Ecology.PLANTS:
+		art_ok = art_ok and Catalog.ITEMS[item].get("icon") == MaterialArt.HERBS[item]
+		art_ok = art_ok and (MaterialArt.PLANTS.has(item) or MaterialArt.HERBS.has(item))
+	check(art_ok, "11种药材图标与10种三阶段药圃贴图均已注册")
 	var initial := {}
 	for id: String in Maps.IDS:
 		initial[id] = weather.climates[id]

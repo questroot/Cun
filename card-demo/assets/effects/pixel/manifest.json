@@ -1121,6 +1121,490 @@
       ]
     },
     {
+      "key": "H01-flag",
+      "label": "血旗三插",
+      "category": "boss",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#30243e",
+        "#70394f",
+        "#ba535e",
+        "#ed9572",
+        "#ffd5a0",
+        "#fff2d5",
+        "#8d7184"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          10,
+          62
+        ],
+        [
+          86,
+          62
+        ]
+      ]
+    },
+    {
+      "key": "H02-charge",
+      "label": "荆冠冲撞",
+      "category": "boss",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#23393d",
+        "#38554e",
+        "#64815a",
+        "#a4bb6d",
+        "#e5dfa0",
+        "#fff1cc",
+        "#ac784f"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H03-surge",
+      "label": "铁壁激流",
+      "category": "boss",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#24334c",
+        "#315b72",
+        "#408b98",
+        "#80c8c3",
+        "#c6f0dc",
+        "#f5fff0",
+        "#8b9eb3"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H04-halo",
+      "label": "裁决光环",
+      "category": "boss",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#35334e",
+        "#685469",
+        "#ac8b82",
+        "#dbbd91",
+        "#f7e4b7",
+        "#fff8e1",
+        "#a9bfd1"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          10,
+          62
+        ],
+        [
+          86,
+          62
+        ]
+      ]
+    },
+    {
+      "key": "H05-spike",
+      "label": "霜钉标记",
+      "category": "boss",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          25,
+          60
+        ],
+        [
+          29,
+          60
+        ],
+        [
+          45,
+          60
+        ],
+        [
+          49,
+          60
+        ],
+        [
+          65,
+          60
+        ],
+        [
+          69,
+          60
+        ],
+        [
+          10,
+          62
+        ],
+        [
+          86,
+          62
+        ]
+      ]
+    },
+    {
+      "key": "H06-pendulum",
+      "label": "钟摆十字",
+      "category": "boss",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#352d40",
+        "#6b4a49",
+        "#a57350",
+        "#d8aa63",
+        "#f2d697",
+        "#fff4ce",
+        "#789a9d"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          51,
+          44
+        ],
+        [
+          52,
+          45
+        ]
+      ]
+    },
+    {
+      "key": "player-w03",
+      "label": "棱光横斩",
+      "category": "player",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "player-w02",
+      "label": "裂墟劈砍",
+      "category": "player",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "player-w05",
+      "label": "骨枝突刺",
+      "category": "player",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          34,
+          46
+        ],
+        [
+          46,
+          46
+        ],
+        [
+          34,
+          58
+        ],
+        [
+          46,
+          58
+        ]
+      ]
+    },
+    {
+      "key": "player-w01",
+      "label": "余烬回响",
+      "category": "player",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "player-w06",
+      "label": "坠岩余震",
+      "category": "player",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
       "key": "guard-rain",
       "label": "沐雨石灵",
       "category": "guard",
@@ -1392,6 +1876,303 @@
         "#8f96bd"
       ],
       "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-heal",
+      "label": "治疗",
+      "category": "status",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#1d3b34",
+        "#2f6b56",
+        "#4f9e78",
+        "#8fd6a8",
+        "#c9f0d4",
+        "#f2fff6",
+        "#6b8f7a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-shield",
+      "label": "护盾",
+      "category": "status",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#1f2c44",
+        "#38527a",
+        "#5f7fae",
+        "#93b3d6",
+        "#cfe3f2",
+        "#f4fbff",
+        "#c9a15a"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-buff",
+      "label": "增益",
+      "category": "status",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#33283c",
+        "#5f4a52",
+        "#9a7a5c",
+        "#d8ab63",
+        "#f4d79a",
+        "#fff3d2",
+        "#8a6fa0"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          29,
+          41
+        ],
+        [
+          67,
+          41
+        ],
+        [
+          29,
+          47
+        ],
+        [
+          67,
+          47
+        ],
+        [
+          29,
+          68
+        ],
+        [
+          67,
+          68
+        ]
+      ]
+    },
+    {
+      "key": "status-burn",
+      "label": "灼烧",
+      "category": "status",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#40283d",
+        "#80414b",
+        "#bf624f",
+        "#ed9d63",
+        "#ffd88d",
+        "#fff1c1",
+        "#ad794f"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-poison",
+      "label": "中毒",
+      "category": "status",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#241f3d",
+        "#4a3a63",
+        "#7a5f8a",
+        "#a98fb0",
+        "#d6c2c8",
+        "#f0e6ea",
+        "#6f9a5a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-freeze",
+      "label": "冰冻",
+      "category": "status",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          32,
+          21
+        ],
+        [
+          64,
+          21
+        ],
+        [
+          64,
+          75
+        ]
+      ]
+    },
+    {
+      "key": "status-stun",
+      "label": "麻痹",
+      "category": "status",
+      "frame_size": [
+        96,
+        96
+      ],
+      "pivot": [
+        48,
+        48
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#2e2a1e",
+        "#5c5230",
+        "#94823f",
+        "#c9b45c",
+        "#f2e39a",
+        "#fffbd0",
+        "#8a7ab0"
+      ],
+      "colors_used": 4,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
       "isolated_px_last_frame": []

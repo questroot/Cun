@@ -5,6 +5,7 @@ const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
 const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
+const MaterialArt = preload("res://scripts/scenes/fudi_material_art.gd")
 var game: Control
 var elapsed := 0.0
 var climates: Dictionary = {}
@@ -160,10 +161,13 @@ func _draw_garden() -> void:
 		var point: Vector2 = plot.position
 		garden.draw_circle(point, 22, Color(0.12, 0.18, 0.1, 0.8))
 		garden.draw_arc(point, 22, -PI / 2, -PI / 2 + maxf(0.04, progress * TAU), 28, color, 3, true)
-		garden.draw_line(point, point - Vector2(0, 12 + progress * 16), color, 3, true)
-		for side in [-1, 1]:
-			var leaf := point + Vector2(side * (7 + progress * 5), -8 - progress * 10)
-			garden.draw_circle(leaf, 4 + progress * 3, color)
+		if plot.ripe:
+			garden.draw_circle(point - Vector2(0, 28), 30, Color(color, 0.14))
+		if not MaterialArt.draw_plant(garden, plot.item, point, progress, plot.ripe, Vector2(78, 78)):
+			garden.draw_line(point, point - Vector2(0, 12 + progress * 16), color, 3, true)
+			for side in [-1, 1]:
+				var leaf := point + Vector2(side * (7 + progress * 5), -8 - progress * 10)
+				garden.draw_circle(leaf, 4 + progress * 3, color)
 		if game.player_foot.distance_to(point) < 200:
 			var stage := "成熟 · 靠近采集" if plot.ripe else ("生长 %d%%" % int(progress * 100) if Ecology.compatible(plot.item, climates[game.region]) else "待候 %d%%" % int(progress * 100))
 			garden.draw_string(font, point + Vector2(-50, 42), "%s · %s" % [Catalog.ITEMS[plot.item].name, stage], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)

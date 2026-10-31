@@ -2,9 +2,10 @@
 
 使用已安装的 pixel-art-studio 技能的 Sprite 原生逐像素绘制，源文件为 [build.py](build.py)，不依赖图像模型。构建脚本从 `CODEX_HOME` 或用户目录下的 `.codex` 查找该技能，需要 Pillow。
 
-- 共38组、304帧：六首领各四招、七属性小怪攻击、七天气粒子。
+- 共56组、448帧：六首领各五招、五把玩家武器攻击、七属性小怪攻击、七种通用状态光环、七天气粒子。
+- 玩家武器组按 `equipment_catalog.gd` 的真实武器编号命名（`player-w01`/`w02`/`w03`/`w05`/`w06`），保证每把已存在的武器都有可触发的打击特效，不会出现取不到的死资产。
 - 原生画布96×96，统一中心锚点48,48；每动画8帧，透明边缘至少2像素，每组最多7色，透明度仅0/255。能量自发光，亮芯与冷色边缘分离；实体种荚、羽毛、铜钟取左上方亮面。
-- 攻击帧时长90/70/50/100/80/80/100/130毫秒，天气每帧120毫秒。爆发类单次播放；天气循环播放。
+- 攻击帧时长90/70/50/100/80/80/100/130毫秒，天气与状态每帧120毫秒。爆发类单次播放；天气与状态循环播放。
 - 每组交付 `名称.png`（768×96原生横排图集）、同名JSON（帧坐标/时长/标签）、`名称-master.png`（第4帧96×96）、`名称-4x.png`（384×384）、`名称.gif`（4倍动画）。游戏目录只保留运行图集、JSON和清单。
 - [manifest.json](manifest.json) 记录色板、锚点、时长、颜色数量及透明度检查；[检查记录](QA.md) 记录三轮查看和修整。
 
@@ -14,4 +15,14 @@
 python -W ignore pixel-art/combat-weather/build.py
 ```
 
-工作预览：[首领总览](boss-preview.png)、[小怪与天气总览](elements-preview.png)、[动作帧检查](motion-preview.png)、[首领动画](boss-animation.gif)、[小怪与天气动画](elements-animation.gif)。可用游戏资产在 [effects/pixel](../../card-demo/assets/effects/pixel/)，技能与躲避方式见 [运行说明](../../docs/combat-weather-effects.md)。
+工作预览：[首领总览](boss-preview.png)、[玩家武器总览](player-preview.png)、[小怪状态与天气总览](elements-preview.png)、[动作帧检查](motion-preview.png)、[首领动画](boss-animation.gif)、[玩家武器动画](player-animation.gif)、[小怪状态与天气动画](elements-animation.gif)。可用游戏资产在 [effects/pixel](../../card-demo/assets/effects/pixel/)，技能与躲避方式见 [运行说明](../../docs/combat-weather-effects.md)。招式的提示词描述见 [prompts/](prompts/)：**56 条，与 56 组特效一一对应**——六首领各五招（30）、七属性小怪（7）、五把玩家武器（5）、七种通用状态（7）、七种天气（7）。
+
+每条都写明底图（该组现有的第 4 帧放大图）、风格锚点（`showcase/H06-hammer.png`）、现造型描述与改造处方，并共用一段 **Silhouette rules**（一个主导体量先被读到，禁止散碎、空洞圆环、无连接的漂浮碎片、细线扛全场）。三类模板有差异：招式与武器是单次播放的峰值帧；状态光环是套在角色身上的八帧循环，要求小尺寸仍可读；天气是满屏平铺的环境粒子，占格只 40–50% 且首尾帧必须接得上。
+
+专项处方共 21 条：13 条针对 boss 与小怪的弱项，8 条针对中毒/麻痹两个「够用」档状态与润雨/晴光/疾风/炎阳/灵雾/霜雪六个偏空的天气。其余用保形模板，只对齐锚点的体量与边缘硬度、不改造型读法。抠图背景按调色板分工：紫色系（sword / holy / fog / storm / poison）走绿幕 #00ff00，其余走品红 #ff00ff。
+
+## 单帧展示图（showcase/）
+
+`showcase/` 存放**单帧美术展示图**，用于对现有特效造型做强化重绘与美术参考。它**不是运行图集，不进游戏**：运行资产仍是 `effects/pixel` 下由 build.py 保证的 96×96、8 帧、≤7 色、alpha 仅 0/255 图集；AI 单帧图无法保证这三条，故不替换。
+
+命名沿用特效键（如 `H06-hammer.png`）；`contact-sheet.png` 为整批复核用的联系图。

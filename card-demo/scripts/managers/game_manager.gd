@@ -5,6 +5,7 @@ var current_stage := "stage_1"
 var stage_pending := false
 var city_spawn := Vector2(334, 558)
 var last_result := ""
+const DiveCatalog = preload("res://scripts/scenes/underwater_catalog.gd")
 var water_activity_state: Dictionary = {}
 const SEA_SAVE := "user://sea_chapter_v1.json"
 const SEA_TEMP := "user://sea_chapter_v1.json.tmp"
@@ -22,13 +23,59 @@ func _read_sea_file(path: String) -> Dictionary:
 		return {}
 	return _read_sea_text(file.get_as_text())
 
+func _migrate_sea_state(legacy: Dictionary) -> Dictionary:
+	var state := legacy.duplicate(true)
+	var slots: Array = ["core"]
+	for i in range(int(state.collectors)):
+		slots.append("collector")
+	while slots.size() < int(state.raft_tiles):
+		slots.append("empty")
+	for building in ["workshop", "tide"]:
+		if (building == "workshop" and state.workshop_built) or (building == "tide" and state.tide_table):
+			var empty_slot := slots.find("empty")
+			if empty_slot == -1:
+				slots.append(building)
+			else:
+				slots[empty_slot] = building
+	state.raft_tiles = slots.size()
+	state.building_slots = slots
+	state.core_level = 3 if state.tide_table or (state.blueprint and int(state.orders_completed) >= 2) else (2 if state.workshop_built or int(state.orders_completed) >= 1 else 1)
+	state.guide_seen_pickup = int(state.wood) > 0 or int(state.scrap) > 0 or int(state.raft_tiles) > 1 or int(state.collectors) > 0 or int(state.orders_completed) > 0
+	state.guide_seen_claim = int(state.water) > 0 or int(state.fiber) > 0 or int(state.rope) > 0 or int(state.orders_completed) > 0 or state.automated_collecting or state.workshop_built or state.resident
+	return state
+
 func _read_sea_text(text: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(text)
-	if not parsed is Dictionary or parsed.get("version") != 1 or not parsed.get("state") is Dictionary:
+	if not parsed is Dictionary or not parsed.get("state") is Dictionary:
+		return {}
+	var raw_version: Variant = parsed.get("version")
+	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]:
 		return {}
 	var state: Dictionary = parsed["state"]
+	var version: int = int(raw_version)
+	var has_equipment := state.has("equipment") or state.has("core_reward_claimed") or state.has("dive_workshop_unlocked") or state.has("dive_workshop_built")
+	if version < 6 or (version == 6 and not has_equipment):
+		state.equipment = DiveCatalog.equipment()
+		state.core_reward_claimed = false
+		state.dive_workshop_unlocked = false
+		state.dive_workshop_built = false
+	elif not DiveCatalog.valid_equipment(state):
+		return {}
+	if version < 6:
+		state.resources = DiveCatalog.resources()
+		state.node_states = DiveCatalog.defaults()
+		state.net_expansion = 0
+	elif not DiveCatalog.valid(state):
+		return {}
+	for key in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
+		if version < 5:
+			state[key] = false
+		elif not state.get(key) is bool:
+			return {}
+	if (state.dive_sonar and not state.dive_shoal) or (state.dive_core and not state.dive_sonar) or (state.dive_archived and not state.dive_core):
+		return {}
 	for key in ["wood", "scrap", "water", "fiber", "rope", "raft_tiles", "collectors", "orders_completed", "pending_water", "pending_fiber"]:
-		if not (state.get(key) is float or state.get(key) is int) or state[key] < 0 or state[key] > 1000000 or state[key] != floor(state[key]):
+		if not (state.get(key) is float or state.get(key) is int) or state[key] < 0 or state[key] > (1000002 if version >= 2 and key == "raft_tiles" else 1000000) or state[key] != floor(state[key]):
 			return {}
 	for key in ["automated_collecting", "workshop_built", "resident", "resident_working", "partner", "blueprint", "tide_table", "delegated", "neighbor_surveyed"]:
 		if not state.get(key) is bool:
@@ -45,6 +92,81 @@ func _read_sea_text(text: String) -> Dictionary:
 			return {}
 	if not state.get("result") is String or state.result.length() > 300 or int(state.collectors) > int(state.raft_tiles) - 1 or int(state.raft_tiles) < 1:
 		return {}
+	if version == 1:
+		state = _migrate_sea_state(state)
+	if not (state.get("core_level") is float or state.get("core_level") is int) or state.core_level != floor(state.core_level) or state.core_level < 1 or state.core_level > 3:
+		return {}
+	if not state.get("guide_seen_pickup") is bool or not state.get("guide_seen_claim") is bool or not state.get("building_slots") is Array:
+		return {}
+	var slots: Array = state.building_slots
+	if slots.size() != int(state.raft_tiles) or slots[0] != "core":
+		return {}
+	var counts := {"core": 0, "empty": 0, "collector": 0, "workshop": 0, "tide": 0, "filter": 0}
+	for slot in slots:
+		if not slot is String or not counts.has(slot):
+			return {}
+		counts[slot] += 1
+	if counts.core != 1 or counts.collector != int(state.collectors) or counts.workshop != int(state.workshop_built) or counts.tide != int(state.tide_table):
+		return {}
+	if (state.workshop_built and state.core_level < 2) or (state.tide_table and state.core_level < 3):
+		return {}
+	if version < 3:
+		if counts.filter != 0:
+			return {}
+		state.at_salt = false
+		state.salt = 0
+		state.filter_blueprint = false
+		state.filter_built = false
+		state.salt_nodes = []
+		state.salt_elapsed = 0.0
+		state.at_wreck = false
+		state.wreck_scrap = 0
+		state.wreck_nodes = []
+		state.wreck_elapsed = 0.0
+		state.hazard_elapsed = 0.0
+		state.wreck_hp = 3
+		state.sail_loadout = ""
+		return state
+	for key in ["at_salt", "filter_blueprint", "filter_built"]:
+		if not state.get(key) is bool:
+			return {}
+	if not (state.get("salt") is int or state.get("salt") is float) or state.salt < 0 or state.salt > 1000000 or state.salt != floor(state.salt):
+		return {}
+	if not (state.get("salt_elapsed") is int or state.get("salt_elapsed") is float) or state.salt_elapsed < 0 or state.salt_elapsed > 100:
+		return {}
+	if not state.get("salt_nodes") is Array or state.salt_nodes.size() > 3:
+		return {}
+	for point in state.salt_nodes:
+		if not point is Array or point.size() != 2 or not (point[0] is int or point[0] is float) or not (point[1] is int or point[1] is float):
+			return {}
+		if absf(float(point[0])) > 10000 or absf(float(point[1])) > 10000:
+			return {}
+	if counts.filter != int(state.filter_built) or (state.filter_built and (not state.filter_blueprint or state.core_level < 3)) or (state.at_salt and not state.tide_table):
+		return {}
+	if version < 4:
+		state.at_wreck = false
+		state.wreck_scrap = 0
+		state.wreck_nodes = []
+		state.wreck_elapsed = 0.0
+		state.hazard_elapsed = 0.0
+		state.wreck_hp = 3
+		state.sail_loadout = ""
+		return state
+	if not state.get("at_wreck") is bool or not state.get("sail_loadout") is String or state.sail_loadout not in ["", "hull", "weapon"] or (state.at_wreck and state.at_salt):
+		return {}
+	for key in ["wreck_scrap", "wreck_hp"]:
+		if not (state.get(key) is int or state.get(key) is float) or state[key] != floor(state[key]) or state[key] < 0 or state[key] > 1000000:
+			return {}
+	if state.wreck_hp > 3:
+		return {}
+	for key in ["wreck_elapsed", "hazard_elapsed"]:
+		if not (state.get(key) is int or state.get(key) is float) or state[key] < 0 or state[key] > 100:
+			return {}
+	if not state.get("wreck_nodes") is Array or state.wreck_nodes.size() > 3:
+		return {}
+	for point in state.wreck_nodes:
+		if not point is Array or point.size() != 2 or not (point[0] is int or point[0] is float) or not (point[1] is int or point[1] is float) or absf(float(point[0])) > 10000 or absf(float(point[1])) > 10000:
+			return {}
 	return state
 
 func load_sea_save() -> void:
@@ -62,7 +184,7 @@ func load_sea_save() -> void:
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""
-	var text := JSON.stringify({"version": 1, "state": state})
+	var text := JSON.stringify({"version": 6, "state": state}, "", true, true)
 	if _read_sea_text(text).is_empty():
 		sea_save_error = "海上存档数据无效，未保存。"
 		return false
