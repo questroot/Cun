@@ -1,5 +1,7 @@
 # Keep local Godot editor binaries out of the repository.
 /Godot_v4.7.2/
+.workbuddy/
+.codebuddy/
 
 # Foundation tool output and local files.
 __pycache__/
