@@ -1,0 +1,2833 @@
+{
+  "version": 1,
+  "pixel_size": 1,
+  "filter": "nearest",
+  "frame_count": 8,
+  "frame_size": [
+    128,
+    128
+  ],
+  "effects": [
+    {
+      "key": "H01-slash",
+      "label": "断旗斩",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#30243e",
+        "#70394f",
+        "#ba535e",
+        "#ed9572",
+        "#ffd5a0",
+        "#fff2d5",
+        "#8d7184"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          78,
+          46
+        ],
+        [
+          86,
+          54
+        ],
+        [
+          73,
+          83
+        ]
+      ]
+    },
+    {
+      "key": "H01-thrust",
+      "label": "破阵穿刺",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#30243e",
+        "#70394f",
+        "#ba535e",
+        "#ed9572",
+        "#ffd5a0",
+        "#fff2d5",
+        "#8d7184"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          41,
+          49
+        ],
+        [
+          41,
+          78
+        ]
+      ]
+    },
+    {
+      "key": "H01-banner",
+      "label": "血旗横扫",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#30243e",
+        "#70394f",
+        "#ba535e",
+        "#ed9572",
+        "#ffd5a0",
+        "#fff2d5",
+        "#8d7184"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          86,
+          37
+        ],
+        [
+          86,
+          54
+        ],
+        [
+          73,
+          83
+        ]
+      ]
+    },
+    {
+      "key": "H01-spin",
+      "label": "回身剑轮",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#30243e",
+        "#70394f",
+        "#ba535e",
+        "#ed9572",
+        "#ffd5a0",
+        "#fff2d5",
+        "#8d7184"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          78,
+          46
+        ],
+        [
+          86,
+          78
+        ],
+        [
+          54,
+          82
+        ]
+      ]
+    },
+    {
+      "key": "H02-stomp",
+      "label": "荆棘践踏",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#23393d",
+        "#38554e",
+        "#64815a",
+        "#a4bb6d",
+        "#e5dfa0",
+        "#fff1cc",
+        "#ac784f"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H02-vine",
+      "label": "地脉藤枪",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#23393d",
+        "#38554e",
+        "#64815a",
+        "#a4bb6d",
+        "#e5dfa0",
+        "#fff1cc",
+        "#ac784f"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          20,
+          65
+        ],
+        [
+          19,
+          66
+        ],
+        [
+          18,
+          67
+        ],
+        [
+          17,
+          68
+        ],
+        [
+          21,
+          70
+        ],
+        [
+          13,
+          71
+        ],
+        [
+          20,
+          71
+        ],
+        [
+          12,
+          72
+        ],
+        [
+          19,
+          72
+        ],
+        [
+          11,
+          73
+        ],
+        [
+          18,
+          73
+        ],
+        [
+          14,
+          76
+        ],
+        [
+          13,
+          77
+        ],
+        [
+          12,
+          78
+        ],
+        [
+          41,
+          78
+        ],
+        [
+          11,
+          79
+        ]
+      ]
+    },
+    {
+      "key": "H02-seed",
+      "label": "飞种围猎",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#23393d",
+        "#38554e",
+        "#64815a",
+        "#a4bb6d",
+        "#e5dfa0",
+        "#fff1cc",
+        "#ac784f"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H02-grove",
+      "label": "森冠禁环",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#23393d",
+        "#38554e",
+        "#64815a",
+        "#a4bb6d",
+        "#e5dfa0",
+        "#fff1cc",
+        "#ac784f"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          74,
+          42
+        ],
+        [
+          34,
+          50
+        ],
+        [
+          46,
+          94
+        ],
+        [
+          74,
+          94
+        ]
+      ]
+    },
+    {
+      "key": "H03-burst",
+      "label": "高压爆破",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#24334c",
+        "#315b72",
+        "#408b98",
+        "#80c8c3",
+        "#c6f0dc",
+        "#f5fff0",
+        "#8b9eb3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H03-jet",
+      "label": "深潜水炮",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#24334c",
+        "#315b72",
+        "#408b98",
+        "#80c8c3",
+        "#c6f0dc",
+        "#f5fff0",
+        "#8b9eb3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          41,
+          49
+        ],
+        [
+          73,
+          57
+        ],
+        [
+          93,
+          57
+        ],
+        [
+          73,
+          71
+        ],
+        [
+          93,
+          71
+        ],
+        [
+          41,
+          78
+        ]
+      ]
+    },
+    {
+      "key": "H03-mine",
+      "label": "浮雷列阵",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#24334c",
+        "#315b72",
+        "#408b98",
+        "#80c8c3",
+        "#c6f0dc",
+        "#f5fff0",
+        "#8b9eb3"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H03-tide",
+      "label": "逆潮冲环",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#24334c",
+        "#315b72",
+        "#408b98",
+        "#80c8c3",
+        "#c6f0dc",
+        "#f5fff0",
+        "#8b9eb3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          42,
+          46
+        ],
+        [
+          34,
+          50
+        ],
+        [
+          46,
+          94
+        ],
+        [
+          74,
+          94
+        ]
+      ]
+    },
+    {
+      "key": "H04-feather",
+      "label": "落羽裁决",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#35334e",
+        "#685469",
+        "#ac8b82",
+        "#dbbd91",
+        "#f7e4b7",
+        "#fff8e1",
+        "#a9bfd1"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H04-wing",
+      "label": "灰翼肃清",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#35334e",
+        "#685469",
+        "#ac8b82",
+        "#dbbd91",
+        "#f7e4b7",
+        "#fff8e1",
+        "#a9bfd1"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          74,
+          38
+        ],
+        [
+          82,
+          86
+        ]
+      ]
+    },
+    {
+      "key": "H04-spears",
+      "label": "十字圣枪",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#35334e",
+        "#685469",
+        "#ac8b82",
+        "#dbbd91",
+        "#f7e4b7",
+        "#fff8e1",
+        "#a9bfd1"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          54,
+          58
+        ],
+        [
+          73,
+          58
+        ]
+      ]
+    },
+    {
+      "key": "H04-verdict",
+      "label": "天秤终审",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#35334e",
+        "#685469",
+        "#ac8b82",
+        "#dbbd91",
+        "#f7e4b7",
+        "#fff8e1",
+        "#a9bfd1"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H05-seal",
+      "label": "霜文封印",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          74,
+          42
+        ],
+        [
+          34,
+          50
+        ],
+        [
+          46,
+          94
+        ],
+        [
+          74,
+          94
+        ]
+      ]
+    },
+    {
+      "key": "H05-icicle",
+      "label": "冰页穿心",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          72,
+          48
+        ],
+        [
+          41,
+          49
+        ],
+        [
+          97,
+          49
+        ],
+        [
+          72,
+          53
+        ],
+        [
+          71,
+          54
+        ],
+        [
+          70,
+          55
+        ],
+        [
+          41,
+          78
+        ]
+      ]
+    },
+    {
+      "key": "H05-script",
+      "label": "禁典十字",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H05-frost",
+      "label": "零度书环",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          74,
+          42
+        ],
+        [
+          34,
+          50
+        ],
+        [
+          46,
+          94
+        ],
+        [
+          74,
+          94
+        ]
+      ]
+    },
+    {
+      "key": "H06-echo",
+      "label": "震钟回响",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#352d40",
+        "#6b4a49",
+        "#a57350",
+        "#d8aa63",
+        "#f2d697",
+        "#fff4ce",
+        "#789a9d"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H06-hammer",
+      "label": "铜锤撼地",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#352d40",
+        "#6b4a49",
+        "#a57350",
+        "#d8aa63",
+        "#f2d697",
+        "#fff4ce",
+        "#789a9d"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H06-chain",
+      "label": "锈链贯击",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#352d40",
+        "#6b4a49",
+        "#a57350",
+        "#d8aa63",
+        "#f2d697",
+        "#fff4ce",
+        "#789a9d"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          41,
+          49
+        ],
+        [
+          10,
+          60
+        ],
+        [
+          22,
+          60
+        ],
+        [
+          34,
+          60
+        ],
+        [
+          46,
+          60
+        ],
+        [
+          9,
+          61
+        ],
+        [
+          16,
+          61
+        ],
+        [
+          21,
+          61
+        ],
+        [
+          28,
+          61
+        ],
+        [
+          33,
+          61
+        ],
+        [
+          40,
+          61
+        ],
+        [
+          45,
+          61
+        ],
+        [
+          9,
+          66
+        ],
+        [
+          16,
+          66
+        ],
+        [
+          21,
+          66
+        ],
+        [
+          28,
+          66
+        ],
+        [
+          33,
+          66
+        ],
+        [
+          40,
+          66
+        ],
+        [
+          45,
+          66
+        ],
+        [
+          10,
+          67
+        ]
+      ]
+    },
+    {
+      "key": "H06-resonance",
+      "label": "暮钟禁域",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#352d40",
+        "#6b4a49",
+        "#a57350",
+        "#d8aa63",
+        "#f2d697",
+        "#fff4ce",
+        "#789a9d"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          103,
+          35
+        ],
+        [
+          22,
+          37
+        ],
+        [
+          26,
+          39
+        ],
+        [
+          109,
+          39
+        ],
+        [
+          110,
+          40
+        ],
+        [
+          17,
+          41
+        ],
+        [
+          23,
+          41
+        ],
+        [
+          16,
+          42
+        ],
+        [
+          22,
+          42
+        ],
+        [
+          15,
+          43
+        ],
+        [
+          16,
+          48
+        ],
+        [
+          15,
+          49
+        ],
+        [
+          15,
+          90
+        ],
+        [
+          110,
+          93
+        ],
+        [
+          19,
+          94
+        ],
+        [
+          109,
+          94
+        ],
+        [
+          20,
+          95
+        ],
+        [
+          105,
+          97
+        ],
+        [
+          26,
+          99
+        ]
+      ]
+    },
+    {
+      "key": "H01-flag",
+      "label": "血旗三插",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#30243e",
+        "#70394f",
+        "#ba535e",
+        "#ed9572",
+        "#ffd5a0",
+        "#fff2d5",
+        "#8d7184"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "H02-charge",
+      "label": "荆冠冲撞",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#23393d",
+        "#38554e",
+        "#64815a",
+        "#a4bb6d",
+        "#e5dfa0",
+        "#fff1cc",
+        "#ac784f"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          70,
+          42
+        ],
+        [
+          70,
+          86
+        ]
+      ]
+    },
+    {
+      "key": "H03-surge",
+      "label": "铁壁激流",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#24334c",
+        "#315b72",
+        "#408b98",
+        "#80c8c3",
+        "#c6f0dc",
+        "#f5fff0",
+        "#8b9eb3"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          90,
+          50
+        ]
+      ]
+    },
+    {
+      "key": "H04-halo",
+      "label": "裁决光环",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#35334e",
+        "#685469",
+        "#ac8b82",
+        "#dbbd91",
+        "#f7e4b7",
+        "#fff8e1",
+        "#a9bfd1"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          74,
+          42
+        ],
+        [
+          42,
+          46
+        ],
+        [
+          34,
+          50
+        ],
+        [
+          46,
+          94
+        ],
+        [
+          74,
+          94
+        ]
+      ]
+    },
+    {
+      "key": "H05-spike",
+      "label": "霜钉标记",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          99,
+          63
+        ]
+      ]
+    },
+    {
+      "key": "H06-pendulum",
+      "label": "钟摆十字",
+      "category": "boss",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#352d40",
+        "#6b4a49",
+        "#a57350",
+        "#d8aa63",
+        "#f2d697",
+        "#fff4ce",
+        "#789a9d"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          67,
+          41
+        ],
+        [
+          68,
+          42
+        ],
+        [
+          60,
+          48
+        ],
+        [
+          68,
+          48
+        ],
+        [
+          61,
+          49
+        ],
+        [
+          67,
+          49
+        ],
+        [
+          67,
+          59
+        ],
+        [
+          48,
+          60
+        ],
+        [
+          68,
+          60
+        ],
+        [
+          85,
+          60
+        ],
+        [
+          49,
+          61
+        ],
+        [
+          69,
+          61
+        ],
+        [
+          86,
+          61
+        ],
+        [
+          41,
+          67
+        ],
+        [
+          86,
+          67
+        ],
+        [
+          42,
+          68
+        ],
+        [
+          85,
+          68
+        ],
+        [
+          67,
+          78
+        ],
+        [
+          68,
+          79
+        ],
+        [
+          60,
+          85
+        ]
+      ]
+    },
+    {
+      "key": "player-w03",
+      "label": "棱光横斩",
+      "category": "player",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          74,
+          70
+        ],
+        [
+          69,
+          79
+        ]
+      ]
+    },
+    {
+      "key": "player-w02",
+      "label": "裂墟劈砍",
+      "category": "player",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "player-w05",
+      "label": "骨枝突刺",
+      "category": "player",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          45,
+          61
+        ],
+        [
+          61,
+          61
+        ],
+        [
+          46,
+          62
+        ],
+        [
+          62,
+          62
+        ]
+      ]
+    },
+    {
+      "key": "player-w01",
+      "label": "余烬回响",
+      "category": "player",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "player-w06",
+      "label": "坠岩余震",
+      "category": "player",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#1e2a3a",
+        "#3f5a76",
+        "#7d9ab0",
+        "#c9d8e2",
+        "#f2f6f8",
+        "#e8b06a",
+        "#8a6a4a"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "guard-rain",
+      "label": "沐雨石灵",
+      "category": "guard",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#23374e",
+        "#395f84",
+        "#5f9fbd",
+        "#93cee0",
+        "#d5f3ed",
+        "#f5fff7",
+        "#779bb1"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          58,
+          82
+        ]
+      ]
+    },
+    {
+      "key": "guard-clear",
+      "label": "逐光木灵",
+      "category": "guard",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#2e3b3d",
+        "#626e50",
+        "#9eae64",
+        "#cdd58a",
+        "#f1e4b1",
+        "#fff7d6",
+        "#6c9c88"
+      ],
+      "colors_used": 2,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "guard-fog",
+      "label": "雾隐石灵",
+      "category": "guard",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#302c4e",
+        "#514667",
+        "#7a7291",
+        "#afa1bd",
+        "#d8c9d8",
+        "#f1e3ed",
+        "#7a9fb2"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          54,
+          66
+        ],
+        [
+          82,
+          66
+        ],
+        [
+          58,
+          90
+        ]
+      ]
+    },
+    {
+      "key": "guard-wind",
+      "label": "巡风石灵",
+      "category": "guard",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#263e46",
+        "#40716d",
+        "#72a395",
+        "#a6cdb2",
+        "#d8e8cc",
+        "#f5f6df",
+        "#96a7b5"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          54,
+          66
+        ],
+        [
+          82,
+          66
+        ],
+        [
+          58,
+          90
+        ]
+      ]
+    },
+    {
+      "key": "guard-heat",
+      "label": "熔火石灵",
+      "category": "guard",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#40283d",
+        "#80414b",
+        "#bf624f",
+        "#ed9d63",
+        "#ffd88d",
+        "#fff1c1",
+        "#ad794f"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          58,
+          82
+        ]
+      ]
+    },
+    {
+      "key": "guard-storm",
+      "label": "鸣雷石灵",
+      "category": "guard",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#2e2b50",
+        "#544580",
+        "#8273b4",
+        "#afa8e0",
+        "#ded9fb",
+        "#fff8ea",
+        "#669eb3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "guard-snow",
+      "label": "霜甲石灵",
+      "category": "guard",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ],
+      "palette": [
+        "#2a3550",
+        "#46658a",
+        "#739fc0",
+        "#abcfdf",
+        "#dceff1",
+        "#fbffff",
+        "#8f96bd"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          58,
+          82
+        ]
+      ]
+    },
+    {
+      "key": "status-heal",
+      "label": "治疗",
+      "category": "status",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#1d3b34",
+        "#2f6b56",
+        "#4f9e78",
+        "#8fd6a8",
+        "#c9f0d4",
+        "#f2fff6",
+        "#6b8f7a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-shield",
+      "label": "护盾",
+      "category": "status",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#1f2c44",
+        "#38527a",
+        "#5f7fae",
+        "#93b3d6",
+        "#cfe3f2",
+        "#f4fbff",
+        "#c9a15a"
+      ],
+      "colors_used": 5,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-buff",
+      "label": "增益",
+      "category": "status",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#33283c",
+        "#5f4a52",
+        "#9a7a5c",
+        "#d8ab63",
+        "#f4d79a",
+        "#fff3d2",
+        "#8a6fa0"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          38,
+          54
+        ],
+        [
+          89,
+          54
+        ],
+        [
+          38,
+          62
+        ],
+        [
+          89,
+          62
+        ],
+        [
+          38,
+          90
+        ],
+        [
+          89,
+          90
+        ],
+        [
+          82,
+          102
+        ]
+      ]
+    },
+    {
+      "key": "status-burn",
+      "label": "灼烧",
+      "category": "status",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#40283d",
+        "#80414b",
+        "#bf624f",
+        "#ed9d63",
+        "#ffd88d",
+        "#fff1c1",
+        "#ad794f"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          102,
+          90
+        ]
+      ]
+    },
+    {
+      "key": "status-poison",
+      "label": "中毒",
+      "category": "status",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#241f3d",
+        "#4a3a63",
+        "#7a5f8a",
+        "#a98fb0",
+        "#d6c2c8",
+        "#f0e6ea",
+        "#6f9a5a"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "status-freeze",
+      "label": "冰冻",
+      "category": "status",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#293251",
+        "#435887",
+        "#5f94b8",
+        "#92d6e0",
+        "#d6f4ef",
+        "#fbffff",
+        "#9b80c3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          43,
+          28
+        ],
+        [
+          85,
+          28
+        ],
+        [
+          85,
+          100
+        ]
+      ]
+    },
+    {
+      "key": "status-stun",
+      "label": "麻痹",
+      "category": "status",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#2e2a1e",
+        "#5c5230",
+        "#94823f",
+        "#c9b45c",
+        "#f2e39a",
+        "#fffbd0",
+        "#8a7ab0"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          98,
+          50
+        ],
+        [
+          30,
+          82
+        ]
+      ]
+    },
+    {
+      "key": "weather-rain",
+      "label": "润雨",
+      "category": "weather",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#23374e",
+        "#395f84",
+        "#5f9fbd",
+        "#93cee0",
+        "#d5f3ed",
+        "#f5fff7",
+        "#779bb1"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          54,
+          90
+        ],
+        [
+          74,
+          90
+        ],
+        [
+          40,
+          95
+        ],
+        [
+          88,
+          105
+        ],
+        [
+          54,
+          110
+        ],
+        [
+          74,
+          110
+        ]
+      ]
+    },
+    {
+      "key": "weather-clear",
+      "label": "晴光",
+      "category": "weather",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#2e3b3d",
+        "#626e50",
+        "#9eae64",
+        "#cdd58a",
+        "#f1e4b1",
+        "#fff7d6",
+        "#6c9c88"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "weather-fog",
+      "label": "灵雾",
+      "category": "weather",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#302c4e",
+        "#514667",
+        "#7a7291",
+        "#afa1bd",
+        "#d8c9d8",
+        "#f1e3ed",
+        "#7a9fb2"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "weather-wind",
+      "label": "疾风",
+      "category": "weather",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#263e46",
+        "#40716d",
+        "#72a395",
+        "#a6cdb2",
+        "#d8e8cc",
+        "#f5f6df",
+        "#96a7b5"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "weather-heat",
+      "label": "炎阳",
+      "category": "weather",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#40283d",
+        "#80414b",
+        "#bf624f",
+        "#ed9d63",
+        "#ffd88d",
+        "#fff1c1",
+        "#ad794f"
+      ],
+      "colors_used": 2,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "weather-storm",
+      "label": "雷雨",
+      "category": "weather",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#2e2b50",
+        "#544580",
+        "#8273b4",
+        "#afa8e0",
+        "#ded9fb",
+        "#fff8ea",
+        "#669eb3"
+      ],
+      "colors_used": 4,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": []
+    },
+    {
+      "key": "weather-snow",
+      "label": "霜雪",
+      "category": "weather",
+      "frame_size": [
+        128,
+        128
+      ],
+      "pivot": [
+        64,
+        64
+      ],
+      "frames": 8,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ],
+      "palette": [
+        "#2a3550",
+        "#46658a",
+        "#739fc0",
+        "#abcfdf",
+        "#dceff1",
+        "#fbffff",
+        "#8f96bd"
+      ],
+      "colors_used": 3,
+      "semi_alpha_px": 0,
+      "near_duplicate_colors": [],
+      "isolated_px_last_frame": [
+        [
+          53,
+          46
+        ],
+        [
+          70,
+          46
+        ],
+        [
+          55,
+          53
+        ],
+        [
+          68,
+          53
+        ],
+        [
+          54,
+          54
+        ],
+        [
+          69,
+          54
+        ],
+        [
+          53,
+          55
+        ],
+        [
+          70,
+          55
+        ],
+        [
+          64,
+          56
+        ],
+        [
+          64,
+          66
+        ],
+        [
+          53,
+          68
+        ],
+        [
+          70,
+          68
+        ],
+        [
+          54,
+          69
+        ],
+        [
+          69,
+          69
+        ],
+        [
+          68,
+          70
+        ],
+        [
+          53,
+          76
+        ],
+        [
+          70,
+          76
+        ]
+      ]
+    }
+  ]
+}

@@ -168,16 +168,7 @@
       "colors_used": 4,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
-      "isolated_px_last_frame": [
-        [
-          10,
-          62
-        ],
-        [
-          86,
-          62
-        ]
-      ]
+      "isolated_px_last_frame": []
     },
     {
       "key": "H02-stomp",
@@ -214,16 +205,7 @@
       "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
-      "isolated_px_last_frame": [
-        [
-          10,
-          62
-        ],
-        [
-          86,
-          62
-        ]
-      ]
+      "isolated_px_last_frame": []
     },
     {
       "key": "H02-vine",
@@ -341,12 +323,44 @@
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
+          23,
+          39
+        ],
+        [
+          74,
+          40
+        ],
+        [
+          75,
+          41
+        ],
+        [
+          76,
+          42
+        ],
+        [
+          19,
+          43
+        ],
+        [
+          19,
+          59
+        ],
+        [
+          76,
+          60
+        ],
+        [
+          75,
+          61
+        ],
+        [
+          74,
           62
         ],
         [
-          86,
-          62
+          23,
+          63
         ]
       ]
     },
@@ -382,17 +396,17 @@
         "#f5fff0",
         "#8b9eb3"
       ],
-      "colors_used": 4,
+      "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
-          62
+          33,
+          33
         ],
         [
-          86,
-          62
+          49,
+          46
         ]
       ]
     },
@@ -487,12 +501,12 @@
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
-          62
+          33,
+          33
         ],
         [
-          86,
-          62
+          49,
+          46
         ]
       ]
     },
@@ -533,12 +547,32 @@
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
+          23,
+          39
+        ],
+        [
+          19,
+          43
+        ],
+        [
+          19,
+          59
+        ],
+        [
+          76,
+          60
+        ],
+        [
+          75,
+          61
+        ],
+        [
+          74,
           62
         ],
         [
-          86,
-          62
+          23,
+          63
         ]
       ]
     },
@@ -577,16 +611,7 @@
       "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
-      "isolated_px_last_frame": [
-        [
-          10,
-          62
-        ],
-        [
-          86,
-          62
-        ]
-      ]
+      "isolated_px_last_frame": []
     },
     {
       "key": "H04-wing",
@@ -706,16 +731,7 @@
       "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
-      "isolated_px_last_frame": [
-        [
-          10,
-          62
-        ],
-        [
-          86,
-          62
-        ]
-      ]
+      "isolated_px_last_frame": []
     },
     {
       "key": "H05-seal",
@@ -754,12 +770,32 @@
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
+          23,
+          39
+        ],
+        [
+          74,
+          40
+        ],
+        [
+          19,
+          59
+        ],
+        [
+          76,
+          60
+        ],
+        [
+          75,
+          61
+        ],
+        [
+          74,
           62
         ],
         [
-          86,
-          62
+          23,
+          63
         ]
       ]
     },
@@ -795,10 +831,14 @@
         "#fbffff",
         "#9b80c3"
       ],
-      "colors_used": 4,
+      "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
+        [
+          54,
+          36
+        ],
         [
           31,
           37
@@ -883,12 +923,36 @@
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
-          62
+          68,
+          35
         ],
         [
-          86,
-          62
+          64,
+          43
+        ],
+        [
+          64,
+          61
+        ],
+        [
+          21,
+          64
+        ],
+        [
+          22,
+          65
+        ],
+        [
+          26,
+          66
+        ],
+        [
+          25,
+          67
+        ],
+        [
+          68,
+          69
         ]
       ]
     },
@@ -924,16 +988,16 @@
         "#fff4ce",
         "#789a9d"
       ],
-      "colors_used": 4,
+      "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
-          62
+          79,
+          46
         ],
         [
-          86,
+          79,
           62
         ]
       ]
@@ -973,16 +1037,7 @@
       "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
-      "isolated_px_last_frame": [
-        [
-          10,
-          62
-        ],
-        [
-          86,
-          62
-        ]
-      ]
+      "isolated_px_last_frame": []
     },
     {
       "key": "H06-chain",
@@ -1106,17 +1161,61 @@
         "#fff4ce",
         "#789a9d"
       ],
-      "colors_used": 4,
+      "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
+          16,
+          28
+        ],
+        [
+          15,
+          29
+        ],
+        [
+          76,
+          29
+        ],
+        [
+          16,
+          30
+        ],
+        [
+          17,
+          31
+        ],
+        [
+          16,
+          32
+        ],
+        [
+          15,
+          33
+        ],
+        [
+          14,
+          34
+        ],
+        [
+          13,
+          35
+        ],
+        [
+          79,
+          46
+        ],
+        [
+          79,
           62
         ],
         [
-          86,
-          62
+          15,
+          71
+        ],
+        [
+          16,
+          72
         ]
       ]
     },
@@ -1155,16 +1254,7 @@
       "colors_used": 4,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
-      "isolated_px_last_frame": [
-        [
-          10,
-          62
-        ],
-        [
-          86,
-          62
-        ]
-      ]
+      "isolated_px_last_frame": []
     },
     {
       "key": "H02-charge",
@@ -1277,12 +1367,44 @@
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          10,
+          23,
+          39
+        ],
+        [
+          74,
+          40
+        ],
+        [
+          75,
+          41
+        ],
+        [
+          76,
+          42
+        ],
+        [
+          19,
+          43
+        ],
+        [
+          19,
+          59
+        ],
+        [
+          76,
+          60
+        ],
+        [
+          75,
+          61
+        ],
+        [
+          74,
           62
         ],
         [
-          86,
-          62
+          23,
+          63
         ]
       ]
     },
@@ -1318,10 +1440,14 @@
         "#fbffff",
         "#9b80c3"
       ],
-      "colors_used": 4,
+      "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
+        [
+          42,
+          43
+        ],
         [
           25,
           60
@@ -1345,14 +1471,6 @@
         [
           69,
           60
-        ],
-        [
-          10,
-          62
-        ],
-        [
-          86,
-          62
         ]
       ]
     },
@@ -1875,7 +1993,7 @@
         "#fbffff",
         "#8f96bd"
       ],
-      "colors_used": 3,
+      "colors_used": 5,
       "semi_alpha_px": 0,
       "near_duplicate_colors": [],
       "isolated_px_last_frame": []

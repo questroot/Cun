@@ -7,8 +7,58 @@ sys.path.insert(0, str(Path(os.environ.get('CODEX_HOME', Path.home() / '.codex')
 from pixelstudio import Sprite
 
 ROOT = Path(__file__).resolve().parent
-DEST = ROOT.parents[1] / 'card-demo/assets/effects/pixel'
+## Frame count is configurable; the default 8 keeps every existing atlas byte-identical.
+## Every drawing curve is authored as 8 control points and resampled, so raising this
+## only interpolates — it never changes the silhouette the 8-frame build produces.
+FRAMES = max(2, int(os.environ.get('VFX_FRAMES', '8')))
+LAST = FRAMES - 1
+## Canvas size is configurable the same way. All drawing is authored on a 96 grid and
+## scaled by K, so raising SIZE adds real pixel detail instead of upscaling.
+SIZE = max(32, int(os.environ.get('VFX_SIZE', '96')))
+K = SIZE / 96.0
+SUFFIX = '' if (FRAMES == 8 and SIZE == 96) else f'-{SIZE}px{FRAMES}f'
+DEST = ROOT.parents[1] / ('card-demo/assets/effects/pixel' + SUFFIX)
 DEST.mkdir(parents=True, exist_ok=True)
+ATLAS = ROOT if not SUFFIX else ROOT / ('frames' + SUFFIX.lstrip('-'))
+if SUFFIX:
+    ATLAS.mkdir(parents=True, exist_ok=True)
+
+def k8(f: int) -> float:
+    """Frame position expressed on the authored 0..7 scale, so curves stay frame-count agnostic."""
+    return (f / LAST) * 7.0
+
+class Canvas:
+    """Scales every coordinate by K onto a SIZE x SIZE sprite. At K=1 calls pass straight
+    through untouched, which keeps the default 96 output byte-identical."""
+    def __init__(self, sprite, k):
+        self.s=sprite; self.k=k
+    def line(self,x0,y0,x1,y1,c,only=None):
+        if self.k==1: self.s.line(x0,y0,x1,y1,c)
+        else: self.s.line(round(x0*self.k),round(y0*self.k),round(x1*self.k),round(y1*self.k),c)
+    def rect(self,x0,y0,x1,y1,c,fill=True,only=None):
+        if self.k==1: self.s.rect(x0,y0,x1,y1,c,fill=fill)
+        else: self.s.rect(round(x0*self.k),round(y0*self.k),round(x1*self.k),round(y1*self.k),c,fill=fill)
+    def circle(self,cx,cy,r,c,fill=False,only=None):
+        if self.k==1: self.s.circle(cx,cy,r,c,fill=fill)
+        else: self.s.circle(cx*self.k,cy*self.k,r*self.k,c,fill=fill)
+    def ellipse(self,x0,y0,x1,y1,c,fill=True,only=None):
+        if self.k==1: self.s.ellipse(x0,y0,x1,y1,c,fill=fill)
+        else: self.s.ellipse(round(x0*self.k),round(y0*self.k),round(x1*self.k),round(y1*self.k),c,fill=fill)
+    def polygon(self,pts,c,fill=True,only=None):
+        if self.k==1: self.s.polygon(pts,c,fill=fill)
+        else: self.s.polygon([(px*self.k,py*self.k) for px,py in pts],c,fill=fill)
+
+def curve(values, f: int) -> float:
+    """Sample an 8-point authored curve at frame f. At FRAMES=8 this returns values[f] exactly."""
+    x = k8(f)
+    i = int(x)
+    if i >= 7:
+        return values[7]
+    return values[i] + (values[i + 1] - values[i]) * (x - i)
+
+def between(f: int, lo8: float, hi8: float) -> bool:
+    """Continuous equivalent of the authored test 'lo8 <= f <= hi8' on the 8-frame scale."""
+    return lo8 - 0.5 <= k8(f) <= hi8 + 0.5
 PALETTES = {
  'sword': ['#30243e','#70394f','#ba535e','#ed9572','#ffd5a0','#fff2d5','#8d7184'],
  'thorn': ['#23393d','#38554e','#64815a','#a4bb6d','#e5dfa0','#fff1cc','#ac784f'],
@@ -70,24 +120,116 @@ def star(s,x,y,c,r=3):
     if r>2: s.rect(x-1,y-1,x+1,y+1,c)
 
 def shard(s,x,y,h,p,lean=0):
-    s.polygon([(x-4,y),(x-2+lean,y-h+5),(x+lean,y-h),(x+4,y-3),(x+3,y+2)],p[1])
-    s.polygon([(x-2,y-1),(x+lean,y-h+2),(x+2,y-3)],p[3])
-    s.line(x+lean,y-h+4,x-1,y-3,p[5])
+    """Faceted shard with five tonal layers: dark shell, lit face, bright core,
+    edge highlight, tip spark. Shared by every spike and debris effect."""
+    if h<4: h=4
+    tip=x+lean
+    s.polygon([(x-4,y),(x-2,y-h+5),(tip,y-h),(x+4,y-3),(x+3,y+2)],p[1])
+    s.polygon([(x-4,y),(x-2,y-h+5),(tip,y-h),(x-1,y-h*.35),(x-2,y)],p[2])
+    s.polygon([(x-2,y-1),(x-1,y-h*.7),(tip,y-h),(x+2,y-3)],p[3])
+    s.line(tip,y-h,x-1,y-3,p[4])
+    s.line(tip,y-h+2,round(tip*.5+x*.5),round(y-h*.55),p[5])
+
+def ring_band(s,cx,cy,rx,ry,thick,color,a0=0.0,a1=None):
+    """Solid band drawn as radial spokes. Stroked arcs break into dots at 96px because
+    path() thickens by shifting copies downward instead of along the normal.
+    Spoke count follows the physical radius so larger canvases do not show comb gaps."""
+    if a1 is None: a1=math.tau
+    span=a1-a0
+    n=max(24,int(abs(span)/math.tau*max(rx*K,1)*7))
+    rnd=round if K==1 else (lambda v: v)
+    for i in range(n):
+        a=a0+span*i/n; ca,sa=math.cos(a),math.sin(a)
+        # At K=1 keep the original 96-grid rounding; above that, round after scaling so
+        # spokes land on distinct physical pixels instead of collapsing into comb gaps.
+        s.line(rnd(cx+ca*(rx-thick*.5)),rnd(cy+sa*(ry-thick*.5)),
+               rnd(cx+ca*(rx+thick*.5)),rnd(cy+sa*(ry+thick*.5)),color)
+
+def bell(s,cx,top,w,h,p,shine=0):
+    """A readable bronze bell: flared mouth, waisted body, crown loop and clapper,
+    lit from the upper left so the volume reads at 96px."""
+    mouth=top+h; half=w//2; waist=half-4
+    s.polygon([(cx-half,mouth),(cx-waist,top+h//3),(cx-half+4,top),(cx,top-2),
+               (cx+half-4,top),(cx+waist,top+h//3),(cx+half,mouth)],p[2])
+    # left lit face and right shadow give the body weight
+    s.polygon([(cx-half+1,mouth-1),(cx-waist+1,top+h//3),(cx-half+6,top+1),(cx-2,top+1),(cx-3,mouth-2)],p[3])
+    s.polygon([(cx+half-2,mouth-1),(cx+waist-1,top+h//3),(cx+half-6,top+2),(cx+2,top+1),(cx+3,mouth-2)],p[1])
+    s.line(cx-half+7,top+5,cx-half+6,mouth-3,p[4])
+    if shine: s.line(cx-half+9,top+7,cx-half+8,top+5+shine*.5,p[5])
+    # mouth rim reads as cast metal thickness
+    s.rect(cx-half,mouth-1,cx+half,mouth+1,p[3])
+    s.line(cx-half,mouth+2,cx+half,mouth+2,p[1])
+    # clapper below the mouth, crown loop above the shoulder
+    s.rect(cx-2,mouth+3,cx+2,mouth+7,p[1])
+    s.circle(cx,mouth+8,2,p[3],fill=True)
+    s.rect(cx-3,top-6,cx+3,top-1,p[1])
+    s.rect(cx-2,top-5,cx+2,top-2,p[4])
+
+def icicle(s,x,y,h,p,lean=0):
+    """Faceted ice spike: dark shell, lit left face, bright core, edge highlight.
+    Five layers instead of the old two-tone blob."""
+    if h<4: h=4
+    tip=x+lean
+    s.polygon([(x-4,y),(x-2,y-h*.6),(tip,y-h),(x+3,y-h*.55),(x+4,y)],p[1])
+    s.polygon([(x-4,y),(x-2,y-h*.6),(tip,y-h),(x-1,y-h*.3),(x-2,y)],p[2])
+    s.polygon([(x-2,y),(x-1,y-h*.7),(tip,y-h),(x+1,y-h*.4),(x+1,y)],p[3])
+    s.line(x-3,y-1,x-1,y-h*.7,p[4])
+    s.line(tip,y-h,tip+1,y-h+2,p[5])
+
+def book(s,cx,cy,t,p):
+    """Open tome: two flat pages meeting at a dark spine, ruled lines running outward
+    from the spine, bright top edges. Reads as a book, not a lens."""
+    w=12; h=7+round(2*t)
+    s.polygon([(cx-w,cy-h),(cx,cy-h+1),(cx+w,cy-h),(cx+w,cy+h-1),(cx,cy+h),(cx-w,cy+h-1)],p[3])
+    s.polygon([(cx-w+1,cy-h+1),(cx-2,cy-h+2),(cx-2,cy+h-1),(cx-w+1,cy+h-2)],p[4])
+    s.polygon([(cx+2,cy-h+2),(cx+w-1,cy-h+1),(cx+w-1,cy+h-2),(cx+2,cy+h-1)],p[3])
+    # spine
+    s.line(cx,cy-h+1,cx,cy+h,p[1])
+    s.line(cx-1,cy-h+2,cx-1,cy+h-1,p[2])
+    # ruled lines run horizontally away from the spine on both pages
+    for i in range(3):
+        yy=cy-h+3+i*3
+        s.line(cx-w+3,yy,cx-3,yy,p[1])
+        s.line(cx+3,yy,cx+w-3,yy,p[1])
+    # lit top edges
+    s.line(cx-w,cy-h,cx-2,cy-h+1,p[5]); s.line(cx+2,cy-h+1,cx+w,cy-h,p[5])
+
+def frost_ring(s,f,p):
+    """Zero-degree tome ring: nested bands, six faceted icicles standing on the band,
+    an open book inside and cold light rising above it."""
+    t=curve([.22,.38,.64,1,.92,.80,.63,.42],f)
+    cx,cy=48,52
+    for rx,ry,th,c in [(31,20,3,p[1]),(27,17,3,p[3]),(23,14,2,p[2])]:
+        ring_band(s,cx,cy,rx,ry,th,c)
+    # five icicles, skipping straight down so none is cut in half by the book
+    for deg in (-150,-90,-30,30,150):
+        a=math.radians(deg)
+        icicle(s,cx+math.cos(a)*29,cy+math.sin(a)*18.5,round(19*t),p,lean=round(math.cos(a)*3))
+    book(s,cx-1,cy-2,t,p)
+    # cold light: a soft column above the pages, not a disc over them
+    for i,c in enumerate((p[2],p[4],p[5])):
+        s.line(cx-5+i*5,cy-14,cx-4+i*5,cy-16,p[2] if i==0 else c)
 
 def ring(s,f,p,double=False):
-    r=[8,13,21,29,34,37,40,42][f]
-    arc(s,48,51,r,r*.62,0,math.tau,p[1],3 if f<5 else 1)
-    arc(s,48,50,r,r*.62,math.pi,math.tau,p[4],2)
-    if double: arc(s,48,51,max(3,r-9),max(2,r*.62-6),0,math.tau,p[2],2)
+    """Shared impact ring: layered dark shell, mid body and a lit upper half so every
+    effect using it gains the same depth instead of one flat stroked arc."""
+    r=curve([8,13,21,29,34,37,40,42],f)
+    ry=r*.62
+    th=3 if k8(f)<4.5 else 2
+    # Layered but not thicker: the ring stays support, the payload stays the subject.
+    ring_band(s,48,51,r,ry,th,p[1])
+    ring_band(s,48,51,r,ry,max(1,th-1),p[2])
+    ring_band(s,48,50,r,ry,1,p[4],math.pi,math.tau)
+    if double: ring_band(s,48,51,max(4,r-9),max(3,ry-6),2,p[2])
     for i in range(6):
         a=i*math.tau/6+.18*f; x=round(48+math.cos(a)*r); y=round(51+math.sin(a)*r*.62)
-        if f<6: star(s,x,y,p[5],2)
+        if k8(f)<5.5: star(s,x,y,p[5],2)
 
 def boss(s,kind,f,p):
     # The source pivot stays (48,48); bounds always retain >=2px transparent margin.
-    t=[.22,.38,.64,1,.92,.80,.63,.42][f]
+    t=curve([.22,.38,.64,1,.92,.80,.63,.42],f)
     if kind in ('slash','banner','spin','wing'):
-        start=-2.7+f*.16; end=start+(3.9 if kind=='spin' else 2.8)
+        start=-2.7+k8(f)*.16; end=start+(3.9 if kind=='spin' else 2.8)
         r=12+int(t*28)
         for band,c in [(0,p[1]),(-3,p[2]),(-6,p[4]),(-7,p[5])]:
             arc(s,48,48,r+band,(r+band)*(.67 if kind!='wing' else .9),start,end,c,3 if band==0 else 2)
@@ -123,13 +265,13 @@ def boss(s,kind,f,p):
         for i in range(5):
             x=22+i*13; y=59+(i%2)*7
             path(s,[(48,49),(x,y),(x-3,y+7),(x-9,y+9)],p[2],2)
-            if f in range(2,6): shard(s,x,y,round((12+i%3*5)*t),p,3 if i%2 else -3)
-        if kind=='hammer' and f<5:
+            if between(f,2,5): shard(s,x,y,round((12+i%3*5)*t),p,3 if i%2 else -3)
+        if kind=='hammer' and k8(f)<4.5:
             s.polygon([(36,18),(51,11),(63,25),(48,32)],p[1]); s.polygon([(36,18),(50,13),(57,20),(44,25)],p[4])
             s.polygon([(46,29),(51,26),(65,47),(61,51)],p[2]); star(s,51,51,p[5],8 if f==3 else 4)
     elif kind in ('burst','mine'):
         ring(s,f,p)
-        if kind=='mine' and f<5:
+        if kind=='mine' and k8(f)<4.5:
             s.circle(48,49,12,p[1]); s.circle(46,47,9,p[2]); s.circle(44,44,4,p[3]); star(s,48,32,p[5],3)
             s.rect(44,45,51,51,p[4]); s.rect(46,47,49,49,p[5])
             for a in range(4):
@@ -142,15 +284,15 @@ def boss(s,kind,f,p):
     elif kind=='seed':
         # Burst seedpods differ from the upright grove wall in silhouette, not just color.
         for i in range(5):
-            a=i*math.tau/5+f*.11; x=round(48+math.cos(a)*31*t); y=round(49+math.sin(a)*23*t)
+            a=i*math.tau/5+k8(f)*.11; x=round(48+math.cos(a)*31*t); y=round(49+math.sin(a)*23*t)
             s.polygon([(x-7,y),(x-3,y-9),(x+4,y-7),(x+7,y),(x+3,y+7),(x-4,y+6)],p[1])
             s.polygon([(x-5,y-1),(x-2,y-7),(x+2,y-6),(x+1,y+4)],p[3])
             s.line(x,y-6,x-1,y+4,p[4]); s.polygon([(x,y-6),(x+5,y-13),(x+8,y-11),(x+3,y-5)],p[2])
-            if f in (2,3): star(s,x+8,y+3,p[5],2)
+            if between(f,2,3): star(s,x+8,y+3,p[5],2)
     elif kind=='grove':
         ring(s,f,p,True)
         for i in range(5):
-            a=i*math.tau/5+f*.06; x=round(48+math.cos(a)*29*t); y=round(54+math.sin(a)*19*t)
+            a=i*math.tau/5+k8(f)*.06; x=round(48+math.cos(a)*29*t); y=round(54+math.sin(a)*19*t)
             s.polygon([(x-6,y+5),(x-3,y-10*t),(x+3,y-20*t),(x+5,y+5)],p[1])
             s.line(x,y+3,x+2,y-14*t,p[3])
             s.polygon([(x,y-7),(x-11,y-14),(x-7,y-4)],p[3]); s.line(x-8,y-12,x,y-6,p[4])
@@ -158,7 +300,7 @@ def boss(s,kind,f,p):
     elif kind in ('feather','verdict'):
         ring(s,f,p)
         for i in range(5):
-            x=24+i*12; y=18+((f*7+i*9)%44)
+            x=24+i*12; y=18+((k8(f)*7+i*9)%44)
             s.polygon([(x,y-8),(x+6,y-3),(x+3,y+7),(x-4,y+12),(x-3,y+1)],p[2])
             s.line(x-4,y+12,x+4,y-4,p[5]); s.line(x,y+3,x+5,y+1,p[3])
         if kind=='verdict':
@@ -179,32 +321,38 @@ def boss(s,kind,f,p):
                 x=24+i*14; y=23+(i%2)*45
                 s.rect(x,y,x+7,y+9,p[1]); path(s,[(x+1,y+2),(x+6,y+2),(x+3,y+6),(x+6,y+7)],p[4])
     elif kind in ('seal','frost'):
-        ring(s,f,p,True)
-        for i in range(6):
-            a=i*math.tau/6; x=round(48+math.cos(a)*25); y=round(49+math.sin(a)*16)
-            if kind=='frost': shard(s,x,y,round(22*t),p)
-            else:
-                s.rect(x-3,y-7,x+3,y+2,p[1]); path(s,[(x-2,y-6),(x+2,y-6),(x-1,y-2),(x+2,y+1)],p[4])
-        star(s,48,45,p[5],round(10*t))
-    elif kind in ('echo','resonance','tide'):
-        ring(s,f,p,True)
-        if kind=='tide':
-            for i in range(3): arc(s,48,48,12+9*i,7+6*i,-2.8+f*.2,.4+f*.2,p[4],2)
+        if kind=='frost':
+            frost_ring(s,f,p)
         else:
-            for i in range(3):
-                x=28+i*20; y=32+(i%2)*10
-                s.polygon([(x-5,y+6),(x-4,y-5),(x,y-10),(x+5,y-5),(x+6,y+6)],p[2])
-                s.line(x-4,y+6,x+6,y+6,p[4]); s.rect(x-1,y+7,x+1,y+9,p[5])
+            ring(s,f,p,True)
+            for i in range(6):
+                a=i*math.tau/6; x=round(48+math.cos(a)*25); y=round(49+math.sin(a)*16)
+                s.rect(x-3,y-7,x+3,y+2,p[1]); path(s,[(x-2,y-6),(x+2,y-6),(x-1,y-2),(x+2,y+1)],p[4])
+            star(s,48,45,p[5],round(10*t))
+    elif kind in ('echo','resonance','tide'):
+        if kind=='tide':
+            ring(s,f,p,True)
+            for i in range(3): arc(s,48,48,12+9*i,7+6*i,-2.8+k8(f)*.2,.4+k8(f)*.2,p[4],2)
+        else:
+            # One readable bell with solid sound rings, instead of three flat blobs and a dotted ring.
+            tt=k8(f)/7
+            for k in range(3):
+                rr=12+tt*18+k*7
+                ring_band(s,48,54,rr,round(rr*.46),3 if k==0 else 2,[p[4],p[3],p[1]][k])
+            bell(s,48,21,34,33,p,shine=round(6*tt))
             if kind=='resonance':
+                # The domain wall: a closed outer band plus six seal studs.
+                ring_band(s,48,50,40+tt*3,28+tt*2,3,p[2])
                 for i in range(6):
-                    a=i*math.tau/6; star(s,round(48+36*math.cos(a)),round(50+23*math.sin(a)),p[4],3)
+                    a=i*math.tau/6
+                    star(s,round(48+40*math.cos(a)),round(50+28*math.sin(a)),p[4],3)
     else: raise ValueError(kind)
-    if f in (2,3) and kind not in ('spin','grove','tide','frost','resonance'):
+    if between(f,2,3) and kind not in ('spin','grove','tide','frost','resonance'):
         star(s,45,43,p[5],4)
 
 def minion(s,kind,f,p):
     # Compact elemental attacks: distinct water / leaves / curse / gust / fire / bolt / ice.
-    t=[.3,.5,.8,1,.8,.6,.4,.2][f]; x=48; y=52
+    t=curve([.3,.5,.8,1,.8,.6,.4,.2],f); x=48; y=52
     if kind in ('rain','heat','snow'):
         for i in range(5):
             dx=(i-2)*8; h=round((20-abs(i-2)*3)*t)
@@ -218,7 +366,7 @@ def minion(s,kind,f,p):
         arc(s,48,60,25*t,9*t,0,math.tau,p[3],2)
     elif kind in ('wind','fog'):
         for i in range(3):
-            arc(s,48,44+i*8,15+8*t-i*2,5+i,-2.8+f*.3,1.7+f*.3,p[2+i],2)
+            arc(s,48,44+i*8,15+8*t-i*2,5+i,-2.8+k8(f)*.3,1.7+k8(f)*.3,p[2+i],2)
         if kind=='fog':
             s.circle(48,47,7,p[1]); s.rect(44,44,46,46,p[5]); s.rect(50,44,52,46,p[5])
             s.line(46,51,50,51,p[4])
@@ -228,18 +376,18 @@ def minion(s,kind,f,p):
         star(s,50,53,p[4],round(10*t)); arc(s,50,63,20*t,7*t,0,math.tau,p[3],2)
     else:
         for i in range(5):
-            a=i*math.tau/5+f*.25; x=round(48+math.cos(a)*25*t); y=round(48+math.sin(a)*19*t)
+            a=i*math.tau/5+k8(f)*.25; x=round(48+math.cos(a)*25*t); y=round(48+math.sin(a)*19*t)
             s.polygon([(x-7,y),(x+2,y-5),(x+8,y-3),(x+1,y+5)],p[2]); s.line(x-5,y,x+5,y-2,p[4])
 
 def weather(s,kind,f,p):
     # Small reusable particles occupy a 96px cell, with no baked backdrop.
     if kind=='rain':
         for i in range(3):
-            x=28+i*17; y=21+(f*43/8+i*13)%43
+            x=28+i*17; y=21+(k8(f)*43/8+i*13)%43
             path(s,[(x+5,y-10),(x,y+3)],p[2+i%2],2); s.line(x+3,y-6,x,y+2,p[4])
-        if f>3: arc(s,48,75,6+(f-4)*5,2+(f-4)*2,0,math.tau,p[3])
+        if k8(f)>3.5: arc(s,48,75,6+(k8(f)-4)*5,2+(k8(f)-4)*2,0,math.tau,p[3])
     elif kind=='snow':
-        x=48+round(math.sin(f*math.tau/8)*3); y=46
+        x=48+round(math.sin(f*math.tau/FRAMES)*3); y=46
         for a in range(6):
             angle=a*math.tau/6; dx=math.cos(angle); dy=math.sin(angle)
             s.line(x,y,x+dx*13,y+dy*13,p[3]);
@@ -247,31 +395,31 @@ def weather(s,kind,f,p):
         star(s,x,y,p[5],2)
     elif kind=='wind':
         for i in range(3):
-            sway=math.sin(f*math.tau/8)*.3
+            sway=math.sin(f*math.tau/FRAMES)*.3
             arc(s,42+i*5,41+i*8,21,5,-2.7+sway,1+sway,p[2+i],1)
-        x=48+round(math.sin(f*math.tau/8)*9); s.polygon([(x-4,63),(x+4,58),(x+8,59),(x,65)],p[3])
+        x=48+round(math.sin(f*math.tau/FRAMES)*9); s.polygon([(x-4,63),(x+4,58),(x+8,59),(x,65)],p[3])
     elif kind=='fog':
         for i in range(4):
-            x=21+i*15+round(math.sin(f*math.tau/8+i)*3); y=43+(i%2)*8
+            x=21+i*15+round(math.sin(f*math.tau/FRAMES+i)*3); y=43+(i%2)*8
             s.ellipse(x-12,y-5,x+16,y+5,p[1+i%2])
             s.rect(x-5,y-5,x+13,y-3,p[3])
     elif kind=='heat':
         for i in range(3):
-            x=33+i*16; y=61-(f*35/8+i*13)%35
+            x=33+i*16; y=61-(k8(f)*35/8+i*13)%35
             s.polygon([(x-3,y+4),(x-3,y),(x+1,y-6),(x+3,y),(x+2,y+4)],p[2]); s.rect(x,y,x+1,y+2,p[4])
     elif kind=='storm':
-        if f in (2,3,4):
+        if between(f,2,4):
             pts=[(53,14),(42,35),(52,35),(39,57),(49,54),(42,77)]
             path(s,pts,p[2],5); path(s,pts,p[4],3); path(s,pts,p[5])
         else:
-            path(s,[(39,32+f*3),(35,43+f*3)],p[2],2); path(s,[(62,28+f*2),(58,39+f*2)],p[3],2)
+            path(s,[(39,32+k8(f)*3),(35,43+k8(f)*3)],p[2],2); path(s,[(62,28+k8(f)*2),(58,39+k8(f)*2)],p[3],2)
     else:
-        star(s,48,47,p[4] if f in (2,3,4) else p[3],3+min(f,7-f))
+        star(s,48,47,p[4] if between(f,2,4) else p[3],3+min(k8(f),7-k8(f)))
         s.rect(29,62,31,64,p[2]); s.rect(65,29,67,31,p[3])
 
 def boss5(s,kind,f,p):
     # Fifth moves: a silhouette the same boss does not already own, so dodging stays readable.
-    t=[.22,.38,.64,1,.92,.80,.63,.42][f]
+    t=curve([.22,.38,.64,1,.92,.80,.63,.42],f)
     if kind=='flag':
         ring(s,f,p)
         for i in range(3):
@@ -279,16 +427,16 @@ def boss5(s,kind,f,p):
             path(s,[(x,y+8),(x,y-h)],p[1],3)
             s.polygon([(x+1,y-h),(x+10,y-h+5),(x+8,y-h+13),(x+1,y-h+9)],p[2])
             s.line(x+2,y-h+2,x+8,y-h+8,p[4])
-            if f in (2,3): star(s,x+6,y-h+7,p[5],2)
+            if between(f,2,3): star(s,x+6,y-h+7,p[5],2)
     elif kind=='charge':
-        start=-2.5+f*.15; end=start+2.9; r=14+int(t*26)
+        start=-2.5+k8(f)*.15; end=start+2.9; r=14+int(t*26)
         for band,c in [(0,p[1]),(-3,p[2]),(-6,p[4])]:
             arc(s,48,48,r+band,(r+band)*.7,start,end,c,3 if band==0 else 2)
         for i in range(5):
             a=start+.35+i*.55; x=round(48+math.cos(a)*(r-2)); y=round(48+math.sin(a)*(r-2)*.7)
             s.polygon([(x-4,y),(x-1,y-9),(x+3,y-7),(x+4,y+2)],p[3]); s.line(x-2,y,x+1,y-6,p[5])
     elif kind=='surge':
-        start=-2.6+f*.14; end=start+3.0; r=16+int(t*26)
+        start=-2.6+k8(f)*.14; end=start+3.0; r=16+int(t*26)
         for band,c in [(0,p[1]),(-4,p[2]),(-7,p[3]),(-9,p[4])]:
             arc(s,48,50,r+band,(r+band)*.72,start,end,c,4 if band==0 else 2)
         for i in range(6):
@@ -313,19 +461,19 @@ def boss5(s,kind,f,p):
             s.circle(x,y,4,p[1]); s.circle(x-1,y-1,2,p[3])
         s.circle(48,48,5,p[1]); s.circle(47,47,3,p[4]); star(s,48,48,p[5],round(6*t))
     else: raise ValueError(kind)
-    if f in (2,3): star(s,45,43,p[5],4)
+    if between(f,2,3): star(s,45,43,p[5],4)
 
 def weapon(s,kind,f,p):
     # Player hits read lighter and tighter than boss casts: thinner bands, brighter steel.
-    t=[.25,.45,.7,1,.85,.65,.45,.3][f]
-    ph=math.tau*f/8
+    t=curve([.25,.45,.7,1,.85,.65,.45,.3],f)
+    ph=math.tau*f/FRAMES
     if kind=='sword':
-        start=-2.4+f*.18; end=start+2.4; r=13+int(t*22)
+        start=-2.4+k8(f)*.18; end=start+2.4; r=13+int(t*22)
         for band,c in [(0,p[2]),(-3,p[3]),(-5,p[4]),(-6,p[5])]:
             arc(s,48,48,r+band,(r+band)*.72,start,end,c,3 if band==0 else 2)
         for band,c in [(-9,p[3]),(-13,p[2])]:
             arc(s,48,48,r+band,(r+band)*.72,start-.35,end-.5,c,2)
-        if f in (2,3): star(s,round(48+math.cos(end)*(r+2)),round(48+math.sin(end)*(r+2)*.72),p[5],3)
+        if between(f,2,3): star(s,round(48+math.cos(end)*(r+2)),round(48+math.sin(end)*(r+2)*.72),p[5],3)
     elif kind=='echo':
         # Delayed aftershock: rings lagging behind each other, embers drifting off the hit.
         for k in range(4):
@@ -340,7 +488,7 @@ def weapon(s,kind,f,p):
             star(s,round(48+math.cos(a)*rr),round(48+math.sin(a)*rr*.72),p[5],3)
         s.circle(48,48,max(3,round(7*t)),p[5],fill=True); s.circle(48,48,max(2,round(4*t)),p[4],fill=True)
     elif kind=='cleave':
-        start=-2.3+f*.16; end=start+2.2; r=12+int(t*20)
+        start=-2.3+k8(f)*.16; end=start+2.2; r=12+int(t*20)
         for band,c in [(0,p[5]),(-3,p[4]),(-6,p[6])]:
             arc(s,48,50,r+band,(r+band)*.75,start,end,c,4 if band==0 else 2)
         for i in range(6):
@@ -365,7 +513,7 @@ def weapon(s,kind,f,p):
         s.polygon([(44,4),(52,4),(54,cy-14),(42,cy-14)],p[2])
         for k in range(2): s.line(37+k*22,8,37+k*22,cy-16,p[3])
         for i in range(3):
-            dy=(f*11+i*23)%40
+            dy=(k8(f)*11+i*23)%40
             s.polygon([(40+i*11,8+dy),(47+i*11,12+dy),(44+i*11,19+dy),(37+i*11,14+dy)],p[3])
         s.polygon([(48,cy-18),(66,cy-4),(61,cy+13),(35,cy+13),(30,cy-4)],p[2])
         s.polygon([(48,cy-13),(59,cy-3),(56,cy+9),(40,cy+9),(37,cy-3)],p[3])
@@ -381,7 +529,7 @@ def weapon(s,kind,f,p):
 
 def status(s,kind,f,p):
     # Looping auras: frame 7 must flow back into frame 0, so everything is driven by a phase.
-    ph=math.tau*f/8; t=.55+.45*math.sin(ph)
+    ph=math.tau*f/FRAMES; t=.55+.45*math.sin(ph)
     if kind=='heal':
         # One big pulsing cross; four drifting motes on their own read as noise, not healing.
         a=22+int(6*t); w=7
@@ -405,7 +553,7 @@ def status(s,kind,f,p):
     elif kind=='buff':
         # Three fat rising chevrons; the old narrow arrows were too small to carry the frame.
         for i in range(3):
-            y=64-((f*10+i*27)%48)
+            y=64-((k8(f)*10+i*27)%48)
             s.polygon([(48,y-11),(67,y+5),(48,y+1),(29,y+5)],p[3])
             s.polygon([(48,y-6),(60,y+3),(48,y),(36,y+3)],p[4])
         arc(s,48,70,24,8,0,math.tau,p[2],2)
@@ -422,7 +570,7 @@ def status(s,kind,f,p):
         s.ellipse(26,54,70,76,p[1]); s.ellipse(30,57,66,72,p[2]); s.ellipse(36,60,60,68,p[3])
         s.line(32,60,64,60,p[4])
         for i in range(4):
-            x=32+i*11; y=58-((f*9+i*17)%40); r=7-((i+f)%2)*2
+            x=32+i*11; y=58-((k8(f)*9+i*17)%40); r=7-((i+f)%2)*2
             s.circle(x,y,r,p[2],fill=True); s.circle(x-2,y-2,max(3,r-3),p[4],fill=True)
             s.line(x-r,y+r-1,x+r,y+r-1,p[1])
         for i in range(3):
@@ -453,30 +601,44 @@ def status(s,kind,f,p):
 LOOPING = ('weather','status')
 
 def make(key,label,palette,draw,kind,category):
-    s=Sprite(96,96,palette=palette)
+    s=Sprite(SIZE,SIZE,palette=palette)
+    canvas=Canvas(s,K)
     looping = category in LOOPING
-    for f in range(8):
+    for f in range(FRAMES):
         if f: s.add_frame(copy=False)
-        draw(s,kind,f,palette)
-        s.set_duration(([120]*8 if looping else [90,70,50,100,80,80,100,130])[f])
-    s.tag('loop' if looping else 'cast',1,8)
-    s.save_spritesheet(str(ROOT/f'{key}.png'),layout='horizontal')
+        draw(canvas,kind,f,palette)
+        s.set_duration(round(120 if looping else curve([90,70,50,100,80,80,100,130],f)))
+    s.tag('loop' if looping else 'cast',1,FRAMES)
+    key_frame=round(LAST*4/7)
+    s.save_spritesheet(str(ATLAS/f'{key}.png'),layout='horizontal')
     s.save_spritesheet(str(DEST/f'{key}.png'),layout='horizontal')
-    s.save_png(str(ROOT/f'{key}-master.png'),frame=4)
-    s.save_png(str(ROOT/f'{key}-4x.png'),frame=4,scale=4)
-    s.save_gif(str(ROOT/f'{key}.gif'),scale=4,bg='#172332')
+    s.save_png(str(ATLAS/f'{key}-master.png'),frame=key_frame)
+    s.save_png(str(ATLAS/f'{key}-4x.png'),frame=key_frame,scale=4)
+    if FRAMES == 8:
+        s.save_gif(str(ATLAS/f'{key}.gif'),scale=4,bg='#172332')
     # Check actual full frame union, binary alpha and palette on every export.
-    frames=[s.composite(i+1) for i in range(8)]
+    frames=[s.composite(i+1) for i in range(FRAMES)]
     used=set()
+    margin=round(2*K); edge=SIZE-margin
     for im in frames:
         bb=im.getbbox()
-        assert bb and bb[0]>=2 and bb[1]>=2 and bb[2]<=94 and bb[3]<=94,(key,bb)
+        assert bb and bb[0]>=margin and bb[1]>=margin and bb[2]<=edge and bb[3]<=edge,(key,bb)
         used.update(c for c in im.get_flattened_data() if c[3])
         assert set(im.getchannel('A').get_flattened_data()) <= {0,255},key
     assert len(used)<=7,(key,len(used))
+    if FRAMES != 8:
+        # The bundled writer hard-codes an eight-slot duration table, so build the GIF directly.
+        durs=[fr.duration for fr in s.frames]
+        shots=[]
+        for im in frames:
+            bg=Image.new('RGBA',im.size,(23,35,50,255))
+            bg.alpha_composite(im)
+            shots.append(bg.convert('RGB').resize((384,384),Image.NEAREST))
+        shots[0].save(str(ATLAS/f'{key}.gif'),save_all=True,append_images=shots[1:],
+                      duration=durs,loop=0,optimize=False)
     stats=s.stats(print_=False)
     assert stats['semi_alpha_px']==0 and not stats['near_duplicate_colors'],(key,stats)
-    return dict(key=key,label=label,category=category,frame_size=[96,96],pivot=[48,48],frames=8,
+    return dict(key=key,label=label,category=category,frame_size=[SIZE,SIZE],pivot=[SIZE//2,SIZE//2],frames=FRAMES,
                 durations=[fr.duration for fr in s.frames],palette=palette,colors_used=len(used),
                 semi_alpha_px=stats['semi_alpha_px'],near_duplicate_colors=stats['near_duplicate_colors'],
                 isolated_px_last_frame=stats['isolated_px']),frames
@@ -505,7 +667,7 @@ def main():
     for kind,label in MINION_NAMES.items(): entries.append(make(f'guard-{kind}',label,PALETTES[kind],minion,kind,'guard'))
     for kind,label,pal in STATUS_NAMES: entries.append(make(f'status-{kind}',label,PALETTES[pal],status,kind,'status'))
     for kind,label in WEATHER_NAMES.items(): entries.append(make(f'weather-{kind}',label,PALETTES[kind],weather,kind,'weather'))
-    manifest={'version':1,'pixel_size':1,'filter':'nearest','frame_count':8,'frame_size':[96,96],
+    manifest={'version':1,'pixel_size':1,'filter':'nearest','frame_count':FRAMES,'frame_size':[SIZE,SIZE],
               'effects':[meta for meta,frames in entries]}
     for dest in (ROOT,DEST): (dest/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
     plate(entries[:30],'boss-preview.png')
@@ -520,11 +682,14 @@ def main():
     # Combined animation is a preview, individual sheets are the runtime masters.
     for label,group,cols in [('boss',entries[:30],6),('player',entries[30:35],5),('elements',entries[35:],7)]:
         animation=[]
-        for f in range(8):
-            im=Image.new('RGBA',(cols*96,math.ceil(len(group)/cols)*96),'#172332')
-            for i,(_,frames) in enumerate(group): im.alpha_composite(frames[f],((i%cols)*96,(i//cols)*96))
+        for f in range(FRAMES):
+            im=Image.new('RGBA',(cols*SIZE,math.ceil(len(group)/cols)*SIZE),'#172332')
+            for i,(_,frames) in enumerate(group): im.alpha_composite(frames[f],((i%cols)*SIZE,(i//cols)*SIZE))
             animation.append(im.convert('RGB').resize((im.width*2,im.height*2),Image.Resampling.NEAREST))
-        animation[0].save(ROOT/f'{label}-animation.gif',save_all=True,append_images=animation[1:],duration=[90,70,50,100,80,80,100,500],loop=0)
-    print(f'Built {len(entries)} effects / {len(entries)*8} native frames; palette, margins and alpha verified.')
+        # Last frame holds longer so the loop reads; at FRAMES=8 this is the original table.
+        durs=[round(curve([90,70,50,100,80,80,100,130],f)) for f in range(FRAMES)]
+        durs[-1]=500
+        animation[0].save(ATLAS/f'{label}-animation.gif',save_all=True,append_images=animation[1:],duration=durs,loop=0)
+    print(f'Built {len(entries)} effects / {len(entries)*FRAMES} native frames; palette, margins and alpha verified.')
 
 if __name__=='__main__': main()
