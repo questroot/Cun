@@ -1,6 +1,278 @@
 extends Control
 const ExplorationTools = preload("res://scripts/scenes/exploration_tools.gd")
 const DiveCatalog = preload("res://scripts/scenes/underwater_catalog.gd")
+const WaterTechnology = preload("res://scripts/scenes/water_technology.gd")
+var technology := WaterTechnology.new()
+var technology_button: Button
+const PublicProjectResultPanel = preload("res://scripts/scenes/public_project_result_panel.gd")
+const PublicProjectService = preload("res://scripts/scenes/public_project_service.gd")
+const PublicProjectEditor = preload("res://scripts/scenes/public_project_editor.gd")
+var public_project: Dictionary = PublicProjectService.defaults()
+var public_project_service := PublicProjectService.new()
+var _public_project_editor: VBoxContainer
+signal public_project_action_requested(operation_id: String, action_id: String, request_id: String, revision: int)
+signal public_project_refresh_requested(operation_id: String, revision: int)
+
+var public_project_result_button: Button
+var _public_project_window: Window
+var _public_project_mask: ColorRect
+var _public_project_panels: Dictionary = {}
+var _public_project_snapshots: Dictionary = {}
+var _public_project_operation: String = ""
+var _public_project_prior_focus: Control
+
+# 仅接收展示事实；不执行结算，也不写入海面存档。
+func show_public_project_result(snapshot: Dictionary) -> bool:
+	if not is_node_ready() or not _public_project_can_open(): return false
+	var operation_id: String = String(snapshot.get("operation_id", "")) if snapshot.get("operation_id") is String else ""
+	if operation_id.is_empty(): return false
+	var accepted: bool = update_public_project_result(snapshot)
+	if not accepted:
+		if not _public_project_panels.has(operation_id): return false
+		var previous: Dictionary = _public_project_snapshots.get(operation_id, {})
+		if typeof(snapshot.get("revision")) != TYPE_INT or int(snapshot.revision) < 0 or int(snapshot.revision) > int(previous.revision): return false
+	return _open_public_project_result(operation_id)
+
+func update_public_project_result(snapshot: Dictionary) -> bool:
+	if not is_node_ready() or not snapshot.get("operation_id") is String: return false
+	var operation_id: String = snapshot.operation_id
+	if operation_id.strip_edges().is_empty(): return false
+	var panel: PublicProjectResultPanel = _public_project_panels.get(operation_id)
+	var created: bool = panel == null
+	if created: panel = PublicProjectResultPanel.new()
+	var data: Dictionary = _public_project_display_snapshot(snapshot)
+	var accepted: bool = panel.set_snapshot(data)
+	if created:
+		if not accepted:
+			panel.free()
+			return false
+		_ensure_public_project_window()
+		for old_id in _public_project_panels.keys():
+			if old_id == _public_project_operation: continue
+			_public_project_panels[old_id].queue_free()
+			_public_project_panels.erase(old_id)
+			_public_project_snapshots.erase(old_id)
+		_public_project_panels[operation_id] = panel
+		panel.hide()
+		_public_project_window.add_child(panel)
+		panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		panel.action_requested.connect(_forward_public_project_action)
+		panel.close_requested.connect(_close_public_project_result)
+	if accepted: _public_project_snapshots[operation_id] = snapshot.duplicate(true)
+	_refresh_public_project_pending()
+	return accepted
+
+func finish_public_project_action(operation_id: String, request_id: String, feedback: String) -> bool:
+	var panel: PublicProjectResultPanel = _public_project_panels.get(operation_id)
+	if panel == null: return false
+	var accepted: bool = panel.finish_action(operation_id, request_id, feedback)
+	_refresh_public_project_pending()
+	return accepted
+
+func _public_project_has_action_handler() -> bool:
+	if public_project_service.host == self: return true
+	# 只检查宿主对外信号；组件到宿主的转发连接不是业务处理器。
+	for connection: Dictionary in public_project_action_requested.get_connections():
+		var callback: Callable = connection.callable
+		if callback.is_valid() and callback.get_object() != self and callback.get_object() not in _public_project_panels.values():
+			return true
+	return false
+
+func _public_project_display_snapshot(snapshot: Dictionary) -> Dictionary:
+	var data: Dictionary = snapshot.duplicate(true)
+	if not _public_project_has_action_handler():
+		data.erase("available_actions")
+		# 组件契约要求该字段为字典；空字典将操作明确显示为“功能待接入”。
+		data["available_actions"] = {}
+	return data
+
+func _sync_public_project_actions(operation_id: String) -> void:
+	var panel: PublicProjectResultPanel = _public_project_panels[operation_id]
+	var source: Dictionary = _public_project_snapshots[operation_id]
+	var actions: Dictionary = source.get("available_actions", {}) if _public_project_has_action_handler() and source.get("available_actions", {}) is Dictionary else {}
+	if panel.snapshot.get("available_actions") != actions:
+		var session: Dictionary = panel.export_session()
+		session.snapshot["available_actions"] = actions.duplicate(true)
+		panel.import_session(session)
+
+func _forward_public_project_action(operation_id: String, action_id: String, request_id: String, revision: int) -> void:
+	if not _public_project_has_action_handler():
+		finish_public_project_action(operation_id, request_id, "not_connected")
+		_sync_public_project_actions(operation_id)
+		return
+	if public_project_service.host == self:
+		_handle_public_project_action(operation_id, action_id, request_id, revision)
+	else:
+		public_project_action_requested.emit(operation_id, action_id, request_id, revision)
+
+func _ensure_public_project_window() -> void:
+	if is_instance_valid(_public_project_window): return
+	_public_project_mask = ColorRect.new()
+	_public_project_mask.name = "PublicProjectResultMask"
+	_public_project_mask.color = Color(0, 0, 0, 0.55)
+	_public_project_mask.mouse_filter = Control.MOUSE_FILTER_STOP
+	_public_project_mask.z_index = 4096
+	add_child(_public_project_mask)
+	_public_project_mask.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_public_project_mask.hide()
+	_public_project_window = Window.new()
+	_public_project_window.name = "PublicProjectResultWindow"
+	_public_project_window.title = "公共工程 · 投料结果"
+	_public_project_window.visible = false
+	_public_project_window.exclusive = true
+	_public_project_window.transient = true
+	_public_project_window.wrap_controls = false
+	add_child(_public_project_window)
+	_public_project_window.close_requested.connect(func() -> void: _close_public_project_result(_public_project_operation))
+	_public_project_window.go_back_requested.connect(func() -> void: _close_public_project_result(_public_project_operation))
+	_public_project_window.window_input.connect(_public_project_window_input)
+
+func _public_project_can_open() -> bool:
+	if at_salt or at_wreck or sailing or is_instance_valid(dive_layer): return false
+	if is_instance_valid(exploration_tools) and exploration_tools.is_open(): return false
+	for child in get_children():
+		if child is Window and child.visible and child != _public_project_window: return false
+	return true
+
+func _open_public_project_result(operation_id: String) -> bool:
+	if not _public_project_can_open() or not _public_project_panels.has(operation_id): return false
+	if not _public_project_window.visible:
+		_public_project_prior_focus = get_viewport().gui_get_focus_owner()
+	_public_project_operation = operation_id
+	_clear_public_project_editor()
+	moving = false
+	target = player_foot
+	model.update_movement(Vector2.ZERO, 0.0)
+	for id: String in _public_project_panels:
+		_public_project_panels[id].visible = id == operation_id
+	_sync_public_project_actions(operation_id)
+	_public_project_mask.show()
+	var viewport_size: Vector2i = Vector2i(get_viewport_rect().size)
+	_public_project_window.popup_centered(Vector2i(maxi(1, mini(800, viewport_size.x - 24)), maxi(1, mini(550, viewport_size.y - 24))))
+	var panel: PublicProjectResultPanel = _public_project_panels[operation_id]
+	panel.focus_initial.call_deferred()
+	# 重开只请求读取最新事实，不重新发出在途动作。
+	if public_project_service.host == self:
+		_refresh_public_project_service()
+	else:
+		public_project_refresh_requested.emit(operation_id, int(panel.snapshot.revision))
+	return true
+
+func _close_public_project_result(operation_id: String) -> void:
+	if not is_instance_valid(_public_project_window) or not _public_project_window.visible or operation_id != _public_project_operation: return
+	_clear_public_project_editor()
+	_public_project_window.hide()
+	_public_project_mask.hide()
+	moving = false
+	target = player_foot
+	model.update_movement(Vector2.ZERO, 0.0)
+	_refresh_public_project_pending()
+	if is_instance_valid(_public_project_prior_focus) and _public_project_prior_focus.is_visible_in_tree() and (not _public_project_prior_focus is BaseButton or not (_public_project_prior_focus as BaseButton).disabled):
+		_public_project_prior_focus.grab_focus()
+	elif is_instance_valid(public_project_result_button) and public_project_result_button.visible:
+		public_project_result_button.grab_focus()
+	elif is_instance_valid(dive_button):
+		dive_button.grab_focus()
+
+func _public_project_window_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and event.keycode == KEY_BACK):
+		_close_public_project_result(_public_project_operation)
+		_public_project_window.set_input_as_handled()
+
+func _refresh_public_project_pending() -> void:
+	if not is_instance_valid(public_project_result_button): return
+	var pending: String = ""
+	for id: String in _public_project_panels:
+		pending = _public_project_panels[id].pending_task()
+		if not pending.is_empty(): break
+	public_project_result_button.text = pending
+	public_project_result_button.visible = not pending.is_empty() and not at_salt and not at_wreck and not sailing and not is_instance_valid(dive_layer)
+
+func _open_pending_public_project_result() -> void:
+	if public_project_service.host == self:
+		var snapshot := public_project_service.snapshot()
+		if not snapshot.is_empty(): show_public_project_result(snapshot)
+		return
+	for id: String in _public_project_panels:
+		if not _public_project_panels[id].pending_task().is_empty():
+			_open_public_project_result(id)
+			return
+func _clear_public_project_editor() -> void:
+	public_project_service.clear_draft()
+	if is_instance_valid(_public_project_editor):
+		_public_project_window.remove_child(_public_project_editor)
+		_public_project_editor.queue_free()
+	_public_project_editor = null
+
+func open_public_project_editor(focused_resource: String = "", cargo_deficits: Dictionary = {}) -> void:
+	if not _public_project_can_open(): return
+	_ensure_public_project_window()
+	if not _public_project_window.visible: _public_project_prior_focus = get_viewport().gui_get_focus_owner()
+	_clear_public_project_editor()
+	for panel in _public_project_panels.values(): panel.hide()
+	_public_project_operation = "editor"
+	_public_project_editor = PublicProjectEditor.new()
+	_public_project_window.add_child(_public_project_editor)
+	_public_project_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var context := public_project_service.context()
+	if public_project.pending_bag == null and not cargo_deficits.is_empty(): context.deficits = cargo_deficits.duplicate(true)
+	_public_project_editor.configure(context, focused_resource)
+	_public_project_editor.preview_requested.connect(func(amounts: Dictionary, pearl_selected: bool) -> void:
+		var preview := public_project_service.preview(amounts, pearl_selected)
+		if preview.has("error"): _public_project_editor.show_error(preview.error)
+		else: _public_project_editor.show_preview(preview))
+	_public_project_editor.confirm_requested.connect(func(token: String, pearl_confirmed: bool) -> void:
+		var result := public_project_service.confirm(token, pearl_confirmed)
+		if not result.ok:
+			_public_project_editor.show_error(result.error)
+			return
+		show_public_project_result(public_project_service.snapshot()))
+	_public_project_editor.close_requested.connect(func() -> void: _close_public_project_result("editor"))
+	moving = false
+	target = player_foot
+	model.update_movement(Vector2.ZERO, 0.0)
+	_public_project_mask.show()
+	var viewport_size := Vector2i(get_viewport_rect().size)
+	_public_project_window.popup_centered(Vector2i(maxi(1, mini(800, viewport_size.x - 24)), maxi(1, mini(550, viewport_size.y - 24))))
+
+func _refresh_public_project_service() -> void:
+	if not is_node_ready(): return
+	if is_instance_valid(dive_view) and dive_view.return_secured: dive_view.show_settlement(true)
+	var snapshot := public_project_service.snapshot()
+	if not snapshot.is_empty(): update_public_project_result(snapshot)
+	_refresh_public_project_pending()
+
+func _handle_public_project_action(operation_id: String, action_id: String, request_id: String, requested_revision: int) -> void:
+	var previous: Dictionary = _public_project_snapshots.get(operation_id, {})
+	if previous.is_empty() or previous.revision != requested_revision:
+		finish_public_project_action(operation_id, request_id, "updated")
+		return
+	match action_id:
+		"retry_bag", "check_bag":
+			public_project_service.queue_recheck()
+			finish_public_project_action(operation_id, request_id, "done")
+		"continue_space", "recheck_edit":
+			finish_public_project_action(operation_id, request_id, "done")
+			open_public_project_editor()
+		"return_base":
+			finish_public_project_action(operation_id, request_id, "done")
+			_close_public_project_result(operation_id)
+		_:
+			finish_public_project_action(operation_id, request_id, "done")
+
+func _clear_public_project_results() -> void:
+	_clear_public_project_editor()
+	public_project_service._last_token = ""
+	public_project_service._last_token_receipt.clear()
+	if is_instance_valid(_public_project_window):
+		_public_project_window.hide()
+		_public_project_mask.hide()
+	for panel in _public_project_panels.values(): panel.queue_free()
+	_public_project_panels.clear()
+	_public_project_snapshots.clear()
+	_public_project_operation = ""
+	public_project_service.invalidate_preview()
+
 const SEA_BACKDROPS := {
 	"home": preload("res://assets/backgrounds/fudi/wetland.webp"),
 	"salt": preload("res://assets/backgrounds/fudi/causeway.webp"),
@@ -133,23 +405,7 @@ func rollback_dive_stock() -> bool:
 	return true
 
 func settle_net(items: Array, lost: int) -> bool:
-	for id in items:
-		if int(resources[id]) >= DiveCatalog.RESOURCE_LIMIT:
-			result_label.text = "仓库达到上限，结算失败；请重试。"
-			return false
-	var gain := DiveCatalog.resources()
-	for id in items: gain[id] += 1
-	for id in gain:
-		if int(resources[id]) + int(gain[id]) > DiveCatalog.RESOURCE_LIMIT:
-			result_label.text = "仓库达到上限，结算失败；网袋保留。"
-			return false
-	for id in gain: resources[id] += gain[id]
-	if not _cache_round(): return false
-	var parts := PackedStringArray()
-	for id in gain:
-		if gain[id] > 0: parts.append("%s×%d" % [DiveCatalog.ITEMS[id][0], gain[id]])
-	last_dive_summary = "本潜收获：%s；损失%d件。" % ["、".join(parts) if not parts.is_empty() else "无", lost]
-	return true
+	return public_project_service.seal_bag(items, false, "shoal", lost)
 
 func _show_warehouse() -> void:
 	if _sea_modal(): return
@@ -181,6 +437,15 @@ func _show_warehouse() -> void:
 	for id in resources:
 		materials.append("%s × %d → %s" % [DiveCatalog.ITEMS[id][0], resources[id], DiveCatalog.USES[id]])
 	_inventory_section(contents, "海底材料 · 数量与用途", materials)
+	for id in resources:
+		var resource_id: String = id
+		var donate := Button.new()
+		donate.text = "%s · 投入公共工程（永久消耗）" % DiveCatalog.ITEMS[id][0]
+		contents.add_child(donate)
+		donate.pressed.connect(func() -> void:
+			popup.hide()
+			popup.queue_free()
+			open_public_project_editor(resource_id))
 	var recipes: Array = []
 	for id in DiveCatalog.RECIPES:
 		var level := net_expansion if id == "net_expansion" else equipment_level(id)
@@ -239,8 +504,9 @@ func _refresh_dive_ui() -> void:
 		dive_workshop_button.tooltip_text = "已建成" if dive_workshop_built else ("已解锁，建造需木2废2" if dive_workshop_unlocked else "首次归档核心解锁")
 	records_button.text = "奖励待补领" if dive_archived and not core_reward_claimed else ("核心待归档" if dive_core and not dive_archived else "探索记录")
 	records_button.tooltip_text = ("探索记录 · 已完成" if dive_archived else "探索记录 · 回看") + "\n" + _dive_summary()
-	dive_button.disabled = at_salt or at_wreck or sailing
-	records_button.disabled = dive_button.disabled
+	dive_button.disabled = at_salt or at_wreck or sailing or public_project.pending_bag != null
+	records_button.disabled = at_salt or at_wreck or sailing
+	dive_button.tooltip_text = "返航袋已安全封存，请先整袋入库；可回基地腾仓或查看探索记录。" if public_project.pending_bag != null else ""
 
 func _sea_window_open() -> bool:
 	for child in get_children():
@@ -263,6 +529,8 @@ func _open_dive(records := false) -> void:
 		return
 	prior_focus = get_viewport().gui_get_focus_owner()
 	if not records:
+		if public_project.pending_bag != null: return
+		if not technology.pause(): return
 		if not rollback_dive_stock(): return
 		dive_node_snapshot = node_states.duplicate(true)
 		dive_stock_changed = false
@@ -305,11 +573,11 @@ func _close_dive() -> void:
 			saved = rollback_dive_stock()
 			last_dive_summary = "氧气耗尽 · 本次失败零收益，收获全部丢失，不可拾回；本潜新核心未保留。" + ("已扣宝箱存量已回滚。" if saved else "宝箱存量回滚保存失败，请重试。")
 		else:
-			# 新核心与整袋入库共用一次保存；失败回滚后仍可按同一快照重试。
-			var prior_core := dive_core
-			if dive_view.pending_core: dive_core = true
-			saved = settle_net(dive_view.settlement.items, dive_view.lost_count)
-			if not saved: dive_core = prior_core
+			saved = public_project_service.seal_bag(dive_view.settlement.items, dive_view.pending_core, dive_view.settlement.place, dive_view.lost_count)
+			if saved:
+				dive_view.return_secured = true
+				last_dive_summary = "返航袋已安全封存；材料与新核心尚未入库。"
+				public_project_service.queue_recheck()
 		if saved:
 			dive_node_snapshot.clear()
 			dive_stock_changed = false
@@ -335,6 +603,7 @@ func _dismiss_dive() -> void:
 	moving = false
 	result_label.text = last_dive_summary + "返回浮台：已调查线索保留。" + ("回声核心待归档，请打开探索记录。" if dive_core and not dive_archived else "可打开探索记录回看。")
 	_refresh_dive_ui()
+	_refresh_public_project_pending()
 	if is_instance_valid(prior_focus):
 		prior_focus.grab_focus()
 	else:
@@ -505,11 +774,41 @@ var action_tabs: TabContainer
 var action_pages: Array[VBoxContainer] = []
 var feedback_scroll: ScrollContainer
 var previous_window := {}
+const DISPLAY_SETTINGS_PATH := "user://water_display.cfg"
+const WATER_RESOLUTIONS := [Vector2i(960, 540), Vector2i(1024, 576), Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]
+var water_resolution := Vector2i(1280, 720)
+var settings_button: Button
+var display_settings: AcceptDialog
+var resolution_picker: OptionButton
+var fullscreen_picker: CheckButton
 var navigation_state := "home"
 var management: AcceptDialog
 var management_button: Button
 var backpack_button: Button
 var navigation_button: Button
+var resident_hint: Label
+var partner_hint: Label
+
+func _show_residents() -> void:
+	if _sea_modal(): return
+	action_tabs.current_tab = 2
+	action_tabs.get_child(2).set_deferred("scroll_vertical", 0)
+	_show_management()
+
+func _resident_status() -> String:
+	if resident_working: return "阿汐已在岗：每批集水额外+1清水。"
+	if resident: return "阿汐已入住：点击上方安排集水岗位，每批额外+1清水。"
+	var missing := PackedStringArray()
+	if collectors == 0: missing.append("先到建造页建集水站")
+	if water < 1: missing.append("到生产页领取清水，还缺清水1")
+	return "阿汐可接纳：消耗清水1，入住后可安排集水岗位。" if missing.is_empty() else "阿汐待接纳：" + "；".join(missing) + "。"
+
+func _partner_status() -> String:
+	if partner: return "岚已加入：到航行页准备首航。"
+	var missing := PackedStringArray()
+	if not resident_working: missing.append("先接纳阿汐并安排集水岗位")
+	if orders_completed < 1: missing.append("到生产页完成首单（清水2、绳索2）")
+	return "岚可邀请：点击上方信标邀请，无额外材料消耗。" if missing.is_empty() else "岚待邀请：" + "；".join(missing) + "。"
 
 func _show_management() -> void:
 	if _sea_modal(): return
@@ -531,7 +830,7 @@ func _navigation_action() -> void:
 		_show_management()
 
 func configure_exploration_actions(bar: HBoxContainer) -> void:
-	bar.position = Vector2(804, 58)
+	bar.position = Vector2(872, 58)
 	bar.add_theme_constant_override("separation", 8)
 	for button in bar.get_children():
 		button.custom_minimum_size = Vector2(92, 40)
@@ -546,13 +845,70 @@ func _configure_water_window() -> void:
 	var usable := DisplayServer.screen_get_usable_rect(window.current_screen)
 	window.min_size = Vector2i(mini(960, usable.size.x), mini(540, usable.size.y))
 	if window.mode == Window.MODE_WINDOWED:
-		var fit := minf(float(usable.size.x) * 0.9 / 1280.0, float(usable.size.y) * 0.9 / 720.0)
-		window.size = Vector2i(Vector2(1280, 720) * fit)
-		window.position = usable.position + (usable.size - window.size) / 2
+		_apply_water_display(water_resolution, false)
+	var config := ConfigFile.new()
+	if config.load(DISPLAY_SETTINGS_PATH) == OK:
+		var saved_size: Variant = config.get_value("display", "resolution", Vector2i(1280, 720))
+		if saved_size is Vector2i and saved_size in WATER_RESOLUTIONS:
+			water_resolution = saved_size
+		_apply_water_display(water_resolution, config.get_value("display", "fullscreen", false) == true)
+
+func _apply_water_display(resolution: Vector2i, fullscreen: bool) -> void:
+	water_resolution = resolution
+	if DisplayServer.get_name() == "headless": return
+	var window := get_window()
+	window.mode = Window.MODE_WINDOWED
+	var usable := DisplayServer.screen_get_usable_rect(window.current_screen)
+	var fit := minf(1.0, minf(float(usable.size.x) * 0.95 / resolution.x, float(usable.size.y) * 0.95 / resolution.y))
+	window.size = Vector2i(Vector2(resolution) * fit)
+	window.position = usable.position + (usable.size - window.size) / 2
+	if fullscreen: window.mode = Window.MODE_FULLSCREEN
+
+func _save_water_display(fullscreen: bool) -> void:
+	var config := ConfigFile.new()
+	config.set_value("display", "resolution", water_resolution)
+	config.set_value("display", "fullscreen", fullscreen)
+	if config.save(DISPLAY_SETTINGS_PATH) != OK:
+		result_label.text = "显示设置已应用，但保存失败；下次进入可能恢复默认。"
 
 func _toggle_water_fullscreen() -> void:
-	var window := get_window()
-	window.mode = Window.MODE_WINDOWED if window.mode in [Window.MODE_FULLSCREEN, Window.MODE_EXCLUSIVE_FULLSCREEN] else Window.MODE_FULLSCREEN
+	var fullscreen := get_window().mode not in [Window.MODE_FULLSCREEN, Window.MODE_EXCLUSIVE_FULLSCREEN]
+	_apply_water_display(water_resolution, fullscreen)
+	_save_water_display(fullscreen)
+	if is_instance_valid(fullscreen_picker): fullscreen_picker.button_pressed = fullscreen
+
+func _show_display_settings() -> void:
+	if _sea_modal(): return
+	moving = false
+	model.update_movement(Vector2.ZERO, 0)
+	if not is_instance_valid(display_settings):
+		display_settings = AcceptDialog.new()
+		display_settings.title = "显示设置"
+		display_settings.min_size = Vector2i(440, 260)
+		display_settings.get_ok_button().text = "应用设置"
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 16)
+		display_settings.add_child(box)
+		var info := Label.new()
+		info.text = "窗口分辨率（小屏自动适配可用区域）\n全屏使用桌面分辨率；F11 可随时切换。"
+		box.add_child(info)
+		resolution_picker = OptionButton.new()
+		resolution_picker.custom_minimum_size = Vector2(380, 42)
+		for resolution in WATER_RESOLUTIONS:
+			resolution_picker.add_item("%d × %d" % [resolution.x, resolution.y])
+		box.add_child(resolution_picker)
+		fullscreen_picker = CheckButton.new()
+		fullscreen_picker.text = "全屏显示"
+		box.add_child(fullscreen_picker)
+		add_child(display_settings)
+		display_settings.confirmed.connect(func() -> void:
+			_apply_water_display(WATER_RESOLUTIONS[resolution_picker.selected], fullscreen_picker.button_pressed)
+			_save_water_display(fullscreen_picker.button_pressed)
+			settings_button.grab_focus())
+		display_settings.canceled.connect(func() -> void: settings_button.grab_focus())
+	resolution_picker.select(WATER_RESOLUTIONS.find(water_resolution))
+	fullscreen_picker.button_pressed = get_window().mode in [Window.MODE_FULLSCREEN, Window.MODE_EXCLUSIVE_FULLSCREEN]
+	display_settings.popup_centered()
 
 func _action(page: int, text: String, action: Callable) -> Button:
 	var button := _make_button(text, Vector2.ZERO, Vector2(330, 44), action)
@@ -587,6 +943,8 @@ func _short_goal() -> String:
 	return "浮台已稳定生产；可下潜探索或继续经营。"
 
 func _ready() -> void:
+	technology.host = self
+	public_project_service.host = self
 	_configure_water_window()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	model = HeroWalkScript.new()
@@ -637,7 +995,8 @@ func _ready() -> void:
 	reset_dialog.dialog_text = "只清除海上首章进度（包括蓝图）；灵伴存档与十关完全不变。确定重开？"
 	reset_dialog.confirmed.connect(_start_round)
 	add_child(reset_dialog)
-	var back := _make_button("返回游戏选择", Vector2(1116, 58), Vector2(140, 40), func() -> void: GameManager.goto_scene("menu"))
+	settings_button = _make_button("设置", Vector2(1080, 58), Vector2(72, 40), _show_display_settings)
+	var back := _make_button("返回选择", Vector2(1164, 58), Vector2(92, 40), func() -> void: GameManager.goto_scene("menu"))
 	back.name = "ReturnButton"
 	management = AcceptDialog.new()
 	management.title = "浮台经营 · 关闭后继续航行"
@@ -649,7 +1008,7 @@ func _ready() -> void:
 	action_tabs = TabContainer.new()
 	action_tabs.custom_minimum_size = Vector2(600, 520)
 	management.add_child(action_tabs)
-	for category in ["建造", "生产", "居民", "航行"]:
+	for category in ["建造", "生产", "居民", "航行", "科技"]:
 		var scroll := ScrollContainer.new()
 		scroll.name = category
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -664,8 +1023,12 @@ func _ready() -> void:
 		box.add_theme_constant_override("separation", 14)
 		margin.add_child(box)
 		action_pages.append(box)
+	_action(4, "科技研究 · 预览七项科技与材料缺口", func() -> void: technology.show_page("tech"))
+	_page_label(4, "基础解析 → 浅海打捞 → 沉船 / 海沟；经营货仓与主动探索独立分支。研究台不需要核心或居民。")
+	_action(0, "研究台 / 打捞器 · 专用设施建造预览", func() -> void: technology.show_page("build"))
+	_action(1, "打捞器 · 领取 / 继续 / 维护包", func() -> void: technology.show_page("device"))
 	core_button = _action(0, "航站核心", func() -> void: _open_build("core"))
-	guide_button = _make_button("任务板", Vector2(912, 58), Vector2(116, 40), _show_guide)
+	guide_button = _make_button("任务板", Vector2(976, 58), Vector2(92, 40), _show_guide)
 	build_dialog = ConfirmationDialog.new()
 	build_dialog.title = "基地建造预览"
 	build_dialog.min_size = Vector2i(430, 240)
@@ -688,9 +1051,12 @@ func _ready() -> void:
 		action_pages[page].move_child(hint, button.get_index() + 1)
 		button_hints.append(hint)
 	_page_label(1, "建站每4秒产出。升级后自动领取；简易工坊自动搓绳。海上进度自动保存。")
+	_page_label(2, "居民与伙伴 · 点击场景中的阿汐 / 岚也可直达此页；灰色按钮的缺少条件见下方。")
 	resident_button = _action(2, "接纳阿汐 · 清水1", _accept_resident)
 	job_button = _action(2, "安排阿汐集水岗位", _assign_resident)
+	resident_hint = _page_label(2, "")
 	partner_button = _action(2, "信标：邀请伙伴岚", _recruit_partner)
+	partner_hint = _page_label(2, "")
 	_page_label(2, "接纳需已有集水站和清水1；安排岗位后每批清水+1。完成首单且阿汐在岗，才能邀请岚。")
 	sail_button = _action(3, "首航 / 重试预览 · 水1 绳1", _open_sail_preview)
 	sail_dialog = ConfirmationDialog.new()
@@ -718,6 +1084,8 @@ func _ready() -> void:
 	else:
 		_restore_round(GameManager.water_activity_state)
 		initial_state = GameManager.water_activity_state.duplicate(true)
+	technology.state.paused = true
+	_cache_round()
 	exploration_tools = ExplorationTools.new()
 	exploration_tools.region = "water_activity"
 	exploration_tools.modal_blocker = func() -> bool: return is_instance_valid(dive_layer) or _sea_window_open()
@@ -725,7 +1093,10 @@ func _ready() -> void:
 	dive_button = _make_button("下潜探索", Vector2(600, 8), Vector2(116, 42), func() -> void: _open_dive())
 	records_button = _make_button("探索记录", Vector2(600, 58), Vector2(116, 40), func() -> void: _open_dive(true))
 	dive_workshop_button = _make_button("潜水工坊 C", Vector2(732, 8), Vector2(140, 42), _show_dive_workshop)
+	technology_button = _make_button("科技 / 打捞", Vector2(732, 58), Vector2(124, 40), func() -> void: technology.show_page("tech"))
 	navigation_button = _make_button("航行", Vector2(888, 8), Vector2(104, 42), _navigation_action)
+	public_project_result_button = _make_button("", Vector2(872, 108), Vector2(192, 44), _open_pending_public_project_result)
+	public_project_result_button.hide()
 	_action(2, "重开海上档", func() -> void:
 		_close_management()
 		reset_dialog.popup_centered()
@@ -739,12 +1110,19 @@ func _ready() -> void:
 	add_child(dive_summary_label)
 	dive_summary_label.hide()
 	_refresh_ui()
+	public_project_service.queue_recheck()
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and is_instance_valid(_public_project_window) and _public_project_window.visible:
+		_close_public_project_result(_public_project_operation)
+		return
+	if what in [NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_APPLICATION_FOCUS_OUT]:
+		if technology.host != null: technology.pause()
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		rollback_dive_stock()
 
 func _exit_tree() -> void:
+	technology.pause()
 	if not previous_window.is_empty():
 		var window := get_window()
 		window.mode = previous_window.mode
@@ -757,6 +1135,8 @@ func _exit_tree() -> void:
 
 func _round_state() -> Dictionary:
 	return {
+		"public_project": public_project.duplicate(true),
+		"technology": technology.state.duplicate(true),
 		"resources": resources.duplicate(true), "node_states": node_states.duplicate(true), "net_expansion": net_expansion,
 		"equipment": equipment.duplicate(true), "core_reward_claimed": core_reward_claimed, "dive_workshop_unlocked": dive_workshop_unlocked, "dive_workshop_built": dive_workshop_built,
 		"dive_shoal": dive_shoal, "dive_sonar": dive_sonar, "dive_core": dive_core, "dive_archived": dive_archived,
@@ -780,6 +1160,16 @@ func _cache_round() -> bool:
 	if initial_state.is_empty():
 		initial_state = state.duplicate(true)
 	if GameManager.save_sea_state(state):
+		var inventory_changed: bool = old.get("resources", DiveCatalog.resources()) != resources
+		var bag_changed: bool = old.get("public_project", {}).get("pending_bag") != public_project.pending_bag
+		if inventory_changed or bag_changed:
+			public_project_service.invalidate_preview()
+			if is_instance_valid(_public_project_editor):
+				_public_project_editor.context.balances = resources.duplicate(true)
+				_public_project_editor.context.bag_items = public_project_service.bag_items()
+				if public_project.pending_bag != null or bag_changed: _public_project_editor.context.deficits = public_project_service.deficits()
+				_public_project_editor.show_error("库存或待袋已变化，请重新预览。")
+			public_project_service.queue_recheck()
 		return true
 	var error: String = GameManager.sea_save_error
 	_restore_round(old if not old.is_empty() else initial_state)
@@ -787,6 +1177,8 @@ func _cache_round() -> bool:
 	return false
 
 func _restore_round(state: Dictionary) -> void:
+	public_project = state.get("public_project", PublicProjectService.defaults()).duplicate(true)
+	technology.state = state.get("technology", WaterTechnology.migrate(state.get("resources", {}))).duplicate(true)
 	resources = state.get("resources", DiveCatalog.resources()).duplicate(true)
 	node_states = state.get("node_states", DiveCatalog.defaults()).duplicate(true)
 	net_expansion = int(state.get("net_expansion", 0))
@@ -865,6 +1257,9 @@ func _make_button(text: String, position_value: Vector2, size_value: Vector2, ac
 func _start_round() -> void:
 	if is_instance_valid(dive_view): dive_view.read_only = true
 	_close_dive()
+	technology.state = WaterTechnology.defaults()
+	public_project = PublicProjectService.defaults()
+	public_project.epoch = PublicProjectService.new_epoch()
 	resources = DiveCatalog.resources()
 	node_states = DiveCatalog.defaults()
 	net_expansion = 0
@@ -930,7 +1325,7 @@ func _start_round() -> void:
 	_refresh_ui()
 	if GameManager.water_activity_state.is_empty():
 		initial_state = _round_state()
-	_cache_round()
+	if _cache_round(): _clear_public_project_results()
 
 func _accept_resident() -> bool:
 	if resident or collectors == 0 or water < 1 or at_salt or at_wreck:
@@ -975,6 +1370,7 @@ func _open_sail_preview() -> void:
 func _begin_sail() -> bool:
 	if sailing or at_salt or at_wreck or sail_loadout not in ["hull", "weapon"] or not partner or not resident_working or water < 1 or rope < 1:
 		return false
+	if not technology.pause(): return false
 	water -= 1
 	rope -= 1
 	sailing = true
@@ -1039,6 +1435,7 @@ func _toggle_delegate() -> bool:
 func _survey_neighbor() -> bool:
 	if not tide_table or at_salt or at_wreck or sailing:
 		return false
+	if not technology.pause(): return false
 	at_salt = true
 	neighbor_surveyed = true
 	player_foot = Vector2(180, 520)
@@ -1067,6 +1464,7 @@ func _return_from_salt() -> bool:
 func _enter_wreck() -> bool:
 	if at_wreck or at_salt or sailing:
 		return false
+	if not technology.pause(): return false
 	at_wreck = true
 	wreck_hp = 3
 	hazard_elapsed = 0.0
@@ -1398,6 +1796,11 @@ func _refresh_ui() -> void:
 	resident_button.disabled = resident or collectors == 0 or water < 1 or sailing or at_salt or at_wreck
 	job_button.disabled = not resident or resident_working or sailing or at_salt or at_wreck
 	partner_button.disabled = partner or not resident_working or orders_completed < 1 or sailing or at_salt or at_wreck
+	resident_hint.text = _resident_status()
+	partner_hint.text = _partner_status()
+	resident_button.tooltip_text = resident_hint.text
+	job_button.tooltip_text = resident_hint.text
+	partner_button.tooltip_text = partner_hint.text
 	sail_button.disabled = sailing or at_salt or at_wreck or sail_loadout == "" or not partner or not resident_working or water < 1 or rope < 1
 	hull_button.disabled = sailing or at_salt or at_wreck
 	weapon_button.disabled = sailing or at_salt or at_wreck
@@ -1450,6 +1853,11 @@ func _refresh_ui() -> void:
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
+	if is_instance_valid(_public_project_window) and _public_project_window.visible:
+		if event.is_action_pressed("ui_cancel") or (event is InputEventKey and event.pressed and event.keycode == KEY_BACK):
+			_close_public_project_result(_public_project_operation)
+		get_viewport().set_input_as_handled()
+		return
 	if is_instance_valid(management) and management.visible and not _sea_modal(false) and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		_close_management()
 		get_viewport().set_input_as_handled()
@@ -1474,6 +1882,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		if SEA_VIEW.has_point(screen):
 			var point := screen_to_world(screen)
 			if not at_salt and not at_wreck and not sailing:
+				if Rect2(242, 264, 110, 66).has_point(point) or Rect2(612, 264, 110, 66).has_point(point):
+					moving = false
+					target = player_foot
+					technology.show_page("tech" if point.x < 400 else "device")
+					get_viewport().set_input_as_handled()
+					return
+				for foot in [Vector2(130, 550), Vector2(720, 550)]:
+					if Rect2(foot - Vector2(49, 64), Vector2(98, 112)).has_point(point):
+						_show_residents()
+						get_viewport().set_input_as_handled()
+						return
 				if dive_workshop_unlocked and Rect2(105, 365, 108, 86).has_point(point):
 					_show_dive_workshop()
 					return
@@ -1487,10 +1906,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			moving = true
 
 func _process(delta: float) -> void:
+	_refresh_public_project_pending()
+	if is_instance_valid(_public_project_window) and _public_project_window.visible:
+		_sync_public_project_actions(_public_project_operation)
+		moving = false
+		target = player_foot
 	if _sea_modal():
 		model.update_movement(Vector2.ZERO, 0)
 		queue_redraw()
 		return
+	if at_salt or at_wreck or sailing:
+		if not technology.state.paused: technology.pause()
+	else:
+		technology.tick(delta)
 	processing_flash = maxf(0.0, processing_flash - delta)
 	wave_elapsed += delta
 	if at_wreck:
@@ -1625,11 +2053,19 @@ func _draw() -> void:
 			draw_string(ThemeDB.fallback_font, center + Vector2(8, 61), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
 		else:
 			draw_string(ThemeDB.fallback_font, center + Vector2(19, 41), "空位%d" % i, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#625540"))
-	# 人物沿用海上居民/伙伴状态；仅作试景展示，不增加交谈或碰撞。
+	for facility in [[Vector2(242, 264), "研究台", technology.state.research_built, BUILDING_ART.workshop], [Vector2(612, 264), "打捞器", technology.state.machine_built, BUILDING_ART.collector]]:
+		var origin: Vector2 = facility[0]
+		draw_rect(Rect2(origin, Vector2(110, 66)), Color("#245968") if facility[2] else Color("#3d505b"))
+		draw_texture_rect(facility[3], Rect2(origin + Vector2(31, -6), Vector2(48, 40)), false)
+		draw_string(ThemeDB.fallback_font, origin + Vector2(8, 46), facility[1] + (" · 已建" if facility[2] else " · 待建"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, origin + Vector2(8, 62), "点击 · " + ("科技研究" if facility[1] == "研究台" else "设备管理"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#ffe5a0"))
+	# 人物和名牌均可点击，直达既有居民页，不改变招募条件。
 	for person in [[RESIDENT_ART, Vector2(130, 550), "阿汐 · " + ("集水中" if resident_working else "已接纳" if resident else "待接纳")], [PARTNER_ART, Vector2(720, 550), "岚 · " + ("已加入" if partner else "待邀请")]]:
 		draw_texture_rect(person[0], Rect2(person[1] - Vector2(24, 64), Vector2(48, 64)), false)
 		draw_rect(Rect2(person[1] + Vector2(-49, 6), Vector2(98, 22)), Color("#193745"))
 		draw_string(ThemeDB.fallback_font, person[1] + Vector2(-44, 22), person[2], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+		draw_rect(Rect2(person[1] + Vector2(-49, 28), Vector2(98, 20)), Color("#193745"))
+		draw_string(ThemeDB.fallback_font, person[1] + Vector2(-44, 43), "点击 · 居民管理", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#ffe5a0"))
 	if dive_workshop_unlocked:
 		draw_line(Vector2(360, 408), Vector2(213, 408), Color("#d5b581"), 12)
 		draw_rect(Rect2(105, 365, 108, 86), Color("#745b40"))

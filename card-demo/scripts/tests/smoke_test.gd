@@ -524,9 +524,9 @@ func run_checks() -> void:
 			instance._tick_production(4.0)
 			check(game.water_activity_state.delegated and game.water_activity_state.neighbor_surveyed and instance.water >= 3, "委任岚增加每批清水且状态持久")
 			var committed_sea: Dictionary = game.water_activity_state.duplicate(true)
-			check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).get("version", 0)) == 6, "近岸和准备进度写入版本6海上独立档")
+			check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).get("version", 0)) == 9, "近岸和准备进度写入版本9海上独立档")
 			game.load_sea_save()
-			check(game.water_activity_state == JSON.parse_string(JSON.stringify(committed_sea, "", true, true)), "版本6重读保留完整海上进度（完整JSON精度）")
+			check(JSON.parse_string(JSON.stringify(game.water_activity_state, "", true, true)) == JSON.parse_string(JSON.stringify(committed_sea, "", true, true)), "版本9重读保留完整海上进度（完整JSON精度，整数正规化等值）")
 			var migrated_v4: Dictionary = game._read_sea_text(JSON.stringify({"version": 4, "state": committed_sea}))
 			check(migrated_v4.core_level == 3 and migrated_v4.filter_blueprint and migrated_v4.salt == 2 and migrated_v4.sail_loadout == "weapon" and migrated_v4.resources.size() == 6 and migrated_v4.node_states.size() == 3, "版本4迁移保留首探图纸、盐晶和准备并初始化海底")
 			var legacy_v3: Dictionary = committed_sea.duplicate(true)
@@ -956,10 +956,18 @@ func run_checks() -> void:
 					if not options.is_empty():
 						battle.player_action(chosen_skill, options[0])
 			check(animation_events > 0, "战斗命中动画回执")
-			# 停止战斗后的独立冲击环检查，避免与实战中短效对象竞争计数。
+			# 浮字持续0.5秒，固定等0.45秒会把尚待回收的对象计入基线。
 			battle.running = false
 			await create_timer(0.45).timeout
-			var fx_before: int = instance.active_fx
+			instance.spawn_floating_text(Vector2(400, 250), "回收边界", Color.WHITE)
+			check(instance.active_fx > 0, "独立特效检查前存在待回收浮字")
+			for drain_step in range(40):
+				await create_timer(0.05).timeout
+				if instance.active_fx == 0:
+					break
+			await process_frame
+			check(instance.active_fx == 0, "实战残留特效限时清空后才建立独立计数基线")
+			var fx_before: int = 0
 			instance.spawn_impact_ring(Vector2(400, 250), Color("#ffa579"), false)
 			check(instance.active_fx == fx_before + 1, "实际命中冲击环短时生成")
 			await create_timer(0.30).timeout

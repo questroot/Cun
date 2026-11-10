@@ -49,7 +49,7 @@ const RECIPES := {
 	"fins": [{"shell": 3, "fiber": 2}, {"algae": 3, "rope": 1}],
 	"net_expansion": [{"coral": 2, "rope": 1}, {"coral": 2, "rope": 1}]
 }
-const USES := {"coral": "面具L1 / 网袋扩容", "shell": "脚蹼L1", "timber": "氧气瓶L2", "copper": "氧气瓶L1 / 面具L2", "algae": "脚蹼L2", "pearl": "深处目标：面具与氧气瓶二级"}
+const USES := {"coral": "面具L1 / 网袋扩容 / 浅海科技与设备", "shell": "脚蹼L1 / 浅海科技 / 维护包", "timber": "氧气瓶L2 / 沉船机械臂 / 缓冲货仓", "copper": "氧气瓶L1 / 面具L2 / 沉船与回声科技", "algae": "脚蹼L2 / 海沟与节能科技 / 进阶维护包", "pearl": "深处目标：面具与氧气瓶二级 / 海沟与回声科技（不可自动产）"}
 
 static func equipment() -> Dictionary:
 	return {"mask": {"id": "mask", "level": 0}, "tank": {"id": "tank", "level": 0}, "fins": {"id": "fins", "level": 0}, "wrist": {"id": "wrist", "level": 0}}

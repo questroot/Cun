@@ -1,6 +1,6 @@
 # Godot 4.7 underwater and existing smoke checks; isolated project and user data only.
 [CmdletBinding()]
-param([string]$EnginePath = '')
+param([string]$EnginePath = '', [switch]$ResultPreview, [switch]$ResultCapture)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $root 'launcher/Launcher.Core.ps1')
@@ -25,11 +25,25 @@ $config = [IO.File]::ReadAllText($configPath).Replace('[application]', "[applica
 # Bound parallel asset import workers in the isolated copy to avoid native import crashes.
 $config += "`n[threading]`nworker_pool/max_threads=1`n`n[editor]`nimport/use_multiple_threads=false`n"
 [IO.File]::WriteAllText($configPath, $config, (New-Object Text.UTF8Encoding($false)))
-foreach ($name in @('import', 'underwater', 'smoke')) {
+Write-Output "Isolated project: $testRoot"
+Write-Output "Isolated user directory: Cun-Underwater-$id"
+$stages = @('import', 'result', 'editor', 'transaction', 'underwater', 'smoke')
+if ($ResultPreview -or $ResultCapture) { $stages = @('import', 'result-preview') }
+$failedStages = @()
+foreach ($name in $stages) {
     $arguments = @('--headless', '--path', $testRoot)
     if ($name -eq 'import') { $arguments += @('--editor', '--import', '--quit') }
     elseif ($name -eq 'underwater') { $arguments += @('--script', 'res://scripts/tests/underwater_smoke.gd') }
+    elseif ($name -eq 'result') { $arguments += @('--script', 'res://scripts/tests/public_project_result_preview.gd') }
+    elseif ($name -eq 'editor') { $arguments += @('--script', 'res://scripts/tests/public_project_editor_smoke.gd') }
+    elseif ($name -eq 'transaction') { $arguments += @('--script', 'res://scripts/tests/public_project_transaction_smoke.gd') }
+    elseif ($name -eq 'result-preview') {
+        $arguments = @('--path', $testRoot, '--rendering-method', 'gl_compatibility', '--script', 'res://scripts/tests/public_project_result_preview.gd')
+        if ($ResultCapture) { $arguments += @('--', '--result-capture') }
+    }
     else { $arguments += @('--script', 'res://scripts/tests/smoke_test.gd') }
+    $log = Join-Path $testRoot ($name + '.log')
+    Write-Output "Running $name; log: $log"
     $process = New-Object Diagnostics.Process
     $process.StartInfo.FileName = $EnginePath
     $process.StartInfo.Arguments = ($arguments | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' '
@@ -41,13 +55,19 @@ foreach ($name in @('import', 'underwater', 'smoke')) {
         if (-not $process.Start()) { throw 'Could not start Godot' }
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit(120000)) { $process.Kill(); throw "$name timed out" }
+        if ($name -eq 'result-preview') { $process.WaitForExit() }
+        elseif (-not $process.WaitForExit(120000)) { $process.Kill(); throw "$name timed out" }
         $output = $stdout.Result + "`n" + $stderr.Result
         $code = $process.ExitCode
     } finally { $process.Dispose() }
     $log = Join-Path $testRoot ($name + '.log')
     [IO.File]::WriteAllText($log, $output, [Text.Encoding]::UTF8)
-    if ($code -ne 0 -or $output -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error|^FAIL:)') { throw "$name failed (exit $code). See $log" }
+    if ($code -ne 0 -or $output -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error|^FAIL:)') {
+        if ($name -eq 'import') { throw "$name failed (exit $code). See $log" }
+        $failedStages += $name
+        Write-Warning "$name failed (exit $code). See $log"
+    }
     $output -split '\r?\n' | Where-Object { $_ -match 'RESULT:' } | Write-Output
 }
 Write-Output "Evidence: $testRoot"
+if ($failedStages.Count) { throw "Failed stages: $($failedStages -join ', '). See $testRoot" }

@@ -293,6 +293,8 @@ func stock_rollback_checks() -> void:
 	for id in view.bag: safe_resources[id] += 1
 	view.foot = view.safety_position()
 	sea._close_dive()
+	check(view.settlement_saved and sea.public_project.pending_bag != null and sea.resources == warehouse, "安全返航先真实封存而不提前入库")
+	await process_frame
 	check(view.settlement_saved and sea.node_states == safe_nodes and sea.resources == safe_resources and sea.dive_node_snapshot.is_empty(), "安全入库保留已扣箱且清快照")
 	check(sea.rollback_dive_stock() and sea.node_states == safe_nodes and sea.resources == safe_resources, "安全结算后回滚不能恢复已入库宝箱")
 	await key(KEY_ESCAPE)
@@ -408,6 +410,8 @@ func settlement_checks() -> void:
 	check(not sea.dive_core and failed_view.pending_core and not failed_view.settlement_saved, "安全结算写失败核心回滚但保留本潜重试")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
 	sea._close_dive()
+	check(failed_view.settlement_saved and sea.public_project.pending_bag.new_core and not sea.dive_core, "安全空袋核心重试先持久化封存")
+	await process_frame
 	check(sea.dive_core and game.water_activity_state.dive_core, "安全空袋重试也可真实保存核心")
 	await key(KEY_ESCAPE)
 	sea._open_dive()
@@ -467,11 +471,13 @@ func settlement_checks() -> void:
 	for i in 2:
 		await key(KEY_ESCAPE, false, true)
 		check(not view.settlement_saved and view.settlement == snapshot and sea.resources.coral == 0 and view.bag.size() == 3, "多次失败保持快照不累计%d" % i)
-	check(view.settlement_text.text.contains("未入库") and not view.settlement_close.visible and root.gui_get_focus_owner() == view.settlement_retry, "失败仅重试且聚焦不丢袋")
+	check(view.settlement_text.text.contains("封存保存失败") and view.settlement_text.text.contains("尚未安全保存") and not view.settlement_close.visible and root.gui_get_focus_owner() == view.settlement_retry, "失败仅重试且聚焦不丢袋")
 	sea._dismiss_dive()
 	check(sea.dive_view == view, "失败不可绕过关闭丢袋")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
 	await key(KEY_SPACE, false, true)
+	await process_frame
+	await process_frame
 	check(view.settlement_saved and view.settlement_panel == panel and sea.resources.coral == 2 and sea.resources.pearl == 1 and view.bag.is_empty(), "空格重试成功更新同一面板准确入库")
 	check(view.settlement_text.text.contains("珊瑚枝 × 2") and view.settlement_text.text.contains("深水珍珠 × 1") and view.settlement_text.text.contains("待归档") and not sea.dive_archived, "中文数量核心待归档且不自动领奖")
 	sea._close_dive()
@@ -518,6 +524,83 @@ func settlement_checks() -> void:
 	await key(KEY_ESCAPE, false, true)
 	check(view.settlement_text.text.contains("奖励待补领") and not sea.core_reward_claimed, "旧归档明确补领但结算不自动发奖")
 	await key(KEY_ESCAPE, false, true)
+
+func pending_return_checks() -> void:
+	var catalog = load("res://scripts/scenes/underwater_catalog.gd")
+	sea._start_round()
+	sea.dive_shoal = true
+	sea.dive_sonar = true
+	sea.dive_core = true
+	sea.dive_archived = true
+	sea.core_reward_claimed = true
+	sea.dive_workshop_unlocked = true
+	sea.dive_workshop_built = true
+	sea.wood = 10
+	sea.fiber = 10
+	for id in sea.resources: sea.resources[id] = catalog.RESOURCE_LIMIT
+	check(sea._cache_round(), "真实满仓返航隔离基线")
+	var warehouse: Dictionary = sea.resources.duplicate(true)
+	sea._open_dive()
+	var view: Control = sea.dive_view
+	view.set_process(false)
+	for node in [catalog.NODES.shoal[0], catalog.NODES.shoal[1]]:
+		view.foot = node[2]
+		check(view.interact(), "满仓仍可真实交互开启宝箱 " + node[0])
+		view.tick_opening(float(catalog.CHESTS[catalog.chest_quality("shoal", node[0])].seconds))
+	check(view.bag.size() == 2, "满仓不影响本潜两件真实随机收获")
+	var incoming: Dictionary = catalog.resources()
+	for id in view.bag: incoming[id] += 1
+	var spent: Dictionary = sea.node_states.duplicate(true)
+	view.foot = view.safety_position()
+	await key(KEY_ESCAPE, false, true)
+	check(view.settlement_saved and view.return_secured and view.bag.is_empty() and sea.resources == warehouse and sea.public_project.pending_bag != null, "真实满仓安全返航封存成功而非丢袋或部分入库")
+	var pending: Dictionary = sea.public_project.pending_bag.duplicate(true)
+	check(pending.items == incoming and sea.dive_node_snapshot.is_empty() and sea.node_states == spent and view.settlement_text.text.contains("安全封存"), "封存完整保留真实收获并提交本潜扣箱")
+	game.load_sea_save()
+	check(json_state_equal(game.water_activity_state.public_project.pending_bag, pending) and json_state_equal(game.water_activity_state.resources, warehouse), "满仓封存待袋与原仓库实际写盘")
+	sea.open_public_project_editor()
+	check(not is_instance_valid(sea._public_project_editor), "潜水结算内禁止绕过基地门禁打开投料")
+	await key(KEY_ESCAPE, false, true)
+	sea._open_dive()
+	check(not is_instance_valid(sea.dive_view) and sea.dive_button.disabled, "真实待袋禁止再次下潜")
+	sea._open_dive(true)
+	check(is_instance_valid(sea.dive_view) and sea.dive_view.read_only, "待袋仍可打开只读探索记录")
+	sea._close_dive()
+	sea.queue_free()
+	await process_frame
+	game.load_sea_save()
+	sea = load("res://scenes/WaterActivity.tscn").instantiate()
+	root.add_child(sea)
+	sea.set_process(false)
+	await process_frame
+	check(json_state_equal(sea.public_project.pending_bag, pending) and json_state_equal(sea.resources, warehouse) and json_state_equal(sea.node_states, spent), "真实销毁重建场景后满仓待袋及扣箱不丢失不重复入库")
+	for area in ["at_salt", "at_wreck", "sailing"]:
+		sea.set(area, true)
+		sea.open_public_project_editor()
+		check(not is_instance_valid(sea._public_project_editor), "非基地禁止投料入口 " + area)
+		sea.set(area, false)
+	sea.open_public_project_editor()
+	check(is_instance_valid(sea._public_project_editor) and sea._public_project_window.visible, "回到基地允许打开真实投料编辑器")
+	sea._close_public_project_result("editor")
+	for id in ["coral", "shell"]:
+		if incoming[id] == 0: continue
+		var recipe: String = "mask" if id == "coral" else "fins"
+		check(sea.craft_equipment(recipe), "基地真实制作装备扣料腾仓 " + recipe)
+		await process_frame
+	var expected := warehouse.duplicate(true)
+	for id in incoming: expected[id] += incoming[id]
+	if incoming.coral > 0: expected.coral -= 3
+	if incoming.shell > 0: expected.shell -= 3
+	check(sea.public_project.pending_bag == null and sea.resources == expected and sea.public_project.last_bag.bag_id == pending.bag_id, "真实制作扣料触发整袋自动入库并关联原袋回执")
+	game.load_sea_save()
+	check(game.water_activity_state.public_project.pending_bag == null and json_state_equal(game.water_activity_state.resources, expected) and json_state_equal(game.water_activity_state.node_states, spent), "扣料后自动入库与原扣箱实际落盘")
+	var receipt: Dictionary = sea.public_project.last_bag.duplicate(true)
+	sea.public_project_service.queue_recheck()
+	await process_frame
+	check(sea.resources == expected and sea.public_project.last_bag == receipt, "后续自动重检不重复入库或改写回执")
+	sea._open_dive()
+	check(is_instance_valid(sea.dive_view) and not sea.dive_view.read_only, "整袋入库后恢复真实下潜")
+	await key(KEY_ESCAPE)
 
 func timed_walk(view: Control, destination: Vector2) -> void:
 	view.target = destination
@@ -775,6 +858,365 @@ func chest_checks() -> void:
 				var loot: Array = catalog.chest_loot(map, node[0], seed_stock, 1000.0)
 				check(loot.size() == catalog.CHESTS[catalog.chest_quality(map, node[0])].count and loot.all(func(id: String) -> bool: return id in catalog.POOLS[map]), "品质件数及地点随机池边界 " + node[0])
 
+func technology_checks() -> void:
+	var module = load("res://scripts/scenes/water_technology.gd")
+	var catalog = load("res://scripts/scenes/underwater_catalog.gd")
+	sea._start_round()
+	var tech = sea.technology
+	check(tech.state == module.defaults() and module.valid(tech.state), "科技新局严格默认且无自动研究")
+	var costs := {"T1": {"coral": 1, "shell": 1}, "T2": {"timber": 2, "copper": 1}, "T3": {"timber": 2, "coral": 2}, "T4": {"algae": 2, "pearl": 1}, "T5": {"copper": 2, "algae": 1}, "T6": {"copper": 2, "pearl": 1}}
+	for id in costs:
+		check(module.TECHS[id].cost == costs[id], "科技配方固定数值 " + id)
+	check(module.TECHS.T0.cost == {} and module.BUILD_COSTS.research == {"wood": 2, "scrap": 2} and module.BUILD_COSTS.machine == {"wood": 3, "scrap": 2, "rope": 1, "coral": 1}, "T0选料、研究台及机器固定配方")
+	for id in ["coral", "shell", "timber", "copper", "algae"]:
+		check(module.TARGETS[id][1] == {"coral": 30.0, "shell": 30.0, "timber": 45.0, "copper": 45.0, "algae": 60.0}[id], "各目标周期固定30/45/60秒 " + id)
+	for id in sea.resources: sea.resources[id] = 100
+	for id in ["wood", "scrap", "fiber", "rope"]: sea.set(id, 100)
+	check(sea._cache_round(), "科技充足材料隔离基线")
+	var before := gameplay_state()
+	for material in module.BUILD_COSTS.research:
+		sea.set(material, 0)
+		check(sea._cache_round(), "研究台单项缺料基线 " + material)
+		var missing := gameplay_state()
+		check(not tech.build("research") and gameplay_state() == missing, "研究台每项材料不足不扣费 " + material)
+		sea.set(material, 100)
+	check(sea._cache_round(), "研究台恢复充足材料")
+	before = gameplay_state()
+	check(not tech.research("T0", {"coral": 2}) and gameplay_state() == before, "无研究台不能研究")
+	check(not tech.build("machine") and gameplay_state() == before, "未T1不能建打捞器")
+	var slots: Array = sea.building_slots.duplicate()
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(not tech.build("research") and gameplay_state() == before, "研究台写失败全回滚")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(tech.build("research") and sea.wood == 98 and sea.scrap == 98 and sea.building_slots == slots and not sea.dive_core and not sea.resident, "研究台木2废2独立位且无核心居民前置")
+	before = gameplay_state()
+	check(not tech.build("research") and gameplay_state() == before, "研究台限一座不重复扣费")
+	check(not tech.research("T0", {"coral": 2}) and gameplay_state() == before, "仅仓库有材料不冒充手动带回")
+	tech.record_manual(["coral"])
+	check(tech.state.manual == {"shoal": true, "wreck": false, "trench": false}, "手动材料仅标记对应浅滩")
+	check(sea._cache_round(), "手动发现基线保存")
+	for selection in [{}, {"coral": 1}, {"coral": 2, "shell": 1}, {"wood": 2}, {"coral": true}, {"coral": -1, "shell": 3}, {"coral": 1.5, "shell": 0.5}, {"coral": "2"}]:
+		before = gameplay_state()
+		check(not tech.research("T0", selection) and gameplay_state() == before, "T0拒绝非法选料且不扣费 " + str(selection))
+	before = gameplay_state()
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(not tech.research("T0", {"coral": 1, "shell": 1}) and gameplay_state() == before, "T0选料写失败精确回滚")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(tech.research("T0", {"coral": 1, "shell": 1}) and sea.resources.coral == 99 and sea.resources.shell == 99 and sea.resources.pearl == 100, "T0只扣所选两件不默认珍珠")
+	before = gameplay_state()
+	check(not tech.research("T0", {"pearl": 2}) and gameplay_state() == before, "重复T0不扣珍珠")
+	check(not tech.research("T4") and gameplay_state() == before, "跨级研究拒绝且不扣料")
+	check(not tech.select_target("pearl") and not tech.research("unknown"), "珍珠不是自动目标且未知科技拒绝")
+	for id in ["T1", "T2", "T3", "T4", "T5", "T6"]:
+		if id in ["T2", "T4"]:
+			before = gameplay_state()
+			check(not tech.research(id) and gameplay_state() == before, "区域手动发现前置拒绝 " + id)
+			tech.record_manual(["timber" if id == "T2" else "algae"])
+		for material in module.TECHS[id].cost:
+			var count: int = sea.resources[material]
+			sea.resources[material] = 0
+			check(sea._cache_round(), "研究逐项缺料基线 " + id + material)
+			before = gameplay_state()
+			check(not tech.research(id) and gameplay_state() == before, "研究每项费用不足整笔拒绝 " + id + material)
+			sea.resources[material] = count
+		check(sea._cache_round(), "研究写失败基线 " + id)
+		before = gameplay_state()
+		DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		check(not tech.research(id) and gameplay_state() == before, "研究保存失败完整回滚 " + id)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		check(tech.research(id), "研究成功 " + id)
+		for material in module.TECHS[id].cost:
+			check(sea.resources[material] == before.resources[material] - module.TECHS[id].cost[material], "研究精确扣费 " + id + material)
+		before = gameplay_state()
+		check(not tech.research(id) and gameplay_state() == before, "研究不可重复 " + id)
+	check(tech.capacity() == 16 and sea.net_expansion == 0, "T3仅扩设备仓不扩潜水网袋")
+	before = gameplay_state()
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(not tech.build("machine") and gameplay_state() == before, "设备建造写失败回滚")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(tech.build("machine") and sea.wood == before.wood - 3 and sea.scrap == before.scrap - 2 and sea.rope == before.rope - 1 and sea.resources.coral == before.resources.coral - 1 and sea.building_slots == slots, "打捞器木3废2绳1珊瑚1独立位")
+	before = gameplay_state()
+	check(not tech.build("machine") and gameplay_state() == before, "设备限一台")
+	for advanced in [false, true]:
+		var pack: String = "advanced" if advanced else "normal"
+		before = gameplay_state()
+		DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		check(not tech.craft_pack(advanced, 3) and gameplay_state() == before, "批量维护包写失败全回滚 " + pack)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		check(tech.craft_pack(advanced, 3) and tech.state.packs[pack] == 3 and sea.resources.shell == before.resources.shell - 3 and sea.rope == before.rope - 3 and sea.fiber == before.fiber and sea.resources.algae == before.resources.algae - (3 if advanced else 0), "批量维护包精确扣费 " + pack)
+		before = gameplay_state()
+		check(not tech.craft_pack(advanced, 0) and not tech.craft_pack(advanced, -1) and not tech.craft_pack(advanced, 1000001) and gameplay_state() == before, "非法维护包批量拒绝 " + pack)
+	for advanced in [false, true]:
+		var pack: String = "advanced" if advanced else "normal"
+		var previous: int = tech.state.packs[pack]
+		tech.state.packs[pack] = catalog.RESOURCE_LIMIT
+		check(sea._cache_round(), "维护包库存上限基线 " + pack)
+		before = gameplay_state()
+		check(not tech.craft_pack(advanced, 1) and gameplay_state() == before, "维护包库存上限整批拒绝 " + pack)
+		tech.state.packs[pack] = previous
+	check(sea._cache_round(), "投包写失败基线")
+	before = gameplay_state()
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(not tech.refuel(false, 2) and gameplay_state() == before, "投包写失败整包额度全部回滚")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(tech.refuel(false, 2) and tech.state.credits == 12 and tech.state.paused and tech.state.current == "", "主动暂停投普通包每包6但不自启")
+	check(tech.refuel(true) and tech.state.credits == 24 and tech.state.packs.advanced == 2, "进阶整包12额度到24")
+	before = gameplay_state()
+	check(not tech.refuel(false) and not tech.refuel(true) and gameplay_state() == before, "24额度超出整包拒绝不扣包")
+	check(tech.resume() and tech.state.credits == 23 and tech.state.current == "coral" and tech.state.remaining == 30, "启动周期只扣1额度且T5不缩周期")
+	tech.tick(10)
+	check(tech.state.remaining == 20 and tech.state.credits == 23, "周期中不重复扣额度")
+	for delta in [NAN, INF, -INF, -1.0, 0.0]:
+		var snapshot: Dictionary = tech.state.duplicate(true)
+		tech.tick(delta)
+		check(tech.state == snapshot, "设备拒绝失效delta " + str(delta))
+	check(tech.pause() and tech.state.remaining == 20 and tech.state.credits == 23, "暂停保留已投入及进度不退款")
+	tech.tick(1000)
+	check(tech.state.remaining == 20 and tech.state.cargo.coral == 0, "暂停大delta不补算")
+	check(tech.select_target("timber") and tech.state.current == "coral" and tech.state.remaining == 20, "预约不替换当前周期")
+	check(tech.resume() and tech.state.credits == 23 and tech.state.remaining == 20, "继续已有周期不再扣1")
+	var nodes: Dictionary = sea.node_states.duplicate(true)
+	tech.tick(20)
+	check(tech.state.cargo.coral == 1 and tech.state.current == "timber" and tech.state.remaining == 45 and tech.state.credits == 22 and sea.node_states == nodes, "完工一件并按预约启动45秒且不扣海底库存")
+	for modal in ["management", "technology", "warehouse", "map"]:
+		if modal == "management": sea._show_management()
+		elif modal == "technology": tech.show_page()
+		elif modal == "warehouse": sea._show_warehouse()
+		else: sea.exploration_tools.open_map()
+		var snapshot: Dictionary = tech.state.duplicate(true)
+		tech.tick(20)
+		sea._process(20)
+		check(tech.state == snapshot, "模态暂停设备计时 " + modal)
+		if modal == "management": sea._close_management()
+		elif modal == "technology": tech.dialog.hide()
+		elif modal == "map": sea.exploration_tools.atlas.close()
+		else:
+			for child in sea.get_children():
+				if child is AcceptDialog and child.visible:
+					child.hide()
+					child.queue_free()
+		await process_frame
+	check(tech.pause(), "满仓测试前暂停")
+	tech.state.current = ""
+	tech.state.remaining = 0.0
+	tech.state.cargo = {"coral": 16, "shell": 0, "timber": 0, "copper": 0, "algae": 0}
+	check(sea._cache_round(), "设备满仓合法基线")
+	var credits: int = tech.state.credits
+	check(tech.resume() and tech.state.current == "" and tech.state.credits == credits, "满仓继续不扣下一周期")
+	tech.tick(1000)
+	check(tech.state.cargo.coral == 16 and tech.state.credits == credits, "满仓大delta不产货不扣额度")
+	sea.resources.coral = catalog.RESOURCE_LIMIT - 15
+	check(sea._cache_round(), "领取仓上限基线")
+	before = gameplay_state()
+	check(not tech.claim() and gameplay_state() == before, "仓库仅差1也整批拒绝不部分入库")
+	sea.resources.coral = 100
+	tech.state.manual = {"shoal": true, "wreck": true, "trench": true}
+	check(sea._cache_round(), "领取事务基线")
+	before = gameplay_state()
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(not tech.claim() and gameplay_state() == before, "领取写失败仓库货仓额度进度全部回滚")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(tech.claim() and sea.resources.coral == 116 and tech._cargo_count() == 0 and tech.state.current == "timber" and tech.state.credits == credits - 1, "满仓领取后自动恢复且只扣新周期1")
+	tech.tick(12.5)
+	check(sea._cache_round(), "读档进度小数基线")
+	var saved: Dictionary = tech.state.duplicate(true)
+	game.load_sea_save()
+	check(json_state_equal(game.water_activity_state.technology, saved), "v8重读保留科技货仓额度与小数进度")
+	sea.queue_free()
+	await process_frame
+	game.load_sea_save()
+	sea = load("res://scenes/WaterActivity.tscn").instantiate()
+	root.add_child(sea)
+	sea.set_process(false)
+	await process_frame
+	tech = sea.technology
+	check(tech.state.paused and tech.state.current == "timber" and tech.state.remaining == 32.5 and tech.state.credits == saved.credits, "真实重建场景读档保进度且必须手动继续")
+	tech.tick(10000)
+	check(tech.state.remaining == 32.5, "读档不补离线时间")
+	check(tech.resume() and tech.state.remaining == 32.5 and tech.state.credits == saved.credits, "读档手动继续不重复扣已投入")
+	before = gameplay_state()
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	tech.tick(32.5)
+	check(tech._settlement_failed and tech.state.current == "timber" and tech.state.remaining == 0 and tech._cargo_count() == 0 and tech.state.credits == before.technology.credits, "完工写失败保待结算不发货不重复扣")
+	tech.tick(10000)
+	check(tech._cargo_count() == 0 and tech.state.remaining == 0, "完工失败冻结自然计时")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+	check(tech.resume() and tech.state.cargo.timber == 1 and tech.state.current == "timber" and tech.state.remaining == 45 and tech.state.credits == before.technology.credits - 1, "完工重试仅发一件并扣下一周期1")
+	check(tech.pause(), "T6开箱前暂停设备")
+	sea._open_dive()
+	var view: Control = sea.dive_view
+	view.set_process(false)
+	for index in [1, 2]:
+		view.bag.clear()
+		var node: Array = catalog.NODES.shoal[index]
+		view.foot = node[2]
+		var entry: Dictionary = sea.node_states.shoal[node[0]].duplicate()
+		var seconds := 2.0 if index == 1 else 4.0
+		view.start_chest(node)
+		check(is_equal_approx(view.opening_left, seconds), "T6精良2秒稀有4秒 " + node[0])
+		view.tick_opening(seconds - 0.5)
+		check(view.bag.is_empty() and sea.node_states.shoal[node[0]].stock == entry.stock, "T6完成前不扣库存不给物品 " + node[0])
+		view.tick_opening(0.5)
+		check(view.bag == catalog.chest_loot("shoal", node[0], int(entry.stock), float(entry.timestamp)) and view.oxygen == 90 and view.capacity() == 8, "T6不改随机掉落氧气网袋 " + node[0])
+	view.foot = view.safety_position()
+	sea._close_dive()
+	await key(KEY_ESCAPE)
+	technology_economy_checks()
+	await technology_schema_checks()
+
+func technology_economy_checks() -> void:
+	var baseline: Dictionary = sea._round_state().duplicate(true)
+	for advanced in [false, true]:
+		sea._restore_round(baseline)
+		var tech = sea.technology
+		tech.state.current = ""
+		tech.state.remaining = 0.0
+		tech.state.credits = 0
+		tech.state.paused = true
+		for id in tech.state.cargo: tech.state.cargo[id] = 0
+		tech.state.packs = {"normal": 0, "advanced": 0}
+		sea.core_level = 2
+		sea.raft_tiles = 3
+		sea.building_slots = ["core", "collector", "workshop"]
+		sea.collectors = 1
+		sea.automated_collecting = true
+		sea.workshop_built = true
+		sea.orders_completed = 2
+		sea.production_elapsed = 0.0
+		sea.fiber = 0
+		sea.rope = 0
+		check(sea._cache_round(), "成熟海面自动绳索经济合法基线 " + str(advanced))
+		sea.fiber = 10
+		var before_rope := gameplay_state()
+		check(not tech.craft_pack(advanced) and gameplay_state() == before_rope, "有纤维无绳索不能冒充维护包耗材 " + str(advanced))
+		sea.fiber = 0
+		sea._tick_production(4.0)
+		check(sea.rope == 1 and sea.fiber == 0, "成熟海面真实生产自动加工绳索且无纤维 " + str(advanced))
+		var resources: Dictionary = sea.resources.duplicate(true)
+		check(tech.craft_pack(advanced) and sea.rope == 0 and sea.fiber == 0 and sea.resources.shell == resources.shell - 1 and sea.resources.algae == resources.algae - (1 if advanced else 0), "自动产绳可直接制作维护包且不需要纤维 " + str(advanced))
+		var rounds := 12 if advanced else 6
+		var targets: Array = ["shell", "algae"] if advanced else ["shell"]
+		while targets.size() < rounds: targets.append("coral")
+		check(tech.select_target(targets[0]) and tech.refuel(advanced) and tech.state.credits == rounds and tech.resume(), "单包完整6/12轮额度 " + str(advanced))
+		for index in rounds:
+			var target: String = targets[index]
+			var seconds := 60.0 if target == "algae" else 30.0
+			check(tech.state.current == target and tech.state.remaining == seconds and tech.state.credits == rounds - index - 1, "补耗材轮周期及扣额准确 %s/%d" % [str(advanced), index])
+			if index + 1 < rounds:
+				check(tech.select_target(targets[index + 1]), "预约下一经济循环目标%d" % index)
+			tech.tick(seconds - 0.5)
+			check(tech._cargo_count() == index and tech.state.remaining == 0.5, "完整周期前不提前发货%d" % index)
+			tech.tick(0.5)
+		check(tech._cargo_count() == rounds and tech.state.credits == 0 and tech.state.current == "", "单包恰好完成6/12轮不透支 " + str(advanced))
+		check(tech.claim() and sea.resources.shell == resources.shell and sea.resources.algae == resources.algae and sea.resources.coral == resources.coral + (10 if advanced else 5), "普通6轮含贝群1轮净5；进阶12轮含贝群与藻共2轮净10 " + str(advanced))
+	sea._restore_round(baseline)
+
+func technology_schema_checks() -> void:
+	var module = load("res://scripts/scenes/water_technology.gd")
+	sea._start_round()
+	var base: Dictionary = sea._round_state()
+	base.resources.coral = 2
+	base.resources.timber = 1
+	base.resources.pearl = 1
+	base.erase("technology")
+	for version in [1, 2, 3, 4, 5, 6]:
+		var migrated: Dictionary = game._read_sea_text(JSON.stringify({"version": version, "state": base}))
+		var expected: Dictionary = module.migrate(base.resources) if version == 6 else module.defaults()
+		check(not migrated.is_empty() and json_state_equal(migrated.technology, expected), "v%d科技迁移按真实保留资源补区域且不赠研究设备" % version)
+	check(module.migrate({}).manual == module.defaults().manual, "旧档已花光材料不伪造历史手动记录")
+	var tech = sea.technology
+	check(sea.settle_net(["coral"], 0) and sea.public_project_service.deposit_bag() and tech.state.manual.shoal and not tech.state.manual.wreck, "真实安全封存后入库桥接手动区域")
+	sea._start_round()
+	tech.state.research_built = true
+	tech.state.researched.T0 = true
+	tech.state.researched.T1 = true
+	tech.state.machine_built = true
+	tech.state.manual.shoal = true
+	tech.state.cargo.coral = 1
+	check(sea._cache_round(), "自动领取手动标记隔离基线")
+	tech.state.manual.shoal = false
+	tech.state.manual.wreck = true
+	check(tech.claim() and not tech.state.manual.shoal and tech.state.manual.wreck, "自动领取不补手动发现")
+	var valid: Dictionary = sea._round_state()
+	check(not game._read_sea_text(JSON.stringify({"version": 8, "state": valid})).is_empty(), "合法v8科技完整结构可读取")
+	for target in {"coral": 60.0, "timber": 90.0, "algae": 120.0}:
+		var old_seconds: float = {"coral": 60.0, "timber": 90.0, "algae": 120.0}[target]
+		for remaining in [0.0, old_seconds * 0.375, old_seconds]:
+			var legacy: Dictionary = valid.duplicate(true)
+			for id in legacy.technology.researched: legacy.technology.researched[id] = true
+			for region in legacy.technology.manual: legacy.technology.manual[region] = true
+			legacy.technology.target = target
+			legacy.technology.current = target
+			legacy.technology.remaining = remaining
+			legacy.technology.credits = 5
+			legacy.technology.packs = {"normal": 2, "advanced": 1}
+			var expected: Dictionary = legacy.duplicate(true)
+			expected.public_project = load("res://scripts/scenes/public_project_service.gd").defaults()
+			expected.technology.remaining = remaining * 0.5
+			var migrated: Dictionary = game._read_sea_text(JSON.stringify({"version": 7, "state": legacy}, "", true, true))
+			check(not migrated.is_empty() and json_state_equal(migrated, expected), "v7三周期零/中间/满额仅剩余秒减半 %s/%s" % [target, str(remaining)])
+			var reread: Dictionary = game._read_sea_text(JSON.stringify({"version": 8, "state": expected}, "", true, true))
+			check(not reread.is_empty() and json_state_equal(reread, expected), "v8重读不得再次减半且保留全部状态 %s/%s" % [target, str(remaining)])
+			if not migrated.is_empty():
+				var migrated_reread: Dictionary = game._read_sea_text(JSON.stringify({"version": 8, "state": migrated}, "", true, true))
+				check(json_state_equal(migrated_reread, migrated), "v7迁移结果以v8重读幂等 %s/%s" % [target, str(remaining)])
+			legacy.technology.remaining = old_seconds + 0.5
+			check(game._read_sea_text(JSON.stringify({"version": 7, "state": legacy})).is_empty(), "v7超过旧周期上限严格拒绝 " + target)
+			legacy.technology.remaining = old_seconds * 0.5 + 0.5
+			check(game._read_sea_text(JSON.stringify({"version": 8, "state": legacy})).is_empty(), "v8超过新周期上限严格拒绝 " + target)
+	for mode in 42:
+		var bad := valid.duplicate(true)
+		var s: Dictionary = bad.technology
+		match mode:
+			0: bad.erase("technology")
+			1: bad.technology = []
+			2: s.unknown = 0
+			3: s.erase("paused")
+			4: s.research_built = 1
+			5: s.machine_built = "true"
+			6: s.paused = 0
+			7: s.researched.T0 = 1
+			8: s.researched.T4 = true
+			9: s.researched.unknown = false
+			10: s.researched.erase("T6")
+			11: s.manual.shoal = 1
+			12: s.manual.unknown = false
+			13: s.manual.erase("trench")
+			14: s.packs.normal = -1
+			15: s.packs.advanced = 1
+			16: s.packs.normal = 1000001
+			17: s.packs.normal = true
+			18: s.packs.normal = 0.5
+			19: s.packs.unknown = 0
+			20: s.credits = 25
+			21: s.credits = -1
+			22: s.credits = true
+			23: s.credits = 1.5
+			24: s.target = "pearl"
+			25: s.target = "timber"
+			26: s.current = "pearl"
+			27: s.current = "coral"; s.remaining = 31
+			28: s.remaining = -1
+			29: s.remaining = "1"
+			30: s.remaining = true
+			31: s.remaining = 1
+			32: s.tracked = "T7"
+			33: s.cargo.coral = 9
+			34: s.cargo.pearl = 1
+			35: s.cargo.timber = 1
+			36: s.cargo.coral = true
+			37: s.cargo.coral = -1
+			38: s.machine_built = false; s.credits = 1
+			39: s.research_built = false
+			40: s.manual = {"shoal": false, "wreck": false, "trench": false}
+			41: s.current = "coral"; s.remaining = 20; s.cargo.coral = 8
+		check(not module.valid(bad.get("technology")), "科技schema拒绝恶意结构%d" % mode)
+		check(game._read_sea_text(JSON.stringify({"version": 8, "state": bad})).is_empty(), "v8真实入口拒绝恶意科技%d" % mode)
+	for invalid in [NAN, INF, -INF]:
+		var bad: Dictionary = valid.technology.duplicate(true)
+		bad.remaining = invalid
+		check(not module.valid(bad), "科技schema拒绝非有限进度 " + str(invalid))
+
 func run() -> void:
 	root.size = Vector2i(1280, 720)
 	await process_frame
@@ -786,8 +1228,8 @@ func run() -> void:
 	sea.set_process(false)
 	var base: Dictionary = sea._round_state()
 	check(sea.dive_summary_label.text.contains("浅滩"), "浮台初始浅滩阶段")
-	check(sea.action_tabs.get_tab_count() == 4, "海面四类独立操作页")
-	var entries := [sea.guide_button, sea.dive_button, sea.records_button, sea.dive_workshop_button, sea.management_button, sea.backpack_button, sea.navigation_button, sea.get_node("ReturnButton"), sea.exploration_tools.get_child(0).get_child(0)]
+	check(sea.action_tabs.get_tab_count() == 5, "海面保留原四类操作页并新增第五科技页")
+	var entries := [sea.guide_button, sea.dive_button, sea.records_button, sea.dive_workshop_button, sea.technology_button, sea.settings_button, sea.management_button, sea.backpack_button, sea.navigation_button, sea.get_node("ReturnButton"), sea.exploration_tools.get_child(0).get_child(0)]
 	check(sea.management_button.size == sea.backpack_button.size and sea.backpack_button.position.x - sea.management_button.get_rect().end.x >= 16, "经营背包统一尺寸且独立间隔至少16像素")
 	check(sea.management.min_size.x >= 620 and sea.action_tabs.custom_minimum_size.x >= 600, "经营面板加宽留出条件说明空间")
 	for entry in entries:
@@ -796,6 +1238,22 @@ func run() -> void:
 		check(entries[i].size.y >= 40, "常用入口至少40像素高")
 		for j in range(i + 1, entries.size()):
 			check(not entries[i].get_global_rect().intersects(entries[j].get_global_rect()), "任务板下潜记录工坊入口不重叠")
+	check(sea.water_resolution == Vector2i(1280, 720), "默认窗口不再随桌面放大")
+	sea.settings_button.pressed.emit()
+	await process_frame
+	check(sea.display_settings.visible and sea.resolution_picker.item_count == 5, "设置入口显示五档窗口分辨率")
+	check(sea._sea_modal() and not sea.moving, "显示设置暂停海面并阻挡底层操作")
+	sea.exploration_tools.open_map()
+	check(not sea.exploration_tools.is_open(), "设置中地图不穿透")
+	sea.resolution_picker.select(0)
+	sea.display_settings.confirmed.emit()
+	sea.display_settings.hide()
+	check(sea.water_resolution == Vector2i(960, 540), "应用最小分辨率")
+	var display_config := ConfigFile.new()
+	check(display_config.load(sea.DISPLAY_SETTINGS_PATH) == OK and display_config.get_value("display", "resolution") == Vector2i(960, 540), "显示偏好独立持久化")
+	check(json_state_equal(sea._round_state(), base), "调整显示设置不改变游戏进度")
+	sea._apply_water_display(Vector2i(1280, 720), false)
+	sea._save_water_display(false)
 	check(not sea.management.visible and not sea.status_label.visible and not sea.dive_summary_label.visible, "主屏收起经营与材料明细")
 	check(sea.SEA_VIEW.get_area() > 1280 * 720 * 0.7, "海域占逻辑画布七成以上")
 	for point in [sea.SEA.position, sea.SEA.end, sea.player_foot, Vector2(500, 500)]:
@@ -807,6 +1265,37 @@ func run() -> void:
 	surface_click.position = sea.world_to_screen(Vector2(600, 550))
 	sea._unhandled_input(surface_click)
 	check(sea.target.is_equal_approx(Vector2(600, 550)), "扩大海面点击反变换")
+	for foot in [Vector2(130, 550), Vector2(720, 550)]:
+		for offset in [Vector2(0, -32), Vector2(0, 38)]:
+			surface_click.position = sea.world_to_screen(foot + offset)
+			sea._unhandled_input(surface_click)
+			check(sea.management.visible and sea.action_tabs.current_tab == 2 and not sea.moving, "点击NPC人物或提示直达居民页且停止移动")
+			check(not sea.resident and not sea.partner and sea.water == base.water, "点击NPC只开入口不自动招募扣费")
+			sea._close_management()
+	check(sea.resident_hint.text.contains("建集水站") and sea.resident_hint.text.contains("清水1"), "阿汐显示建站及缺水条件")
+	check(sea.partner_hint.text.contains("集水岗位") and sea.partner_hint.text.contains("清水2、绳索2"), "岚显示岗位及首单条件")
+	sea.collectors = 1
+	sea.water = 1
+	sea._refresh_ui()
+	check(not sea.resident_button.disabled and sea.resident_hint.text.contains("可接纳"), "条件满足提示可接纳")
+	sea.resident = true
+	sea._refresh_ui()
+	check(not sea.job_button.disabled and sea.resident_hint.text.contains("安排集水岗位"), "入住提示安排岗位")
+	sea.resident_working = true
+	sea.orders_completed = 1
+	sea._refresh_ui()
+	check(not sea.partner_button.disabled and sea.partner_hint.text.contains("可邀请"), "条件满足提示可邀请")
+	sea.partner = true
+	sea._refresh_ui()
+	check(sea.resident_hint.text.contains("每批") and sea.partner_hint.text.contains("航行页"), "已招募提示实际用途及下一步")
+	sea.collectors = base.collectors
+	sea.water = base.water
+	sea.resident = base.resident
+	sea.resident_working = base.resident_working
+	sea.orders_completed = base.orders_completed
+	sea.partner = base.partner
+	sea._refresh_ui()
+	surface_click.position = sea.world_to_screen(Vector2(600, 550))
 	sea.management_button.pressed.emit()
 	var sea_clock: float = sea.wave_elapsed
 	sea._process(5)
@@ -845,10 +1334,17 @@ func run() -> void:
 			var inventory: ScrollContainer = child.get_node("InventoryScroll")
 			check(inventory.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED and inventory.size.y <= 430 and child.size.y < 650, "背包内容限高可纵向滚动且不超画布")
 			var sections: VBoxContainer = inventory.get_child(0)
-			check(sections.get_child_count() == 4, "背包按海面材料待领海底材料装备配方四组展示")
+			var groups := 0
+			var donation_buttons := 0
 			var displayed := PackedStringArray()
 			for section in sections.get_children():
-				for row in section.get_children(): displayed.append(row.text)
+				if section is Button:
+					donation_buttons += 1
+					check(section.text.contains("投入公共工程（永久消耗）"), "背包材料投料入口明确永久消耗")
+				else:
+					groups += 1
+					for row in section.get_children(): displayed.append(row.text)
+			check(groups == 4 and donation_buttons == sea.resources.size(), "背包保留四组库存配方且六种材料各有投料入口")
 			var full_text := "\n".join(displayed)
 			for line in child.dialog_text.split("\n"):
 				if line.is_empty(): continue
@@ -1048,9 +1544,9 @@ func run() -> void:
 	var archived: Dictionary = sea._round_state()
 	sea.dive_view.archive_button.pressed.emit()
 	check(sea._round_state() == archived, "重复归档无奖励")
-	check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 6, "写入v6")
+	check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 9, "写入v9")
 	game.load_sea_save()
-	check(game.water_activity_state.dive_archived, "v6重读")
+	check(game.water_activity_state.dive_archived, "v8重读保留归档")
 	for field in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
 		var invalid: Dictionary = archived.duplicate(true)
 		invalid[field] = 1
@@ -1108,8 +1604,10 @@ func run() -> void:
 	await v2_checks()
 	await workshop_checks()
 	await settlement_checks()
+	await pending_return_checks()
 	await chest_checks()
 	await stock_rollback_checks()
+	await technology_checks()
 	sea._start_round()
 	check(sea._cache_round(), "专项退出恢复新局供经营回归使用")
 	sea.queue_free()

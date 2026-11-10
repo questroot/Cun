@@ -52,6 +52,7 @@ func start_chest(node: Array) -> void:
 	moving = false
 	opening = {"map": place, "id": node[0], "position": node[2]}
 	opening_total = float(Catalog.CHESTS[Catalog.chest_quality(place, node[0])].seconds)
+	if host.technology.researched("T6"): opening_total *= 2.0 / 3.0
 	opening_left = opening_total
 	message = "按一次E已启动开箱，无需按住；移动取消，开启期间继续耗氧。"
 	if opening_left == 0: finish_chest()
@@ -87,7 +88,7 @@ func tick_opening(delta: float) -> void:
 
 func _exit_tree() -> void:
 	cancel_opening("关闭场景")
-	if not read_only and not settlement_saved and is_instance_valid(host):
+	if not read_only and not settlement_saved and not return_secured and is_instance_valid(host):
 		host.rollback_dive_stock()
 
 func has_core() -> bool:
@@ -95,10 +96,12 @@ func has_core() -> bool:
 var oxygen_label: Label
 var settlement: Dictionary = {}
 var settlement_saved := false
+var return_secured := false
 var settlement_panel: PanelContainer
 var settlement_text: RichTextLabel
 var settlement_close: Button
 var settlement_records: Button
+var settlement_technology: Button
 var settlement_retry: Button
 
 func show_settlement(saved: bool) -> void:
@@ -140,19 +143,27 @@ func show_settlement(saved: bool) -> void:
 			host._dismiss_dive()
 			host._open_dive(true))
 		buttons.add_child(settlement_records)
+		settlement_technology = Button.new()
+		settlement_technology.text = "查看科技"
+		settlement_technology.pressed.connect(func() -> void:
+			if not settlement_saved: return
+			host._dismiss_dive()
+			host.technology.show_page("tech"))
+		buttons.add_child(settlement_technology)
 		settlement_close = Button.new()
 		settlement_close.text = "返回浮台 / Esc"
 		settlement_close.pressed.connect(func() -> void:
 			if settlement_saved: host._dismiss_dive())
 		buttons.add_child(settlement_close)
 	var location: String = {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}[settlement.place]
-	var lines := PackedStringArray([("耗尽救援 · 本次失败零收益" if settlement.rescue else "安全光柱上浮") + " · " + location, "", ("本次入库" if saved else "待入库网袋") + " · 共%d件：" % settlement.items.size(), settlement_items(settlement.items), "", "全部损失 · 共%d件（不可拾回）：" % settlement.losses.size(), settlement_items(settlement.losses), ""])
+	var lines := PackedStringArray([("耗尽救援 · 本次失败零收益" if settlement.rescue else "安全光柱上浮") + " · " + location, "", ("安全封存·待入库" if saved and host.public_project.pending_bag != null else ("本次入库" if saved else "待封存网袋")) + " · 共%d件：" % settlement.items.size(), settlement_items(settlement.items), "", "全部损失 · 共%d件（不可拾回）：" % settlement.losses.size(), settlement_items(settlement.losses), ""])
 	if settlement.rescue:
 		lines.append("未安全上浮：本次收获100%不入库，本潜新核心未保留，不能归档领奖；历史仓库、装备及已带回核心不受影响。")
 		lines.append("已扣宝箱存量已回滚；再次开启同代次不会重抽。" if saved else "宝箱存量回滚保存失败，探索冻结，请重试。\n" + host.result_label.text)
 		settlement_retry.text = "重试存量回滚"
 	else:
-		lines.append("入库成功 · 已保存，确认关闭不会重复入库。" if saved else "尚未入库 · 保存失败或仓库已满，网袋保留且探索冻结。请重试；不要退出游戏。\n" + host.result_label.text)
+		lines.append(("返航袋已安全封存，可返回基地；待袋整袋入库前禁止再次下潜。" if host.public_project.pending_bag != null else "材料与核心已入库并保存。") if saved else "封存保存失败，尚未安全保存；网袋冻结，请原地重试。\n" + host.result_label.text)
+		settlement_retry.text = "重试安全封存"
 	lines.append("线索：浅滩%s / 声呐%s" % ["已记录" if host.dive_shoal else "未调查", "已记录" if host.dive_sonar else "未调查"])
 	if host.dive_archived and not host.core_reward_claimed:
 		lines.append("核心已归档 · 奖励待补领：打开探索记录，显式补领工坊位＋木2废2。")
@@ -165,11 +176,13 @@ func show_settlement(saved: bool) -> void:
 	else:
 		lines.append("核心尚未取得 · 下一步：" + host._dive_summary())
 	if settlement.items.is_empty(): lines.append("本次无收获；不沿用上一潜入库记录。")
+	elif not settlement.rescue: lines.append("安全带回的材料可用于装备与科技；点击查看科技预览缺口，不会自动扣料。")
 	settlement_text.text = "\n".join(lines)
 	settlement_retry.visible = not saved
 	settlement_records.visible = saved
 	settlement_close.visible = saved
-	var controls: Array = [settlement_records, settlement_close] if saved else [settlement_retry]
+	settlement_technology.visible = saved
+	var controls: Array = [settlement_records, settlement_technology, settlement_close] if saved else [settlement_retry]
 	for i in controls.size():
 		var button: Button = controls[i]
 		button.focus_next = button.get_path_to(controls[(i + 1) % controls.size()])

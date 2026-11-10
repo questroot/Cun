@@ -6,6 +6,8 @@ var stage_pending := false
 var city_spawn := Vector2(334, 558)
 var last_result := ""
 const DiveCatalog = preload("res://scripts/scenes/underwater_catalog.gd")
+const WaterTechnology = preload("res://scripts/scenes/water_technology.gd")
+const PublicProjectService = preload("res://scripts/scenes/public_project_service.gd")
 var water_activity_state: Dictionary = {}
 const SEA_SAVE := "user://sea_chapter_v1.json"
 const SEA_TEMP := "user://sea_chapter_v1.json.tmp"
@@ -49,10 +51,12 @@ func _read_sea_text(text: String) -> Dictionary:
 	if not parsed is Dictionary or not parsed.get("state") is Dictionary:
 		return {}
 	var raw_version: Variant = parsed.get("version")
-	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]:
+	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]:
 		return {}
 	var state: Dictionary = parsed["state"]
 	var version: int = int(raw_version)
+	if version < 9:
+		state.public_project = PublicProjectService.defaults()
 	var has_equipment := state.has("equipment") or state.has("core_reward_claimed") or state.has("dive_workshop_unlocked") or state.has("dive_workshop_built")
 	if version < 6 or (version == 6 and not has_equipment):
 		state.equipment = DiveCatalog.equipment()
@@ -67,11 +71,20 @@ func _read_sea_text(text: String) -> Dictionary:
 		state.net_expansion = 0
 	elif not DiveCatalog.valid(state):
 		return {}
+	if version < 7:
+		state.technology = WaterTechnology.migrate(state.resources)
+	elif version == 7:
+		state.technology = WaterTechnology.migrate_v7(state.get("technology"))
+		if state.technology.is_empty(): return {}
+	elif not WaterTechnology.valid(state.get("technology")):
+		return {}
 	for key in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
 		if version < 5:
 			state[key] = false
 		elif not state.get(key) is bool:
 			return {}
+	if not PublicProjectService.valid(state): return {}
+	PublicProjectService.normalize_amounts(state.resources)
 	if (state.dive_sonar and not state.dive_shoal) or (state.dive_core and not state.dive_sonar) or (state.dive_archived and not state.dive_core):
 		return {}
 	for key in ["wood", "scrap", "water", "fiber", "rope", "raft_tiles", "collectors", "orders_completed", "pending_water", "pending_fiber"]:
@@ -184,7 +197,7 @@ func load_sea_save() -> void:
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""
-	var text := JSON.stringify({"version": 6, "state": state}, "", true, true)
+	var text := JSON.stringify({"version": 9, "state": state}, "", true, true)
 	if _read_sea_text(text).is_empty():
 		sea_save_error = "海上存档数据无效，未保存。"
 		return false
