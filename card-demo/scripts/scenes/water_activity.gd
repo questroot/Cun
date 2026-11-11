@@ -318,7 +318,7 @@ func recipe_text(id: String) -> String:
 func craft_equipment(id: String) -> bool:
 	if is_instance_valid(dive_layer) or at_salt or at_wreck or sailing or not dive_workshop_built or not DiveCatalog.RECIPES.has(id): return false
 	var level := net_expansion if id == "net_expansion" else equipment_level(id)
-	if level >= 2: return false
+	if level >= 2 or not DiveCatalog.recipe_unlocked(id, level, dive_archive): return false
 	var recipe: Dictionary = DiveCatalog.RECIPES[id][level]
 	for material in recipe:
 		if material_count(material) < int(recipe[material]):
@@ -355,7 +355,7 @@ func _show_dive_workshop() -> void:
 	box.add_theme_constant_override("separation", 14)
 	popup.add_child(box)
 	var info := Label.new()
-	info.text = "核心附属工坊位：" + ("已建成" if dive_workshop_built else ("已解锁 · 建造需木2废2" if dive_workshop_unlocked else "首次归档核心解锁并获木2废2")) + "\n面具照亮120→200→260；氧气90→120→150；脚蹼230→280→320；网袋8→12→16\n珍珠用于面具/氧气瓶二级；图鉴门槛后续整合，本轮不限制。"
+	info.text = "核心附属工坊位：" + ("已建成" if dive_workshop_built else ("已解锁 · 建造需木2废2" if dive_workshop_unlocked else "首次归档核心解锁并获木2废2")) + "\n面具照亮120→200→260；氧气90→120→150；脚蹼230→280→320；网袋8→12→16\n珍珠用于面具/氧气瓶二级；安全记录3/5/7/9种解锁捕网/护腕/捕网二级/护腕二级。"
 	box.add_child(info)
 	var build := Button.new()
 	build.text = "建造潜水工坊（核心附属位） · 木2 废2 · 缺木%d 废%d" % [maxi(0, 2 - wood), maxi(0, 2 - scrap)]
@@ -369,7 +369,7 @@ func _show_dive_workshop() -> void:
 		var button := Button.new()
 		var level := net_expansion if id == "net_expansion" else equipment_level(id)
 		button.text = ("网袋扩容" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id]) + " · 当前%d级 · " % level + recipe_text(id)
-		button.disabled = not dive_workshop_built or level >= 2
+		button.disabled = not dive_workshop_built or level >= 2 or not DiveCatalog.recipe_unlocked(id, level, dive_archive)
 		button.pressed.connect(func() -> void:
 			craft_equipment(id)
 			popup.hide()
@@ -419,8 +419,10 @@ func _show_warehouse() -> void:
 	lines.append("清水：订单；纤维：加工绳索/脚蹼L1；绳索：订单/脚蹼L2/网袋扩容")
 	for id in resources: lines.append("%s × %d → %s" % [DiveCatalog.ITEMS[id][0], resources[id], DiveCatalog.USES[id]])
 	for id in DiveCatalog.RECIPES: lines.append(("网袋" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id]) + "：" + recipe_text(id))
-	popup.dialog_text = "\n".join(lines)
+	popup.dialog_text = ""
 	popup.get_label().hide()
+	popup.get_label().custom_minimum_size = Vector2.ZERO
+	popup.min_size = Vector2i(760, 487)
 	var scroll := ScrollContainer.new()
 	scroll.name = "InventoryScroll"
 	scroll.custom_minimum_size = Vector2(720, 430)
@@ -478,6 +480,10 @@ var dive_sonar := false
 var dive_core := false
 var dive_archived := false
 var species_records: Dictionary = DiveCatalog.species_records()
+var dive_archive: Dictionary = DiveCatalog.archive_defaults()
+var tide_clock := 0.0
+var tide_shells: Dictionary = {}
+var creature_states: Dictionary = {}
 var dive_layer: CanvasLayer
 var dive_view: Control
 var dive_button: Button
@@ -528,6 +534,7 @@ func _sea_modal(include_management := true) -> bool:
 func _open_dive(records := false) -> void:
 	if _sea_modal() or at_salt or at_wreck or sailing:
 		return
+	public_project_service.refresh_orders()
 	prior_focus = get_viewport().gui_get_focus_owner()
 	if not records:
 		if public_project.pending_bag != null: return
@@ -574,7 +581,7 @@ func _close_dive() -> void:
 			saved = rollback_dive_stock()
 			last_dive_summary = "氧气耗尽 · 本次失败零收益，收获全部丢失，不可拾回；本潜新核心未保留。" + ("已扣宝箱存量已回滚。" if saved else "宝箱存量回滚保存失败，请重试。")
 		else:
-			saved = public_project_service.seal_bag(dive_view.settlement.items, dive_view.pending_core, dive_view.settlement.place, dive_view.lost_count)
+			saved = public_project_service.seal_bag(dive_view.settlement.items, dive_view.pending_core, dive_view.settlement.place, dive_view.lost_count, dive_view.observed.keys())
 			if saved:
 				dive_view.return_secured = true
 				last_dive_summary = "返航袋已安全封存；材料与新核心尚未入库。"
@@ -589,6 +596,9 @@ func _close_dive() -> void:
 		_refresh_dive_ui()
 		return
 	_dismiss_dive()
+
+func _dive_archive_sound() -> void:
+	if is_instance_valid(dive_view): dive_view.cue("archive")
 
 func _dismiss_dive() -> void:
 	if not is_instance_valid(dive_layer): return
@@ -616,7 +626,7 @@ func _commit_species(id: String) -> bool:
 	if not is_instance_valid(dive_view) or not dive_view.is_inside_tree() or dive_view.is_queued_for_deletion(): return false
 	if dive_view.read_only or dive_view.settling or dive_view.settlement_saved or not dive_view.settlement.is_empty() or dive_view.oxygen <= 0: return false
 	var entry: Dictionary = catalog[id]
-	if dive_view.place != entry.place or not dive_view.foot.distance_to(entry.pos) <= DiveCatalog.OBSERVE_RADIUS: return false
+	if dive_view.place != entry.place or not dive_view.foot.distance_to(dive_view.species_position(id)) <= DiveCatalog.OBSERVE_RADIUS: return false
 	if species_records[id]: return true
 	var previous := species_records.duplicate(true)
 	species_records[id] = true
@@ -1158,7 +1168,7 @@ func _round_state() -> Dictionary:
 		"resources": resources.duplicate(true), "node_states": node_states.duplicate(true), "net_expansion": net_expansion,
 		"equipment": equipment.duplicate(true), "core_reward_claimed": core_reward_claimed, "dive_workshop_unlocked": dive_workshop_unlocked, "dive_workshop_built": dive_workshop_built,
 		"dive_shoal": dive_shoal, "dive_sonar": dive_sonar, "dive_core": dive_core, "dive_archived": dive_archived,
-		"species_records": species_records.duplicate(true),
+		"species_records": species_records.duplicate(true), "dive_archive": dive_archive.duplicate(true),
 		"wood": wood, "scrap": scrap, "water": water, "fiber": fiber, "rope": rope,
 		"raft_tiles": raft_tiles, "core_level": core_level, "guide_seen_pickup": guide_seen_pickup, "guide_seen_claim": guide_seen_claim, "building_slots": building_slots.duplicate(), "collectors": collectors, "orders_completed": orders_completed,
 		"pending_water": pending_water, "pending_fiber": pending_fiber,
@@ -1210,6 +1220,7 @@ func _restore_round(state: Dictionary) -> void:
 	dive_core = state.get("dive_core", false)
 	dive_archived = state.get("dive_archived", false)
 	species_records = state.get("species_records", DiveCatalog.species_records()).duplicate(true)
+	dive_archive = state.get("dive_archive", DiveCatalog.archive_defaults()).duplicate(true)
 	wood = state["wood"]
 	scrap = state["scrap"]
 	water = state["water"]
@@ -1294,6 +1305,10 @@ func _start_round() -> void:
 	dive_core = false
 	dive_archived = false
 	species_records = DiveCatalog.species_records()
+	dive_archive = DiveCatalog.archive_defaults()
+	tide_clock = 0.0
+	tide_shells.clear()
+	creature_states.clear()
 	resident = false
 	resident_working = false
 	partner = false
@@ -1927,6 +1942,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			moving = true
 
 func _process(delta: float) -> void:
+	tide_clock += maxf(0, delta)
 	_refresh_public_project_pending()
 	if is_instance_valid(_public_project_window) and _public_project_window.visible:
 		_sync_public_project_actions(_public_project_operation)

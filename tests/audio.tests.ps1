@@ -21,6 +21,8 @@ foreach ($file in (Get-ChildItem -LiteralPath $source -Recurse -File)) {
 }
 $configPath = Join-Path $testRoot 'project.godot'
 $config = [IO.File]::ReadAllText($configPath).Replace('[application]', "[application]`nconfig/use_custom_user_dir=true`nconfig/custom_user_dir_name=`"Cun-Audio-$testId`"")
+# Match the underwater runner's bounded import workers in isolated copies.
+$config += "`n[threading]`nworker_pool/max_threads=1`n`n[editor]`nimport/use_multiple_threads=false`n"
 [IO.File]::WriteAllText($configPath, $config, (New-Object Text.UTF8Encoding($false)))
 function Invoke-AudioCheck([string]$Name, [string[]]$EngineArgs) {
     $process = New-Object Diagnostics.Process

@@ -61,7 +61,12 @@ static func valid(state: Dictionary) -> bool:
 	for bag in [pending, last]:
 		if bag == null: continue
 		var is_pending: bool = bag == pending
-		if not bag is Dictionary or bag.size() != 6: return false
+		if not bag is Dictionary or bag.size() not in [6, 8]: return false
+		if bag.size() == 8:
+			for key in ["observed", "live"]:
+				if not bag.get(key) is Array: return false
+				for species_id in bag[key]:
+					if not Catalog.species().has(species_id): return false
 		var n := _bag_number(bag.get("bag_id"), p.epoch, p.bag_seq)
 		if n == 0 or (is_pending and n != p.bag_seq): return false
 		if not is_pending and n != p.bag_seq - (1 if pending != null else 0): return false
@@ -71,7 +76,8 @@ static func valid(state: Dictionary) -> bool:
 		normalize_amounts(bag.items)
 		var weight := 0
 		for id in Catalog.ITEMS: weight += int(bag.items[id]) * int(Catalog.ITEMS[id][1])
-		if weight > Catalog.BASE_CAPACITY + int(state.get("net_expansion", 0)) * 4 or (weight == 0 and not bag.new_core): return false
+		weight += bag.get("live", []).size() * 2
+		if weight > Catalog.BASE_CAPACITY + int(state.get("net_expansion", 0)) * 4: return false
 		if is_pending:
 			if bag.get("origin") not in Catalog.POOLS or not Catalog.integer(bag.get("lost_count"), Catalog.RESOURCE_LIMIT): return false
 			bag.lost_count = int(bag.lost_count)
@@ -170,26 +176,37 @@ func confirm(token: String, pearl_confirmed: bool) -> Dictionary:
 	queue_recheck()
 	return {"ok": true, "receipt": receipt.duplicate(true)}
 
-func seal_bag(items: Array, new_core: bool, origin: String, lost_count: int) -> bool:
+func seal_bag(items: Array, new_core: bool, origin: String, lost_count: int, observed: Array = []) -> bool:
+	if not busy and items.is_empty() and not new_core and host.public_project.pending_bag != null:
+		var pending: Dictionary = host.public_project.pending_bag
+		if pending.items == Catalog.resources() and not pending.new_core and pending.origin == origin and pending.get("observed", []) == observed: return deposit_bag()
 	if busy or host.public_project.pending_bag != null or origin not in Catalog.POOLS or not Catalog.integer(lost_count, Catalog.RESOURCE_LIMIT): return false
 	var counts := Catalog.resources()
+	var live := []
+	for id in observed:
+		if not Catalog.species().has(id): return false
 	for id in items:
-		if not counts.has(id): return false
-		counts[id] += 1
-	if items.is_empty() and not new_core: return host._cache_round()
+		if String(id).begins_with("live:"):
+			var species_id := String(id).trim_prefix("live:")
+			if not Catalog.species().has(species_id): return false
+			live.append(species_id)
+		else:
+			if not counts.has(id): return false
+			counts[id] += 1
 	if host.public_project.bag_seq >= MAX_SEQ: return false
 	var before: Dictionary = host._round_state().duplicate(true)
 	busy = true
 	if host.public_project.epoch == "": host.public_project.epoch = new_epoch()
 	host.public_project.bag_seq += 1
 	var id := _id(host.public_project.epoch, "bag", host.public_project.bag_seq)
-	host.public_project.pending_bag = {"bag_id": id, "deposit_operation_id": id + ":deposit", "items": counts, "new_core": new_core, "origin": origin, "lost_count": lost_count}
+	host.public_project.pending_bag = {"bag_id": id, "deposit_operation_id": id + ":deposit", "items": counts, "new_core": new_core, "origin": origin, "lost_count": lost_count, "observed": observed.duplicate(), "live": live}
 	var saved: bool = host._cache_round()
 	if not saved: host._restore_round(before)
 	busy = false
 	if saved:
 		invalidate_preview()
 		bag_save_failed = false
+		if items.is_empty() and not new_core: return deposit_bag()
 	return saved
 
 func deposit_bag() -> bool:
@@ -208,13 +225,75 @@ func deposit_bag() -> bool:
 	if bag.new_core: host.dive_core = true
 	host.technology.record_manual(items)
 	host.public_project.last_bag = {"bag_id": bag.bag_id, "operation_id": bag.deposit_operation_id, "items": bag.items.duplicate(true), "new_core": bag.new_core, "before": stock, "after": host.resources.duplicate(true)}
+	host.public_project.last_bag["observed"] = bag.get("observed", []).duplicate()
+	host.public_project.last_bag["live"] = bag.get("live", []).duplicate()
+	if not _apply_archive(bag):
+		host._restore_round(before)
+		busy = false
+		return false
 	host.public_project.pending_bag = null
 	var saved: bool = host._cache_round()
 	if not saved: host._restore_round(before)
 	busy = false
 	bag_save_failed = not saved
-	if saved: invalidate_preview()
+	if saved:
+		invalidate_preview()
+		if host.has_method("_dive_archive_sound"): host._dive_archive_sound()
 	return saved
+
+func _new_order() -> Dictionary:
+	host.dive_archive.order_seq += 1
+	return {"id": host.dive_archive.order_seq, "kind": (int(host.dive_archive.order_seq) - 1) % Catalog.ORDER_POOL.size(), "done": false}
+
+func refresh_orders(now: float = Time.get_unix_time_from_system()) -> bool:
+	if not host.tide_table or busy or not is_finite(now) or now <= 0: return false
+	var progress: Dictionary = host.dive_archive
+	if not progress.orders.is_empty() and now - float(progress.refreshed) < 86400: return true
+	var before: Dictionary = host._round_state().duplicate(true)
+	progress.orders.clear()
+	for i in 3: progress.orders.append(_new_order())
+	progress.refreshed = maxf(float(progress.refreshed), now)
+	if host._cache_round(): return true
+	host._restore_round(before)
+	return false
+
+func _apply_archive(bag: Dictionary) -> bool:
+	var progress: Dictionary = host.dive_archive
+	for id in bag.get("observed", []): progress.safe[id] = true
+	for id in bag.get("live", []):
+		progress.captured[id] = true
+		progress.safe[id] = true
+	if progress.voyages >= MAX_SEQ: return false
+	progress.voyages += 1
+	if not host.tide_table: return true
+	var now := Time.get_unix_time_from_system()
+	# 过期旧单先撤销；本次新生成的任务不能消费同一批归档成果。
+	var expired: bool = progress.orders.is_empty() or now - float(progress.refreshed) >= 86400
+	var old_orders: Array = [] if expired else progress.orders.duplicate(true)
+	if expired:
+		if progress.order_seq > MAX_SEQ - 3: return false
+		progress.orders.clear()
+		for i in 3: progress.orders.append(_new_order())
+		progress.refreshed = maxf(float(progress.refreshed), now)
+	for order in old_orders:
+		if order.done: continue
+		var config: Dictionary = Catalog.ORDER_POOL[int(order.kind)]
+		var eligible: bool = config.observe in bag.get("observed", []) if config.has("observe") else int(host.resources[config.item]) >= int(config.amount)
+		if not eligible: continue
+		if int(host.get(config.reward)) + int(config.count) > Catalog.RESOURCE_LIMIT: return false
+		if config.has("item"): host.resources[config.item] -= int(config.amount)
+		host.set(config.reward, int(host.get(config.reward)) + int(config.count))
+		progress.completed.append(order.id)
+		for current in progress.orders:
+			if current.id == order.id: current.done = true
+	if not expired:
+		var replaced_oldest := false
+		for i in progress.orders.size():
+			if progress.orders[i].done or not replaced_oldest:
+				if not progress.orders[i].done: replaced_oldest = true
+				if progress.order_seq >= MAX_SEQ: return false
+				progress.orders[i] = _new_order()
+	return true
 
 func queue_recheck() -> void:
 	if queued or running: return

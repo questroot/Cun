@@ -51,10 +51,18 @@ func _read_sea_text(text: String) -> Dictionary:
 	if not parsed is Dictionary or not parsed.get("state") is Dictionary:
 		return {}
 	var raw_version: Variant = parsed.get("version")
-	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]:
+	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]:
 		return {}
 	var state: Dictionary = parsed["state"]
 	var version: int = int(raw_version)
+	if version < 11:
+		state.dive_archive = DiveCatalog.archive_defaults()
+		if state.get("equipment") is Dictionary:
+			if state.equipment.size() not in [4, 5] or not state.equipment.get("wrist") is Dictionary or state.equipment.wrist.get("level") != 0: return {}
+			if state.equipment.has("capture_net") and (not state.equipment.capture_net is Dictionary or state.equipment.capture_net.get("id") != "capture_net" or state.equipment.capture_net.get("level") != 0): return {}
+			state.equipment.capture_net = {"id": "capture_net", "level": 0}
+	else:
+		if not DiveCatalog.valid_archive(state.get("dive_archive")): return {}
 	if version < 10:
 		state.species_records = DiveCatalog.species_records()
 	else:
@@ -203,7 +211,7 @@ func load_sea_save() -> void:
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""
-	var text := JSON.stringify({"version": 10, "state": state}, "", true, true)
+	var text := JSON.stringify({"version": 11, "state": state}, "", true, true)
 	if _read_sea_text(text).is_empty():
 		sea_save_error = "海上存档数据无效，未保存。"
 		return false

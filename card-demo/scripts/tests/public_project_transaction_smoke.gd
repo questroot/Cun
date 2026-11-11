@@ -12,6 +12,8 @@ class TransactionHost extends Node:
 	var resources: Dictionary = Catalog.resources()
 	var public_project: Dictionary = Service.defaults()
 	var technology = Technology.new()
+	var dive_archive := Catalog.archive_defaults()
+	var tide_table := false
 	var dive_core := false
 	var dive_sonar := true
 	var net_expansion := 0
@@ -38,11 +40,13 @@ class TransactionHost extends Node:
 			"dive_workshop_unlocked": false, "dive_workshop_built": false,
 			"node_states": Catalog.defaults(1000.0), "net_expansion": net_expansion,
 			"resources": resources.duplicate(true), "public_project": public_project.duplicate(true),
-			"technology": technology.state.duplicate(true), "dive_core": dive_core, "dive_sonar": dive_sonar
+			"technology": technology.state.duplicate(true), "dive_core": dive_core, "dive_sonar": dive_sonar,
+			"dive_archive": dive_archive.duplicate(true), "species_records": Catalog.species_records()
 		}
 		return state
 
 	func _restore_round(state: Dictionary) -> void:
+		dive_archive = state.get("dive_archive", Catalog.archive_defaults()).duplicate(true)
 		resources = state.resources.duplicate(true)
 		public_project = state.public_project.duplicate(true)
 		technology.state = state.technology.duplicate(true)
@@ -55,7 +59,7 @@ class TransactionHost extends Node:
 		if fail_next:
 			fail_next = false
 			return false
-		var decoded: Dictionary = game._read_sea_text(JSON.stringify({"version": 9, "state": _round_state()}))
+		var decoded: Dictionary = game._read_sea_text(JSON.stringify({"version": 11, "state": _round_state()}))
 		if decoded.is_empty(): return false
 		if real_disk and not game.save_sea_state(_round_state()): return false
 		saved = decoded.duplicate(true)
@@ -413,7 +417,7 @@ func schema_tests() -> void:
 		bad = receipts.duplicate(true)
 		bad.public_project[receipt_key].operation_id = "wrong"
 		check(read(bad).is_empty(), "v9拒绝回执操作身份不一致 " + receipt_key)
-	for value: Variant in [true, 0, 10, 9.5, "9"]:
+	for value: Variant in [true, 0, 12, 9.5, "9"]:
 		check(read(base, value).is_empty(), "拒绝非法存档版本 " + str(value))
 
 func run() -> void:

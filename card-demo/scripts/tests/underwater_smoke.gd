@@ -84,7 +84,11 @@ func v2_checks() -> void:
 	check(sea._sea_window_open(), "真实海面B仓库")
 	for child in sea.get_children():
 		if child is AcceptDialog and child.visible:
-			check(child.dialog_text.contains("珊瑚枝") and child.dialog_text.contains("绳索"), "仓库并列新旧资源")
+			var text := ""
+			for section in child.get_node("InventoryScroll").get_child(0).get_children():
+				if section is Button: continue
+				for row in section.get_children(): text += row.text
+			check(text.contains("珊瑚枝") and text.contains("绳索"), "仓库并列新旧资源")
 			child.hide()
 			child.queue_free()
 	await process_frame
@@ -684,8 +688,9 @@ func workshop_checks() -> void:
 	scrap_before = sea.scrap
 	check(sea.build_dive_workshop() and sea.wood == wood_before - 2 and sea.scrap == scrap_before - 2 and sea.building_slots == slots, "附属工坊木2废2且不改旧槽")
 	check(not sea.build_dive_workshop(), "工坊不能重复建造")
-	check(sea.equipment.size() == 4 and sea.equipment.wrist == {"id": "wrist", "level": 0}, "四槽默认保留未开放护腕")
+	check(sea.equipment.size() == 5 and sea.equipment.wrist == {"id": "wrist", "level": 0}, "五槽默认护腕及捕网零级")
 	check(sea._build_cost("dive_workshop") == catalog.WORKSHOP_COST and sea._build_reason("dive_workshop").contains("已建成"), "潜水工坊接入既有建造成本与门禁")
+	for species_id in sea.dive_archive.safe: sea.dive_archive.safe[species_id] = true
 	for id in catalog.RECIPES:
 		for level in 2:
 			for missing in catalog.RECIPES[id][level]:
@@ -1317,6 +1322,8 @@ func species_checks() -> void:
 	view.tick_observation(2.0)
 	check(not sea.species_records[id] and view.observation_elapsed == 0, "开箱期间不观察")
 	view.cancel_opening("生态专项")
+	position = view.species_position(id)
+	view.foot = position
 	var before: Dictionary = sea._round_state().duplicate(true)
 	var memory: Dictionary = game.water_activity_state.duplicate(true)
 	var disk := FileAccess.get_file_as_string(game.SEA_SAVE)
@@ -1348,7 +1355,7 @@ func species_checks() -> void:
 	expected_state.species_records[id] = true
 	check(json_state_equal(recorded, expected_state), "生态成功只改变对应图鉴位，无材料核心奖励")
 	game.load_sea_save()
-	check(game.water_activity_state.species_records[id] and int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 10, "成功后立即从v10磁盘重载保留")
+	check(game.water_activity_state.species_records[id] and int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 11, "成功后立即从v11磁盘重载保留")
 	disk = FileAccess.get_file_as_string(game.SEA_SAVE)
 	check(DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP)) == OK, "幂等提交注入写故障")
 	check(sea._commit_species(id), "已记录物种重复真事务幂等且无需写盘")
@@ -1419,6 +1426,91 @@ func species_checks() -> void:
 			if mode in ["extra", "replace"]: bad.species_records.unknown_species = false
 		check(game._read_sea_text(JSON.stringify({"version": 10, "state": bad})).is_empty(), "v10拒绝非法键集合 " + mode)
 	print("SPECIES RESULT: ", checks - starting_checks, " checks, ", failures - starting_failures, " failed")
+
+func additions_checks() -> void:
+	var catalog = load("res://scripts/scenes/underwater_catalog.gd")
+	sea._start_round()
+	check(sea._cache_round(), "增量功能基线")
+	var service = sea.public_project_service
+	check(service.seal_bag(["coral"], false, "shoal", 0, ["shoal_glowfish"]), "观察凭据封存")
+	check(not sea.dive_archive.safe.shoal_glowfish and sea.dive_archive.voyages == 0, "封存不授安全记录航程")
+	check(service.deposit_bag() and sea.dive_archive.safe.shoal_glowfish and sea.dive_archive.voyages == 1, "入库安全记录及航程")
+	check(service.deposit_bag() and sea.dive_archive.voyages == 1, "重复入库不重复航程")
+	check(service.seal_bag(["live:shoal_blue_hermit_crab"], false, "shoal", 0), "活体独立封存")
+	check(service.deposit_bag() and sea.dive_archive.captured.shoal_blue_hermit_crab and sea.dive_archive.safe.shoal_blue_hermit_crab, "活捕认证同时安全记录")
+	check(service.seal_bag([], false, "shoal", 0) and sea.public_project.pending_bag == null and sea.dive_archive.voyages == 3, "空袋直接归档")
+	check(not catalog.recipe_unlocked("capture_net", 0, sea.dive_archive), "两种安全记录未解锁捕网")
+	sea.dive_archive.safe.shoal_spotted_flatfish = true
+	check(catalog.recipe_unlocked("capture_net", 0, sea.dive_archive), "三种安全记录解锁捕网")
+	sea.tide_table = true
+	sea.core_level = 3
+	sea.building_slots.append("tide")
+	sea.raft_tiles = sea.building_slots.size()
+	check(service.refresh_orders() and sea.dive_archive.orders.size() == 3, "潮测台三单")
+	sea.resources.coral = 20
+	sea.resources.shell = 20
+	sea.resources.timber = 20
+	check(service.seal_bag([], false, "shoal", 0), "旧委托结算")
+	check(sea.dive_archive.completed.size() == 3 and sea.dive_archive.orders.size() == 3, "三槽完成后补单")
+	for order in sea.dive_archive.orders: check(not order.done and order.id > 3, "新单不消费同批成果")
+	sea.dive_archive.refreshed = Time.get_unix_time_from_system() - 86401
+	var completed: int = sea.dive_archive.completed.size()
+	check(service.seal_bag([], false, "shoal", 0) and sea.dive_archive.completed.size() == completed, "过期旧单不奖励")
+	var orders: Array = sea.dive_archive.orders.duplicate(true)
+	check(service.refresh_orders(Time.get_unix_time_from_system() - 100) and sea.dive_archive.orders == orders, "时间倒拨不刷新")
+	sea.core_reward_claimed = true
+	sea.dive_workshop_unlocked = true
+	sea.dive_workshop_built = true
+	sea.dive_archived = true
+	sea.dive_core = true
+	sea.dive_sonar = true
+	sea.dive_shoal = true
+	sea.equipment.capture_net.level = 1
+	sea._cache_round()
+	sea._open_dive()
+	var view: Control = sea.dive_view
+	view.set_process(false)
+	sea.tide_clock = 100
+	check(view.tide().rising, "涨潮相位")
+	view.tick_ecology(0.01)
+	var state: Dictionary = sea.creature_states.shoal_glowfish
+	view.foot = state.pos - Vector2(25, 0)
+	view.facing = Vector2.RIGHT
+	check(view.push() and state.stun > 0, "扇形推开硬直")
+	check(not view.push(), "推开冷却")
+	view.bag = ["coral", "coral", "coral", "coral", "coral", "coral", "coral"]
+	check(view.capture() and view.bag.size() == 7 and state.respawn == 0, "活捕满袋不移除")
+	view.bag.clear()
+	check(view.capture() and view.bag == ["live:shoal_glowfish"] and state.respawn == 180, "活捕成功及共享重生")
+	check(view.used_slots() == 2, "活体两格")
+	view.discard(0)
+	check(view.bag.is_empty(), "活体可丢弃")
+	sea.tide_clock = 240
+	check(view.tidal_shells().size() == 2, "落潮两处贝群")
+	sea.tide_shells[view.tidal_shells()[0][0]] = true
+	check(view.tidal_shells().size() == 1, "临时贝群防重")
+	view.tick_ecology(180)
+	check(state.respawn == 0, "生物180秒重生")
+	view.place = "wreck"
+	sea.tide_clock = 0
+	var crab: Dictionary = sea.creature_states.wreck_rust_crab
+	for level in 3:
+		sea.equipment.wrist.level = level
+		crab.pos = Vector2(590, 400)
+		crab.stun = 0.0
+		view.foot = crab.pos
+		view.oxygen = 90
+		view.hit_cooldown = 0.0
+		view.tick_ecology(0.001)
+		check(is_equal_approx(view.oxygen, [84.0, 87.0, 90.0][level]), "护腕轻击减伤等级%d" % level)
+	view.place = "shoal"
+	view.foot = Vector2(340, 560)
+	view.start_chest(catalog.NODES.shoal[1])
+	view.move_step(Vector2(100, 0))
+	view.tick_opening(1)
+	check(view.opening.is_empty(), "被动位移离开半径取消开箱")
+	sea._start_round()
+	check(sea.tide_clock == 0 and sea.creature_states.is_empty() and sea.tide_shells.is_empty(), "重开清运行态")
 
 func run() -> void:
 	if not ProjectSettings.get_setting("application/config/use_custom_user_dir", false) or not str(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")).begins_with("Cun-Underwater-"):
@@ -1537,7 +1629,6 @@ func run() -> void:
 	var warehouse_found := false
 	for child in sea.get_children():
 		if child is AcceptDialog and child.visible:
-			warehouse_found = child.dialog_text.contains("待领产出") and child.dialog_text.contains("珊瑚枝")
 			var inventory: ScrollContainer = child.get_node("InventoryScroll")
 			check(inventory.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED and inventory.size.y <= 430 and child.size.y < 650, "背包内容限高可纵向滚动且不超画布")
 			var sections: VBoxContainer = inventory.get_child(0)
@@ -1553,6 +1644,7 @@ func run() -> void:
 					for row in section.get_children(): displayed.append(row.text)
 			check(groups == 4 and donation_buttons == sea.resources.size(), "背包保留四组库存配方且六种材料各有投料入口")
 			var full_text := "\n".join(displayed)
+			warehouse_found = full_text.contains("待领产出") and full_text.contains("珊瑚枝")
 			for line in child.dialog_text.split("\n"):
 				if line.is_empty(): continue
 				var parts: PackedStringArray = line.split("：", true, 1)
@@ -1752,7 +1844,7 @@ func run() -> void:
 	var archived: Dictionary = sea._round_state()
 	sea.dive_view.archive_button.pressed.emit()
 	check(sea._round_state() == archived, "重复归档无奖励")
-	check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 10, "写入v10")
+	check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 11, "写入v11")
 	game.load_sea_save()
 	check(game.water_activity_state.dive_archived, "v8重读保留归档")
 	for field in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
@@ -1818,6 +1910,7 @@ func run() -> void:
 	await stock_rollback_checks()
 	await technology_checks()
 	await species_checks()
+	await additions_checks()
 	sea._start_round()
 	check(sea._cache_round(), "专项退出恢复新局供经营回归使用")
 	sea.queue_free()

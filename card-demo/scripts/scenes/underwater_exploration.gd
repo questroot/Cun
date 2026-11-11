@@ -38,11 +38,118 @@ var records_page := "clues"
 var records_tabs: HBoxContainer
 var clues_tab: Button
 var species_tab: Button
+var orders_tab: Button
+var orders_content: Label
 var clues_content: VBoxContainer
 var species_content: VBoxContainer
 var species_count: Label
 var species_regions: Dictionary = {}
 var species_cards: Dictionary = {}
+var observed: Dictionary = {}
+var facing := Vector2.RIGHT
+var push_cooldown := 0.0
+var hit_cooldown := 0.0
+var narrow_wreck := false
+var audio: Node
+
+func species_position(id: String) -> Vector2:
+	return host.creature_states.get(id, {}).get("pos", Catalog.species()[id].pos)
+
+func tide() -> Dictionary:
+	var phase := fposmod(host.tide_clock, 270.0)
+	if phase < 90: return {"name": "平潮", "left": 90 - phase, "rising": false, "falling": false}
+	if phase < 135: return {"name": "涨潮", "left": 135 - phase, "rising": true, "falling": false}
+	if phase < 225: return {"name": "平潮", "left": 225 - phase, "rising": false, "falling": false}
+	return {"name": "落潮", "left": 270 - phase, "rising": false, "falling": true}
+
+func cue(event: String) -> void:
+	if is_instance_valid(audio): audio.cue(event)
+
+func tick_ecology(delta: float) -> void:
+	push_cooldown = maxf(0, push_cooldown - delta)
+	hit_cooldown = maxf(0, hit_cooldown - delta)
+	for id in Catalog.species():
+		var entry: Dictionary = Catalog.species()[id]
+		if not host.creature_states.has(id):
+			host.creature_states[id] = {"pos": entry.pos, "stun": 0.0, "respawn": 0.0, "phase": 0.0, "warning": 0.0, "dash": 0.0, "direction": Vector2.RIGHT, "attack": 3.0}
+		var state: Dictionary = host.creature_states[id]
+		if state.respawn > 0:
+			state.respawn = maxf(0, float(state.respawn) - delta)
+			if state.respawn == 0: state.pos = entry.pos
+			continue
+		state.stun = maxf(0, float(state.stun) - delta)
+		if entry.place != place or state.stun > 0: continue
+		state.phase += delta
+		var motion := Vector2(cos(float(state.phase)), sin(float(state.phase) * 0.7)) * delta * 12
+		if id == "trench_blind_eel":
+			state.attack -= delta * (1.5 if tide().rising else 1.0)
+			if state.warning > 0:
+				state.warning = maxf(0, float(state.warning) - delta)
+				if state.warning == 0: state.dash = 0.7
+			elif state.dash > 0:
+				state.dash = maxf(0, float(state.dash) - delta)
+				motion = state.direction * delta * 310
+			elif state.attack <= 0 and foot.distance_to(state.pos) < 260:
+				state.direction = (foot - Vector2(state.pos)).normalized()
+				state.warning = 0.8
+				state.attack = 5.0
+		if can_stand(Vector2(state.pos) + motion): state.pos += motion
+		if hit_cooldown <= 0 and foot.distance_to(state.pos) < 28 and (id == "wreck_rust_crab" or (id == "trench_blind_eel" and state.dash > 0)):
+			var light: bool = id == "wreck_rust_crab"
+			var wrist: int = host.equipment_level("wrist")
+			var damage := (0.0 if wrist == 2 else (3.0 if wrist == 1 else 6.0)) if light else (8.0 if wrist == 2 else (12.0 if wrist == 1 else 18.0))
+			hit_cooldown = 1.2
+			oxygen = maxf(0, oxygen - damage)
+			move_step((foot - Vector2(state.pos)).normalized() * 32)
+			cue("hit")
+			if oxygen <= 0:
+				tick_oxygen(0.000001)
+				return
+	if place == "trench" and tide().rising:
+		move_step(Vector2(24 * delta, 0))
+	if place == "wreck":
+		if not tide().falling: narrow_wreck = false
+		elif not Rect2(378, 423, 114, 44).has_point(foot): narrow_wreck = true
+
+func push() -> bool:
+	if read_only or settling or ascending > 0 or oxygen <= 0 or bag_open or push_cooldown > 0: return false
+	push_cooldown = 1.0
+	for id in host.creature_states:
+		var state: Dictionary = host.creature_states[id]
+		if Catalog.species()[id].place != place or state.respawn > 0: continue
+		var offset: Vector2 = state.pos - foot
+		if offset.length() <= 85 and (offset.length() < 1 or facing.dot(offset.normalized()) >= 0.4):
+			state.stun = 2.0 + host.equipment_level("capture_net") * 1.5
+			state.dash = 0.0
+			state.warning = 0.0
+			var destination: Vector2 = state.pos + offset.normalized() * 28
+			if can_stand(destination): state.pos = destination
+	cue("push")
+	return true
+
+func capture() -> bool:
+	if host.equipment_level("capture_net") <= 0: return false
+	for id in host.creature_states:
+		var state: Dictionary = host.creature_states[id]
+		if Catalog.species()[id].place != place or state.respawn > 0 or state.stun <= 0 or foot.distance_to(state.pos) > 56: continue
+		if not fits("live:" + id):
+			message = "活捕需要2格空间；生物仍在原处。"
+			return true
+		bag.append("live:" + id)
+		state.respawn = 180.0
+		state.stun = 0.0
+		message = "活捕成功；安全入库后认证。"
+		cue("gather")
+		return true
+	return false
+
+func tidal_shells() -> Array:
+	if place != "shoal" or not tide().falling: return []
+	var result := []
+	for i in 2:
+		var id := "%d:%d" % [int(host.tide_clock / 270), i]
+		if not host.tide_shells.has(id): result.append([id, Vector2(210 + i * 560, 590)])
+	return result
 
 func reset_observation() -> void:
 	observing_id = ""
@@ -54,8 +161,8 @@ func nearest_species() -> String:
 	var entries := Catalog.species()
 	for id in entries:
 		var entry: Dictionary = entries[id]
-		if entry.place != place or host.species_records.get(id, false) or observation_blocked.has(id): continue
-		var candidate := foot.distance_to(entry.pos)
+		if entry.place != place or observed.has(id) or host.creature_states.get(id, {}).get("respawn", 0) > 0 or observation_blocked.has(id): continue
+		var candidate := foot.distance_to(species_position(id))
 		if candidate <= distance:
 			if nearest.is_empty() or candidate < distance:
 				nearest = id
@@ -66,7 +173,7 @@ func tick_observation(delta: float) -> void:
 	var entries := Catalog.species()
 	for id in observation_blocked.keys():
 		var entry: Dictionary = entries[id]
-		if entry.place != place or foot.distance_to(entry.pos) > Catalog.OBSERVE_RADIUS:
+		if entry.place != place or foot.distance_to(species_position(id)) > Catalog.OBSERVE_RADIUS:
 			observation_blocked.erase(id)
 	if read_only or settling or ascending > 0 or oxygen <= 0 or bag_open or not opening.is_empty() or not settlement.is_empty():
 		reset_observation()
@@ -82,6 +189,7 @@ func tick_observation(delta: float) -> void:
 	var id := observing_id
 	reset_observation()
 	if host._commit_species(id):
+		observed[id] = true
 		message = "生态记录已保存：%s；救援上浮仍保留，可在浮台生态图鉴回看。" % entries[id].name
 	else:
 		observation_blocked[id] = true
@@ -89,7 +197,7 @@ func tick_observation(delta: float) -> void:
 
 func update_records_focus() -> void:
 	if not read_only: return
-	var controls: Array = [clues_tab, species_tab]
+	var controls: Array = [clues_tab, species_tab, orders_tab]
 	if records_page == "clues" and not archive_button.disabled: controls.append(archive_button)
 	controls.append(close_button)
 	for i in controls.size():
@@ -102,10 +210,10 @@ func update_records_focus() -> void:
 		button.set_focus_neighbor(SIDE_TOP, button.focus_previous)
 
 func show_records_page(page: String) -> void:
-	if not read_only or page not in ["clues", "species"]: return
+	if not read_only or page not in ["clues", "species", "orders"]: return
 	records_page = page
 	refresh()
-	(clues_tab if page == "clues" else species_tab).grab_focus()
+	({"clues": clues_tab, "species": species_tab, "orders": orders_tab}[page]).grab_focus()
 
 func build_records() -> void:
 	records_tabs = HBoxContainer.new()
@@ -124,6 +232,17 @@ func build_records() -> void:
 	species_tab.custom_minimum_size = Vector2(180, 42)
 	species_tab.pressed.connect(show_records_page.bind("species"))
 	records_tabs.add_child(species_tab)
+	orders_tab = Button.new()
+	orders_tab.text = "阿汐委托 / 航程"
+	orders_tab.toggle_mode = true
+	orders_tab.custom_minimum_size = Vector2(220, 42)
+	orders_tab.pressed.connect(show_records_page.bind("orders"))
+	records_tabs.add_child(orders_tab)
+	orders_content = Label.new()
+	orders_content.position = Vector2(100, 205)
+	orders_content.size = Vector2(1070, 410)
+	orders_content.add_theme_font_size_override("font_size", 17)
+	add_child(orders_content)
 	clues_content = VBoxContainer.new()
 	clues_content.position = Vector2(100, 225)
 	clues_content.size = Vector2(1070, 350)
@@ -180,6 +299,17 @@ func refresh_records() -> void:
 	species_tab.button_pressed = records_page == "species"
 	clues_content.visible = records_page == "clues"
 	species_content.visible = records_page == "species"
+	orders_tab.button_pressed = records_page == "orders"
+	orders_content.visible = records_page == "orders"
+	var order_lines: Array[String] = ["阿汐委托 · 成功入库统一交付；新单从下次归档起结算。"]
+	if not host.tide_table: order_lines.append("建成潮测台后开放三单。")
+	for order in host.dive_archive.orders:
+		var config: Dictionary = Catalog.ORDER_POOL[int(order.kind)]
+		var request: String = ("观察" + String(Catalog.species()[config.observe].name)) if config.has("observe") else (Catalog.item_name(config.item) + " ×%d" % int(config.amount))
+		order_lines.append("#%d  %s → %s ×%d" % [int(order.id), request, {"wood": "木", "scrap": "废", "fiber": "纤维", "water": "清水", "salt": "盐"}[config.reward], int(config.count)])
+	order_lines.append("\n安全航程 %d · 每5次一条线索（最多10条）" % int(host.dive_archive.voyages))
+	for i in mini(10, int(host.dive_archive.voyages) / 5): order_lines.append("%d. %s" % [i + 1, Catalog.VOYAGE_CLUES[i]])
+	orders_content.text = "\n".join(order_lines)
 	var lines := ["珊瑚浅滩：" + ("船舷金属片，光迹指向船尾。" if host.dive_shoal else "尚未调查"), "侧倾沉船：" + ("声呐台记录间歇光带与海沟方向。" if host.dive_sonar else "尚未调查"), "发光海沟：" + ("唯一回声核心已带回。" if host.dive_core else "尚未发现"), "归档：" + ("浅滩 → 船尾声呐 → 海沟核心；深处信号仍未解。" if host.dive_archived else "待取得核心并在浮台归档")]
 	for i in lines.size(): clues_content.get_child(i).text = lines[i]
 	var counts := {"shoal": 0, "wreck": 0, "trench": 0}
@@ -194,10 +324,12 @@ func refresh_records() -> void:
 			counts[entry.place] += 1
 			total += 1
 		species_cards[id].text.text = (entry.name + " · 已记录\n" + locations[entry.place] + "\n" + entry.description) if recorded else ("未知生物 · 未记录\n" + locations[entry.place] + "\n靠近48像素，持续观察2秒解锁。")
+		species_cards[id].text.text += "\n安全 %s · 活捕 %s" % ["✓" if host.dive_archive.safe[id] else "—", "✓" if host.dive_archive.captured[id] else "—"]
 		species_cards[id].icon.queue_redraw()
 	for region in counts:
 		species_regions[region].text = "%s · %d/%d" % [locations[region], counts[region], totals[region]]
-	species_count.text = "生态记录 %d/%d · 已保存记录救援保留，无材料或核心奖励" % [total, entries.size()]
+	var safe_count: int = host.dive_archive.safe.values().count(true)
+	species_count.text = "观察 %d/9 · 安全 %d/9 · 安全3/5/7/9种解锁捕网/护腕/捕网II/护腕II" % [total, safe_count]
 	update_records_focus()
 
 func cancel_opening(reason: String) -> void:
@@ -214,7 +346,7 @@ func start_chest(node: Array) -> void:
 	if int(entry.stock) <= 0:
 		message = "宝箱已开空，等待补充。"
 		return
-	var slots := Catalog.chest_slots(place, node[0])
+	var slots := chest_slots(node[0])
 	if used_slots() + slots > capacity():
 		message = "网袋空间不足：此箱需预留%d格（按最大可能产出）；未开箱、不扣次数。" % slots
 		return
@@ -226,12 +358,15 @@ func start_chest(node: Array) -> void:
 	message = "按一次E已启动开箱，无需按住；移动取消，开启期间继续耗氧。"
 	if opening_left == 0: finish_chest()
 
+func chest_slots(id: String) -> int:
+	return Catalog.chest_slots(place, id)
+
 func finish_chest() -> void:
 	if opening.is_empty(): return
 	var current := opening.duplicate()
 	opening.clear()
 	opening_left = 0
-	if used_slots() + Catalog.chest_slots(place, current.id) > capacity():
+	if used_slots() + chest_slots(current.id) > capacity():
 		message = "网袋空间不足；未扣次数、未抽奖。"
 		return
 	# 只有事务保存成功才计算一次随机结果，失败无奖励也不扣存量。
@@ -240,7 +375,11 @@ func finish_chest() -> void:
 		message = "开箱失败：补充中或保存失败；未扣次数、未发奖，可重试。"
 		return
 	var loot := Catalog.chest_loot(place, current.id, int(entry.stock), float(entry.timestamp))
+	if tide().rising:
+		for item in loot.duplicate():
+			if item == "algae": loot.append(item)
 	bag.append_array(loot)
+	cue("gather")
 	message = "宝箱开启：" + settlement_items(loot).replace("\n", "、") + "；暂存网袋，安全上浮才入库。用途："
 	for id in loot: message += Catalog.USES[id] + "；"
 
@@ -275,6 +414,8 @@ var settlement_technology: Button
 var settlement_retry: Button
 
 func show_settlement(saved: bool) -> void:
+	cue("surface")
+	if is_instance_valid(audio): audio.enter("")
 	reset_observation()
 	model.hide()
 	settlement_saved = saved
@@ -366,7 +507,7 @@ func settlement_items(items: Array) -> String:
 	var counts := {}
 	for id in items: counts[id] = int(counts.get(id, 0)) + 1
 	var lines := PackedStringArray()
-	for id in counts: lines.append("%s × %d" % [Catalog.ITEMS[id][0], counts[id]])
+	for id in counts: lines.append("%s × %d" % [Catalog.item_name(id), counts[id]])
 	return "\n".join(lines) if not lines.is_empty() else "空袋 / 无"
 
 func oxygen_max() -> float:
@@ -412,11 +553,11 @@ func capacity() -> int:
 
 func used_slots() -> int:
 	var total := 0
-	for id in bag: total += int(Catalog.ITEMS[id][1])
+	for id in bag: total += Catalog.item_slots(id)
 	return total
 
 func fits(id: String) -> bool:
-	return used_slots() + int(Catalog.ITEMS[id][1]) <= capacity()
+	return used_slots() + Catalog.item_slots(id) <= capacity()
 
 func discard(index: int) -> void:
 	if settling or ascending > 0 or index < 0 or index >= bag.size(): return
@@ -431,9 +572,9 @@ func bag_slot(index: int) -> Rect2:
 func item_at(point: Vector2) -> int:
 	var slot := 0
 	for i in bag.size():
-		for offset in int(Catalog.ITEMS[bag[i]][1]):
+		for offset in Catalog.item_slots(bag[i]):
 			if bag_slot(slot + offset).has_point(point): return i
-		slot += int(Catalog.ITEMS[bag[i]][1])
+		slot += Catalog.item_slots(bag[i])
 	return -1
 
 func tick_oxygen(delta: float) -> void:
@@ -444,7 +585,7 @@ func tick_oxygen(delta: float) -> void:
 			settling = true
 			returned.emit()
 		return
-	var rate: float = Catalog.RATES[place]
+	var rate: float = Catalog.RATES[place] * (1.1 if tide().rising else 1.0)
 	var remainder := maxf(0, delta - oxygen / rate)
 	oxygen = maxf(0, oxygen - delta * rate)
 	if oxygen <= oxygen_max() * 0.3 and not warned:
@@ -483,7 +624,7 @@ func nearest_target() -> Dictionary:
 		var candidate := foot.distance_to(drops[i].position)
 		if candidate <= distance:
 			distance = candidate
-			nearest = {"kind": "drop", "data": i, "position": drops[i].position, "text": "捡回 " + Catalog.ITEMS[drops[i].id][0]}
+			nearest = {"kind": "drop", "data": i, "position": drops[i].position, "text": "捡回 " + Catalog.item_name(drops[i].id)}
 	return nearest
 
 func stock_text(id: String) -> String:
@@ -520,7 +661,7 @@ func _ready() -> void:
 	feedback = _label(Vector2(70, 90), 20)
 	prompt = _label(Vector2(70, 640), 19)
 	rules_label = _label(Vector2(70, 72), 16)
-	rules_label.text = "规则：耗尽丢整袋/新核心；宝箱须安全上浮入库；靠近生物48px观察2秒，已保存生态记录救援保留。"
+	rules_label.text = "耗尽丢整袋/新核心；安全上浮入库认证。靠近生物观察2秒；J推开，硬直时E活捕（需捕网/2格）。"
 	rules_label.visible = not read_only
 	feedback.position.y = 94
 	feedback.add_theme_font_size_override("font_size", 14)
@@ -546,6 +687,28 @@ func _ready() -> void:
 	feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prompt.size = Vector2(680 if read_only else 1130, 70)
 	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if not read_only and ResourceLoader.exists("res://scripts/scenes/underwater_audio.gd"):
+		audio = load("res://scripts/scenes/underwater_audio.gd").new()
+		add_child(audio)
+		audio.enter(place)
+		var mute := Button.new()
+		mute.text = "静音"
+		mute.position = Vector2(780, 30)
+		mute.size = Vector2(90, 40)
+		mute.pressed.connect(func() -> void:
+			audio.set_muted(not audio.muted)
+			mute.text = "恢复声音" if audio.muted else "静音")
+		add_child(mute)
+		var volume := HSlider.new()
+		volume.position = Vector2(875, 40)
+		volume.size = Vector2(95, 24)
+		volume.max_value = 100
+		volume.value = 70
+		volume.value_changed.connect(func(value: float) -> void:
+			audio.music_level = value / 100.0
+			audio.effects_level = value / 100.0
+			audio.ambience_level = value / 100.0)
+		add_child(volume)
 	if read_only: build_records()
 	refresh()
 	if read_only:
@@ -564,7 +727,7 @@ func _label(at: Vector2, font_size: int) -> Label:
 func obstacles() -> Array[Rect2]:
 	match place:
 		"shoal": return [Rect2(430, 155, 65, 190), Rect2(430, 435, 65, 190)]
-		"wreck": return [Rect2(390, 155, 90, 280), Rect2(390, 535, 90, 90), Rect2(480, 155, 570, 70), Rect2(480, 555, 570, 70)]
+		"wreck": return [Rect2(390, 155, 90, 300 if narrow_wreck else 280), Rect2(390, 535, 90, 90), Rect2(480, 155, 570, 70), Rect2(480, 555, 570, 70)]
 		"trench": return [Rect2(70, 155, 1130, 175), Rect2(70, 490, 1130, 135), Rect2(960, 155, 240, 470)]
 	return []
 
@@ -603,7 +766,17 @@ func site_text(site: String) -> String:
 	return site + " · 可进入"
 
 func interact() -> bool:
-	if read_only or settling or ascending > 0 or bag_open: return false
+	if read_only or settling or ascending > 0 or oxygen <= 0 or bag_open: return false
+	if capture():
+		refresh()
+		return true
+	for shell in tidal_shells():
+		if foot.distance_to(shell[1]) <= 56:
+			if fits("shell"):
+				bag.append("shell")
+				host.tide_shells[shell[0]] = true
+				cue("gather")
+			return true
 	var chosen := nearest_target()
 	if chosen.is_empty(): return false
 	if chosen.kind == "node":
@@ -617,7 +790,7 @@ func interact() -> bool:
 		elif chosen.kind == "drop":
 			bag.append(id)
 			drops.remove_at(int(chosen.data))
-			message = "已捡回 " + Catalog.ITEMS[id][0]
+			message = "已捡回 " + Catalog.item_name(id)
 
 		refresh()
 		return true
@@ -660,6 +833,7 @@ func enter(destination: String) -> void:
 	cancel_opening("切换地点")
 	var source := place
 	place = destination
+	if is_instance_valid(audio): audio.enter(place)
 	foot = Vector2(225, 410 if place == "trench" else 490)
 	if source == "wreck" and place == "shoal":
 		foot = Vector2(1000, 490)
@@ -677,6 +851,10 @@ func refresh() -> void:
 	if not is_instance_valid(heading) or not settlement.is_empty(): return
 	oxygen_label.visible = not read_only
 	oxygen_label.text = "氧气 %.1f / %.0f 秒 ×%.2f  网袋 %d/%d · B查看 · 光柱附近Esc上浮" % [oxygen, oxygen_max(), Catalog.RATES[place], used_slots(), capacity()]
+	oxygen_label.text += " · %s %ds · J推开/E活捕" % [tide().name, ceili(tide().left)]
+	if is_instance_valid(audio):
+		audio.set_tide(tide().rising)
+		audio.set_oxygen(oxygen / oxygen_max())
 	if warned: oxygen_label.text += " · 低氧警告！耗尽整袋丢失，立即前往光柱"
 	oxygen_label.modulate = Color.YELLOW if warned else Color.WHITE
 	heading.text = "浮台 · 探索记录" if read_only else {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}[place] + " · WASD / 方向键 / 点击移动"
@@ -731,6 +909,7 @@ func _input(event: InputEvent) -> void:
 				drag_index = -1
 				moving = false
 				refresh()
+			elif event.keycode == KEY_J: push()
 			elif event.keycode == KEY_E: interact()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not read_only and bag_open:
 		var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
@@ -752,10 +931,12 @@ func _process(delta: float) -> void:
 	if read_only: return
 	tick_oxygen(delta)
 	if not is_inside_tree(): return
+	var was_opening := not opening.is_empty()
 	if not settling and ascending <= 0:
 		var input_moving := Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_UP) or Input.is_key_pressed(KEY_DOWN) or Input.is_key_pressed(KEY_LEFT) or Input.is_key_pressed(KEY_RIGHT)
 		if input_moving: cancel_opening("移动输入")
-		tick_opening(delta)
+		tick_ecology(delta)
+		if ascending <= 0 and not settling: tick_opening(delta)
 	if bag_open or settling or ascending > 0:
 		reset_observation()
 		refresh()
@@ -765,6 +946,7 @@ func _process(delta: float) -> void:
 	elif moving:
 		if foot.distance_to(target) < 4: moving = false
 		else: direction = (target - foot).normalized()
+	if direction != Vector2.ZERO: facing = direction
 	var before := foot
 	var motion := direction * minf(delta, 0.05) * swim_speed()
 	if moving: motion = motion.limit_length(foot.distance_to(target))
@@ -773,7 +955,7 @@ func _process(delta: float) -> void:
 	if moving and direction != Vector2.ZERO and foot.distance_to(before) < 0.01:
 		moving = false
 		message = "前方受阻，已停止；请用方向键或分段点击绕过缺口。"
-	tick_observation(delta)
+	if not was_opening: tick_observation(delta)
 	refresh()
 
 func draw_creature(canvas: CanvasItem, p: Vector2, shape: String, color: Color, silhouette: bool = false) -> void:
@@ -823,9 +1005,13 @@ func draw_species() -> void:
 	for id in entries:
 		var entry: Dictionary = entries[id]
 		if entry.place != place: continue
-		var p: Vector2 = entry.pos
+		if host.creature_states.get(id, {}).get("respawn", 0) > 0: continue
+		var p: Vector2 = species_position(id)
 		var recorded: bool = host.species_records.get(id, false)
 		draw_creature(self, p, entry.shape, entry.color)
+		var state: Dictionary = host.creature_states.get(id, {})
+		if state.get("warning", 0) > 0: draw_arc(p, 36, 0, TAU, 24, Color.RED, 3)
+		if state.get("stun", 0) > 0: draw_string(ThemeDB.fallback_font, p - Vector2(25, 28), "硬直 · E活捕", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.YELLOW)
 		if entry.shape == "fish":
 			draw_creature(self, p + Vector2(31, 18), "fish", entry.color.darkened(0.15))
 		var nearby := foot.distance_to(p) <= Catalog.OBSERVE_RADIUS
@@ -884,6 +1070,9 @@ func _draw() -> void:
 		draw_arc(target, 10, 0, TAU, 20, Color("#ffe6a4"), 2)
 		draw_line(target - Vector2(15, 0), target + Vector2(15, 0), Color("#ffe6a4"), 2)
 	draw_species()
+	for shell in tidal_shells():
+		draw_circle(shell[1], 14, Color.CYAN)
+		draw_string(ThemeDB.fallback_font, shell[1] - Vector2(35, 22), "临时贝群 · E", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 	for site in sites():
 		if site[0] == "上浮出口":
 			draw_rect(Rect2(Vector2(site[1].x - 15, FIELD.position.y), Vector2(30, site[1].y - FIELD.position.y)), Color(0.5, 1.0, 0.9, 0.22))
@@ -923,7 +1112,7 @@ func _draw() -> void:
 	for drop in drops:
 		if drop.place == place:
 			draw_circle(drop.position, 8, Color.ORANGE)
-			draw_string(ThemeDB.fallback_font, drop.position + Vector2(12, 12), "拾 " + Catalog.ITEMS[drop.id][0], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+			draw_string(ThemeDB.fallback_font, drop.position + Vector2(12, 12), "拾 " + Catalog.item_name(drop.id), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 	var chosen := nearest_target()
 	if not chosen.is_empty(): draw_arc(chosen.position, 25, 0, TAU, 24, Color.YELLOW, 3)
 	var ratio := oxygen / oxygen_max()
@@ -940,8 +1129,8 @@ func _draw() -> void:
 		var slot := 0
 		for i in bag.size():
 			var id: String = bag[i]
-			for offset in int(Catalog.ITEMS[id][1]):
+			for offset in Catalog.item_slots(id):
 				var cell := bag_slot(slot + offset).grow(-4)
 				draw_rect(cell, Color("#375c70"))
-				draw_string(ThemeDB.fallback_font, cell.position + Vector2(2, 28), "%d %s" % [i + 1, Catalog.ITEMS[id][0]], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
-			slot += int(Catalog.ITEMS[id][1])
+				draw_string(ThemeDB.fallback_font, cell.position + Vector2(2, 28), "%d %s" % [i + 1, Catalog.item_name(id)], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+			slot += Catalog.item_slots(id)

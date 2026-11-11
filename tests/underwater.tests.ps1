@@ -27,13 +27,14 @@ $config += "`n[threading]`nworker_pool/max_threads=1`n`n[editor]`nimport/use_mul
 [IO.File]::WriteAllText($configPath, $config, (New-Object Text.UTF8Encoding($false)))
 Write-Output "Isolated project: $testRoot"
 Write-Output "Isolated user directory: Cun-Underwater-$id"
-$stages = @('import', 'result', 'editor', 'transaction', 'underwater', 'smoke')
+$stages = @('import', 'result', 'editor', 'transaction', 'underwater', 'underwater-audio', 'smoke')
 if ($ResultPreview -or $ResultCapture) { $stages = @('import', 'result-preview') }
 $failedStages = @()
 foreach ($name in $stages) {
     $arguments = @('--headless', '--path', $testRoot)
     if ($name -eq 'import') { $arguments += @('--editor', '--import', '--quit') }
     elseif ($name -eq 'underwater') { $arguments += @('--script', 'res://scripts/tests/underwater_smoke.gd') }
+    elseif ($name -eq 'underwater-audio') { $arguments += @('--audio-driver', 'Dummy', '--script', 'res://scripts/tests/underwater_audio_smoke.gd') }
     elseif ($name -eq 'result') { $arguments += @('--script', 'res://scripts/tests/public_project_result_preview.gd') }
     elseif ($name -eq 'editor') { $arguments += @('--script', 'res://scripts/tests/public_project_editor_smoke.gd') }
     elseif ($name -eq 'transaction') { $arguments += @('--script', 'res://scripts/tests/public_project_transaction_smoke.gd') }

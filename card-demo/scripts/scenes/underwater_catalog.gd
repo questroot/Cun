@@ -61,19 +61,72 @@ const ITEMS := {
 	"timber": ["船料", 2], "copper": ["铜件", 2],
 	"algae": ["发光藻", 1], "pearl": ["深水珍珠", 3]
 }
-const EQUIPMENT := {"mask": "潜水面具", "tank": "氧气瓶", "fins": "脚蹼", "wrist": "护腕（暂未开放）"}
+const EQUIPMENT := {"mask": "潜水面具", "tank": "氧气瓶", "fins": "脚蹼", "wrist": "护腕", "capture_net": "捕网"}
 const WORKSHOP_COST := Vector2i(2, 2)
 const SAFETY_RADIUS := 56.0
 const RECIPES := {
 	"mask": [{"coral": 3, "wood": 2}, {"pearl": 1, "copper": 2}],
 	"tank": [{"copper": 2, "scrap": 2}, {"pearl": 1, "timber": 2}],
 	"fins": [{"shell": 3, "fiber": 2}, {"algae": 3, "rope": 1}],
-	"net_expansion": [{"coral": 2, "rope": 1}, {"coral": 2, "rope": 1}]
+	"net_expansion": [{"coral": 2, "rope": 1}, {"coral": 2, "rope": 1}],
+	"capture_net": [{"shell": 2, "fiber": 2}, {"algae": 3, "copper": 2}],
+	"wrist": [{"timber": 2, "copper": 2}, {"pearl": 1, "copper": 3}]
 }
 const USES := {"coral": "面具L1 / 网袋扩容 / 浅海科技与设备", "shell": "脚蹼L1 / 浅海科技 / 维护包", "timber": "氧气瓶L2 / 沉船机械臂 / 缓冲货仓", "copper": "氧气瓶L1 / 面具L2 / 沉船与回声科技", "algae": "脚蹼L2 / 海沟与节能科技 / 进阶维护包", "pearl": "深处目标：面具与氧气瓶二级 / 海沟与回声科技（不可自动产）"}
 
 static func equipment() -> Dictionary:
-	return {"mask": {"id": "mask", "level": 0}, "tank": {"id": "tank", "level": 0}, "fins": {"id": "fins", "level": 0}, "wrist": {"id": "wrist", "level": 0}}
+	var result := {}
+	for id in EQUIPMENT: result[id] = {"id": id, "level": 0}
+	return result
+
+static func item_name(id: String) -> String:
+	return "活体·" + String(species()[id.trim_prefix("live:")].name) if id.begins_with("live:") else String(ITEMS[id][0])
+
+static func item_slots(id: String) -> int:
+	return 2 if id.begins_with("live:") else int(ITEMS[id][1])
+
+static func archive_defaults() -> Dictionary:
+	return {"safe": species_records(), "captured": species_records(), "voyages": 0, "orders": [], "order_seq": 0, "refreshed": 0.0, "completed": []}
+
+static func valid_archive(value: Variant) -> bool:
+	if not value is Dictionary or value.size() != archive_defaults().size(): return false
+	for key in ["safe", "captured"]:
+		if not value.get(key) is Dictionary or value[key].size() != species().size(): return false
+		for id in species():
+			if not value[key].get(id) is bool: return false
+	for key in ["voyages", "order_seq"]:
+		if not integer(value.get(key), 1000000000): return false
+	if not (value.get("refreshed") is float or value.get("refreshed") is int) or not is_finite(float(value.refreshed)) or value.refreshed < 0 or value.refreshed > 253402300799.0: return false
+	if not value.get("orders") is Array or value.orders.size() > 3 or not value.get("completed") is Array: return false
+	var ids := []
+	for order in value.orders:
+		if not order is Dictionary or order.size() != 3 or not integer(order.get("id"), int(value.order_seq)) or order.id < 1 or order.id in ids or not integer(order.get("kind"), 9) or not order.get("done") is bool: return false
+		ids.append(order.id)
+	for id in value.completed:
+		if not integer(id, int(value.order_seq)) or id < 1: return false
+	return true
+
+static func recipe_unlocked(id: String, level: int, progress: Dictionary) -> bool:
+	var count := 0
+	for seen in progress.safe.values():
+		if seen: count += 1
+	if id == "capture_net": return count >= (3 if level == 0 else 7)
+	if id == "wrist": return count >= (5 if level == 0 else 9)
+	return true
+
+const ORDER_POOL := [
+	{"item": "coral", "amount": 2, "reward": "wood", "count": 2},
+	{"item": "shell", "amount": 2, "reward": "scrap", "count": 2},
+	{"item": "timber", "amount": 1, "reward": "wood", "count": 2},
+	{"item": "copper", "amount": 1, "reward": "scrap", "count": 2},
+	{"item": "algae", "amount": 2, "reward": "fiber", "count": 2},
+	{"item": "shell", "amount": 3, "reward": "water", "count": 2},
+	{"item": "coral", "amount": 3, "reward": "salt", "count": 2},
+	{"observe": "shoal_glowfish", "reward": "wood", "count": 1},
+	{"observe": "wreck_rust_crab", "reward": "scrap", "count": 1},
+	{"observe": "trench_glowing_jellyfish", "reward": "fiber", "count": 1}
+]
+const VOYAGE_CLUES := ["远处的回声晚到了一拍。", "旧船钟记录了同样的间隔。", "光带绕开了断崖下的黑影。", "贝壳内侧留下朝北的细纹。", "声呐里出现两次短促应答。", "沉船航图没有标注那束光。", "深处水流携来温暖的沙粒。", "十次回声后，信号仍在原处。", "有人曾在岩面刻下归途。", "断崖之外，微光正在等待回应。"]
 
 const NODES := {
 	"shoal": [["s1", "coral", Vector2(270, 300)], ["s2", "shell", Vector2(340, 560)], ["s3", "coral", Vector2(740, 520)], ["s4", "shell", Vector2(970, 370)]],
@@ -106,7 +159,7 @@ static func valid_equipment(state: Dictionary) -> bool:
 	if not state.get("equipment") is Dictionary or state.equipment.size() != EQUIPMENT.size(): return false
 	for slot in EQUIPMENT:
 		var item: Variant = state.equipment.get(slot)
-		if not item is Dictionary or item.size() != 2 or item.get("id") != slot or not integer(item.get("level"), 0 if slot == "wrist" else 2): return false
+		if not item is Dictionary or item.size() != 2 or item.get("id") != slot or not integer(item.get("level"), 2): return false
 		if item.level > 0 and not state.dive_workshop_built: return false
 	return true
 
