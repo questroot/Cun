@@ -31,6 +31,174 @@ var opening: Dictionary = {}
 var opening_left := 0.0
 var opening_total := 0.0
 var rules_label: Label
+var observing_id := ""
+var observation_elapsed := 0.0
+var observation_blocked: Dictionary = {}
+var records_page := "clues"
+var records_tabs: HBoxContainer
+var clues_tab: Button
+var species_tab: Button
+var clues_content: VBoxContainer
+var species_content: VBoxContainer
+var species_count: Label
+var species_regions: Dictionary = {}
+var species_cards: Dictionary = {}
+
+func reset_observation() -> void:
+	observing_id = ""
+	observation_elapsed = 0.0
+
+func nearest_species() -> String:
+	var nearest := ""
+	var distance := Catalog.OBSERVE_RADIUS
+	var entries := Catalog.species()
+	for id in entries:
+		var entry: Dictionary = entries[id]
+		if entry.place != place or host.species_records.get(id, false) or observation_blocked.has(id): continue
+		var candidate := foot.distance_to(entry.pos)
+		if candidate <= distance:
+			if nearest.is_empty() or candidate < distance:
+				nearest = id
+				distance = candidate
+	return nearest
+
+func tick_observation(delta: float) -> void:
+	var entries := Catalog.species()
+	for id in observation_blocked.keys():
+		var entry: Dictionary = entries[id]
+		if entry.place != place or foot.distance_to(entry.pos) > Catalog.OBSERVE_RADIUS:
+			observation_blocked.erase(id)
+	if read_only or settling or ascending > 0 or oxygen <= 0 or bag_open or not opening.is_empty() or not settlement.is_empty():
+		reset_observation()
+		return
+	if not is_finite(delta) or delta <= 0: return
+	var chosen := nearest_species()
+	if chosen != observing_id:
+		reset_observation()
+		observing_id = chosen
+	if observing_id.is_empty(): return
+	observation_elapsed = minf(Catalog.OBSERVE_SECONDS, observation_elapsed + delta)
+	if observation_elapsed < Catalog.OBSERVE_SECONDS: return
+	var id := observing_id
+	reset_observation()
+	if host._commit_species(id):
+		message = "生态记录已保存：%s；救援上浮仍保留，可在浮台生态图鉴回看。" % entries[id].name
+	else:
+		observation_blocked[id] = true
+		message = "生态记录保存失败；请离开观察圈后重新靠近观察，不会自动重试。"
+
+func update_records_focus() -> void:
+	if not read_only: return
+	var controls: Array = [clues_tab, species_tab]
+	if records_page == "clues" and not archive_button.disabled: controls.append(archive_button)
+	controls.append(close_button)
+	for i in controls.size():
+		var button: Button = controls[i]
+		button.focus_next = button.get_path_to(controls[(i + 1) % controls.size()])
+		button.focus_previous = button.get_path_to(controls[(i - 1 + controls.size()) % controls.size()])
+		button.set_focus_neighbor(SIDE_RIGHT, button.focus_next)
+		button.set_focus_neighbor(SIDE_BOTTOM, button.focus_next)
+		button.set_focus_neighbor(SIDE_LEFT, button.focus_previous)
+		button.set_focus_neighbor(SIDE_TOP, button.focus_previous)
+
+func show_records_page(page: String) -> void:
+	if not read_only or page not in ["clues", "species"]: return
+	records_page = page
+	refresh()
+	(clues_tab if page == "clues" else species_tab).grab_focus()
+
+func build_records() -> void:
+	records_tabs = HBoxContainer.new()
+	records_tabs.position = Vector2(70, 144)
+	records_tabs.add_theme_constant_override("separation", 16)
+	add_child(records_tabs)
+	clues_tab = Button.new()
+	clues_tab.text = "探索线索"
+	clues_tab.toggle_mode = true
+	clues_tab.custom_minimum_size = Vector2(180, 42)
+	clues_tab.pressed.connect(show_records_page.bind("clues"))
+	records_tabs.add_child(clues_tab)
+	species_tab = Button.new()
+	species_tab.text = "生态图鉴"
+	species_tab.toggle_mode = true
+	species_tab.custom_minimum_size = Vector2(180, 42)
+	species_tab.pressed.connect(show_records_page.bind("species"))
+	records_tabs.add_child(species_tab)
+	clues_content = VBoxContainer.new()
+	clues_content.position = Vector2(100, 225)
+	clues_content.size = Vector2(1070, 350)
+	clues_content.add_theme_constant_override("separation", 45)
+	add_child(clues_content)
+	for i in 4:
+		var label := Label.new()
+		label.add_theme_font_size_override("font_size", 23)
+		clues_content.add_child(label)
+	species_content = VBoxContainer.new()
+	species_content.position = Vector2(70, 197)
+	species_content.size = Vector2(1130, 426)
+	species_content.add_theme_constant_override("separation", 8)
+	add_child(species_content)
+	species_count = Label.new()
+	species_count.add_theme_font_size_override("font_size", 18)
+	species_content.add_child(species_count)
+	var regions := HBoxContainer.new()
+	regions.add_theme_constant_override("separation", 12)
+	species_content.add_child(regions)
+	var entries := Catalog.species()
+	for region in ["shoal", "wreck", "trench"]:
+		var column := VBoxContainer.new()
+		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		column.add_theme_constant_override("separation", 8)
+		regions.add_child(column)
+		var region_label := Label.new()
+		column.add_child(region_label)
+		species_regions[region] = region_label
+		for id in entries:
+			var entry: Dictionary = entries[id]
+			if entry.place != region: continue
+			var panel := PanelContainer.new()
+			panel.custom_minimum_size = Vector2(0, 112)
+			column.add_child(panel)
+			var row := HBoxContainer.new()
+			panel.add_child(row)
+			var icon := Control.new()
+			icon.custom_minimum_size = Vector2(66, 100)
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			icon.draw.connect(func() -> void:
+				draw_creature(icon, Vector2(33, 49), entry.shape, entry.color if host.species_records.get(id, false) else Color("#344658"), not host.species_records.get(id, false)))
+			row.add_child(icon)
+			var text := Label.new()
+			text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			text.add_theme_font_size_override("font_size", 15)
+			row.add_child(text)
+			species_cards[id] = {"text": text, "icon": icon}
+
+func refresh_records() -> void:
+	var locations := {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}
+	clues_tab.button_pressed = records_page == "clues"
+	species_tab.button_pressed = records_page == "species"
+	clues_content.visible = records_page == "clues"
+	species_content.visible = records_page == "species"
+	var lines := ["珊瑚浅滩：" + ("船舷金属片，光迹指向船尾。" if host.dive_shoal else "尚未调查"), "侧倾沉船：" + ("声呐台记录间歇光带与海沟方向。" if host.dive_sonar else "尚未调查"), "发光海沟：" + ("唯一回声核心已带回。" if host.dive_core else "尚未发现"), "归档：" + ("浅滩 → 船尾声呐 → 海沟核心；深处信号仍未解。" if host.dive_archived else "待取得核心并在浮台归档")]
+	for i in lines.size(): clues_content.get_child(i).text = lines[i]
+	var counts := {"shoal": 0, "wreck": 0, "trench": 0}
+	var totals := {"shoal": 0, "wreck": 0, "trench": 0}
+	var total := 0
+	var entries := Catalog.species()
+	for id in entries:
+		var entry: Dictionary = entries[id]
+		var recorded: bool = host.species_records.get(id, false)
+		totals[entry.place] += 1
+		if recorded:
+			counts[entry.place] += 1
+			total += 1
+		species_cards[id].text.text = (entry.name + " · 已记录\n" + locations[entry.place] + "\n" + entry.description) if recorded else ("未知生物 · 未记录\n" + locations[entry.place] + "\n靠近48像素，持续观察2秒解锁。")
+		species_cards[id].icon.queue_redraw()
+	for region in counts:
+		species_regions[region].text = "%s · %d/%d" % [locations[region], counts[region], totals[region]]
+	species_count.text = "生态记录 %d/%d · 已保存记录救援保留，无材料或核心奖励" % [total, entries.size()]
+	update_records_focus()
 
 func cancel_opening(reason: String) -> void:
 	if opening.is_empty(): return
@@ -39,6 +207,7 @@ func cancel_opening(reason: String) -> void:
 	message = "开箱取消：%s；不扣次数、不发奖。" % reason
 
 func start_chest(node: Array) -> void:
+	reset_observation()
 	if not opening.is_empty(): return
 	var entry: Dictionary = host.node_states[place][node[0]].duplicate()
 	Catalog.recover(entry, Time.get_unix_time_from_system())
@@ -87,6 +256,7 @@ func tick_opening(delta: float) -> void:
 	if opening_left == 0: finish_chest()
 
 func _exit_tree() -> void:
+	reset_observation()
 	cancel_opening("关闭场景")
 	if not read_only and not settlement_saved and not return_secured and is_instance_valid(host):
 		host.rollback_dive_stock()
@@ -105,6 +275,7 @@ var settlement_technology: Button
 var settlement_retry: Button
 
 func show_settlement(saved: bool) -> void:
+	reset_observation()
 	model.hide()
 	settlement_saved = saved
 	if not is_instance_valid(settlement_panel):
@@ -158,7 +329,7 @@ func show_settlement(saved: bool) -> void:
 	var location: String = {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}[settlement.place]
 	var lines := PackedStringArray([("耗尽救援 · 本次失败零收益" if settlement.rescue else "安全光柱上浮") + " · " + location, "", ("安全封存·待入库" if saved and host.public_project.pending_bag != null else ("本次入库" if saved else "待封存网袋")) + " · 共%d件：" % settlement.items.size(), settlement_items(settlement.items), "", "全部损失 · 共%d件（不可拾回）：" % settlement.losses.size(), settlement_items(settlement.losses), ""])
 	if settlement.rescue:
-		lines.append("未安全上浮：本次收获100%不入库，本潜新核心未保留，不能归档领奖；历史仓库、装备及已带回核心不受影响。")
+		lines.append("未安全上浮：本次收获100%不入库，本潜新核心未保留，不能归档领奖；历史仓库、装备、已带回核心及已保存生态记录不受影响。")
 		lines.append("已扣宝箱存量已回滚；再次开启同代次不会重抽。" if saved else "宝箱存量回滚保存失败，探索冻结，请重试。\n" + host.result_label.text)
 		settlement_retry.text = "重试存量回滚"
 	else:
@@ -222,6 +393,7 @@ func safety_hint() -> String:
 	return "安全点：%s方 %d像素（直线距离，绕障前往）· 到光柱附近才能E/Esc返航" % [direction, ceili(offset.length())]
 
 func request_return() -> void:
+	reset_observation()
 	cancel_opening("请求上浮")
 	if read_only or settling:
 		returned.emit()
@@ -280,6 +452,7 @@ func tick_oxygen(delta: float) -> void:
 		warning_count += 1
 		message = "氧气不足30%，建议上浮！"
 	if oxygen == 0:
+		reset_observation()
 		cancel_opening("氧气耗尽")
 		moving = false
 		bag_open = false
@@ -347,7 +520,7 @@ func _ready() -> void:
 	feedback = _label(Vector2(70, 90), 20)
 	prompt = _label(Vector2(70, 640), 19)
 	rules_label = _label(Vector2(70, 72), 16)
-	rules_label.text = "规则：耗尽失败零收益，整袋/新核心丢失不可拾回；宝箱暂存网袋，须安全上浮入库。"
+	rules_label.text = "规则：耗尽丢整袋/新核心；宝箱须安全上浮入库；靠近生物48px观察2秒，已保存生态记录救援保留。"
 	rules_label.visible = not read_only
 	feedback.position.y = 94
 	feedback.add_theme_font_size_override("font_size", 14)
@@ -364,10 +537,6 @@ func _ready() -> void:
 	archive_button.pressed.connect(func() -> void:
 		message = "探索记录已归档；深处信号仍未解。" if host._commit_dive("dive_archived") else host.result_label.text
 		refresh()
-		if archive_button.disabled:
-			close_button.focus_next = NodePath(".")
-			close_button.focus_previous = NodePath(".")
-			for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]: close_button.set_focus_neighbor(side, NodePath("."))
 		close_button.grab_focus()
 	)
 	add_child(archive_button)
@@ -377,16 +546,10 @@ func _ready() -> void:
 	feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prompt.size = Vector2(680 if read_only else 1130, 70)
 	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if read_only: build_records()
 	refresh()
-	close_button.focus_next = close_button.get_path_to(archive_button) if read_only and not archive_button.disabled else NodePath(".")
-	close_button.focus_previous = close_button.focus_next
-	archive_button.focus_next = archive_button.get_path_to(close_button)
-	archive_button.focus_previous = archive_button.focus_next
-	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
-		close_button.set_focus_neighbor(side, close_button.focus_next)
-		archive_button.set_focus_neighbor(side, archive_button.focus_next)
-	if read_only and not archive_button.disabled:
-		archive_button.grab_focus()
+	if read_only:
+		clues_tab.grab_focus()
 	else:
 		close_button.grab_focus()
 
@@ -492,6 +655,8 @@ func interact() -> bool:
 	return false
 
 func enter(destination: String) -> void:
+	reset_observation()
+	observation_blocked.clear()
 	cancel_opening("切换地点")
 	var source := place
 	place = destination
@@ -516,10 +681,11 @@ func refresh() -> void:
 	oxygen_label.modulate = Color.YELLOW if warned else Color.WHITE
 	heading.text = "浮台 · 探索记录" if read_only else {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}[place] + " · WASD / 方向键 / 点击移动"
 	feedback.text = (host._dive_summary() + ("\n" + message if message.contains("失败") else "")) if read_only else message
-	archive_button.visible = read_only
+	archive_button.visible = read_only and records_page == "clues"
 	archive_button.disabled = not host.dive_core or host.core_reward_claimed
 	archive_button.text = "已归档领奖 · 无需重复" if host.core_reward_claimed else ("补领工坊位＋木2废2" if host.dive_archived else ("首次归档：工坊位＋木2废2" if host.dive_core else "尚未取得核心 · 暂不可归档"))
 	if read_only:
+		refresh_records()
 		prompt.text = "已归档 · 可随时重访" if host.dive_archived else ("带回核心，点击归档完成记录" if host.dive_core else "可提前返航；已调查线索持续保留")
 	else:
 		prompt.text = safety_hint()
@@ -527,6 +693,8 @@ func refresh() -> void:
 		if not opening.is_empty():
 			prompt.text += "\n开箱进度 %d%% · 剩余%.1f秒 · 移动取消 / B不暂停耗氧" % [int(100 * (1 - opening_left / opening_total)), opening_left]
 		elif not chosen.is_empty(): prompt.text += "\nE · 最近目标：" + chosen.text + "（普通即时 / 精良3秒 / 稀有6秒，候选）"
+		if not observing_id.is_empty():
+			prompt.text += "\n生态观察 %.1f / %.0f秒 · 圈内移动可继续；离圈/开箱/网袋会清零" % [observation_elapsed, Catalog.OBSERVE_SECONDS]
 		if ascending > 0: prompt.text = "自动上浮 %.1f秒" % ascending
 		elif settling: prompt.text = "待结算：Esc 重试，禁止继续采集。"
 	queue_redraw()
@@ -540,8 +708,13 @@ func _input(event: InputEvent) -> void:
 				if settlement_saved: host._dismiss_dive()
 				else: host._close_dive()
 		return
+	if read_only:
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+			get_viewport().set_input_as_handled()
+			request_return()
+		return
 	if event is InputEventKey:
-		if event.keycode in [KEY_TAB, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE] or (read_only and event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]):
+		if event.keycode in [KEY_TAB, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
 			return
 		get_viewport().set_input_as_handled()
 		if event.pressed and not event.echo:
@@ -553,6 +726,7 @@ func _input(event: InputEvent) -> void:
 				message = "装备只读：面具%d / 瓶%d / 蹼%d级；制造请返回浮台C工坊。" % [host.equipment_level("mask"), host.equipment_level("tank"), host.equipment_level("fins")]
 				refresh()
 			elif event.keycode == KEY_B and not read_only and not settling and ascending <= 0:
+				reset_observation()
 				bag_open = not bag_open
 				drag_index = -1
 				moving = false
@@ -583,6 +757,7 @@ func _process(delta: float) -> void:
 		if input_moving: cancel_opening("移动输入")
 		tick_opening(delta)
 	if bag_open or settling or ascending > 0:
+		reset_observation()
 		refresh()
 		return
 	var direction := Vector2(float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT)) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)), float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP))).normalized()
@@ -598,15 +773,75 @@ func _process(delta: float) -> void:
 	if moving and direction != Vector2.ZERO and foot.distance_to(before) < 0.01:
 		moving = false
 		message = "前方受阻，已停止；请用方向键或分段点击绕过缺口。"
+	tick_observation(delta)
 	refresh()
+
+func draw_creature(canvas: CanvasItem, p: Vector2, shape: String, color: Color, silhouette: bool = false) -> void:
+	var ink := color.darkened(0.35) if silhouette else Color("#123346")
+	match shape:
+		"crab":
+			for side in [-1, 1]:
+				for i in 3:
+					canvas.draw_line(p + Vector2(side * 10, i * 5 - 3), p + Vector2(side * (23 - i * 2), i * 7), color, 3)
+				canvas.draw_line(p + Vector2(side * 11, -2), p + Vector2(side * 20, -14), color, 4)
+				canvas.draw_circle(p + Vector2(side * 21, -15), 5, color)
+			canvas.draw_circle(p, 13, color)
+			canvas.draw_arc(p, 9, 0, TAU * 1.6, 24, ink, 2)
+		"flatfish":
+			canvas.draw_colored_polygon(PackedVector2Array([p + Vector2(-25, 0), p + Vector2(-6, -13), p + Vector2(20, -6), p + Vector2(25, 0), p + Vector2(10, 12), p + Vector2(-12, 12)]), color)
+			if not silhouette:
+				for offset in [Vector2(-10, 0), Vector2(0, 7), Vector2(8, -5)]: canvas.draw_circle(p + offset, 3, ink)
+		"eel":
+			var points := PackedVector2Array()
+			for i in 13: points.append(p + Vector2(-27 + i * 4, sin(i * 0.65) * 8))
+			canvas.draw_polyline(points, color, 9, true)
+			canvas.draw_circle(points[-1], 6, color)
+		"jellyfish":
+			for i in 5:
+				var x := -16 + i * 8
+				canvas.draw_polyline(PackedVector2Array([p + Vector2(x, 0), p + Vector2(x + 3, 13), p + Vector2(x - 2, 28)]), color, 2, true)
+			var dome := PackedVector2Array()
+			for i in 17: dome.append(p + Vector2(cos(PI + i * PI / 16) * 23, sin(PI + i * PI / 16) * 20))
+			canvas.draw_colored_polygon(dome, color)
+		"snail":
+			canvas.draw_line(p + Vector2(-22, 12), p + Vector2(23, 12), color, 8)
+			canvas.draw_circle(p + Vector2(-3, -1), 16, color)
+			canvas.draw_arc(p + Vector2(-3, -1), 10, 0, TAU * 1.7, 32, ink, 2)
+			canvas.draw_line(p + Vector2(17, 10), p + Vector2(23, -8), color, 3)
+			canvas.draw_line(p + Vector2(13, 10), p + Vector2(13, -7), color, 3)
+		_:
+			canvas.draw_colored_polygon(PackedVector2Array([p + Vector2(-26, -12), p + Vector2(-26, 12), p + Vector2(-10, 0)]), color)
+			canvas.draw_colored_polygon(PackedVector2Array([p + Vector2(-15, 0), p + Vector2(-3, -12), p + Vector2(15, -9), p + Vector2(25, 0), p + Vector2(12, 11), p + Vector2(-3, 10)]), color)
+			if shape == "angler":
+				canvas.draw_polyline(PackedVector2Array([p + Vector2(6, -8), p + Vector2(10, -25), p + Vector2(23, -25), p + Vector2(25, -17)]), color, 2, true)
+				canvas.draw_circle(p + Vector2(25, -17), 5, color if silhouette else Color("#fff1a1"))
+	if not silhouette and shape not in ["jellyfish", "snail"]:
+		canvas.draw_circle(p + Vector2(15 if shape != "crab" else 5, -4 if shape != "crab" else -10), 2, ink)
+
+func draw_species() -> void:
+	var entries := Catalog.species()
+	for id in entries:
+		var entry: Dictionary = entries[id]
+		if entry.place != place: continue
+		var p: Vector2 = entry.pos
+		var recorded: bool = host.species_records.get(id, false)
+		draw_creature(self, p, entry.shape, entry.color)
+		if entry.shape == "fish":
+			draw_creature(self, p + Vector2(31, 18), "fish", entry.color.darkened(0.15))
+		var nearby := foot.distance_to(p) <= Catalog.OBSERVE_RADIUS
+		if nearby or observing_id == id:
+			draw_arc(p, Catalog.OBSERVE_RADIUS, 0, TAU, 48, Color(0.6, 0.9, 1, 0.35), 1)
+		var text: String = entry.name + " · 已记录" if recorded else "未知生物 · 靠近观察"
+		if observation_blocked.has(id): text = "保存失败 · 离圈重试"
+		elif observing_id == id:
+			draw_arc(p, 31, -PI / 2, -PI / 2 + TAU * observation_elapsed / Catalog.OBSERVE_SECONDS, 48, Color("#b4f5c4"), 4)
+			text = "观察 %.1f / %.0f秒" % [observation_elapsed, Catalog.OBSERVE_SECONDS]
+		draw_string(ThemeDB.fallback_font, p + Vector2(-55, 42), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#b4f5c4") if recorded else Color.WHITE)
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#071b2b"))
 	if not settlement.is_empty(): return
-	if read_only:
-		var lines := ["珊瑚浅滩：" + ("船舷金属片，光迹指向船尾。" if host.dive_shoal else "尚未调查"), "侧倾沉船：" + ("声呐台记录间歇光带与海沟方向。" if host.dive_sonar else "尚未调查"), "发光海沟：" + ("唯一回声核心已带回。" if host.dive_core else "尚未发现"), "归档：" + ("浅滩 → 船尾声呐 → 海沟核心；深处信号仍未解。" if host.dive_archived else "待取得核心并在浮台归档")]
-		for i in lines.size(): draw_string(ThemeDB.fallback_font, Vector2(100, 230 + i * 85), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color.WHITE)
-		return
+	if read_only: return
 	# 福地背景仅作水下氛围；通行区域和真实障碍始终使用原矩形。
 	draw_texture_rect(BACKDROPS[place], FIELD, false, Color("#78cbdc"))
 	draw_rect(FIELD, {"shoal": Color(0.03, 0.28, 0.36, 0.72), "wreck": Color(0.02, 0.17, 0.26, 0.78), "trench": Color(0.01, 0.10, 0.22, 0.82)}[place])
@@ -648,6 +883,7 @@ func _draw() -> void:
 	if moving:
 		draw_arc(target, 10, 0, TAU, 20, Color("#ffe6a4"), 2)
 		draw_line(target - Vector2(15, 0), target + Vector2(15, 0), Color("#ffe6a4"), 2)
+	draw_species()
 	for site in sites():
 		if site[0] == "上浮出口":
 			draw_rect(Rect2(Vector2(site[1].x - 15, FIELD.position.y), Vector2(30, site[1].y - FIELD.position.y)), Color(0.5, 1.0, 0.9, 0.22))

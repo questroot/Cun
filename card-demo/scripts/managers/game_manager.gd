@@ -51,10 +51,16 @@ func _read_sea_text(text: String) -> Dictionary:
 	if not parsed is Dictionary or not parsed.get("state") is Dictionary:
 		return {}
 	var raw_version: Variant = parsed.get("version")
-	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]:
+	if not (raw_version is int or raw_version is float) or raw_version not in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]:
 		return {}
 	var state: Dictionary = parsed["state"]
 	var version: int = int(raw_version)
+	if version < 10:
+		state.species_records = DiveCatalog.species_records()
+	else:
+		if not state.get("species_records") is Dictionary or state.species_records.size() != DiveCatalog.species_records().size(): return {}
+		for id in DiveCatalog.species_records():
+			if not state.species_records.get(id) is bool: return {}
 	if version < 9:
 		state.public_project = PublicProjectService.defaults()
 	var has_equipment := state.has("equipment") or state.has("core_reward_claimed") or state.has("dive_workshop_unlocked") or state.has("dive_workshop_built")
@@ -197,7 +203,7 @@ func load_sea_save() -> void:
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""
-	var text := JSON.stringify({"version": 9, "state": state}, "", true, true)
+	var text := JSON.stringify({"version": 10, "state": state}, "", true, true)
 	if _read_sea_text(text).is_empty():
 		sea_save_error = "海上存档数据无效，未保存。"
 		return false

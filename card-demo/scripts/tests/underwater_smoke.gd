@@ -484,7 +484,8 @@ func settlement_checks() -> void:
 	check(sea.resources.coral == 2, "成功重复请求不重复入库")
 	view.settlement_records.grab_focus()
 	await key(KEY_ENTER, false, true)
-	check(sea.dive_view.read_only and root.gui_get_focus_owner() == sea.dive_view.archive_button, "结算记录入口沿既有显式归档路径")
+	check(sea.dive_view.read_only and root.gui_get_focus_owner() == sea.dive_view.clues_tab, "结算记录入口聚焦线索页签")
+	sea.dive_view.archive_button.grab_focus()
 	await key(KEY_SPACE)
 	check(sea.dive_archived and sea.core_reward_claimed, "结算进入记录后显式归档领奖")
 	await key(KEY_ESCAPE)
@@ -1217,7 +1218,213 @@ func technology_schema_checks() -> void:
 		bad.remaining = invalid
 		check(not module.valid(bad), "科技schema拒绝非有限进度 " + str(invalid))
 
+func species_route(view: Control, destination: Vector2) -> bool:
+	var origin: Vector2 = view.foot
+	var queue: Array[Vector2i] = [Vector2i.ZERO]
+	var parents := {Vector2i.ZERO: Vector2i.ZERO}
+	var cursor := 0
+	var found := false
+	var end := Vector2i.ZERO
+	while cursor < queue.size():
+		var cell := queue[cursor]
+		cursor += 1
+		var point := origin + Vector2(cell) * 10.0
+		if point.distance_to(destination) <= 10.0:
+			end = cell
+			found = true
+			break
+		for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next: Vector2i = cell + direction
+			if parents.has(next): continue
+			var next_point := origin + Vector2(next) * 10.0
+			if not view.can_stand(next_point) or not view.can_stand((point + next_point) / 2.0): continue
+			parents[next] = cell
+			queue.append(next)
+	if not found: return false
+	var route: Array[Vector2] = [destination]
+	while end != Vector2i.ZERO:
+		route.push_front(origin + Vector2(end) * 10.0)
+		end = parents[end]
+	for point in route:
+		view.move_step(point - view.foot)
+		if view.foot.distance_to(point) > 0.01: return false
+	return view.foot.distance_to(destination) < 0.01
+
+func species_checks() -> void:
+	var starting_checks := checks
+	var starting_failures := failures
+	var catalog = load("res://scripts/scenes/underwater_catalog.gd")
+	check(ProjectSettings.get_setting("application/config/use_custom_user_dir", false) and str(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")).begins_with("Cun-Underwater-"), "生态专项仅允许隔离用户目录")
+	if not str(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")).begins_with("Cun-Underwater-"): return
+	sea._start_round()
+	check(sea._cache_round(), "生态专项保存空图鉴基线")
+	var entries: Dictionary = catalog.species()
+	var expected := {
+		"shoal": ["shoal_glowfish", "shoal_blue_hermit_crab", "shoal_spotted_flatfish"],
+		"wreck": ["wreck_lanternfish", "wreck_rust_crab", "wreck_cabin_eel"],
+		"trench": ["trench_blind_eel", "trench_glowing_jellyfish", "trench_glass_snail"]}
+	check(entries.size() == 9 and catalog.species_records().size() == 9 and catalog.OBSERVE_RADIUS == 48.0 and catalog.OBSERVE_SECONDS == 2.0, "九物种与48像素2秒配置")
+	sea._open_dive()
+	var view: Control = sea.dive_view
+	view.set_process(false)
+	for region in expected:
+		if region != "shoal": view.enter(region)
+		var entrance: Vector2 = Vector2(145, 520) if region == "shoal" else Vector2(225, 410 if region == "trench" else 490)
+		check(view.foot == entrance and view.can_stand(entrance), "实际入口安全落点 " + region)
+		for id in expected[region]:
+			check(entries.has(id), "固定物种ID存在 " + id)
+			if not entries.has(id): continue
+			var entry: Dictionary = entries[id]
+			check(entry.place == region and entry.pos is Vector2 and not entry.name.is_empty() and not entry.description.is_empty() and entry.color is Color and entry.shape in ["fish", "crab", "flatfish", "angler", "eel", "jellyfish", "snail"] and not sea.species_records[id], "物种配置完整且默认未记录 " + id)
+			view.foot = entrance
+			check(species_route(view, entry.pos), "从实际入口BFS并逐段行走可达 " + id)
+			check(view.nearest_species() == id, "到达后最近物种匹配 " + id)
+	view.enter("shoal")
+	var id := "shoal_glowfish"
+	var position: Vector2 = entries[id].pos
+	view.foot = position + Vector2(48, 0)
+	check(view.nearest_species() == id, "48像素边界包含在观察圈")
+	view.tick_observation(1.0)
+	check(view.observing_id == id and view.observation_elapsed == 1.0 and not sea.species_records[id], "边界累计1秒未点亮")
+	view.move_step(Vector2(-8, 0))
+	view.tick_observation(0.5)
+	check(view.observation_elapsed == 1.5, "圈内实际移动继续累计")
+	view.foot = position + Vector2(48.01, 0)
+	check(view.nearest_species().is_empty(), "48像素外不选中")
+	view.tick_observation(0.5)
+	check(view.observing_id.is_empty() and view.observation_elapsed == 0 and not sea.species_records[id], "离圈清零不拼接两段时间")
+	view.foot = position
+	for delta in [0.0, -1.0, NAN, INF]:
+		view.tick_observation(delta)
+		check(view.observation_elapsed == 0 and not sea.species_records[id], "无效观察delta不累计 " + str(delta))
+	view.tick_observation(1.0)
+	view.reset_observation()
+	check(view.observing_id.is_empty() and view.observation_elapsed == 0, "显式重置观察")
+	view.tick_observation(1.0)
+	view.enter("wreck")
+	check(view.observation_elapsed == 0 and view.observing_id.is_empty(), "切图立即清零观察")
+	view.enter("shoal")
+	view.foot = position
+	view.tick_observation(1.0)
+	await key(KEY_B)
+	check(view.bag_open and view.observation_elapsed == 0, "真实B开网袋立即清零")
+	view._process(2.0)
+	check(not sea.species_records[id] and view.observation_elapsed == 0, "网袋开启不观察")
+	await key(KEY_B)
+	view.tick_observation(1.0)
+	view.start_chest(catalog.NODES.shoal[1])
+	check(not view.opening.is_empty() and view.observation_elapsed == 0, "启动精良箱立即清零观察")
+	view.tick_observation(2.0)
+	check(not sea.species_records[id] and view.observation_elapsed == 0, "开箱期间不观察")
+	view.cancel_opening("生态专项")
+	var before: Dictionary = sea._round_state().duplicate(true)
+	var memory: Dictionary = game.water_activity_state.duplicate(true)
+	var disk := FileAccess.get_file_as_string(game.SEA_SAVE)
+	check(DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP)) == OK, "生态保存失败注入SEA_TEMP目录")
+	view.tick_observation(1.99)
+	check(not sea.species_records[id] and is_equal_approx(view.observation_elapsed, 1.99), "不足2秒不提交")
+	view.tick_observation(0.01)
+	check(view.observation_blocked.has(id) and view.observing_id.is_empty() and view.observation_elapsed == 0 and view.message.contains("失败"), "2秒保存失败明确提示且阻断自动重试")
+	check(sea.result_label.text.contains("失败"), "观察事务失败更新海面错误反馈")
+	before.result = sea.result_label.text
+	check(json_state_equal(sea._round_state(), before) and json_state_equal(game.water_activity_state, memory) and FileAccess.get_file_as_string(game.SEA_SAVE) == disk, "观察失败主机内存管理器磁盘均不点亮且无奖励")
+	check(DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP)) == OK, "移除生态保存故障")
+	view.tick_observation(100.0)
+	check(not sea.species_records[id] and view.observation_blocked.has(id) and FileAccess.get_file_as_string(game.SEA_SAVE) == disk, "恢复磁盘后留圈仍不自动重试")
+	view.foot = position + Vector2(48, 0)
+	view.tick_observation(0.1)
+	check(view.observation_blocked.has(id), "失败后48边界仍阻断")
+	view.foot = position + Vector2(49, 0)
+	view.tick_observation(0.1)
+	check(view.observation_blocked.is_empty(), "真正离圈解除失败阻断")
+	view.foot = position
+	view.tick_observation(1.0)
+	check(not sea.species_records[id] and view.observation_elapsed == 1.0, "重入圈从零重新计时")
+	view.foot = position + Vector2(48, 0)
+	view.tick_observation(1.0)
+	check(sea.species_records[id] and game.water_activity_state.species_records[id] and view.message.contains("已保存"), "重新观察满2秒真事务点亮")
+	var recorded: Dictionary = sea._round_state().duplicate(true)
+	var expected_state := before.duplicate(true)
+	expected_state.species_records[id] = true
+	check(json_state_equal(recorded, expected_state), "生态成功只改变对应图鉴位，无材料核心奖励")
+	game.load_sea_save()
+	check(game.water_activity_state.species_records[id] and int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 10, "成功后立即从v10磁盘重载保留")
+	disk = FileAccess.get_file_as_string(game.SEA_SAVE)
+	check(DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP)) == OK, "幂等提交注入写故障")
+	check(sea._commit_species(id), "已记录物种重复真事务幂等且无需写盘")
+	view.tick_observation(20.0)
+	check(view.nearest_species().is_empty() and sea._round_state() == recorded and FileAccess.get_file_as_string(game.SEA_SAVE) == disk, "重复观察不重复提交或奖励")
+	check(not sea._commit_species("unknown_species"), "未知物种提交拒绝")
+	check(DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP)) == OK, "移除幂等提交写故障")
+	var second := "shoal_blue_hermit_crab"
+	view.foot = entries[second].pos
+	view.tick_observation(1.5)
+	view.bag = ["coral"]
+	view.oxygen = 0.5
+	view._process(0.5)
+	check(view.oxygen == 0 and view.ascending > 0 and view.observation_elapsed == 0 and not sea.species_records[second] and view.bag.is_empty(), "同帧耗氧优先于满2秒观察，未记录且整袋丢失")
+	view.tick_observation(2.0)
+	check(not sea.species_records[second], "救援上浮期间禁止观察")
+	view.tick_oxygen(catalog.ASCENT_SECONDS)
+	check(view.settlement_saved and sea.species_records[id] and not sea.species_records[second], "救援保留已成功图鉴，不补记中断物种")
+	game.load_sea_save()
+	check(game.water_activity_state.species_records[id] and not game.water_activity_state.species_records[second], "救援后立即重载已存图鉴仍保留")
+	await key(KEY_ESCAPE)
+	sea._open_dive(true)
+	view = sea.dive_view
+	view.set_process(false)
+	view.show_records_page("species")
+	check(view.read_only and view.species_content.visible and not view.clues_content.visible and view.species_cards.size() == 9 and view.species_regions.size() == 3, "只读图鉴分页与九张物种卡")
+	check(view.species_count.text.contains("1/9") and view.species_regions.shoal.text.contains("1/3") and view.species_regions.wreck.text.contains("0/3") and view.species_regions.trench.text.contains("0/3"), "只读图鉴总数与三地计数")
+	for species_id in entries:
+		var card: Dictionary = view.species_cards[species_id]
+		check(is_instance_valid(card.icon) and card.icon.is_visible_in_tree() and not card.icon.get_signal_connection_list("draw").is_empty(), "剪影或点亮图形接入真实绘制 " + species_id)
+		if species_id == id:
+			check(card.text.text.contains(entries[species_id].name) and card.text.text.contains(entries[species_id].description) and card.text.text.contains("已记录") and not card.text.text.contains("未知生物"), "已点亮卡显示名称与描述")
+		else:
+			check(card.text.text.contains("未知生物") and card.text.text.contains("未记录") and not card.text.text.contains(entries[species_id].name) and not card.text.text.contains(entries[species_id].description), "未点亮剪影卡隐藏身份 " + species_id)
+	before = sea._round_state().duplicate(true)
+	disk = FileAccess.get_file_as_string(game.SEA_SAVE)
+	view.foot = entries[second].pos
+	view.tick_observation(20.0)
+	check(not sea._commit_species(second) and sea._round_state() == before and FileAccess.get_file_as_string(game.SEA_SAVE) == disk, "只读图鉴不能观察提交且无落盘")
+	view.show_records_page("clues")
+	check(view.clues_content.visible and not view.species_content.visible, "图鉴可切回探索线索")
+	view.show_records_page("species")
+	check(view.species_count.text.contains("1/9"), "分页往返保持点亮与计数")
+	sea._close_dive()
+	var base: Dictionary = sea._round_state().duplicate(true)
+	for version in range(1, 10):
+		var legacy := base.duplicate(true)
+		legacy.erase("species_records")
+		var migrated: Dictionary = game._read_sea_text(JSON.stringify({"version": version, "state": legacy}))
+		check(not migrated.is_empty() and migrated.species_records == catalog.species_records(), "v%d缺失图鉴迁移为空九项" % version)
+		legacy.species_records = {"injected": true}
+		migrated = game._read_sea_text(JSON.stringify({"version": version, "state": legacy}))
+		check(not migrated.is_empty() and migrated.species_records == catalog.species_records(), "v%d迁移不信任旧版伪造点亮" % version)
+	check(not game._read_sea_text(JSON.stringify({"version": 10, "state": base})).is_empty(), "v10合法混合布尔图鉴可重读")
+	for invalid in [null, true, 1, "records", [], {}]:
+		var bad := base.duplicate(true)
+		bad.species_records = invalid
+		check(game._read_sea_text(JSON.stringify({"version": 10, "state": bad})).is_empty(), "v10拒绝非法图鉴容器 " + str(invalid))
+	for invalid in [null, 0, 1, -1, 0.5, "true", [], {}]:
+		var bad := base.duplicate(true)
+		bad.species_records[id] = invalid
+		check(game._read_sea_text(JSON.stringify({"version": 10, "state": bad})).is_empty(), "v10拒绝非布尔记录 " + str(invalid))
+	for mode in ["missing", "extra", "replace", "absent"]:
+		var bad := base.duplicate(true)
+		if mode == "absent": bad.erase("species_records")
+		else:
+			if mode in ["missing", "replace"]: bad.species_records.erase(id)
+			if mode in ["extra", "replace"]: bad.species_records.unknown_species = false
+		check(game._read_sea_text(JSON.stringify({"version": 10, "state": bad})).is_empty(), "v10拒绝非法键集合 " + mode)
+	print("SPECIES RESULT: ", checks - starting_checks, " checks, ", failures - starting_failures, " failed")
+
 func run() -> void:
+	if not ProjectSettings.get_setting("application/config/use_custom_user_dir", false) or not str(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")).begins_with("Cun-Underwater-"):
+		printerr("拒绝运行：水下回归必须使用 underwater.tests.ps1 创建的隔离用户目录。")
+		quit(1)
+		return
 	root.size = Vector2i(1280, 720)
 	await process_frame
 	game = root.get_node("GameManager")
@@ -1384,9 +1591,9 @@ func run() -> void:
 	sea.result_label.text = original_feedback
 	check(sea.SEA == Rect2(72, 238, 744, 414), "海面原场地碰撞不变")
 	sea._open_dive(true)
-	check(root.gui_get_focus_owner() == sea.dive_view.close_button and sea.dive_view.archive_button.disabled, "无核心记录聚焦关闭")
+	check(root.gui_get_focus_owner() == sea.dive_view.clues_tab and sea.dive_view.archive_button.disabled, "无核心记录聚焦线索页签")
 	await key(KEY_TAB)
-	check(root.gui_get_focus_owner() == sea.dive_view.close_button, "不可归档时Tab不穿透浮台")
+	check(root.gui_get_focus_owner() == sea.dive_view.species_tab, "不可归档时Tab进入生态页签不穿透浮台")
 	await key(KEY_ESCAPE)
 	base = sea._round_state()
 	for version in [1, 2, 3, 4]:
@@ -1518,15 +1725,15 @@ func run() -> void:
 	sea.result_label.text = "设施生产消息，不属于探索记录"
 	sea._open_dive(true)
 	view = sea.dive_view
-	check(root.gui_get_focus_owner() == view.archive_button, "记录打开聚焦可用归档")
+	check(root.gui_get_focus_owner() == view.clues_tab, "记录打开聚焦线索页签")
 	check(view.feedback.text.contains("待归档") and not view.feedback.text.contains("设施生产"), "记录概况独立于海上消息")
 	await key(KEY_TAB)
-	check(root.gui_get_focus_owner() == view.close_button, "真实Tab在记录内导航")
+	check(root.gui_get_focus_owner() == view.species_tab, "真实Tab在记录内导航生态页签")
 	await key(KEY_TAB, true)
-	check(root.gui_get_focus_owner() == view.archive_button, "真实ShiftTab返回归档")
+	check(root.gui_get_focus_owner() == view.clues_tab, "真实ShiftTab返回线索页签")
 	for code in [KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN]:
 		await key(code)
-		check(root.gui_get_focus_owner() in [view.archive_button, view.close_button], "记录方向导航不穿透 " + str(code))
+		check(root.gui_get_focus_owner() in [view.clues_tab, view.species_tab, view.archive_button, view.close_button], "记录方向导航不穿透 " + str(code))
 	view.archive_button.grab_focus()
 	await key(KEY_M)
 	check(not sea.exploration_tools.is_open(), "记录中地图快捷键不穿透")
@@ -1539,12 +1746,13 @@ func run() -> void:
 	sea.dive_workshop_unlocked = false
 	check(sea._cache_round(), "隔离夹具恢复待归档以验证空格")
 	sea._open_dive(true)
+	sea.dive_view.archive_button.grab_focus()
 	await key(KEY_SPACE)
 	check(sea.dive_archived, "真实空格归档")
 	var archived: Dictionary = sea._round_state()
 	sea.dive_view.archive_button.pressed.emit()
 	check(sea._round_state() == archived, "重复归档无奖励")
-	check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 9, "写入v9")
+	check(int(JSON.parse_string(FileAccess.get_file_as_string(game.SEA_SAVE)).version) == 10, "写入v10")
 	game.load_sea_save()
 	check(game.water_activity_state.dive_archived, "v8重读保留归档")
 	for field in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
@@ -1567,7 +1775,7 @@ func run() -> void:
 	sea._close_dive()
 	await key(KEY_ESCAPE)
 	sea._open_dive(true)
-	check(root.gui_get_focus_owner() == sea.dive_view.close_button and sea.dive_view.feedback.text.contains("工坊"), "已完成记录聚焦关闭与独立概况")
+	check(root.gui_get_focus_owner() == sea.dive_view.clues_tab and sea.dive_view.feedback.text.contains("工坊"), "已完成记录聚焦关闭与独立概况")
 	sea._close_dive()
 	sea._start_round()
 	var before: Dictionary = game.water_activity_state.duplicate(true)
@@ -1589,6 +1797,7 @@ func run() -> void:
 	before = game.water_activity_state.duplicate(true)
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
 	sea._open_dive(true)
+	sea.dive_view.archive_button.grab_focus()
 	await key(KEY_ENTER)
 	check(not sea.dive_archived and game.water_activity_state == before and sea.dive_view.feedback.text.contains("失败"), "真实Enter归档失败回滚且记录明确提示")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
@@ -1608,6 +1817,7 @@ func run() -> void:
 	await chest_checks()
 	await stock_rollback_checks()
 	await technology_checks()
+	await species_checks()
 	sea._start_round()
 	check(sea._cache_round(), "专项退出恢复新局供经营回归使用")
 	sea.queue_free()

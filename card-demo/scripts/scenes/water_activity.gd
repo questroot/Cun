@@ -477,6 +477,7 @@ var dive_shoal := false
 var dive_sonar := false
 var dive_core := false
 var dive_archived := false
+var species_records: Dictionary = DiveCatalog.species_records()
 var dive_layer: CanvasLayer
 var dive_view: Control
 var dive_button: Button
@@ -608,6 +609,23 @@ func _dismiss_dive() -> void:
 		prior_focus.grab_focus()
 	else:
 		dive_button.grab_focus()
+
+func _commit_species(id: String) -> bool:
+	var catalog := DiveCatalog.species()
+	if not catalog.has(id): return false
+	if not is_instance_valid(dive_view) or not dive_view.is_inside_tree() or dive_view.is_queued_for_deletion(): return false
+	if dive_view.read_only or dive_view.settling or dive_view.settlement_saved or not dive_view.settlement.is_empty() or dive_view.oxygen <= 0: return false
+	var entry: Dictionary = catalog[id]
+	if dive_view.place != entry.place or not dive_view.foot.distance_to(entry.pos) <= DiveCatalog.OBSERVE_RADIUS: return false
+	if species_records[id]: return true
+	var previous := species_records.duplicate(true)
+	species_records[id] = true
+	if not _cache_round():
+		species_records = previous
+		return false
+	_refresh_dive_ui()
+	dive_view.refresh()
+	return true
 
 func _commit_dive(key: String) -> bool:
 	if key not in ["dive_shoal", "dive_sonar", "dive_core", "dive_archived"]:
@@ -1140,6 +1158,7 @@ func _round_state() -> Dictionary:
 		"resources": resources.duplicate(true), "node_states": node_states.duplicate(true), "net_expansion": net_expansion,
 		"equipment": equipment.duplicate(true), "core_reward_claimed": core_reward_claimed, "dive_workshop_unlocked": dive_workshop_unlocked, "dive_workshop_built": dive_workshop_built,
 		"dive_shoal": dive_shoal, "dive_sonar": dive_sonar, "dive_core": dive_core, "dive_archived": dive_archived,
+		"species_records": species_records.duplicate(true),
 		"wood": wood, "scrap": scrap, "water": water, "fiber": fiber, "rope": rope,
 		"raft_tiles": raft_tiles, "core_level": core_level, "guide_seen_pickup": guide_seen_pickup, "guide_seen_claim": guide_seen_claim, "building_slots": building_slots.duplicate(), "collectors": collectors, "orders_completed": orders_completed,
 		"pending_water": pending_water, "pending_fiber": pending_fiber,
@@ -1190,6 +1209,7 @@ func _restore_round(state: Dictionary) -> void:
 	dive_sonar = state.get("dive_sonar", false)
 	dive_core = state.get("dive_core", false)
 	dive_archived = state.get("dive_archived", false)
+	species_records = state.get("species_records", DiveCatalog.species_records()).duplicate(true)
 	wood = state["wood"]
 	scrap = state["scrap"]
 	water = state["water"]
@@ -1273,6 +1293,7 @@ func _start_round() -> void:
 	dive_sonar = false
 	dive_core = false
 	dive_archived = false
+	species_records = DiveCatalog.species_records()
 	resident = false
 	resident_working = false
 	partner = false

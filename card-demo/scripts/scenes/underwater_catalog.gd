@@ -1,6 +1,27 @@
 extends RefCounted
 
 const OXYGEN := 90.0
+const OBSERVE_RADIUS := 48.0
+const OBSERVE_SECONDS := 2.0
+
+static func species() -> Dictionary:
+	return {
+		"shoal_glowfish": {"name": "光鱼群", "place": "shoal", "pos": Vector2(290, 210), "description": "浅滩中结群游动的小鱼，鳞片映出柔和的光。", "shape": "fish", "color": Color("#8de9e5")},
+		"shoal_blue_hermit_crab": {"name": "蓝寄居蟹", "place": "shoal", "pos": Vector2(580, 570), "description": "背着螺壳的蓝色寄居蟹，在浅滩沙地寻找食物。", "shape": "crab", "color": Color("#70b7ef")},
+		"shoal_spotted_flatfish": {"name": "斑点比目鱼", "place": "shoal", "pos": Vector2(850, 570), "description": "伏在沙地上的比目鱼，斑点让它与海底融为一体。", "shape": "flatfish", "color": Color("#cfb88a")},
+		"wreck_lanternfish": {"name": "灯笼鱼", "place": "wreck", "pos": Vector2(300, 240), "description": "在沉船阴影间游动，身上的微光如同小灯笼。", "shape": "angler", "color": Color("#f1ce78")},
+		"wreck_rust_crab": {"name": "锈蟹", "place": "wreck", "pos": Vector2(590, 400), "description": "锈红色甲壳的螃蟹，在沉船残骸间缓慢爬行。", "shape": "crab", "color": Color("#cf8668")},
+		"wreck_cabin_eel": {"name": "舱居鳗", "place": "wreck", "pos": Vector2(940, 430), "description": "栖居在破损船舱里的细长海鳗，偶尔探出身子。", "shape": "eel", "color": Color("#99b5ad")},
+		"trench_blind_eel": {"name": "盲鳗", "place": "trench", "pos": Vector2(240, 350), "description": "适应幽暗海沟的鳗类，依靠触觉感知周围环境。", "shape": "eel", "color": Color("#bc9acb")},
+		"trench_glowing_jellyfish": {"name": "发光水母", "place": "trench", "pos": Vector2(510, 350), "description": "透明伞体散发蓝紫微光，触须随深海水流舒展。", "shape": "jellyfish", "color": Color("#b1a2f1")},
+		"trench_glass_snail": {"name": "琉璃蜗牛", "place": "trench", "pos": Vector2(790, 460), "description": "海沟岩壁上的小蜗牛，半透明螺壳映出琉璃般的色彩。", "shape": "snail", "color": Color("#91e3c8")}
+	}
+
+static func species_records() -> Dictionary:
+	var records := {}
+	for id in species(): records[id] = false
+	return records
+
 const RATES := {"shoal": 1.0, "wreck": 1.25, "trench": 1.6}
 const ASCENT_SECONDS := 1.5
 const RECOVERY_SECONDS := 180.0
