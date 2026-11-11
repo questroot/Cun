@@ -993,12 +993,16 @@
       "near_duplicate_colors": [],
       "isolated_px_last_frame": [
         [
-          79,
-          46
+          77,
+          60
         ],
         [
-          79,
-          62
+          28,
+          64
+        ],
+        [
+          68,
+          64
         ]
       ]
     },

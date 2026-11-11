@@ -146,16 +146,23 @@ def ring_band(s,cx,cy,rx,ry,thick,color,a0=0.0,a1=None):
                rnd(cx+ca*(rx+thick*.5)),rnd(cy+sa*(ry+thick*.5)),color)
 
 def bell(s,cx,top,w,h,p,shine=0):
-    """A readable bronze bell: flared mouth, waisted body, crown loop and clapper,
+    """A readable bronze bell: rounded shoulders, flared mouth, crown loop and clapper,
     lit from the upper left so the volume reads at 96px."""
-    mouth=top+h; half=w//2; waist=half-4
-    s.polygon([(cx-half,mouth),(cx-waist,top+h//3),(cx-half+4,top),(cx,top-2),
-               (cx+half-4,top),(cx+waist,top+h//3),(cx+half,mouth)],p[2])
-    # left lit face and right shadow give the body weight
-    s.polygon([(cx-half+1,mouth-1),(cx-waist+1,top+h//3),(cx-half+6,top+1),(cx-2,top+1),(cx-3,mouth-2)],p[3])
-    s.polygon([(cx+half-2,mouth-1),(cx+waist-1,top+h//3),(cx+half-6,top+2),(cx+2,top+1),(cx+3,mouth-2)],p[1])
-    s.line(cx-half+7,top+5,cx-half+6,mouth-3,p[4])
-    if shine: s.line(cx-half+9,top+7,cx-half+8,top+5+shine*.5,p[5])
+    mouth=top+h; half=w//2; waist=half-3
+    s.polygon([(cx-half,mouth),(cx-half+1,top+h//2),(cx-waist,top+3),
+               (cx-waist+4,top),(cx+waist-4,top),(cx+waist,top+3),
+               (cx+half-1,top+h//2),(cx+half,mouth)],p[2])
+    # lit left face and shadowed right face, split on a curve rather than a hard vertical
+    s.polygon([(cx-half+1,mouth-1),(cx-half+2,top+h//2),(cx-waist+1,top+4),
+               (cx-3,top+1),(cx-4,mouth-2)],p[3])
+    s.polygon([(cx+half-2,mouth-1),(cx+half-3,top+h//2),(cx+waist-2,top+4),
+               (cx+2,top+1),(cx+3,mouth-2)],p[1])
+    s.line(cx-half+6,top+6,cx-half+5,mouth-3,p[4])
+    if shine: s.line(cx-half+8,top+8,cx-half+7,top+6+shine*.4,p[5])
+    # cast bands on the body so it reads as metal, not a flat trapezoid
+    for yy in (top+h//3+3, top+h//2+4):
+        s.line(cx-half+4,yy,cx+half-4,yy,p[1])
+        s.line(cx-half+4,yy-1,cx+half-4,yy-1,p[4])
     # mouth rim reads as cast metal thickness
     s.rect(cx-half,mouth-1,cx+half,mouth+1,p[3])
     s.line(cx-half,mouth+2,cx+half,mouth+2,p[1])
@@ -336,11 +343,19 @@ def boss(s,kind,f,p):
         else:
             # One readable bell with solid sound rings, instead of three flat blobs and a dotted ring.
             tt=k8(f)/7
-            for k in range(3):
-                rr=12+tt*18+k*7
-                ring_band(s,48,54,rr,round(rr*.46),3 if k==0 else 2,[p[4],p[3],p[1]][k])
-            bell(s,48,21,34,33,p,shine=round(6*tt))
-            if kind=='resonance':
+            if kind=='echo':
+                # Sound leaves the downward-facing mouth as a fan and the top stays open, so
+                # the effect has a direction instead of reading as a decorative aura ring.
+                for k in range(3):
+                    rr=12+tt*14+k*7
+                    ring_band(s,48,52,rr,round(rr*.62),max(1,3-k),
+                              [p[4],p[3],p[1]][k],math.radians(26),math.radians(154))
+                bell(s,48,17,32,34,p,shine=round(6*tt))
+            else:
+                for k in range(3):
+                    rr=12+tt*18+k*7
+                    ring_band(s,48,54,rr,round(rr*.46),3 if k==0 else 2,[p[4],p[3],p[1]][k])
+                bell(s,48,21,34,33,p,shine=round(6*tt))
                 # The domain wall: a closed outer band plus six seal studs.
                 ring_band(s,48,50,40+tt*3,28+tt*2,3,p[2])
                 for i in range(6):
