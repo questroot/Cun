@@ -256,7 +256,9 @@ func refuel(advanced: bool, count: int = 1) -> bool:
 	state.packs[key] = int(state.packs[key]) - count
 	state.credits = int(state.credits) + quota * count
 	_start()
-	return _save(before, "投入%d包，增加%d次额度；主动暂停时须手动继续。" % [count, quota * count])
+	var saved := _save(before, "投入%d包，增加%d次额度；主动暂停时须手动继续。" % [count, quota * count])
+	if saved and not (state.current != "" and float(state.remaining) <= 0): _settlement_failed = false
+	return saved
 
 func select_target(id: String) -> bool:
 	if not _allowed() or not state.machine_built or not TARGETS.has(id): return false
@@ -323,7 +325,9 @@ func claim() -> bool:
 		host.resources[id] = int(host.resources[id]) + int(state.cargo[id])
 		state.cargo[id] = 0
 	_start()
-	return _save(before, "已领取%d件；自动产出不增加手动发现记录。" % amount)
+	var saved := _save(before, "已领取%d件；自动产出不增加手动发现记录。" % amount)
+	if saved and not (state.current != "" and float(state.remaining) <= 0): _settlement_failed = false
+	return saved
 
 func status_text() -> String:
 	if not state.machine_built: return "未建打捞器：研究T1后前往建造。"

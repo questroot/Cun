@@ -197,6 +197,33 @@ func capture_tests() -> void:
 		print("RESULT: screenshot ", ProjectSettings.globalize_path(path), " host=", host.size, " scroll=", scroll.size)
 		host.hide()
 
+func host_frame_tests() -> void:
+	var activity = load("res://scenes/WaterActivity.tscn").instantiate()
+	root.add_child(activity)
+	await settle()
+	activity.open_public_project_editor()
+	await settle()
+	check(activity._public_project_operation == "editor" and activity._public_project_window.visible, "真实海面宿主打开editor并逐帧保持")
+	check(not activity._public_project_panels.has("editor") and not activity._public_project_snapshots.has("editor"), "editor不伪造结果面板和快照")
+	activity._sync_public_project_actions("missing")
+	var panel := preload("res://scripts/scenes/public_project_result_panel.gd").new()
+	activity._public_project_panels["missing_snapshot"] = panel
+	activity._sync_public_project_actions("missing_snapshot")
+	activity._public_project_panels.erase("missing_snapshot")
+	panel.free()
+	activity._public_project_panels["freed"] = panel
+	activity._public_project_snapshots["freed"] = {}
+	activity._sync_public_project_actions("freed")
+	activity._public_project_panels.erase("freed")
+	activity._public_project_snapshots.erase("freed")
+	await settle()
+	check(is_instance_valid(activity._public_project_editor), "缺失键和已释放面板不影响editor宿主逐帧运行")
+	activity._close_public_project_result("editor")
+	await settle()
+	check(not activity._public_project_window.visible and not is_instance_valid(activity._public_project_editor), "editor取消关闭且不残留弹窗")
+	activity.queue_free()
+	await settle()
+
 func run() -> void:
 	# 在创建任何测试节点或写入截图之前拒绝非隔离用户目录。
 	if not bool(ProjectSettings.get_setting("application/config/use_custom_user_dir", false)) or String(ProjectSettings.get_setting("application/config/custom_user_dir_name", "")).is_empty():
@@ -216,6 +243,7 @@ func run() -> void:
 	await configure_tests()
 	rejection_tests()
 	interaction_tests()
+	await host_frame_tests()
 	if "--editor-capture" in OS.get_cmdline_user_args():
 		if DisplayServer.get_name() == "headless":
 			check(false, "图形布局检查禁止使用headless")

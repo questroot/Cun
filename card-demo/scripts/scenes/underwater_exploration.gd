@@ -604,7 +604,10 @@ func tick_oxygen(delta: float) -> void:
 		pending_core = false
 		ascending = Catalog.ASCENT_SECONDS
 		message = "氧气耗尽，救援中；本次失败零收益，全部%d件收获丢失，不可拾回。" % lost_count
-		if remainder > 0: tick_oxygen(remainder)
+		ascending = maxf(0, ascending - remainder)
+		if ascending == 0:
+			settling = true
+			returned.emit()
 
 func nearest_target() -> Dictionary:
 	var nearest := {}

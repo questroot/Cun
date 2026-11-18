@@ -87,6 +87,8 @@ func _public_project_display_snapshot(snapshot: Dictionary) -> Dictionary:
 	return data
 
 func _sync_public_project_actions(operation_id: String) -> void:
+	if not _public_project_panels.has(operation_id) or not _public_project_snapshots.has(operation_id): return
+	if not is_instance_valid(_public_project_panels[operation_id]): return
 	var panel: PublicProjectResultPanel = _public_project_panels[operation_id]
 	var source: Dictionary = _public_project_snapshots[operation_id]
 	var actions: Dictionary = source.get("available_actions", {}) if _public_project_has_action_handler() and source.get("available_actions", {}) is Dictionary else {}
@@ -686,6 +688,7 @@ const PICKUP_RADIUS := 35.0
 const DEBRIS_INTERVAL := 6.0
 const MAX_DEBRIS := 5
 const PRODUCTION_INTERVAL := 4.0
+const RESOURCE_LIMIT := DiveCatalog.RESOURCE_LIMIT
 const EXPAND_WOOD := 3
 const EXPAND_SCRAP := 2
 const COLLECTOR_WOOD := 2
@@ -802,6 +805,13 @@ var action_tabs: TabContainer
 var action_pages: Array[VBoxContainer] = []
 var feedback_scroll: ScrollContainer
 var previous_window := {}
+var _previous_auto_accept_quit := true
+var _leave_prepared := false
+var _leave_requested := false
+var _leave_quit := false
+var leave_dialog: ConfirmationDialog
+var recovery_dialog: ConfirmationDialog
+var recovery_button: Button
 const DISPLAY_SETTINGS_PATH := "user://water_display.cfg"
 const WATER_RESOLUTIONS := [Vector2i(960, 540), Vector2i(1024, 576), Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]
 var water_resolution := Vector2i(1280, 720)
@@ -971,6 +981,8 @@ func _short_goal() -> String:
 	return "浮台已稳定生产；可下潜探索或继续经营。"
 
 func _ready() -> void:
+	_previous_auto_accept_quit = get_tree().is_auto_accept_quit()
+	get_tree().set_auto_accept_quit(false)
 	technology.host = self
 	public_project_service.host = self
 	_configure_water_window()
@@ -1024,8 +1036,22 @@ func _ready() -> void:
 	reset_dialog.confirmed.connect(_start_round)
 	add_child(reset_dialog)
 	settings_button = _make_button("设置", Vector2(1080, 58), Vector2(72, 40), _show_display_settings)
-	var back := _make_button("返回选择", Vector2(1164, 58), Vector2(92, 40), func() -> void: GameManager.goto_scene("menu"))
+	var back := _make_button("返回选择", Vector2(1164, 58), Vector2(92, 40), func() -> void: _request_leave())
 	back.name = "ReturnButton"
+	leave_dialog = ConfirmationDialog.new()
+	leave_dialog.title = "放弃本次航战？"
+	leave_dialog.dialog_text = "离场将放弃本次航战，已消耗的清水与绳索不退还；再次进入不会续战。确定离场？"
+	leave_dialog.confirmed.connect(_confirm_leave)
+	leave_dialog.canceled.connect(func() -> void: _leave_requested = false)
+	add_child(leave_dialog)
+	recovery_dialog = ConfirmationDialog.new()
+	recovery_dialog.title = "从有效备份恢复海上进度"
+	recovery_dialog.dialog_text = "恢复会优先使用待提交备份，其次使用普通备份；坏主档会被保留隔离。当前未保存现场将被恢复进度替换。是否确认恢复？"
+	recovery_dialog.confirmed.connect(_recover_sea_save)
+	add_child(recovery_dialog)
+	recovery_button = _make_button("恢复海上存档", Vector2(1080, 108), Vector2(176, 40), func() -> void:
+		if GameManager.can_recover_sea_save(): recovery_dialog.popup_centered())
+	recovery_button.visible = GameManager.can_recover_sea_save()
 	management = AcceptDialog.new()
 	management.title = "浮台经营 · 关闭后继续航行"
 	management.min_size = Vector2i(620, 580)
@@ -1144,13 +1170,72 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST and is_instance_valid(_public_project_window) and _public_project_window.visible:
 		_close_public_project_result(_public_project_operation)
 		return
-	if what in [NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_APPLICATION_FOCUS_OUT]:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not _leave_requested:
 		if technology.host != null: technology.pause()
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		rollback_dive_stock()
+		_request_leave(true)
+
+func _request_leave(quit_game: bool = false) -> void:
+	if _leave_prepared: return
+	_leave_requested = true
+	_leave_quit = quit_game
+	if sailing:
+		leave_dialog.popup_centered()
+		return
+	_confirm_leave()
+
+func _prepare_leave() -> bool:
+	var before := _round_state()
+	var combat_before := {"sailing": sailing, "active_loadout": active_loadout, "sail_hp": sail_hp, "enemy_hp": enemy_hp, "braced": braced}
+	var stock_before := dive_node_snapshot.duplicate(true)
+	var changed_before := dive_stock_changed
+	if not rollback_dive_stock() or not technology.pause() or not _cache_round():
+		var error := GameManager.sea_save_error
+		_restore_round(before)
+		for key: String in combat_before: set(key, combat_before[key])
+		_refresh_ui()
+		dive_node_snapshot = stock_before
+		dive_stock_changed = changed_before
+		result_label.text = "离场保存失败，仍留在当前现场。" + error
+		return false
+	_leave_prepared = true
+	return true
+
+func _confirm_leave() -> void:
+	if not _leave_requested: return
+	if not _prepare_leave():
+		_leave_requested = false
+		return
+	if _leave_quit:
+		get_tree().quit()
+	else:
+		GameManager.goto_scene("menu")
+
+func _recover_sea_save() -> void:
+	if not GameManager.recover_sea_save():
+		result_label.text = "恢复失败，当前现场保留。" + GameManager.sea_save_error
+		return
+	_clear_public_project_results()
+	if is_instance_valid(dive_layer):
+		remove_child(dive_layer)
+		dive_layer.queue_free()
+		dive_layer = null
+		dive_view = null
+		if is_instance_valid(exploration_tools):
+			exploration_tools.show()
+			exploration_tools.set_process_input(true)
+	_restore_round(GameManager.water_activity_state)
+	technology.state.paused = true
+	initial_state = _round_state().duplicate(true)
+	dive_node_snapshot.clear()
+	dive_stock_changed = false
+	_refresh_ui()
+	result_label.text = GameManager.sea_save_error
+	recovery_button.visible = GameManager.can_recover_sea_save()
 
 func _exit_tree() -> void:
-	technology.pause()
+	# 离场事务只在确认入口提交，销毁阶段不重试或覆盖刚刚提交的现场。
+	get_tree().set_auto_accept_quit(_previous_auto_accept_quit)
 	if not previous_window.is_empty():
 		var window := get_window()
 		window.mode = previous_window.mode
@@ -1158,8 +1243,6 @@ func _exit_tree() -> void:
 		window.size = previous_window.size
 		window.position = previous_window.position
 		window.title = previous_window.title
-	if not rollback_dive_stock():
-		push_warning("放弃下潜时宝箱存量回滚保存失败；磁盘保留上次成功存量。")
 
 func _round_state() -> Dictionary:
 	return {
@@ -1201,6 +1284,7 @@ func _cache_round() -> bool:
 			public_project_service.queue_recheck()
 		return true
 	var error: String = GameManager.sea_save_error
+	if is_instance_valid(recovery_button): recovery_button.visible = GameManager.can_recover_sea_save()
 	_restore_round(old if not old.is_empty() else initial_state)
 	result_label.text = error
 	return false
@@ -1527,6 +1611,7 @@ func _return_from_wreck() -> bool:
 func _collect_wreck() -> void:
 	for i in range(wreck_nodes.size() - 1, -1, -1):
 		if player_foot.distance_to(wreck_nodes[i]) <= PICKUP_RADIUS:
+			if not _has_capacity({"scrap": 2, "wreck_scrap": 2}): return
 			wreck_nodes.remove_at(i)
 			scrap += 2
 			wreck_scrap += 2
@@ -1538,6 +1623,7 @@ func _collect_wreck() -> void:
 func _collect_salt() -> void:
 	for i in range(salt_nodes.size() - 1, -1, -1):
 		if player_foot.distance_to(salt_nodes[i]) <= PICKUP_RADIUS:
+			if not _has_capacity({"salt": 1}): return
 			salt_nodes.remove_at(i)
 			salt += 1
 			result_label.text = "采得盐晶 +1（库存%d）；返港后可用于过滤架。" % salt
@@ -1548,6 +1634,7 @@ func _collect_salt() -> void:
 func _collect_nearby() -> void:
 	for i in range(debris.size() - 1, -1, -1):
 		if player_foot.distance_to(debris[i]) <= PICKUP_RADIUS:
+			if not _has_capacity({"wood": 1, "scrap": 1}): return
 			debris.remove_at(i)
 			wood += 1
 			scrap += 1
@@ -1566,31 +1653,41 @@ func _build_collector() -> bool:
 	_open_build("collector")
 	return false
 
+func _has_capacity(gains: Dictionary) -> bool:
+	for key: String in gains:
+		if int(get(key)) > RESOURCE_LIMIT - int(gains[key]):
+			result_label.text = "库存或累计数量已达上限（%s）；请先消耗库存，本次未扣料、未领取。" % key
+			return false
+	return true
+
 func _tick_production(delta: float) -> void:
-	if collectors == 0 or at_salt or at_wreck:
+	if collectors == 0 or at_salt or at_wreck or not is_finite(delta):
 		return
-	production_elapsed += maxf(delta, 0.0)
-	var cycles := int(production_elapsed / PRODUCTION_INTERVAL)
-	if cycles > 0:
-		production_elapsed -= cycles * PRODUCTION_INTERVAL
-		var water_gain := cycles * (collectors + int(resident_working) + int(delegated) + int(filter_built))
-		if automated_collecting:
-			water += water_gain
-			if workshop_built:
-				rope += cycles * collectors
-				processing_flash = 1.0
-			else:
-				fiber += cycles * collectors
-		else:
-			pending_water += water_gain
-			pending_fiber += cycles * collectors
-		result_label.text = "设施已产出 %d 批%s。" % [cycles * collectors, "，自动收取并加工" if workshop_built else ("，自动收取" if automated_collecting else "，等待领取")]
-		_refresh_ui()
-		_cache_round()
+	var water_key := "water" if automated_collecting else "pending_water"
+	var material_key := ("rope" if workshop_built else "fiber") if automated_collecting else "pending_fiber"
+	var water_per_cycle := collectors + int(resident_working) + int(delegated) + int(filter_built)
+	var capacity_cycles := mini(int((RESOURCE_LIMIT - int(get(water_key))) / water_per_cycle), int((RESOURCE_LIMIT - int(get(material_key))) / collectors))
+	# 满仓保留待兑现周期，不再增加时间；沿用存档允许的100秒计时上限。
+	if capacity_cycles > 0:
+		production_elapsed = minf(100.0, production_elapsed + maxf(delta, 0.0))
+	var due := int(production_elapsed / PRODUCTION_INTERVAL)
+	var cycles := mini(due, capacity_cycles)
+	if cycles == 0:
+		if capacity_cycles == 0: result_label.text = "产出仓位已满，生产暂停；已有周期保留，请先消耗或领取。"
+		return
+	production_elapsed -= cycles * PRODUCTION_INTERVAL
+	set(water_key, int(get(water_key)) + cycles * water_per_cycle)
+	set(material_key, int(get(material_key)) + cycles * collectors)
+	if automated_collecting and workshop_built: processing_flash = 1.0
+	result_label.text = "设施已产出 %d 批%s。" % [cycles * collectors, "，自动收取并加工" if workshop_built else ("，自动收取" if automated_collecting else "，等待领取")]
+	if cycles < due: result_label.text += " 仓位已满，剩余周期暂停。"
+	_refresh_ui()
+	_cache_round()
 
 func _claim_production() -> bool:
 	if at_salt or at_wreck or automated_collecting or pending_water == 0 and pending_fiber == 0:
 		return false
+	if not _has_capacity({"water": pending_water, "fiber": pending_fiber}): return false
 	water += pending_water
 	fiber += pending_fiber
 	guide_seen_claim = true
@@ -1603,6 +1700,7 @@ func _claim_production() -> bool:
 func _upgrade_collector() -> bool:
 	if at_salt or at_wreck or collectors == 0 or automated_collecting or orders_completed < 1 or wood < UPGRADE_WOOD or scrap < UPGRADE_SCRAP:
 		return false
+	if not _has_capacity({"water": pending_water, "fiber": pending_fiber}): return false
 	wood -= UPGRADE_WOOD
 	scrap -= UPGRADE_SCRAP
 	automated_collecting = true
@@ -1621,6 +1719,7 @@ func _build_workshop() -> bool:
 func _process_fiber() -> bool:
 	if fiber < 1 or at_salt or at_wreck:
 		return false
+	if not _has_capacity({"rope": 1}): return false
 	fiber -= 1
 	rope += 1
 	result_label.text = "加工完成：1纤维制成1绳索。"
@@ -1630,6 +1729,7 @@ func _process_fiber() -> bool:
 func _fulfill_order() -> bool:
 	if at_salt or at_wreck or water < ORDER_WATER or rope < ORDER_ROPE:
 		return false
+	if not _has_capacity({"wood": 2, "scrap": 2, "orders_completed": 1}): return false
 	water -= ORDER_WATER
 	rope -= ORDER_ROPE
 	wood += 2
@@ -1734,6 +1834,7 @@ func _confirm_build() -> void:
 		slot = slot_picker.get_item_id(slot_picker.selected)
 		if slot <= 0 or slot >= building_slots.size() or building_slots[slot] != "empty":
 			return
+	if kind == "workshop" and not _has_capacity({"rope": fiber}): return
 	var cost := _build_cost(kind)
 	wood -= cost.x
 	scrap -= cost.y
@@ -1944,6 +2045,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	tide_clock += maxf(0, delta)
 	_refresh_public_project_pending()
+	if _leave_prepared: return
 	if is_instance_valid(_public_project_window) and _public_project_window.visible:
 		_sync_public_project_actions(_public_project_operation)
 		moving = false

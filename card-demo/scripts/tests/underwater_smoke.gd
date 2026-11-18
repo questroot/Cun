@@ -1048,6 +1048,7 @@ func technology_checks() -> void:
 	check(tech._cargo_count() == 0 and tech.state.remaining == 0, "完工失败冻结自然计时")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
 	check(tech.resume() and tech.state.cargo.timber == 1 and tech.state.current == "timber" and tech.state.remaining == 45 and tech.state.credits == before.technology.credits - 1, "完工重试仅发一件并扣下一周期1")
+	technology_recovery_checks()
 	check(tech.pause(), "T6开箱前暂停设备")
 	sea._open_dive()
 	var view: Control = sea.dive_view
@@ -1069,6 +1070,66 @@ func technology_checks() -> void:
 	await key(KEY_ESCAPE)
 	technology_economy_checks()
 	await technology_schema_checks()
+
+func technology_recovery_checks() -> void:
+	var baseline: Dictionary = sea._round_state().duplicate(true)
+	var tech = sea.technology
+	for action in ["claim", "refuel"]:
+		sea._restore_round(baseline)
+		tech._settlement_failed = false
+		tech.state.current = ""
+		tech.state.remaining = 0.0
+		tech.state.credits = 2
+		tech.state.paused = false
+		for id in tech.state.cargo: tech.state.cargo[id] = 0
+		tech.state.cargo.coral = 1
+		tech.state.packs.normal = 1
+		check(sea._cache_round(), "启动失败恢复旧货基线 " + action)
+		var before := gameplay_state()
+		DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		tech.tick(1.0)
+		check(tech._settlement_failed and gameplay_state() == before, "新周期启动写失败回滚且保留旧货 " + action)
+		var failed: bool = tech.claim() if action == "claim" else tech.refuel(false)
+		check(not failed and tech._settlement_failed and gameplay_state() == before, "启动失败后恢复操作写失败不清锁且全部回滚 " + action)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		check(tech.select_target("timber") and tech._settlement_failed, "普通保存成功不清启动失败锁 " + action)
+		var recovered: bool = tech.claim() if action == "claim" else tech.refuel(false)
+		check(recovered and not tech._settlement_failed and tech.state.current == "timber" and tech.state.remaining == 45 and tech.state.credits == (1 if action == "claim" else 7), "旧货领取或投包保存成功恢复启动且只扣一次额度 " + action)
+		check(sea.resources.coral == before.resources.coral + (1 if action == "claim" else 0) and tech.state.cargo.coral == (0 if action == "claim" else 1) and tech.state.packs.normal == (1 if action == "claim" else 0), "启动恢复领取旧货及投包扣费准确 " + action)
+		tech.tick(1.0)
+		check(tech.state.remaining == 44, "启动恢复后自然计时继续推进 " + action)
+		tech.tick(44.0)
+		check(tech.state.cargo.timber == 1 and tech.state.credits == (0 if action == "claim" else 6), "启动恢复后自然完工只发一件 " + action)
+	for action in ["claim", "refuel"]:
+		sea._restore_round(baseline)
+		tech._settlement_failed = false
+		tech.state.current = "timber"
+		tech.state.remaining = 1.0
+		tech.state.credits = 2
+		tech.state.paused = false
+		for id in tech.state.cargo: tech.state.cargo[id] = 0
+		tech.state.cargo.coral = 1
+		tech.state.packs.normal = 1
+		check(sea._cache_round(), "有旧货完工待结算基线 " + action)
+		DirAccess.make_dir_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		tech.tick(1.0)
+		check(tech._settlement_failed and tech.state.current == "timber" and tech.state.remaining == 0 and tech.state.cargo.timber == 0 and tech.state.cargo.coral == 1, "有旧货完工保存失败保留待结算 " + action)
+		var before := gameplay_state()
+		var failed: bool = tech.claim() if action == "claim" else tech.refuel(false)
+		check(not failed and tech._settlement_failed and gameplay_state() == before, "待结算恢复操作写失败不清锁且全量回滚 " + action)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(game.SEA_TEMP))
+		var recovered: bool = tech.claim() if action == "claim" else tech.refuel(false)
+		check(recovered and tech._settlement_failed and tech.state.current == "timber" and tech.state.remaining == 0 and tech.state.cargo.timber == 0 and tech.state.credits == (2 if action == "claim" else 8), "待结算领取或投包保存成功仍不误解锁或发货 " + action)
+		check(tech.select_target("timber") and tech._settlement_failed, "普通保存成功不清待结算锁 " + action)
+		before = gameplay_state()
+		tech.tick(1000.0)
+		check(tech._settlement_failed and gameplay_state() == before, "待结算领取或投包后仍冻结自然计时 " + action)
+		check(tech.resume() and not tech._settlement_failed and tech.state.cargo.timber == 1 and tech.state.current == "timber" and tech.state.remaining == 45 and tech.state.credits == (1 if action == "claim" else 7), "待结算只能继续重试且仅发一件扣下一轮一次 " + action)
+		before = gameplay_state()
+		check(tech.resume() and gameplay_state() == before, "待结算恢复后反复继续不重复发货扣额 " + action)
+	sea._restore_round(baseline)
+	tech._settlement_failed = false
+	check(sea._cache_round(), "恢复科技失败重试测试前基线")
 
 func technology_economy_checks() -> void:
 	var baseline: Dictionary = sea._round_state().duplicate(true)

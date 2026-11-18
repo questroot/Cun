@@ -47,7 +47,10 @@ func _migrate_sea_state(legacy: Dictionary) -> Dictionary:
 	return state
 
 func _read_sea_text(text: String) -> Dictionary:
-	var parsed: Variant = JSON.parse_string(text)
+	var json := JSON.new()
+	if json.parse(text) != OK:
+		return {}
+	var parsed: Variant = json.data
 	if not parsed is Dictionary or not parsed.get("state") is Dictionary:
 		return {}
 	var raw_version: Variant = parsed.get("version")
@@ -208,6 +211,70 @@ func load_sea_save() -> void:
 		elif FileAccess.file_exists(SEA_SAVE) or FileAccess.file_exists(SEA_BACKUP) or FileAccess.file_exists(SEA_BACKUP + ".pending"):
 			sea_save_error = "海上存档损坏，未覆盖原档；请先备份文件。"
 	water_activity_state = state
+
+func can_recover_sea_save() -> bool:
+	return _read_sea_file(SEA_SAVE).is_empty() and (not _read_sea_file(SEA_BACKUP + ".pending").is_empty() or not _read_sea_file(SEA_BACKUP).is_empty())
+
+func recover_sea_save() -> bool:
+	sea_save_error = ""
+	if not _read_sea_file(SEA_SAVE).is_empty():
+		sea_save_error = "海上主档有效，无需恢复。"
+		return false
+	var state := _read_sea_file(SEA_BACKUP + ".pending")
+	if state.is_empty():
+		state = _read_sea_file(SEA_BACKUP)
+	if state.is_empty():
+		sea_save_error = "海上没有有效备份，原档保留。"
+		return false
+	var recovery_temp := SEA_TEMP + ".recover"
+	var text := JSON.stringify({"version": 11, "state": state}, "", true, true)
+	if _read_sea_text(text).is_empty():
+		sea_save_error = "海上恢复数据无效，原档与备份保留。"
+		return false
+	var file := FileAccess.open(recovery_temp, FileAccess.WRITE)
+	if file == null:
+		sea_save_error = "海上恢复临时文件写入失败，原档与备份保留。"
+		return false
+	file.store_string(text)
+	file.flush()
+	var write_error := file.get_error()
+	file.close()
+	if write_error != OK or _read_sea_file(recovery_temp).is_empty():
+		sea_save_error = "海上恢复写入校验失败，原档与备份保留。"
+		return false
+	var absolute := ProjectSettings.globalize_path(SEA_SAVE)
+	var quarantine := ""
+	if not _read_sea_file(SEA_SAVE).is_empty():
+		sea_save_error = "海上主档已变为有效，未执行恢复。"
+		return false
+	if FileAccess.file_exists(SEA_SAVE):
+		var prefix := absolute + ".corrupt." + str(Time.get_ticks_usec())
+		quarantine = prefix
+		var suffix := 0
+		while FileAccess.file_exists(quarantine) or DirAccess.dir_exists_absolute(quarantine):
+			suffix += 1
+			quarantine = prefix + "." + str(suffix)
+		if DirAccess.rename_absolute(absolute, quarantine) != OK:
+			sea_save_error = "海上坏主档隔离失败，原档与备份保留。"
+			return false
+	if FileAccess.file_exists(SEA_SAVE) or DirAccess.dir_exists_absolute(absolute) or DirAccess.rename_absolute(ProjectSettings.globalize_path(recovery_temp), absolute) != OK:
+		if not quarantine.is_empty() and not FileAccess.file_exists(SEA_SAVE) and not DirAccess.dir_exists_absolute(absolute):
+			DirAccess.rename_absolute(quarantine, absolute)
+		sea_save_error = "海上恢复置换失败，原档或隔离文件与备份保留。"
+		if not quarantine.is_empty():
+			sea_save_error += " 隔离路径：" + quarantine
+		return false
+	var committed := _read_sea_file(SEA_SAVE)
+	if committed.is_empty() or committed != _read_sea_text(text):
+		sea_save_error = "海上恢复主档校验失败，原档或隔离文件与备份保留。"
+		if not quarantine.is_empty():
+			sea_save_error += " 隔离路径：" + quarantine
+		return false
+	water_activity_state = committed.duplicate(true)
+	sea_save_error = "海上存档已从备份恢复；请核对进度。"
+	if not quarantine.is_empty():
+		sea_save_error += " 坏主档隔离路径：" + quarantine
+	return true
 
 func save_sea_state(state: Dictionary) -> bool:
 	sea_save_error = ""

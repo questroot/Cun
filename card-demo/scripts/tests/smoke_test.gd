@@ -617,7 +617,22 @@ func run_checks() -> void:
 					instance._collect_salt()
 				check(instance.salt == before_failed_reset.salt and game.water_activity_state == before_failed_reset, "采盐存档失败不发放重复奖励")
 			check(not instance._enter_wreck() and not instance.at_wreck and instance.wreck_scrap == before_failed_reset.wreck_scrap and game.water_activity_state == before_failed_reset, "废船带进入写失败回滚区域与库存")
+			instance.sailing = true
+			instance.active_loadout = "weapon"
+			instance.sail_hp = 5
+			instance.enemy_hp = 4
+			instance._request_leave(true)
+			check(instance.leave_dialog.visible and instance.leave_dialog.dialog_text.contains("不退还") and not instance._leave_prepared, "窗口关闭航战先确认且明确不退补给")
+			instance.leave_dialog.hide()
+			instance.leave_dialog.canceled.emit()
+			check(instance.sailing and not instance._leave_requested and not instance._leave_prepared, "取消离场保持航战现场")
+			instance._request_leave()
+			instance.leave_dialog.hide()
+			instance.leave_dialog.confirmed.emit()
+			check(not instance._leave_prepared and not instance._leave_requested and instance.sailing and instance.sail_hp == 5 and instance.enemy_hp == 4 and instance.result_label.text.contains("离场保存失败"), "确认后保存失败不切场且保留航战现场")
+			instance.sailing = false
 			DirAccess.remove_absolute(temp_path)
+			_check_water_capacity_and_leave(instance, game)
 			instance._start_round()
 			check(instance.wood == 0 and instance.rope == 0 and instance.raft_tiles == 1 and instance.core_level == 1 and instance.building_slots == ["core"] and not instance.guide_seen_pickup and not instance.guide_seen_claim and instance.orders_completed == 0 and not instance.automated_collecting and not instance.workshop_built and instance.pending_water == 0, "重开清空成长、核心槽位与引导进度")
 		elif path.ends_with("TeamSelect.tscn"):
@@ -1186,6 +1201,84 @@ func run_checks() -> void:
 	data.save_data["hero_skill"] = saved_hero_skill
 	print("SMOKE RESULT: %s (%d failed)" % ["PASS" if failures == 0 else "FAIL", failures])
 	quit(0 if failures == 0 else 1)
+
+func _check_water_capacity_and_leave(activity, game) -> void:
+	var saved: Dictionary = activity._round_state().duplicate(true)
+	var limit: int = activity.RESOURCE_LIMIT
+	activity.wood = limit
+	activity.scrap = limit - 1
+	activity.debris.clear()
+	activity.debris.append(activity.player_foot)
+	activity._collect_nearby()
+	check(activity.debris.size() == 1 and activity.scrap == limit - 1, "木料满仓拒绝整份打捞且不吞节点")
+	activity.scrap = limit - 1
+	activity.wreck_scrap = 0
+	activity.wreck_nodes.clear()
+	activity.wreck_nodes.append(activity.player_foot)
+	activity._collect_wreck()
+	check(activity.wreck_nodes.size() == 1 and activity.wreck_scrap == 0, "废料不足两格拒绝船骸整份领取")
+	activity.scrap = 0
+	activity.wreck_scrap = limit - 1
+	activity._collect_wreck()
+	check(activity.scrap == 0 and activity.wreck_nodes.size() == 1, "船骸累计量也受上限约束")
+	activity.salt = limit
+	activity.salt_nodes.clear()
+	activity.salt_nodes.append(activity.player_foot)
+	activity._collect_salt()
+	check(activity.salt_nodes.size() == 1 and activity.salt == limit, "盐晶满仓保留节点")
+	activity._restore_round(saved)
+	activity.water = limit
+	activity.pending_water = 1
+	activity.pending_fiber = 1
+	activity.automated_collecting = false
+	var wood_before: int = activity.wood
+	check(not activity._claim_production() and activity.pending_water == 1, "待领水溢出时整批不领取")
+	check(not activity._upgrade_collector() and activity.wood == wood_before and not activity.automated_collecting, "升级转入容量不足不扣料不升级")
+	activity.rope = limit
+	activity.fiber = 1
+	check(not activity._process_fiber() and activity.fiber == 1, "搓绳满仓不扣纤维")
+	activity.rope = 2
+	activity.orders_completed = limit
+	check(not activity._fulfill_order() and activity.rope == 2 and activity.water == limit, "订单计数满额不扣水绳")
+	activity.orders_completed = 2
+	activity.wood = limit - 1
+	check(not activity._fulfill_order() and activity.rope == 2, "订单奖励无容量不扣水绳")
+	activity._restore_round(saved)
+	activity.workshop_built = false
+	activity.building_slots[2] = "empty"
+	activity.fiber = 2
+	activity.rope = limit - 1
+	activity._open_build("workshop")
+	var build_wood: int = activity.wood
+	activity._confirm_build()
+	activity.build_dialog.hide()
+	check(not activity.workshop_built and activity.wood == build_wood and activity.fiber == 2, "工坊批量转绳溢出不建造不扣料")
+	activity._restore_round(saved)
+	activity.automated_collecting = false
+	activity.pending_water = limit - 4
+	activity.pending_fiber = limit - 1
+	activity.production_elapsed = 0.0
+	check(activity._cache_round(), "容量边界生产夹具有效")
+	activity._tick_production(12.0)
+	check(activity.pending_water == limit and activity.pending_fiber == limit and activity.production_elapsed == 8.0, "仅兑现可容纳整周期且保留待兑现周期")
+	activity._tick_production(10000.0)
+	check(activity.production_elapsed == 8.0, "满仓停止新增计时不会无限累积")
+	activity.pending_water -= 4
+	activity.pending_fiber -= 1
+	activity._tick_production(0.0)
+	check(activity.pending_water == limit and activity.production_elapsed == 4.0, "腾仓后兑现保留周期")
+	activity._restore_round(saved)
+	check(activity._enter_wreck(), "离场现场夹具进入废船带")
+	activity.hazard_elapsed = 4.75
+	activity.wreck_hp = 2
+	check(activity._prepare_leave() and activity.technology.state.paused and game.water_activity_state.hazard_elapsed == 4.75, "离场准备保存阵风余时并暂停科技")
+	activity._leave_prepared = false
+	activity._restore_round(game.water_activity_state)
+	check(activity.at_wreck and activity.wreck_hp == 2 and activity.hazard_elapsed == 4.75, "阵风现场重入保留船体与余时")
+	activity._process(0.3)
+	check(activity.wreck_hp == 1, "重入后阵风按剩余时间触发而非重置")
+	activity._restore_round(saved)
+	activity._cache_round()
 
 func check(condition: bool, description: String) -> void:
 	if condition:

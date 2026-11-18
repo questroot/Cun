@@ -4,7 +4,7 @@ const Service = preload("res://scripts/scenes/public_project_service.gd")
 const Catalog = preload("res://scripts/scenes/underwater_catalog.gd")
 const Technology = preload("res://scripts/scenes/water_technology.gd")
 const ResultPanel = preload("res://scripts/scenes/public_project_result_panel.gd")
-const DISK_PATHS := ["user://sea_chapter_v1.json", "user://sea_chapter_v1.json.tmp", "user://sea_chapter_v1.json.bak", "user://sea_chapter_v1.json.bak.pending"]
+const DISK_PATHS := ["user://sea_chapter_v1.json", "user://sea_chapter_v1.json.tmp", "user://sea_chapter_v1.json.bak", "user://sea_chapter_v1.json.bak.pending", "user://sea_chapter_v1.json.tmp.recover"]
 
 # The fake host persists JSON through the real GameManager validator. No player files are written.
 class TransactionHost extends Node:
@@ -75,6 +75,7 @@ var checks := 0
 var failures := 0
 var game: Node
 var hosts: Array[TransactionHost] = []
+var recovery_quarantines: Array[String] = []
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -223,6 +224,10 @@ func failure_tests() -> void:
 # GDScript has no try/finally: the caller always runs cleanup after this body,
 # and each fixture is cleared before the next case (check never aborts).
 func clear_disk_fixtures() -> void:
+	for path in recovery_quarantines:
+		if FileAccess.file_exists(path):
+			check(DirAccess.remove_absolute(path) == OK, "清理本次恢复隔离文件 " + path)
+	recovery_quarantines.clear()
 	for path in DISK_PATHS:
 		var absolute := ProjectSettings.globalize_path(path)
 		if DirAccess.dir_exists_absolute(absolute):
@@ -259,6 +264,90 @@ func disk_failure_case(stage: String, blocked: String, message: String) -> void:
 	draft = host.service.preview(amounts("coral", 3), false)
 	check(host.service.confirm(draft.token, false).get("ok", false), stage + "新预览可成功提交")
 	check(same(game._read_sea_file(DISK_PATHS[0]), host._round_state()), stage + "磁盘与提交状态一致")
+
+func write_disk_fixture(path: String, text: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	check(file != null, "写入隔离测试夹具 " + path)
+	if file != null:
+		file.store_string(text)
+		file.close()
+
+func remember_quarantine(bad_text: String) -> String:
+	var message: String = game.sea_save_error
+	var marker := "坏主档隔离路径："
+	check(message.contains(marker), "成功恢复提示包含坏主档隔离路径")
+	if not message.contains(marker): return ""
+	var path := message.get_slice(marker, 1)
+	check(path.begins_with(ProjectSettings.globalize_path(DISK_PATHS[0]) + ".corrupt."), "隔离路径属于本次测试主档")
+	if not path.begins_with(ProjectSettings.globalize_path(DISK_PATHS[0]) + ".corrupt."): return ""
+	recovery_quarantines.append(path)
+	check(FileAccess.get_file_as_string(path) == bad_text, "坏主档逐字隔离未进入备份轮换")
+	return path
+
+func recovery_disk_tests() -> void:
+	clear_disk_fixtures()
+	var host := host_with()
+	var state := host._round_state()
+	var backup_text := JSON.stringify({"version": 11, "state": state})
+	var bad_text := "{broken-main"
+	for malformed: String in [bad_text, "{broken-pending", "{broken-backup", "", "{\"version\":11,\"state\":", "[1, 2"]:
+		var before_cache: Dictionary = game.water_activity_state.duplicate(true)
+		var before_error: String = game.sea_save_error
+		write_disk_fixture(DISK_PATHS[0], malformed)
+		check(game._read_sea_text(malformed).is_empty() and game._read_sea_file(DISK_PATHS[0]).is_empty(), "malformed JSON文本与磁盘读取均静默拒绝 " + malformed)
+		check(FileAccess.get_file_as_string(DISK_PATHS[0]) == malformed and same(game.water_activity_state, before_cache) and game.sea_save_error == before_error, "malformed JSON读取不改原文缓存或提示")
+	write_disk_fixture(DISK_PATHS[0], bad_text)
+	write_disk_fixture(DISK_PATHS[2], backup_text)
+	var cached: Dictionary = game.water_activity_state.duplicate(true)
+	check(game.can_recover_sea_save() and same(game.water_activity_state, cached), "恢复查询只读且坏主档有效备份可恢复")
+	check(not game.save_sea_state(state), "普通保存仍拒绝坏主档，不隐式恢复")
+	check(FileAccess.get_file_as_string(DISK_PATHS[0]) == bad_text and FileAccess.get_file_as_string(DISK_PATHS[2]) == backup_text and same(game.water_activity_state, cached), "普通保存拒绝时坏主档备份和缓存保留")
+	block_disk_path(DISK_PATHS[4])
+	check(not game.recover_sea_save() and game.sea_save_error == "海上恢复临时文件写入失败，原档与备份保留。", "恢复临时写入失败明确报错")
+	check(FileAccess.get_file_as_string(DISK_PATHS[0]) == bad_text and FileAccess.get_file_as_string(DISK_PATHS[2]) == backup_text and same(game.water_activity_state, cached), "恢复写失败不移动坏主档、不消费备份、不改缓存")
+	clear_disk_fixtures()
+	write_disk_fixture(DISK_PATHS[0], bad_text)
+	write_disk_fixture(DISK_PATHS[2], backup_text)
+	check(game.recover_sea_save(), "显式恢复备份成功")
+	var first_path := remember_quarantine(bad_text)
+	check(same(game._read_sea_file(DISK_PATHS[0]), state) and same(game.water_activity_state, state), "恢复提交后磁盘与缓存同步")
+	check(FileAccess.get_file_as_string(DISK_PATHS[2]) == backup_text and not FileAccess.file_exists(DISK_PATHS[3]), "恢复不消费有效bak也不将坏主档轮换至pending")
+	check(not game.can_recover_sea_save() and not game.recover_sea_save(), "有效主档不显示恢复且拒绝再次恢复")
+	var pending_state := state.duplicate(true)
+	pending_state.resources.coral += 1
+	var pending_text := JSON.stringify({"version": 11, "state": pending_state})
+	write_disk_fixture(DISK_PATHS[0], bad_text)
+	check(game.can_recover_sea_save(), "查询备份后允许用户确认")
+	write_disk_fixture(DISK_PATHS[3], pending_text)
+	check(game.recover_sea_save(), "确认恢复时现读有效pending优先于bak")
+	var second_path := remember_quarantine(bad_text)
+	check(first_path != second_path and FileAccess.get_file_as_string(first_path) == bad_text, "重复恢复使用唯一隔离路径不覆盖前次坏档")
+	check(same(game.water_activity_state, pending_state) and same(game._read_sea_file(DISK_PATHS[0]), pending_state), "恢复使用确认时现读pending而非查询时缓存")
+	check(FileAccess.get_file_as_string(DISK_PATHS[2]) == backup_text and FileAccess.get_file_as_string(DISK_PATHS[3]) == pending_text, "恢复成功两个有效来源逐字保留")
+	clear_disk_fixtures()
+	write_disk_fixture(DISK_PATHS[2], backup_text)
+	write_disk_fixture(DISK_PATHS[3], pending_text)
+	block_disk_path(DISK_PATHS[0])
+	cached = game.water_activity_state.duplicate(true)
+	check(not game.recover_sea_save() and game.sea_save_error.begins_with("海上恢复置换失败"), "恢复提交被目录阻塞返回失败")
+	check(DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(DISK_PATHS[0])) and FileAccess.get_file_as_string(DISK_PATHS[2]) == backup_text and FileAccess.get_file_as_string(DISK_PATHS[3]) == pending_text and same(game.water_activity_state, cached), "恢复提交失败不覆盖新占位、不消费来源、不改缓存")
+	check(not game._read_sea_file(DISK_PATHS[4]).is_empty(), "提交失败保留已校验独立恢复临时文件")
+	clear_disk_fixtures()
+	write_disk_fixture(DISK_PATHS[0], bad_text)
+	write_disk_fixture(DISK_PATHS[2], backup_text)
+	write_disk_fixture(DISK_PATHS[3], "{broken-pending")
+	check(game.can_recover_sea_save() and game.recover_sea_save(), "无效pending回退有效bak")
+	remember_quarantine(bad_text)
+	check(same(game.water_activity_state, state) and FileAccess.get_file_as_string(DISK_PATHS[3]) == "{broken-pending", "回退bak不改写无效pending")
+	clear_disk_fixtures()
+	write_disk_fixture(DISK_PATHS[0], bad_text)
+	write_disk_fixture(DISK_PATHS[2], backup_text)
+	check(game.can_recover_sea_save(), "备份失效前查询可恢复")
+	write_disk_fixture(DISK_PATHS[2], "{broken-backup")
+	cached = game.water_activity_state.duplicate(true)
+	check(not game.can_recover_sea_save() and not game.recover_sea_save(), "查询后备份失效，确认现读必须拒绝而非使用旧来源")
+	check(FileAccess.get_file_as_string(DISK_PATHS[0]) == bad_text and FileAccess.get_file_as_string(DISK_PATHS[2]) == "{broken-backup" and same(game.water_activity_state, cached), "无有效源失败保留坏档与缓存")
+	clear_disk_fixtures()
 
 func real_disk_tests() -> void:
 	# Explicit opt-in prevents a parallel smoke suite from touching its shared save.
@@ -301,6 +390,7 @@ func real_disk_tests() -> void:
 	check(host.service.confirm(draft.token, false).get("duplicate", false) and writes == host.writes, "整理告警后重复确认不重扣重写")
 	game.load_sea_save()
 	check(same(game.water_activity_state, host._round_state()) and game.sea_save_error == "", "告警后重载采用已提交主档")
+	recovery_disk_tests()
 	# The equivalent of finally: no early return after fixture creation.
 	clear_disk_fixtures()
 	game.water_activity_state = cached
