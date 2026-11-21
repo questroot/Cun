@@ -7,6 +7,7 @@ var game
 var audio
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run")
 
 func check(value: bool, message: String) -> void:

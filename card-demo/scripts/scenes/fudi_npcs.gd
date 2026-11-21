@@ -262,6 +262,7 @@ func talk(id: String) -> void:
 	game.model.update_movement(Vector2.ZERO, 0)
 	refresh()
 	game._refresh_ui()
+	if game.persistence != null: game.persistence.request_save()
 
 func progress_text(id: String) -> String:
 	var parts: Array[String] = []

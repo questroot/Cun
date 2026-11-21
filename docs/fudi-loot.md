@@ -30,7 +30,7 @@
 
 另有[异变宝箱守卫](fudi-chests.md)：守箱Boss只以60%概率掉一件异变品质装备，原非零属性提高30%后向上取整，与普通副本分开计数。20种原图各提供一个强化版本，原小怪及常驻Boss仍使用普通品质掉落池。
 
-尸体清理和拾取均防重复；跨地图保留行囊与尚未拾取的物品，重开或离开福地清空本轮，不改灵伴存档。本轮交付负责掉落与收集；另一个聊天正在接入穿戴面板，穿戴效果及其验证由该任务维护。
+尸体清理和拾取均防重复；跨地图保留行囊与尚未拾取的物品，并随福地独立保存，确认重新开始才清空本轮，不改灵伴存档。穿戴与融合规则见[装备文档](fudi-equipment.md)。
 
 物品与概率配置：[loot_catalog.gd](../card-demo/scripts/scenes/loot_catalog.gd)。素材重建：[prepare_loot_icons.py](../tools/prepare_loot_icons.py)，需要Python与Pillow，游戏运行不依赖Python。
 

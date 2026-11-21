@@ -126,10 +126,10 @@ func run_checks() -> void:
 	gear.close()
 	game.player_foot = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size
 	game.facing = Vector2.RIGHT
-	game.states[game.region].enemies = [{"position": game.player_foot + Vector2(80, 0), "hp": 500, "max_hp": 500, "flash": 0.0}]
+	game.states[game.region].enemies = [game.Guards.create(game.player_foot + Vector2(80, 0), "melee").merged({"hp": 500, "max_hp": 500, "flash": 0.0}, true)]
 	game.cooldowns.j = 0
 	check(game.attack("j") and game.states[game.region].enemies[0].hp == 436, "融合+10武器真实J伤害为26+38")
-	check(game.incoming_damage(20) == 13, "融合防具进入实际减伤计算")
+	check(game.incoming_damage(20) == 18, "融合防具进入实际减伤计算")
 	var foot: Vector2 = game.player_foot
 	var held := InputEventKey.new()
 	held.physical_keycode = KEY_D

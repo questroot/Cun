@@ -29,6 +29,11 @@ const MATERIALS := {
 	"rush": {"name": "灯芯草", "color": "#b8c97a"},
 	"berry": {"name": "甘露莓", "color": "#e99f9e"},
 }
+const SUPPLIES := {
+	"field_bandage": {"name": "止血绷带", "color": "#d5d9be", "heal": 25, "cost": {"bloodgrass": 2, "fiber": 1}},
+	"herbal_draught": {"name": "灵草药饮", "color": "#8fe1ac", "heal": 35, "cost": {"herb": 2, "dewleaf": 1}},
+	"berry_tonic": {"name": "甘露薄荷饮", "color": "#e99f9e", "heal": 45, "cost": {"berry": 2, "mint": 1}},
+}
 static var ITEMS: Dictionary = _all_items()
 
 static func _all_items() -> Dictionary:
@@ -37,6 +42,7 @@ static func _all_items() -> Dictionary:
 		if items.has(id):
 			items[id]["icon"] = MaterialArt.HERBS[id]
 	items.merge(preload("res://scripts/scenes/loot_catalog.gd").ITEMS)
+	items.merge(SUPPLIES)
 	return items
 
 const REGIONS := {

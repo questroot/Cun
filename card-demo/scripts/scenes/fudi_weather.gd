@@ -171,10 +171,6 @@ func _draw_garden() -> void:
 		if game.player_foot.distance_to(point) < 200:
 			var stage := "成熟 · 靠近采集" if plot.ripe else ("生长 %d%%" % int(progress * 100) if Ecology.compatible(plot.item, climates[game.region]) else "待候 %d%%" % int(progress * 100))
 			garden.draw_string(font, point + Vector2(-50, 42), "%s · %s" % [Catalog.ITEMS[plot.item].name, stage], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
-	for enemy: Dictionary in game.states[game.region].enemies:
-		if enemy.has("name"):
-			garden.draw_string(font, enemy.position + Vector2(-55, -96), enemy.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, enemy.tint)
-
 func _draw_garden_map() -> void:
 	if not initialized:
 		return

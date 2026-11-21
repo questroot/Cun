@@ -139,6 +139,12 @@ func _draw_map() -> void:
 		if not _boss_names(id).is_empty():
 			var marker := _map_position(id) + Vector2(region_buttons[id].size.x * 0.5 + 9, 0)
 			map_surface.draw_colored_polygon(PackedVector2Array([marker + Vector2(0, -5), marker + Vector2(5, 0), marker + Vector2(0, 5), marker + Vector2(-5, 0)]), Color("#eeaa86"))
+	if has_meta("task_provider"):
+		var goal: Dictionary = get_meta("task_provider").call()
+		if not goal.is_empty():
+			var marker := _map_position(goal.region)
+			map_surface.draw_arc(marker, 64, 0, TAU, 48, Color("#ffe1a1"), 4, true)
+			map_surface.draw_string(ThemeDB.fallback_font, marker + Vector2(-38, -33), "追踪目标", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#ffe1a1"))
 	var font := ThemeDB.fallback_font
 	map_surface.draw_string(font, Vector2(8, 72), "福地 · 大环套小环", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#d7c18b"))
 	map_surface.draw_string(font, Vector2(8, map_surface.size.y - 12), "◆ 首领驻地", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("#eeaa86"))

@@ -11,6 +11,7 @@ var checks := 0
 var failures := 0
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(ok: bool, message: String) -> void:
@@ -217,7 +218,7 @@ func run_checks() -> void:
 	game.inventory["w05-bone-halberd@mutated"] = 1
 	game.equipment.equip_item("w05-bone-halberd@mutated")
 	check(game.equipment.effects.weapon() == "w05-bone-halberd" and game.equipment.effects.attack_radius("j", 112) == 182, "异变武器保留原武器特效")
-	var target := {"position": game.player_foot + Vector2(80, 0), "hp": 200, "max_hp": 200, "flash": 0.0}
+	var target: Dictionary = game.Guards.create(game.player_foot + Vector2(80, 0), "melee").merged({"hp": 200, "max_hp": 200, "flash": 0.0}, true)
 	game.states[game.region].enemies = [target]
 	var damage: int = 26 + game.equipment.bonuses().attack
 	game.cooldowns.j = 0.0
@@ -234,6 +235,7 @@ func run_checks() -> void:
 	await capture("enhanced_equipment")
 	game.equipment.close()
 	game.open_journal()
+	game.book.select_page(3)
 	check(game.journal_text.text.contains("异变宝箱") and game.journal_text.text.contains("60%"), "B行囊展示宝箱状态与守卫掉率")
 	game.journal.hide()
 	game.tools.atlas.open(game.region)

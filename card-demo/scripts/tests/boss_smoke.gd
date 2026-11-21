@@ -7,6 +7,7 @@ var checks := 0
 var failures := 0
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(ok: bool, message: String) -> void:
@@ -192,6 +193,7 @@ func run_checks() -> void:
 	await capture("atlas")
 	game.tools.atlas.close()
 	game.open_journal()
+	game.book.select_page(3)
 	check(game.journal_text.get_parsed_text().contains("荆冠鹿骑") and game.journal_text.get_parsed_text().contains("灰翼审判者"), "行囊展示全部首领与坐标掉落")
 	game.journal.hide()
 	for region: String in Maps.IDS:

@@ -7,6 +7,7 @@ var game
 var traps
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(condition: bool, message: String) -> void:

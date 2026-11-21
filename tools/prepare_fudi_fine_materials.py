@@ -22,6 +22,29 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "output/imagegen/fudi-fine"
 DEST = ROOT / "card-demo/assets/fudi/fine"
 
+BUILDINGS = {
+    "grove": "11_buildings_grove-v3.png",
+    "post": "12_buildings_post-v3.png",
+    "quarry": "13_buildings_quarry.png",
+    "ruins": "14_buildings_ruins.png",
+    "refuge": "15_buildings_refuge.png",
+    "wetland": "16_buildings_wetland.png",
+    "causeway": "17_buildings_causeway.png",
+    "kilnwood": "18_buildings_kilnwood.png",
+    "archive": "19_buildings_archive-v2.png",
+    "snowridge": "20_buildings_snowridge.png",
+}
+
+SCENERY = {
+    "camphor": "48_scenery_camphor.png",
+    "pine": "49_scenery_pine.png",
+    "charred_pine": "50_scenery_charred_pine.png",
+    "snow_pine": "51_scenery_snow_pine.png",
+    "reeds": "52_scenery_reeds.png",
+    "lotus": "53_scenery_lotus.png",
+    "shrub": "54_scenery_shrub.png",
+}
+
 CHESTS = {
     "normal_closed": "21_chests_normal_closed.png",
     "normal_open": "22_chests_normal_open.png",
@@ -206,8 +229,24 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def build_objects(sources: dict[str, str], category: str, size: int) -> list[dict]:
+    destination = DEST / category
+    destination.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for asset_id, filename in sources.items():
+        image = _fit(_trim(keyed_rgba(SOURCE / filename)), size - PADDING * 2, size - PADDING * 2)
+        canvas = Image.new("RGBA", (image.width + PADDING * 2, image.height + PADDING * 2))
+        canvas.alpha_composite(image, (PADDING, PADDING))
+        output = destination / f"{asset_id}.png"
+        canvas.save(output, optimize=True)
+        entries.append({"id": asset_id, "path": output.relative_to(ROOT).as_posix(), "size": list(canvas.size), "source": filename})
+    return entries
+
+
 def build() -> None:
     assets = {
+        "buildings": build_objects(BUILDINGS, "buildings", 1024),
+        "scenery": build_objects(SCENERY, "scenery", 512),
         "chests": build_chests(),
         "herbs": build_herbs(),
         "plants": build_plants(),

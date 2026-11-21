@@ -17,6 +17,11 @@ const GMTools = preload("res://scripts/scenes/fudi_gm.gd")
 const NPCs = preload("res://scripts/scenes/fudi_npcs.gd")
 const NpcExchange = preload("res://scripts/scenes/fudi_npc_exchange.gd")
 const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
+const Save = preload("res://scripts/scenes/fudi_save.gd")
+const Story = preload("res://scripts/scenes/fudi_story.gd")
+const Guards = preload("res://scripts/scenes/fudi_guards.gd")
+const Journal = preload("res://scripts/scenes/fudi_journal.gd")
+const Supplies = preload("res://scripts/scenes/fudi_supplies.gd")
 const ENEMY_ART := preload("res://assets/characters/pet_enemy_stone.png")
 const ARENA := Rect2(16, 88, 1248, 560)
 const WORLD_ZOOM := 0.8
@@ -70,6 +75,12 @@ var menu_exit: Button
 var menu_info: Label
 var npcs: Node
 var npc_exchange: Node
+var persistence: Node
+var story: Node
+var restart_confirm: ConfirmationDialog
+var guards: Node
+var book: Node
+var supplies: Node
 
 ## Fixed observation provider: only painted targets intersecting the clipped world view.
 func play_visible() -> Dictionary:
@@ -88,7 +99,7 @@ func play_visible() -> Dictionary:
 		_visible_target(targets,exit[1]*data.size,"E → "+str(Catalog.REGIONS[exit[0]].name),"exit",80)
 	for enemy: Dictionary in states[region].enemies:
 		var center := world_to_screen(enemy.position)
-		_visible_target(targets,enemy.position-Vector2(0,38),"守卫","enemy",46)
+		_visible_target(targets,enemy.position-Vector2(0,38),Guards.NAMES[enemy.behavior],"enemy",46)
 		var bar := Rect2(center-Vector2(28,84)*WORLD_ZOOM,Vector2(56,5)*WORLD_ZOOM)
 		if ARENA.encloses(bar) and not targets.is_empty() and targets[-1].kind == "enemy" and ARENA.has_point(center-Vector2(0,38)*WORLD_ZOOM):
 			targets[-1]["visible_health_bar"] = {"fill_ratio":clampf(float(enemy.hp)/float(enemy.get("max_hp",60)),0.0,1.0),"x":bar.position.x,"y":bar.position.y,"width":bar.size.x,"height":bar.size.y}
@@ -115,6 +126,7 @@ func play_visible() -> Dictionary:
 		result["chest_encounter_view"] = chests.play_visible_encounters()
 	var weather := get_node_or_null("Weather")
 	if weather != null: result["visible_gardens"] = weather.play_visible()
+	if guards != null: result["visible_guard_warnings"] = guards.play_visible()
 	if npcs != null: result["visible_npcs"] = npcs.play_visible()
 	return result
 
@@ -182,6 +194,21 @@ func _ready() -> void:
 	npc_exchange = NpcExchange.new()
 	npc_exchange.name = "NpcExchange"
 	add_child(npc_exchange)
+	story = Story.new()
+	story.name = "Story"
+	add_child(story)
+	guards = Guards.new()
+	guards.name = "Guards"
+	add_child(guards)
+	supplies = Supplies.new()
+	supplies.name = "Supplies"
+	add_child(supplies)
+	book = Journal.new()
+	book.name = "Journal"
+	add_child(book)
+	persistence = Save.new()
+	persistence.name = "ExpeditionSave"
+	add_child(persistence)
 
 func combat_targets() -> Array[Dictionary]:
 	var targets: Array[Dictionary] = []
@@ -206,7 +233,7 @@ func _create_region(id: String) -> Dictionary:
 	var enemies: Array[Dictionary] = []
 	for n in range(int(Catalog.REGIONS[id].enemies)):
 		var point := _free_point(id, rng, enemies)
-		enemies.append({"position": point, "home": point, "hp": 60, "flash": 0.0})
+		enemies.append(Guards.create(point, Guards.KINDS[n % 3]))
 	return {"pickups": pickups, "enemies": enemies, "visited": [false, false, false], "rested": false, "foot": Maps.MAPS[id].spawn * extent}
 
 func _free_point(id: String, rng: RandomNumberGenerator, occupied: Array) -> Vector2:
@@ -303,8 +330,8 @@ func _build_hud() -> void:
 	end_layout.add_child(result)
 	continue_button = UI.button("继续自由探索", resume_exploration)
 	end_layout.add_child(continue_button)
-	end_layout.add_child(UI.button("重新开始一轮", restart))
-	end_layout.add_child(UI.button("返回游戏选择", func() -> void: GameManager.goto_scene("menu")))
+	end_layout.add_child(UI.button("重新开始一轮", request_restart))
+	end_layout.add_child(UI.button("保存并返回游戏选择", leave_expedition))
 	outcome.hide()
 	dialogue = PanelContainer.new()
 	dialogue.position = Vector2(210, 250)
@@ -359,8 +386,17 @@ func _build_hud() -> void:
 	menu_actions.add_theme_constant_override("separation", 8)
 	menu_layout.add_child(menu_actions)
 	menu_actions.add_child(UI.button("继续探索  Esc", close_menu))
+	menu_actions.add_child(UI.button("保存探索进度", func() -> void: persistence.save_now()))
+	menu_actions.add_child(UI.button("重新开始一轮…", request_restart))
 	menu_layout.add_child(UI.label("WASD 移动 · E 交互\nJ 斩击 · K 灵弹 · L 震荡\nM 地图 · B 行囊 · C 装备\n靠近资源自动采集；规则详见 M / B。", 15, Color("#9eb8b0")))
 	menu.hide()
+	restart_confirm = ConfirmationDialog.new()
+	restart_confirm.title = "重新开始福地"
+	restart_confirm.dialog_text = "将清空当前福地的装备、委托和地图进度，开始新一轮。\n确认重新开始？"
+	restart_confirm.ok_button_text = "确认重新开始"
+	restart_confirm.cancel_button_text = "保留进度"
+	restart_confirm.confirmed.connect(restart)
+	add_child(restart_confirm)
 	var update_shade := func() -> void: modal_shade.visible = outcome.visible or dialogue.visible or journal.visible
 	for panel: Control in [outcome, dialogue, journal]:
 		panel.visibility_changed.connect(update_shade)
@@ -400,6 +436,9 @@ func register_menu_action(button: Button) -> void:
 	for action: Dictionary in actions:
 		button.pressed.disconnect(action.callable)
 	button.pressed.connect(func() -> void:
+		if persistence != null and persistence.blocked and button == menu_exit:
+			leave_expedition()
+			return
 		close_menu()
 		for action: Dictionary in actions:
 			action.callable.call())
@@ -415,9 +454,12 @@ func toggle_menu() -> void:
 	elif not _paused() and not finished:
 		menu_info.text = "%s · %s\n守卫剩余 %d · 见闻 %d / %d\n行囊 %d 份 · 坐标 %d, %d" % [Maps.MAPS[region].npc, Maps.MAPS[region].chapter, states[region].enemies.size(), _visited_total(), Maps.site_total(), _inventory_total(), int(player_foot.x), int(player_foot.y)]
 		menu.show()
+		if persistence != null:
+			persistence.save_now()
 		model.update_movement(Vector2.ZERO, 0)
 
 func close_menu() -> void:
+	if persistence != null and persistence.blocked: return
 	menu.hide()
 	menu_button.release_focus()
 
@@ -441,6 +483,7 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 		states[region].foot = player_foot
 	region = id
 	for enemy: Dictionary in states[id].enemies: enemy["attack_fx"] = 0.0
+	if guards != null: guards.enter_region()
 	tools.region = id
 	var chests := get_node_or_null("Chests")
 	if chests != null:
@@ -464,9 +507,22 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 	_refresh_ui()
 	world_canvas.queue_redraw()
 	queue_redraw()
+	if persistence != null: persistence.request_save()
+
+func request_restart() -> void:
+	restart_confirm.popup_centered(Vector2i(540, 170))
 
 func restart() -> void:
+	GameManager.set_meta("fudi_new_expedition", true)
 	GameManager.goto_scene("fudi")
+
+func leave_expedition() -> void:
+	if persistence == null or persistence.blocked or persistence.save_now():
+		GameManager.goto_scene("menu")
+	else:
+		tools.confirm.hide()
+		menu_info.text = persistence.status + "\n请重试保存后再返回。"
+		menu.show()
 
 func resume_exploration() -> void:
 	finished = false
@@ -610,6 +666,7 @@ func _collect_nearby() -> void:
 			inventory[pickups[i].item] += 1
 			sound_requested.emit("pickup")
 			pickups.remove_at(i)
+			if persistence != null: persistence.request_save()
 
 func _process(delta: float) -> void:
 	if _paused() or finished:
@@ -636,19 +693,8 @@ func _process(delta: float) -> void:
 	model.modulate = Color("#ff9c8c") if hurt_timer > 0.75 else Color.WHITE
 	for key: String in cooldowns:
 		cooldowns[key] = maxf(0, float(cooldowns[key]) - delta)
-	for enemy: Dictionary in states[region].enemies:
-		enemy.flash = maxf(0, float(enemy.flash) - delta)
-		enemy["attack_fx"] = maxf(0,float(enemy.get("attack_fx",0.0))-delta)
-		var offset: Vector2 = player_foot - enemy.position
-		if offset.length() > 32 and offset.length() < 380:
-			var slow: float = equipment.effects.enemy_speed_scale(enemy) if equipment != null else 1.0
-			enemy.position = move_world(enemy.position, offset.normalized() * minf(float(enemy.get("speed", 76.0)) * slow * delta, offset.length() - 32))
-		elif offset.length() <= 32 and hurt_timer <= 0:
-			health = maxi(0, health - incoming_damage(int(enemy.get("damage", 10))))
-			hurt_timer = 1.0
-			enemy["attack_fx"] = PixelVFX.LIFETIME
-			enemy["attack_weather"] = enemy.get("weather","clear")
-			enemy["attack_point"] = player_foot
+	guards.tick(minf(delta, 0.1))
+	if finished: return
 	_tick_projectiles(delta)
 	for i in range(effects.size() - 1, -1, -1):
 		effects[i].life -= delta
@@ -696,6 +742,7 @@ func _end_round(won: bool) -> void:
 	result.text = "十域已肃清 · 战斗目标完成\n采集 %d 份，可继续寻找人物线索。" % _inventory_total() if won else "本轮探索结束\n采集物品 %d 份，重开后再试一次。" % _inventory_total()
 	continue_button.visible = won
 	outcome.show()
+	if persistence != null: persistence.request_save()
 
 func _inventory_total() -> int:
 	var count := 0
@@ -717,6 +764,7 @@ func _refresh_ui() -> void:
 	var next: int = states[region].visited.find(false)
 	bag.text = "%s · %s" % [Maps.MAPS[region].npc, "本地见闻已齐" if next < 0 else "寻找" + str(Maps.MAPS[region].sites[next][0])]
 	hint.text = "E  " + str(target.name) if not target.is_empty() else "WASD 移动 · 循路探索"
+	if book != null: book.update_tracking()
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#0d1c26"))
@@ -760,7 +808,11 @@ func _draw_world() -> void:
 		canvas.draw_set_transform(point, 0, Vector2(1, 0.30))
 		canvas.draw_circle(Vector2.ZERO, 29, Color(0.02, 0.04, 0.05, 0.45))
 		canvas.draw_set_transform(Vector2.ZERO)
-		canvas.draw_texture_rect(ENEMY_ART, Rect2(point - Vector2(38, 76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color(enemy.get("tint", Color.WHITE)))
+		var scale := Vector2(1.12, 0.85) if enemy.guard_phase == "windup" else Vector2(0.9, 1.12) if enemy.guard_phase == "charge" or float(enemy.get("attack_fx", 0.0)) > 0 else Vector2.ONE
+		var lean: float = -0.12 if float(enemy.flash) > 0 else (0.12 * enemy.guard_direction.x if enemy.guard_phase == "windup" else 0.0)
+		canvas.draw_set_transform(point, lean, scale)
+		canvas.draw_texture_rect(ENEMY_ART, Rect2(Vector2(-38, -76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color(enemy.get("tint", Color.WHITE)))
+		canvas.draw_set_transform(Vector2.ZERO)
 		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56, 5)), Color("#18212b"))
 		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56 * float(enemy.hp) / float(enemy.get("max_hp", 60)), 5)), Color("#dc947e"))
 		if float(enemy.get("attack_fx",0.0)) > 0:
@@ -780,7 +832,7 @@ func _draw_world() -> void:
 			PixelVFX.draw(canvas, "player-" + swing, effect.position + effect.facing * 30, PixelVFX.LIFETIME - float(effect.life), Vector2.ONE * 2, angle, Color(1, 1, 1, 0.9))
 
 func _paused() -> bool:
-	return menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
+	return (restart_confirm != null and restart_confirm.visible) or (persistence != null and persistence.blocked) or menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
 
 func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
 	var point := origin
@@ -818,7 +870,7 @@ func interaction_target() -> Dictionary:
 		if player_foot.distance_to(Maps.site_position(region, i)) <= 100:
 			return {"kind": "site", "index": i, "name": str(data.sites[i][0]) + " · " + str(data.npc)}
 	if player_foot.distance_to(data.spawn * data.size) < 95:
-		return {"kind": "rest", "name": "休息点（本地每轮一次）"}
+		return {"kind": "rest", "name": "休息点（用后可在B物品页修补）"}
 	for exit: Array in data.exits:
 		if player_foot.distance_to(exit[1] * data.size) <= 120:
 			return {"kind": "exit", "destination": exit[0], "name": "前往" + str(Catalog.REGIONS[exit[0]].name)}
@@ -852,13 +904,13 @@ func interact() -> void:
 			return
 		"rest":
 			if states[region].rested:
-				dialogue_text.text = "这里的恢复物资已经用过。继续探索，其他区域也有休息点。"
+				dialogue_text.text = "这里的恢复物资已经用过。在附近打开B物品页，可消耗木料3和松脂1修补，再休息一次。"
 			elif health >= 100:
 				dialogue_text.text = "生命充足，恢复物资留在这里。需要时再回来休息。"
 			else:
 				health = 100
 				states[region].rested = true
-				dialogue_text.text = "拾一已确认周围安全。生命恢复至 100；这个休息点本轮不再补充物资。"
+				dialogue_text.text = "拾一已确认周围安全。生命恢复至 100；用过的休息点可在B物品页消耗木料3和松脂1修补。"
 		"site":
 			var index: int = target.index
 			if index > 0 and not states[region].visited[index - 1]:
@@ -866,6 +918,9 @@ func interact() -> void:
 			else:
 				states[region].visited[index] = true
 				dialogue_text.text = "%s · %s\n%s\n\n%s" % [data.npc, data.chapter, data.sites[index][2], "十域人物见闻已收齐。后续复苏与调查的故事仍待继续。" if _visited_total() == Maps.site_total() else "已记入见闻。B 可回看。"]
+			if region == "grove" and index == 0 and story != null:
+				story.present()
+	if persistence != null: persistence.request_save()
 	dialogue.show()
 	model.update_movement(Vector2.ZERO, 0)
 	_refresh_ui()
@@ -880,28 +935,10 @@ func _visited_total() -> int:
 	return count
 
 func open_journal() -> void:
-	journal_text.bbcode_enabled = true
-	var lines: Array[String] = ["行囊与见闻  ·  本轮收集 %d 份  ·  人物线索 %d / %d" % [_inventory_total(), _visited_total(), Maps.site_total()], "C 打开人物装备，可穿戴、替换与卸下；装备数量包含已穿戴物品，本轮有效。"]
-	lines.append("\n此地已读见闻 · " + str(Catalog.REGIONS[region].name))
-	var local_data: Dictionary = Maps.MAPS[region]
-	var has_local_record := false
-	for i in range(local_data.sites.size()):
-		if states[region].visited[i]:
-			has_local_record = true
-			lines.append("%s：%s" % [local_data.sites[i][0], local_data.sites[i][2]])
-	if not has_local_record: lines.append("还没有调查记录；靠近地标按 E。")
-	if npcs != null: lines.append_array(npcs.journal_lines())
-	lines.append("\n行囊与规则")
-	for item: String in Loot.ITEMS:
-		if int(inventory.get(item, 0)) > 0:
-			lines.append("[img=44x44]%s[/img]  %s × %d" % [Loot.ITEMS[item].icon.resource_path, Loot.ITEMS[item].name, inventory[item]])
-	for item: String in inventory:
-		if inventory[item] > 0 and not Loot.ITEMS.has(item):
-			var info: Dictionary = Catalog.ITEMS[item]
-			if info.has("icon"):
-				lines.append("[img=44x44]%s[/img]  %s × %d" % [info.icon.resource_path, info.name, inventory[item]])
-			else:
-				lines.append("%s × %d" % [info.name, inventory[item]])
+	book.open()
+
+func journal_help() -> String:
+	var lines: Array[String] = ["帮助 · WASD移动，J/K/L攻击，E交互，M地图，B行囊，C装备。\n蓄力守卫：走出黄圈；投石守卫：横移躲开锁定射线；冲锋守卫：避开预警直道，等出招后反击。\n物品页可制作/使用补给，木料3与松脂1可修补已用过的休息点。\nEsc保存或确认重新开始；进度独立保存，离线不推进。"]
 	var chests := get_node_or_null("Chests")
 	if chests != null:
 		lines.append("\n宝箱 · 金色方块为普通箱，紫色方块为异变箱；靠近按E开启。")
@@ -933,19 +970,11 @@ func open_journal() -> void:
 		lines.append("\n首领 · 小地图红菱形；预警圈锁定后可走出躲避。")
 		for id: String in Maps.IDS:
 			lines.append("%s：%s" % [Catalog.REGIONS[id].name, bosses.summary(id)])
-	for id: String in Maps.IDS:
-		var data: Dictionary = Maps.MAPS[id]
-		lines.append("\n%s · %s" % [data.npc, data.chapter])
-		for i in range(data.sites.size()):
-			lines.append("%s：%s" % [data.sites[i][0], data.sites[i][2] if states[id].visited[i] else "尚未调查"])
-	journal_text.text = "\n".join(lines)
 	if buildings != null:
-		journal_text.text += "\n\n大型建筑 · 绿光增益 / 紫光减益；入口光圈触发60秒，同类替换。\n" + buildings.status_text()
+		lines.append("\n\n大型建筑 · 绿光增益 / 紫光减益；入口光圈触发60秒，同类替换。\n" + buildings.status_text())
 		for id: String in Maps.IDS:
-			journal_text.text += "\n" + Catalog.REGIONS[id].name + "：" + buildings.summary(id)
-	journal_text.scroll_to_line(0)
-	journal.show()
-	model.update_movement(Vector2.ZERO, 0)
+			lines.append("\n" + Catalog.REGIONS[id].name + "：" + buildings.summary(id))
+	return "\n".join(lines)
 
 func _draw_minimap() -> void:
 	if not states.has(region):

@@ -56,7 +56,8 @@ func _ready() -> void:
 	var button := _entry_button("进入灵伴回合冒险", func() -> void: GameManager.goto_scene("city"))
 	button.name = "EnterSpirit"
 	panel.add_child(button)
-	var fudi := _entry_button("进入福地  ·  动作试玩", func() -> void: GameManager.goto_scene("fudi"))
+	var has_expedition := FileAccess.file_exists("user://fudi_expedition_v1.json") or FileAccess.file_exists("user://fudi_expedition_v1.json.bak")
+	var fudi := _entry_button("继续福地探索" if has_expedition else "进入福地  ·  动作试玩", func() -> void: GameManager.goto_scene("fudi"))
 	fudi.name = "EnterFudi"
 	panel.add_child(fudi)
 	var water := _entry_button("海底水世界", func() -> void: GameManager.goto_scene("water_activity"))
@@ -66,7 +67,7 @@ func _ready() -> void:
 	water_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	water_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(water_hint)
-	var controls := UI.label("WASD 移动 · J 斩击 · K 灵弹 · L 震荡\nM 地图 / 资源分布 / 区域切换\n福地进度仅保留在本次游玩。", 17)
+	var controls := UI.label("WASD 移动 · J 斩击 · K 灵弹 · L 震荡\nM 地图 / 资源分布 / 区域切换\n福地进度独立保存，下次可继续探索。", 17)
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(controls)

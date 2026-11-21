@@ -31,7 +31,7 @@
 - 亮`?`：所需调查均已完成，回来交谈记录完成。
 - 完成后隐藏任务图标，人物与名字继续可见，可再次交谈，不重复完成。
 
-沿用30处调查的前序要求；提前完成的调查也计入已接委托。委托进度、人物位置仅在本轮有效，重开重置，不改灵伴存档，不发放未实现的奖励。未知剧情正文仅在交谈中显示，公开游玩观察仅返回屏内完整人物、已绘头顶标记与E交谈提示，遮挡时不返回路线或任务内部条件。
+沿用30处调查的前序要求；提前完成的调查也计入已接委托。委托进度、人物位置随福地独立存档保留，确认重开后重置，不改灵伴存档；这些既有委托不增加奖励，新增祝婶任务另见[灶台说明](fudi-progress.md)。未知剧情正文仅在交谈中显示，公开游玩观察仅返回屏内完整人物、已绘头顶标记与E交谈提示，遮挡时不返回路线或任务内部条件。
 
 源码：[人物模块](../card-demo/scripts/scenes/fudi_npcs.gd)、[福地接入](../card-demo/scripts/scenes/fudi.gd)。美术源：[十人绘制](../pixel-art/npc-expansion/README.md)、[标记绘制脚本](../pixel-art/quest-markers/build.py)。运行素材：[NPC目录](../card-demo/assets/characters/npcs/README.md)、[标记目录](../card-demo/assets/ui/quest-markers/README.md)。
 

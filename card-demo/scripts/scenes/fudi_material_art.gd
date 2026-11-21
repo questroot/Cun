@@ -1,5 +1,41 @@
 extends RefCounted
-## Runtime art for the Fudi fine-material pass: chests, herb icons and plants.
+## Transparent runtime art from the approved Fudi paintings.
+
+const BUILDINGS := {
+	"grove": preload("res://assets/fudi/fine/buildings/grove.png"),
+	"post": preload("res://assets/fudi/fine/buildings/post.png"),
+	"quarry": preload("res://assets/fudi/fine/buildings/quarry.png"),
+	"ruins": preload("res://assets/fudi/fine/buildings/ruins.png"),
+	"refuge": preload("res://assets/fudi/fine/buildings/refuge.png"),
+	"wetland": preload("res://assets/fudi/fine/buildings/wetland.png"),
+	"causeway": preload("res://assets/fudi/fine/buildings/causeway.png"),
+	"kilnwood": preload("res://assets/fudi/fine/buildings/kilnwood.png"),
+	"archive": preload("res://assets/fudi/fine/buildings/archive.png"),
+	"snowridge": preload("res://assets/fudi/fine/buildings/snowridge.png"),
+}
+
+const SCENERY := {
+	"camphor": preload("res://assets/fudi/fine/scenery/camphor.png"),
+	"pine": preload("res://assets/fudi/fine/scenery/pine.png"),
+	"charred_pine": preload("res://assets/fudi/fine/scenery/charred_pine.png"),
+	"snow_pine": preload("res://assets/fudi/fine/scenery/snow_pine.png"),
+	"reeds": preload("res://assets/fudi/fine/scenery/reeds.png"),
+	"lotus": preload("res://assets/fudi/fine/scenery/lotus.png"),
+	"shrub": preload("res://assets/fudi/fine/scenery/shrub.png"),
+}
+
+static func building_rect(id: String, door: Vector2) -> Rect2:
+	# Keep the full sprite outside the existing painted travel lanes.
+	const LAYOUT := {
+		"grove": [Vector2(0, -135), 720.0], "post": [Vector2(0, -135), 720.0],
+		"quarry": [Vector2(0, -175), 720.0], "ruins": [Vector2(0, -175), 720.0],
+		"refuge": [Vector2(0, -135), 720.0], "wetland": [Vector2(280, -215), 640.0],
+		"causeway": [Vector2(-480, -135), 600.0], "kilnwood": [Vector2(40, -135), 720.0],
+		"archive": [Vector2(0, -175), 720.0], "snowridge": [Vector2(0, -135), 720.0],
+	}
+	var size: Vector2 = BUILDINGS[id].get_size()
+	size *= minf(LAYOUT[id][1] / size.x, 440.0 / size.y)
+	return Rect2(door + LAYOUT[id][0] - Vector2(size.x * 0.5, size.y), size)
 
 const CHESTS := {
 	"normal_closed": preload("res://assets/fudi/fine/chests/normal_closed.png"),

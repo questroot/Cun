@@ -20,7 +20,7 @@ const WEAPONS := {
 const SET_EFFECTS := {
 	"s1": {"name": "追归", "tiers": {2: "移速额外 +20", 4: "J/K/L 冷却缩短15%", 5: "攻击命中恢复4生命，间隔1秒"}},
 	"s2": {"name": "烽炉", "tiers": {2: "伤害额外 +6", 4: "命中附加灼烧，每秒6伤害，持续3秒；刷新不叠加", 5: "L 震荡半径 +50，伤害额外 +12"}},
-	"s3": {"name": "镜潮", "tiers": {2: "减伤额外 +3", 4: "固定减伤后再减少20%伤害，向上取整", 5: "每8秒补充18护盾，吸收伤害；护盾不叠加"}},
+	"s3": {"name": "镜潮", "tiers": {2: "防御额外 +3", 4: "防御减伤后再减少20%伤害，向上取整", 5: "每8秒补充18护盾，吸收伤害；护盾不叠加"}},
 }
 const WEAPON_EFFECTS := {
 	"w01-ashen-echo": "余烬回响：J命中后0.35秒追加10伤害，间隔2秒。",
@@ -102,6 +102,6 @@ static func text(values: Dictionary, signed: bool = false) -> String:
 	var parts: Array[String] = []
 	for key: String in ["attack", "defense", "speed"]:
 		var amount := int(values[key])
-		var label: String = {"attack": "伤害", "defense": "减伤", "speed": "移速"}[key]
+		var label: String = {"attack": "伤害", "defense": "防御", "speed": "移速"}[key]
 		parts.append("%s %s%d" % [label, "+" if signed and amount >= 0 else "", amount])
 	return "   ".join(parts)

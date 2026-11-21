@@ -25,7 +25,7 @@
 
 未击败全部守卫时不能领取异变箱奖励；先击败首领但小怪存活时仍锁定。重复按E、重复清理尸体和重复靠近奖励都不会重复发放。已触发的守卫战会计入清场条件，未开启宝箱不阻碍正常通关；胜后继续探索可开箱、清守卫与领奖。
 
-地图、装备、对话、行囊和结算暂停守卫；离开区域冻结当地战斗，保留血量及掉落，旅行取消首领旧预警并留出准备时间。重开或离开福地清空箱子、战斗和本轮奖励，不写灵伴存档。
+地图、装备、对话、行囊和结算暂停守卫；离开区域冻结当地战斗，保留血量及掉落，旅行取消首领旧预警并留出准备时间。箱子、守箱战与奖励随福地独立保存，读档取消旧预警并留出准备时间，确认重开才清空，不写灵伴存档。
 
 配置：[chest_catalog.gd](../card-demo/scripts/scenes/chest_catalog.gd)。宝箱与守卫模块：[fudi_chests.gd](../card-demo/scripts/scenes/fudi_chests.gd)。品质登记：[loot_catalog.gd](../card-demo/scripts/scenes/loot_catalog.gd)。属性计算：[equipment_catalog.gd](../card-demo/scripts/scenes/equipment_catalog.gd)。
 

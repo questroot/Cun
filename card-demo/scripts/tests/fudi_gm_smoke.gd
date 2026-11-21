@@ -5,6 +5,7 @@ var failures := 0
 var checks := 0
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(ok: bool, message: String) -> void:
@@ -157,6 +158,7 @@ func run_checks() -> void:
 		print("FUDI_GM_CAPTURE: " + ProjectSettings.globalize_path(path))
 	gm.close()
 	game.open_journal()
+	game.book.select_page(2)
 	check(game.journal_text.text.contains("30 / 30") and game.journal_text.text.contains(str(Maps.MAPS.archive.sites[2][2])), "完成的任务线可在行囊见闻回看正文")
 	game.journal.hide()
 	check(data.save_data == original_progress and FileAccess.get_file_as_string(data.SAVE_PATH) == original_save, "全部 GM 操作不修改灵伴存档")

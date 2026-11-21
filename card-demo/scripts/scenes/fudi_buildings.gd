@@ -2,6 +2,7 @@ extends Node
 ## Round-local rolls and two timed status slots. No loot or equipment state is mutated.
 const Catalog = preload("res://scripts/scenes/building_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const Art = preload("res://scripts/scenes/fudi_material_art.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
 var game
 var rng := RandomNumberGenerator.new()
@@ -16,7 +17,7 @@ func play_visible() -> Dictionary:
 	if not game.ARENA.has_point(door): return {}
 	var result := {"entrance":{"x":door.x,"y":door.y},"activation_radius":Catalog.RADIUS*game.WORLD_ZOOM,"appearance":"建筑入口光圈，走入自动生效"}
 	var rect := Catalog.footprint(game.region)
-	var label_origin: Vector2 = door+Vector2(-rect.size.x*0.45,-62)*game.WORLD_ZOOM
+	var label_origin: Vector2 = door+Vector2(-rect.size.x*0.45,-132)*game.WORLD_ZOOM
 	var effect: Dictionary = Catalog.EFFECTS[states[game.region].effect]
 	var text := "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益",effect.name,effect.description]
 	var font := ThemeDB.fallback_font
@@ -92,7 +93,7 @@ func multiplier(stat: String) -> float:
 	return value
 
 func camera_height() -> float:
-	return 0.82 if game.player_foot.distance_to(Catalog.entrance(game.region)) < 350 else 0.65
+	return 0.90 if game.player_foot.distance_to(Catalog.entrance(game.region)) < 350 else 0.65
 
 func summary(id: String) -> String:
 	if not states.has(id):
@@ -132,87 +133,14 @@ func draw_minimap() -> void:
 
 func draw_world() -> void:
 	var id: String = game.region
-	var rect := Catalog.footprint(id)
+	var rect := Art.building_rect(id, Catalog.entrance(id))
 	var door := Catalog.entrance(id)
-	var view: Rect2 = game.visible_world().grow(250)
-	if not view.intersects(rect) and not view.has_point(door):
+	var view: Rect2 = game.visible_world()
+	if not view.intersects(rect) and not view.intersects(Rect2(door - Vector2(360, 190), Vector2(720, 290))):
 		return
 	var canvas: Control = game.world_canvas
-	var data: Dictionary = Catalog.REGIONS[id]
-	var tint := Catalog.color(states[id].effect)
-	var wall := Color(data.wall)
-	var roof := Color(data.roof)
-	var trim := Color(Maps.MAPS[id].accent)
-	var x := rect.position.x
-	var y := rect.position.y
-	var w := rect.size.x
-	var bottom := rect.end.y
-	var center := rect.get_center().x
-	if Maps.Art.has_art(id):
-		_draw_entrance(canvas, id, door, w, trim, tint)
-		return
-	# Broad terraces, side walls and multiple roof planes give a readable large silhouette.
-	canvas.draw_rect(Rect2(rect.position + Vector2(18, 20), rect.size), Color(0.01, 0.025, 0.03, 0.5))
-	canvas.draw_rect(rect, wall.darkened(0.28))
-	canvas.draw_rect(Rect2(x + 12, y + 6, w - 24, rect.size.y - 6), wall)
-	for i in range(4):
-		canvas.draw_rect(Rect2(center - 80 - i * 10, bottom + i * 9, 160 + i * 20, 10), wall.lightened(0.12 - i * 0.04))
-	# Lit colonnade, tall central door and window grids.
-	for i in range(8):
-		var column_x := x + 25 + i * (w - 50) / 7
-		canvas.draw_rect(Rect2(column_x - 6, y + 18, 12, rect.size.y - 24), wall.lightened(0.22))
-		canvas.draw_rect(Rect2(column_x - 10, bottom - 10, 20, 10), trim.darkened(0.35))
-		if i < 7 and absf(column_x + (w - 50) / 14 - center) > 42:
-			var win := Rect2(column_x + 12, y + 36, (w - 50) / 7 - 24, 42)
-			canvas.draw_rect(win, Color("#1e343b"))
-			canvas.draw_rect(win.grow(-5), Color(trim, 0.6))
-			canvas.draw_line(Vector2(win.get_center().x, win.position.y), Vector2(win.get_center().x, win.end.y), wall.darkened(0.3), 3)
-	canvas.draw_rect(Rect2(center - 36, bottom - 80, 72, 80), Color("#152c30"))
-	canvas.draw_arc(Vector2(center, bottom - 76), 36, PI, TAU, 24, trim, 5, true)
-	canvas.draw_rect(Rect2(center - 29, bottom - 74, 58, 74), roof.darkened(0.35))
-	canvas.draw_circle(Vector2(center + 15, bottom - 32), 3, trim)
-	_roof(canvas, Vector2(x - 22, y + 25), w + 44, 85, roof, trim)
-	_roof(canvas, Vector2(center - w * 0.30, y - 40), w * 0.60, 75, roof.lightened(0.09), trim)
-	var ornament := Vector2(center, y - 92)
-	match data.kind:
-		"forge", "kiln":
-			for side in [-1, 1]:
-				var chimney := Vector2(center + side * w * 0.34, y - 78)
-				canvas.draw_rect(Rect2(chimney, Vector2(30, 90)), wall.darkened(0.22))
-				canvas.draw_rect(Rect2(chimney - Vector2(5, 6), Vector2(40, 12)), trim.darkened(0.25))
-				for i in range(3):
-					canvas.draw_circle(chimney + Vector2(15 + i * side * 8, -20 - i * 16), 10 + i * 4, Color("#a5a28c", 0.23))
-			canvas.draw_circle(ornament + Vector2(0, 15), 22, Color("#e7a16b"))
-			canvas.draw_colored_polygon(PackedVector2Array([ornament + Vector2(-11, 24), ornament + Vector2(1, -4), ornament + Vector2(13, 24)]), Color("#ffe2a1"))
-		"sanctum", "archive", "observatory":
-			canvas.draw_circle(ornament + Vector2(0, 35), 57, roof.lightened(0.13))
-			canvas.draw_arc(ornament + Vector2(0, 35), 57, PI, TAU, 32, trim, 4, true)
-			canvas.draw_rect(Rect2(ornament + Vector2(-62, 35), Vector2(124, 16)), roof)
-			canvas.draw_line(ornament + Vector2(0, -38), ornament + Vector2(0, 8), trim, 4, true)
-			canvas.draw_arc(ornament + Vector2(0, -14), 20, 0, TAU, 32, trim, 3, true)
-			canvas.draw_line(ornament + Vector2(-28, -22), ornament + Vector2(28, -6), trim, 3, true)
-		"gate":
-			for side in [-1, 1]:
-				var tower := Vector2(center + side * w * 0.36, y - 100)
-				canvas.draw_rect(Rect2(tower - Vector2(32, 0), Vector2(64, 145)), wall.darkened(0.08))
-				_roof(canvas, tower + Vector2(-48, 4), 96, 44, roof, trim)
-				canvas.draw_rect(Rect2(tower + Vector2(-12, 25), Vector2(24, 34)), trim)
-		"clinic":
-			canvas.draw_rect(Rect2(ornament + Vector2(-28, 0), Vector2(56, 56)), Color("#254f4e"))
-			canvas.draw_rect(Rect2(ornament + Vector2(-6, 6), Vector2(12, 44)), trim)
-			canvas.draw_rect(Rect2(ornament + Vector2(-22, 22), Vector2(44, 12)), trim)
-		"dock":
-			for i in range(9):
-				var post := Vector2(x + i * w / 8, bottom)
-				canvas.draw_line(post, post + Vector2(0, 35), wall.darkened(0.35), 8, true)
-			for side in [-1, 1]:
-				var lantern := Vector2(center + side * w * 0.4, y + 18)
-				canvas.draw_circle(lantern, 14, trim)
-				canvas.draw_line(lantern + Vector2(0, 14), lantern + Vector2(0, 28), trim, 3)
-		_:
-			canvas.draw_rect(Rect2(ornament + Vector2(-46, 8), Vector2(92, 36)), roof.darkened(0.25))
-			canvas.draw_string(ThemeDB.fallback_font, ornament + Vector2(-22, 35), "百味", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, trim)
-	_draw_entrance(canvas, id, door, w, trim, tint)
+	canvas.draw_texture_rect(Art.BUILDINGS[id], rect, false)
+	_draw_entrance(canvas, id, door, Catalog.footprint(id).size.x, Color(Maps.MAPS[id].accent), Catalog.color(states[id].effect))
 
 func _draw_entrance(canvas: Control, id: String, door: Vector2, w: float, trim: Color, tint: Color) -> void:
 	var data: Dictionary = Catalog.REGIONS[id]
@@ -221,14 +149,9 @@ func _draw_entrance(canvas: Control, id: String, door: Vector2, w: float, trim: 
 	canvas.draw_arc(door, Catalog.RADIUS, 0, TAU, 64, Color(tint, 0.7), 3, true)
 	canvas.draw_colored_polygon(PackedVector2Array([door + Vector2(0, -19), door + Vector2(19, 0), door + Vector2(0, 19), door + Vector2(-19, 0)]), Color(tint, 0.8))
 	var effect: Dictionary = Catalog.EFFECTS[states[id].effect]
-	canvas.draw_string(ThemeDB.fallback_font, door + Vector2(-w * 0.45, -90), data.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 23, trim)
-	canvas.draw_string(ThemeDB.fallback_font, door + Vector2(-w * 0.45, -62), "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益", effect.name, effect.description], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, tint)
-
-func _roof(canvas: Control, base: Vector2, width: float, height: float, roof: Color, trim: Color) -> void:
-	var points := PackedVector2Array([base + Vector2(-8, 0), base + Vector2(width * 0.22, -height * 0.75), base + Vector2(width * 0.50, -height), base + Vector2(width * 0.78, -height * 0.75), base + Vector2(width + 8, 0)])
-	canvas.draw_colored_polygon(points, roof)
-	canvas.draw_polyline(points, trim.darkened(0.15), 4, true)
-	canvas.draw_line(base - Vector2(12, 0), base + Vector2(width + 12, 0), trim, 6, true)
-	for i in range(1, 12):
-		var t := i / 12.0
-		canvas.draw_line(base + Vector2(width * 0.5, -height + 8), base + Vector2(width * t, -4), Color(trim, 0.18), 2, true)
+	var description := "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益", effect.name, effect.description]
+	var font := ThemeDB.fallback_font
+	var label_width := maxf(font.get_string_size(data.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 23).x, font.get_string_size(description, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x)
+	canvas.draw_style_box(UI.hud_panel(Color(0.04, 0.10, 0.12, 0.9)), Rect2(door + Vector2(-w * 0.45 - 10, -186), Vector2(label_width + 20, 66)))
+	canvas.draw_string(ThemeDB.fallback_font, door + Vector2(-w * 0.45, -160), data.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 23, trim)
+	canvas.draw_string(font, door + Vector2(-w * 0.45, -132), description, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, tint)

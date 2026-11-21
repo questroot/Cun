@@ -1,14 +1,20 @@
 # 福地细绘场景素材
 
-2026-10-25 按用户要求，把福地新一批细绘素材接入当前场景，替换原先代码绘制的宝箱、药材点与药圃草形。原始生成图保留在 `output/imagegen/fudi-fine/`，本目录只放透明运行图。
+2026-10-25 首次接入宝箱、药材点与药圃；2026-11-21补齐十座独立建筑和七种环境植物，使用已有验图版本，不重新生成。原始图保留在 `output/imagegen/fudi-fine/`，本目录共44张透明运行图。
 
 | 目录 | 内容 | 运行尺寸 |
 | --- | --- | --- |
+| `buildings/` | 十地大食堂、邮驿、铸造殿、水镜圣所、救援厅、临水长榭、关楼、炭窑、档案馆、观星台 | 等比裁边，长边1024以内 |
+| `scenery/` | 香樟、松树、焦松、雪松、芦苇、荷花、灌木 | 等比裁边，长边512以内 |
 | `chests/` | 普通箱关闭/打开、异变箱关闭/守卫中/已净化/已领取 | 256×256 |
 | `herbs/` | 11 种草药图标 | 128×128 |
 | `plants/` | 10 种药圃三阶段生长图，横向 3 格 | 576×192（每格 192×192） |
 
 宝箱状态对应：`sealed → mutated_closed`、`guarding → mutated_guarding`、`cleared → mutated_cleared`、`opened → mutated_open`；普通箱使用 `normal_closed / normal_open`。草药图标同时用于野外拾取和 B 行囊；药圃按生长进度显示三阶段，成熟时为第三格。
+
+建筑选用队列已验图的版本：灶街与邮驿v3、档案馆v2，其余为原版。建筑图片等比显示，按每地入口分别定位，九张成图地图中贴图矩形避开现有道路；霜脊观星台替换原程序建筑，并移除其背后的旧占位矩形。名称和增减益提示加深色底，近入口时镜头留出建筑高度。背景中烘焙的其他房屋仍作装饰，不逐栋重绘地图。
+
+七种环境植物按地区主题与成图水陆位置手工布点，附加贴地阴影并避开独立建筑，不增加碰撞或可采集物。宝箱等比显示为128世界像素，保持脚底锚点和六态映射。采集距离、药圃生长、宝箱奖励、建筑效果、道路和玩家存档契约不变。
 
 ## 复现
 
@@ -18,6 +24,6 @@ python tools/prepare_fudi_fine_materials.py
 
 脚本需要 Pillow。它按源图边缘判断绿色或品红抠像底，移除右下角生成水印，裁掉透明留白并统一缩放；牛蒡根（`bitterroot`）暂无三阶段源图，运行时退回单张草药图标并按进度缩放。原始生成图不被修改。
 
-运行映射集中在 `card-demo/scripts/scenes/fudi_material_art.gd`，由宝箱模块 `fudi_chests.gd`、野外/行囊 `fudi.gd` 和药圃 `fudi_weather.gd` 共用。`manifest.json` 记录每张运行图的来源、尺寸和 SHA256。
+运行映射集中在 `card-demo/scripts/scenes/fudi_material_art.gd`，由 `fudi_landscape.gd`、`fudi_buildings.gd`、宝箱模块 `fudi_chests.gd`、野外/行囊 `fudi.gd` 和药圃 `fudi_weather.gd` 共用。`manifest.json` 记录每张运行图的来源、尺寸和 SHA256。
 
 来源和许可尚未独立核验，登记保持 `review / license unknown`；接入试玩不视为商用或再分发授权。

@@ -7,6 +7,7 @@ var checks := 0
 var failures := 0
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(ok: bool, message: String) -> void:
@@ -103,7 +104,7 @@ func run_checks() -> void:
 	game.player_foot = foot
 	game.facing = Vector2.RIGHT
 	for wanted: bool in [false, true]:
-		game.states.grove.enemies = [{"position": foot + Vector2(80, 0), "hp": 1, "flash": 0.0, "drop": "dewleaf"}]
+		game.states.grove.enemies = [game.Guards.create(foot + Vector2(80, 0), "melee").merged({"hp": 1, "flash": 0.0, "drop": "dewleaf"}, true)]
 		set_next_drop(wanted)
 		game.cooldowns.j = 0.0
 		check(game.attack("j") and game.states.grove.enemies.is_empty(), "真实战斗入口击杀小怪，掉落分支 " + str(wanted))
@@ -148,7 +149,9 @@ func run_checks() -> void:
 		game.states.quarry.pickups.append({"item": ["s2-top", "s2-ring", "w06-falling-crag"][i], "position": game.player_foot + Vector2(100 + 140 * i, 0), "boss_drop": true})
 	await capture("boss_loot")
 	game.open_journal()
-	check(game.journal_text.text.contains("小怪35%") and game.journal_text.text.contains("Boss必掉1件") and game.journal_text.text.contains(Loot.ITEMS[item].name), "行囊有装备数量、图片和掉率规则")
+	check(game.journal_text.text.contains(Loot.ITEMS[item].name), "物品页有装备数量与图片")
+	game.book.select_page(3)
+	check(game.journal_text.text.contains("小怪35%") and game.journal_text.text.contains("Boss必掉1件"), "帮助页保留完整掉率规则")
 	await capture("inventory")
 	game.journal.hide()
 	game.tools.atlas.open("quarry")

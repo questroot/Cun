@@ -6,6 +6,7 @@ var checks := 0
 var failures := 0
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func frames(count: int = 3) -> void:

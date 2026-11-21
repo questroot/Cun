@@ -7,7 +7,9 @@ var bosses
 var checks := 0
 var failures := 0
 
-func _initialize() -> void: call_deferred("run")
+func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
+	call_deferred("run")
 
 func check(ok: bool, label: String) -> void:
 	checks += 1
@@ -211,11 +213,15 @@ func run() -> void:
 		weather.adapt_enemies("post")
 		for other: Dictionary in game.states.post.enemies: other.position=game.player_foot+Vector2(900,0)
 		enemy.position=game.player_foot
+		enemy.behavior="melee"
+		enemy.guard_phase="windup"
+		enemy.guard_left=0.001
+		enemy.guard_target=game.player_foot
 		game.health=100
 		game.hurt_timer=0
 		game._process(.01)
 		check(enemy.attack_weather==element and float(enemy.attack_fx)>0,"guard elemental effect "+element)
-		check(game.health==100-int(weather.Ecology.WEATHER[element].damage),"guard contact damage preserved "+element)
+		check(game.health==100-int(weather.Ecology.WEATHER[element].damage),"guard charged damage preserved "+element)
 		enemy.attack_fx=VFX.LIFETIME-.22
 		weather.elapsed=.36
 		await capture("guard_"+element)
@@ -226,6 +232,7 @@ func run() -> void:
 		game.menu.hide()
 	game.enter_region("grove")
 	game.open_journal()
+	game.book.select_page(3)
 	for moves: Array in Skills.MOVES.values():
 		for s: Dictionary in moves: check(game.journal_text.get_parsed_text().contains(s.name),"journal "+s.name)
 	game.journal.hide()

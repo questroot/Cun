@@ -16,6 +16,7 @@ func enter_region() -> void:
 	casts.clear()
 	for boss: Dictionary in bosses.values():
 		boss.windup = 0.0
+		boss["attack_pose"] = 0.0
 		boss.cooldown = maxf(1.8, float(boss.cooldown))
 	refresh()
 
@@ -38,7 +39,7 @@ func _ready() -> void:
 	for id: String in Catalog.DEFINITIONS:
 		var config: Dictionary = Catalog.DEFINITIONS[id]
 		var home: Vector2 = config.point * Maps.MAPS[config.region].size
-		bosses[id] = {"id": id, "position": home, "home": home, "hp": config.hp, "max_hp": config.hp, "hit_radius": 42.0, "hit_height": 45.0, "flash": 0.0, "cooldown": 1.8, "windup": 0.0, "target": home, "paid": false, "skill_index": 0}
+		bosses[id] = {"id": id, "position": home, "home": home, "hp": config.hp, "max_hp": config.hp, "hit_radius": 42.0, "hit_height": 45.0, "flash": 0.0, "cooldown": 1.8, "windup": 0.0, "attack_pose": 0.0, "target": home, "paid": false, "skill_index": 0}
 	game.world_canvas.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	game.world_canvas.draw.connect(draw_world)
 	game.minimap.draw.connect(draw_minimap)
@@ -108,10 +109,12 @@ func tick(delta: float) -> void:
 		var skill := Skills.current(boss)
 		var slow: float = game.equipment.effects.enemy_speed_scale(boss) if game.equipment != null else 1.0
 		boss.flash = maxf(0, float(boss.flash) - delta)
+		boss.attack_pose = maxf(0, float(boss.attack_pose) - delta)
 		var offset: Vector2 = game.player_foot - boss.position
 		if float(boss.windup) > 0:
 			boss.windup = maxf(0, float(boss.windup) - delta)
 			if float(boss.windup) == 0:
+				boss.attack_pose = 0.28
 				# Lock geometry at cast time. Each cast resolves once, even across multi zones.
 				casts.append({"boss_id":boss.id,"skill":skill,"target":boss.target,"origin":boss.get("cast_origin",boss.position),"direction":boss.get("direction",Vector2.RIGHT),"zones":boss.get("zones",[boss.target]).duplicate(),"life":VFX.LIFETIME})
 				if Skills.hits(boss,game.player_foot) and game.hurt_timer <= 0:
@@ -173,7 +176,12 @@ func draw_world() -> void:
 		canvas.draw_set_transform(Vector2.ZERO)
 		var art: Texture2D = Catalog.ART[boss.id]
 		var extent := Vector2(art.get_width(), art.get_height()) * 1.08
-		canvas.draw_texture_rect(art, Rect2(point - Vector2(extent.x * 0.5, extent.y), extent), false, Color("#ffb19d") if float(boss.flash) > 0 else Color.WHITE)
+		# Keep the feet planted while the existing art compresses, strikes and recoils.
+		var scale := Vector2(1.10, 0.90) if boss.windup > 0 else Vector2(0.94, 1.06) if boss.attack_pose > 0 else Vector2.ONE
+		var lean := -0.08 if boss.flash > 0 else 0.07 if boss.attack_pose > 0 else -0.04 if boss.windup > 0 else 0.0
+		canvas.draw_set_transform(point, lean, scale)
+		canvas.draw_texture_rect(art, Rect2(Vector2(-extent.x * 0.5, -extent.y), extent), false, Color("#ffb19d") if float(boss.flash) > 0 else Color.WHITE)
+		canvas.draw_set_transform(Vector2.ZERO)
 		var top := point - Vector2(68, extent.y + 16)
 		canvas.draw_rect(Rect2(top, Vector2(136, 7)), Color("#221f29"))
 		canvas.draw_rect(Rect2(top, Vector2(136.0 * float(boss.hp) / float(boss.max_hp), 7)), color)

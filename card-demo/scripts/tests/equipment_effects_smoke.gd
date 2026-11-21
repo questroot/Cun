@@ -19,7 +19,7 @@ func wear(id: String = "", amount: int = 0, weapon: String = "") -> void:
 	game.states[game.region].enemies.clear()
 
 func target(distance: float = 80.0, hp: int = 500) -> Dictionary:
-	var enemy := {"position": game.player_foot + Vector2(distance, 0), "hp": hp, "max_hp": 500, "flash": 0.0, "speed": 76.0}
+	var enemy: Dictionary = game.Guards.create(game.player_foot + Vector2(distance, 0), "melee").merged({"hp": hp, "max_hp": 500, "flash": 0.0, "speed": 76.0}, true)
 	game.states[game.region].enemies.append(enemy)
 	return enemy
 
@@ -125,7 +125,7 @@ func run_checks() -> void:
 	check(gear.bonuses().defense == 10, "镜潮2件额外减伤3")
 	wear("s3", 4)
 	var armor: int = gear.bonuses().defense
-	check(game.incoming_damage(40) == ceili((40 - armor) * 0.8) and game.incoming_damage(1) == 1, "镜潮4件固定减伤后再减20%，至少1点")
+	check(game.incoming_damage(40) == ceili(ceili(40.0 * 40.0 / (40.0 + armor)) * 0.8) and game.incoming_damage(1) == 1, "镜潮4件防御收益递减后再减20%，至少1点")
 	wear("s3", 5)
 	check(fx.shield_points == 0, "镜潮5件初穿不免费获得护盾")
 	fx.tick(7.99)
@@ -135,11 +135,15 @@ func run_checks() -> void:
 	await capture("shield")
 	enemy = target(0)
 	enemy.damage = 20
+	enemy.behavior = "melee"
+	enemy.guard_phase = "windup"
+	enemy.guard_left = 0.001
+	enemy.guard_target = game.player_foot
 	game._process(0.01)
 	check(game.health == 100 and fx.shield_points < 18, "护盾实际吸收怪物伤害")
 	var shield: int = fx.shield_points
 	var remainder: int = game.incoming_damage(100)
-	check(remainder == ceili((100 - int(gear.bonuses().defense)) * 0.8) - shield and fx.shield_points == 0, "大伤害击破护盾后剩余伤害正确")
+	check(remainder == ceili(ceili(100.0 * 40.0 / (40.0 + int(gear.bonuses().defense))) * 0.8) - shield and fx.shield_points == 0, "大伤害击破护盾后剩余伤害正确")
 	fx.tick(8)
 	fx.tick(8)
 	check(fx.shield_points == 18, "多周期护盾刷新而不叠加")

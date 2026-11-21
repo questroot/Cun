@@ -1,6 +1,20 @@
 extends RefCounted
-## Nine finished map paintings; the remaining snowridge keeps its procedural scenery.
+## Map paintings and roadside props; snowridge retains its authored ground geometry.
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const Art = preload("res://scripts/scenes/fudi_material_art.gd")
+const Buildings = preload("res://scripts/scenes/building_catalog.gd")
+const SCENERY := {
+	"grove": [["camphor", Vector2(0.19, 0.42)], ["shrub", Vector2(0.23, 0.35)], ["camphor", Vector2(0.60, 0.63)], ["shrub", Vector2(0.75, 0.55)]],
+	"post": [["camphor", Vector2(0.35, 0.38)], ["shrub", Vector2(0.19, 0.39)], ["camphor", Vector2(0.60, 0.88)], ["shrub", Vector2(0.62, 0.43)]],
+	"quarry": [["pine", Vector2(0.46, 0.45)], ["shrub", Vector2(0.56, 0.55)], ["pine", Vector2(0.70, 0.27)], ["shrub", Vector2(0.21, 0.30)]],
+	"ruins": [["lotus", Vector2(0.22, 0.24)], ["reeds", Vector2(0.26, 0.37)], ["lotus", Vector2(0.56, 0.75)], ["reeds", Vector2(0.86, 0.44)]],
+	"refuge": [["pine", Vector2(0.30, 0.24)], ["shrub", Vector2(0.19, 0.43)], ["pine", Vector2(0.66, 0.44)], ["shrub", Vector2(0.67, 0.77)]],
+	"wetland": [["reeds", Vector2(0.24, 0.56)], ["lotus", Vector2(0.54, 0.44)], ["reeds", Vector2(0.74, 0.70)], ["lotus", Vector2(0.77, 0.33)]],
+	"causeway": [["reeds", Vector2(0.20, 0.29)], ["lotus", Vector2(0.40, 0.53)], ["reeds", Vector2(0.60, 0.72)], ["lotus", Vector2(0.81, 0.36)]],
+	"kilnwood": [["charred_pine", Vector2(0.20, 0.40)], ["pine", Vector2(0.70, 0.44)], ["charred_pine", Vector2(0.43, 0.85)], ["pine", Vector2(0.39, 0.20)]],
+	"archive": [["lotus", Vector2(0.18, 0.45)], ["shrub", Vector2(0.70, 0.46)], ["camphor", Vector2(0.87, 0.61)], ["reeds", Vector2(0.42, 0.40)]],
+	"snowridge": [["snow_pine", Vector2(0.17, 0.44)], ["snow_pine", Vector2(0.29, 0.58)], ["snow_pine", Vector2(0.53, 0.16)], ["snow_pine", Vector2(0.66, 0.68)]],
+}
 
 static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 	var data: Dictionary = Maps.MAPS[id]
@@ -10,6 +24,7 @@ static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 	if Maps.Art.has_art(id):
 		canvas.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		canvas.draw_texture_rect(Maps.Art.TEXTURES[id], Rect2(Vector2.ZERO, extent), false)
+		draw_scenery(canvas, id, visible)
 		return
 	canvas.draw_rect(Rect2(Vector2.ZERO, extent), ground)
 	# Stable terrain patches make distant screens distinct without imported bitmap assets.
@@ -28,7 +43,10 @@ static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 		canvas.draw_polyline(points, Color("#182a2b"), 90, true)
 		canvas.draw_polyline(points, Color(data.road), 74, true)
 		canvas.draw_polyline(points, Color(accent, 0.23), 3, true)
-	for rect: Rect2 in Maps.obstacles(id):
+	var obstacles := Maps.obstacles(id)
+	for index in range(obstacles.size()):
+		if index == 2: continue # The independent building sprite supplies this silhouette.
+		var rect: Rect2 = obstacles[index]
 		if not visible.grow(200).intersects(rect):
 			continue
 		if data.terrain == "garden":
@@ -51,27 +69,25 @@ static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 				canvas.draw_colored_polygon(PackedVector2Array([p + Vector2(-32, 18), p + Vector2(-20, -34), p + Vector2(22, -45), p + Vector2(44, 10)]), Color("#cedcda") if data.terrain == "snowridge" else Color("#8a7b65"))
 		else:
 			building(canvas, rect, Color("#46565a") if data.terrain == "archive" else Color("#746855"), accent)
-	# Small scenery remains outside the clear roads and authored collision volumes.
-	for i in range(85):
-		var point := Vector2(rng.randf_range(80, extent.x - 80), rng.randf_range(90, extent.y - 60))
-		if not visible.grow(100).has_point(point) or not Maps.walkable(id, point, 45):
-			continue
-		var on_road := false
-		for road: Array in data.roads:
-			for n in range(road.size() - 1):
-				if Geometry2D.get_closest_point_to_segment(point, road[n] * extent, road[n + 1] * extent).distance_to(point) < 125:
-					on_road = true
-		if on_road:
-			continue
-		canvas.draw_circle(point, 27, Color(0.02, 0.04, 0.04, 0.25))
-		if data.terrain in ["garden", "camp", "kilnwood"]:
-			canvas.draw_line(point, point + Vector2(0, -48), Color("#7d6c50"), 8, true)
-			canvas.draw_circle(point + Vector2(0, -57), 36, Color("#484c36") if data.terrain == "kilnwood" else Color("#365948"))
-			canvas.draw_circle(point + Vector2(-13, -67), 22, Color("#757b47") if data.terrain == "kilnwood" else Color("#527257"))
-		else:
-			canvas.draw_style_box(_box(Color("#65716b"), Color("#8c9a8e")), Rect2(point - Vector2(22, 40), Vector2(44, 40)))
+	draw_scenery(canvas, id, visible)
 	# The boundary is visible and shares the exact movement bounds.
 	canvas.draw_rect(Rect2(Vector2(20, 20), extent - Vector2(40, 40)), Color(accent, 0.50), false, 8)
+
+static func draw_scenery(canvas: CanvasItem, id: String, visible: Rect2) -> void:
+	var data: Dictionary = Maps.MAPS[id]
+	var building := Art.building_rect(id, Buildings.entrance(id))
+	# Authored ground/water placements avoid putting tree roots into painted rivers.
+	for prop: Array in SCENERY[id]:
+		var point: Vector2 = prop[1] * data.size
+		var art: Texture2D = Art.SCENERY[prop[0]]
+		var size: Vector2 = art.get_size()
+		size *= (260.0 if prop[0] in ["camphor", "pine", "charred_pine", "snow_pine"] else 115.0) / size.y
+		var rect := Rect2(point - Vector2(size.x * 0.5, size.y), size)
+		if not visible.intersects(rect) or building.intersects(rect): continue
+		canvas.draw_set_transform(point, 0, Vector2(1, 0.25))
+		canvas.draw_circle(Vector2.ZERO, size.x * 0.25, Color(0.02, 0.04, 0.04, 0.23))
+		canvas.draw_set_transform(Vector2.ZERO)
+		canvas.draw_texture_rect(art, rect, false)
 
 static func _box(color: Color, edge: Color) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()

@@ -203,6 +203,7 @@ func buy(item: String) -> bool:
 		return false
 	game.inventory.crystal -= price
 	game.inventory[item] = int(game.inventory.get(item, 0)) + 1
+	if game.persistence != null: game.persistence.request_save()
 	stock[active_id][item] -= 1
 	feedback.text = "已购入 %s ×1，消耗 %d 灵晶；已放进行囊。" % [Items.ITEMS[item].name, price]
 	game.sound_requested.emit("pickup")

@@ -2824,6 +2824,295 @@
       "status": "review",
       "notes": "Fudi fine three-stage plant sheet from the user-provided 2026-10-25 batch. Runtime transparent derivative; chroma background keyed, source watermark removed, trimmed and scaled. Exact source file, size and SHA256 in card-demo/assets/fudi/fine/manifest.json. License and release rights not independently verified.",
       "sha256": "ca15003e43616299dae73c52caaef13586cfe9eccb6f28436ec56641a183247f"
+    },
+    {
+      "id": "asset_7697044fe0940a38",
+      "name": "archive",
+      "path": "card-demo/assets/fudi/fine/buildings/archive.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "ee14ab13c9bba142b38aedf57d5b80b4c9559e43cb7d777899c14315d1d69b8d"
+    },
+    {
+      "id": "asset_192c9a37bf3c6e92",
+      "name": "causeway",
+      "path": "card-demo/assets/fudi/fine/buildings/causeway.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "acab517148c26b07883443a2d5e114374976723bde484732d9c37c30ae0de7a4"
+    },
+    {
+      "id": "asset_b664c38bcece54a4",
+      "name": "grove",
+      "path": "card-demo/assets/fudi/fine/buildings/grove.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "44fec87c9aa6ecb29b9eaeda8aa4f866b60034f3e4a88343a2cc32cbcf3d9623"
+    },
+    {
+      "id": "asset_12c351c4ba6fe0b4",
+      "name": "kilnwood",
+      "path": "card-demo/assets/fudi/fine/buildings/kilnwood.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "8d3223daf324cde9684f97d80343ee410522310b97dfe819ffd1c00c1d6f2180"
+    },
+    {
+      "id": "asset_692f8c9e5a3790e1",
+      "name": "post",
+      "path": "card-demo/assets/fudi/fine/buildings/post.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "4360cf3ba576d310e1bcc2a2d7df09fd81e2329eb8debb26cfcf6a55d4e5264d"
+    },
+    {
+      "id": "asset_14f3d1d8a59e81aa",
+      "name": "quarry",
+      "path": "card-demo/assets/fudi/fine/buildings/quarry.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "6ba3d1c6508bd946e4b772d24592ce49095acafad87a846ed8896453884e7bfe"
+    },
+    {
+      "id": "asset_36d803d7f73d19c2",
+      "name": "refuge",
+      "path": "card-demo/assets/fudi/fine/buildings/refuge.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "4e58310041efc1a7b84da67d8a169801751671644d70f9b1ae96cfc8d5a0d219"
+    },
+    {
+      "id": "asset_ac06b940950ec21d",
+      "name": "ruins",
+      "path": "card-demo/assets/fudi/fine/buildings/ruins.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "2bdaff8ceb532b1525a7587251d5bb15cf7cc96768ca45a101aaa550369cc04b"
+    },
+    {
+      "id": "asset_2a38d7570857610d",
+      "name": "snowridge",
+      "path": "card-demo/assets/fudi/fine/buildings/snowridge.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "f82a993e35806e5759cb6f2cf7eb8c6424c1e51f124ae58e5a70bd265f46d389"
+    },
+    {
+      "id": "asset_8d3145ffc0b72c40",
+      "name": "wetland",
+      "path": "card-demo/assets/fudi/fine/buildings/wetland.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "buildings"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "4a98c1674eb5b9ea119bf479328118766bef98837ec23c9f083e97d918d6aa51"
+    },
+    {
+      "id": "asset_f281c5091c475817",
+      "name": "camphor",
+      "path": "card-demo/assets/fudi/fine/scenery/camphor.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "scenery"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "b7207684b3dc4e30d33f2d93df55dadfe06596c4ea7e954b96b1d97d7515c8fc"
+    },
+    {
+      "id": "asset_a13d57aa7b3a1c7e",
+      "name": "charred_pine",
+      "path": "card-demo/assets/fudi/fine/scenery/charred_pine.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "scenery"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "22d793bea82731de7abb7de249585cf42b39193818002a4d488033fb6ab67976"
+    },
+    {
+      "id": "asset_ac7f8f7792b14cc0",
+      "name": "lotus",
+      "path": "card-demo/assets/fudi/fine/scenery/lotus.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "scenery"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "9ad1eb9cc3b6e30c8be0c7b2044d4a7c1b113a601332bfb62333027c12e784d0"
+    },
+    {
+      "id": "asset_687058f68949979a",
+      "name": "pine",
+      "path": "card-demo/assets/fudi/fine/scenery/pine.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "scenery"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "b77a1a4fbb498459670aea8dc5d448940de2422444f361a44e24b29527fd1bf7"
+    },
+    {
+      "id": "asset_84ad57223f3d272f",
+      "name": "reeds",
+      "path": "card-demo/assets/fudi/fine/scenery/reeds.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "scenery"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "48ab15344f7c81ceb95362c7370203f5cee35a5453c83633731a789f8d44da05"
+    },
+    {
+      "id": "asset_a03a1d3f0576fcb2",
+      "name": "shrub",
+      "path": "card-demo/assets/fudi/fine/scenery/shrub.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "scenery"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "192ed1b9b613e1128207c66af3dc3030112522bc015e478f47298d167f10adc9"
+    },
+    {
+      "id": "asset_d17727228eba3652",
+      "name": "snow_pine",
+      "path": "card-demo/assets/fudi/fine/scenery/snow_pine.png",
+      "kind": "image",
+      "tags": [
+        "fudi",
+        "fine",
+        "scenery"
+      ],
+      "source": "Existing gpt-image-2 gateway paintings in output/imagegen/fudi-fine/; approved image variants selected by queue.json; transparent derivatives built by tools/prepare_fudi_fine_materials.py",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
+      "sha256": "9d26d7b52a3831d6090657345234c0c8f1d0f88ea912176aad25593e1fd8caea"
     }
   ]
 }

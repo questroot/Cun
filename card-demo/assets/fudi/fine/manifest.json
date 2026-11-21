@@ -3,6 +3,180 @@
   "style": "Fudi fine pixel art; chroma-keyed transparent runtime PNGs",
   "source_directory": "output/imagegen/fudi-fine",
   "assets": {
+    "buildings": [
+      {
+        "id": "grove",
+        "path": "card-demo/assets/fudi/fine/buildings/grove.png",
+        "size": [
+          1024,
+          653
+        ],
+        "source": "11_buildings_grove-v3.png",
+        "sha256": "44fec87c9aa6ecb29b9eaeda8aa4f866b60034f3e4a88343a2cc32cbcf3d9623"
+      },
+      {
+        "id": "post",
+        "path": "card-demo/assets/fudi/fine/buildings/post.png",
+        "size": [
+          1024,
+          704
+        ],
+        "source": "12_buildings_post-v3.png",
+        "sha256": "4360cf3ba576d310e1bcc2a2d7df09fd81e2329eb8debb26cfcf6a55d4e5264d"
+      },
+      {
+        "id": "quarry",
+        "path": "card-demo/assets/fudi/fine/buildings/quarry.png",
+        "size": [
+          1024,
+          949
+        ],
+        "source": "13_buildings_quarry.png",
+        "sha256": "6ba3d1c6508bd946e4b772d24592ce49095acafad87a846ed8896453884e7bfe"
+      },
+      {
+        "id": "ruins",
+        "path": "card-demo/assets/fudi/fine/buildings/ruins.png",
+        "size": [
+          1024,
+          928
+        ],
+        "source": "14_buildings_ruins.png",
+        "sha256": "2bdaff8ceb532b1525a7587251d5bb15cf7cc96768ca45a101aaa550369cc04b"
+      },
+      {
+        "id": "refuge",
+        "path": "card-demo/assets/fudi/fine/buildings/refuge.png",
+        "size": [
+          1024,
+          674
+        ],
+        "source": "15_buildings_refuge.png",
+        "sha256": "4e58310041efc1a7b84da67d8a169801751671644d70f9b1ae96cfc8d5a0d219"
+      },
+      {
+        "id": "wetland",
+        "path": "card-demo/assets/fudi/fine/buildings/wetland.png",
+        "size": [
+          1024,
+          596
+        ],
+        "source": "16_buildings_wetland.png",
+        "sha256": "4a98c1674eb5b9ea119bf479328118766bef98837ec23c9f083e97d918d6aa51"
+      },
+      {
+        "id": "causeway",
+        "path": "card-demo/assets/fudi/fine/buildings/causeway.png",
+        "size": [
+          1024,
+          725
+        ],
+        "source": "17_buildings_causeway.png",
+        "sha256": "acab517148c26b07883443a2d5e114374976723bde484732d9c37c30ae0de7a4"
+      },
+      {
+        "id": "kilnwood",
+        "path": "card-demo/assets/fudi/fine/buildings/kilnwood.png",
+        "size": [
+          1024,
+          662
+        ],
+        "source": "18_buildings_kilnwood.png",
+        "sha256": "8d3223daf324cde9684f97d80343ee410522310b97dfe819ffd1c00c1d6f2180"
+      },
+      {
+        "id": "archive",
+        "path": "card-demo/assets/fudi/fine/buildings/archive.png",
+        "size": [
+          1024,
+          742
+        ],
+        "source": "19_buildings_archive-v2.png",
+        "sha256": "ee14ab13c9bba142b38aedf57d5b80b4c9559e43cb7d777899c14315d1d69b8d"
+      },
+      {
+        "id": "snowridge",
+        "path": "card-demo/assets/fudi/fine/buildings/snowridge.png",
+        "size": [
+          1024,
+          929
+        ],
+        "source": "20_buildings_snowridge.png",
+        "sha256": "f82a993e35806e5759cb6f2cf7eb8c6424c1e51f124ae58e5a70bd265f46d389"
+      }
+    ],
+    "scenery": [
+      {
+        "id": "camphor",
+        "path": "card-demo/assets/fudi/fine/scenery/camphor.png",
+        "size": [
+          512,
+          458
+        ],
+        "source": "48_scenery_camphor.png",
+        "sha256": "b7207684b3dc4e30d33f2d93df55dadfe06596c4ea7e954b96b1d97d7515c8fc"
+      },
+      {
+        "id": "pine",
+        "path": "card-demo/assets/fudi/fine/scenery/pine.png",
+        "size": [
+          512,
+          512
+        ],
+        "source": "49_scenery_pine.png",
+        "sha256": "b77a1a4fbb498459670aea8dc5d448940de2422444f361a44e24b29527fd1bf7"
+      },
+      {
+        "id": "charred_pine",
+        "path": "card-demo/assets/fudi/fine/scenery/charred_pine.png",
+        "size": [
+          445,
+          512
+        ],
+        "source": "50_scenery_charred_pine.png",
+        "sha256": "22d793bea82731de7abb7de249585cf42b39193818002a4d488033fb6ab67976"
+      },
+      {
+        "id": "snow_pine",
+        "path": "card-demo/assets/fudi/fine/scenery/snow_pine.png",
+        "size": [
+          512,
+          468
+        ],
+        "source": "51_scenery_snow_pine.png",
+        "sha256": "9d26d7b52a3831d6090657345234c0c8f1d0f88ea912176aad25593e1fd8caea"
+      },
+      {
+        "id": "reeds",
+        "path": "card-demo/assets/fudi/fine/scenery/reeds.png",
+        "size": [
+          478,
+          512
+        ],
+        "source": "52_scenery_reeds.png",
+        "sha256": "48ab15344f7c81ceb95362c7370203f5cee35a5453c83633731a789f8d44da05"
+      },
+      {
+        "id": "lotus",
+        "path": "card-demo/assets/fudi/fine/scenery/lotus.png",
+        "size": [
+          512,
+          475
+        ],
+        "source": "53_scenery_lotus.png",
+        "sha256": "9ad1eb9cc3b6e30c8be0c7b2044d4a7c1b113a601332bfb62333027c12e784d0"
+      },
+      {
+        "id": "shrub",
+        "path": "card-demo/assets/fudi/fine/scenery/shrub.png",
+        "size": [
+          512,
+          481
+        ],
+        "source": "54_scenery_shrub.png",
+        "sha256": "192ed1b9b613e1128207c66af3dc3030112522bc015e478f47298d167f10adc9"
+      }
+    ],
     "chests": [
       {
         "id": "normal_closed",

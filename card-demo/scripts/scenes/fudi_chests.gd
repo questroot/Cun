@@ -340,7 +340,7 @@ func draw_world() -> void:
 			color = Color("#7b8c88")
 		canvas.draw_circle(point, 29, Color(color, 0.18))
 		var tint := Color(0.72, 0.78, 0.75, 0.92) if chest.state == "opened" else Color.WHITE
-		Art.draw_chest(canvas, Art.chest_texture(chest.mutated, str(chest.state)), point, 160, tint)
+		Art.draw_chest(canvas, Art.chest_texture(chest.mutated, str(chest.state)), point, 128, tint)
 		var label := "异变宝箱" if chest.mutated else "普通宝箱"
 		match chest.state:
 			"guarding": label += " · 守卫中"

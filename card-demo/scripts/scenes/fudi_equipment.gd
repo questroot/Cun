@@ -71,6 +71,7 @@ func equip_item(item: String) -> bool:
 	effects.loadout_changed()
 	selected = item
 	refresh()
+	if game.persistence != null: game.persistence.request_save()
 	return true
 
 func unequip_slot(key: String) -> bool:
@@ -80,6 +81,7 @@ func unequip_slot(key: String) -> bool:
 	equipped.erase(key)
 	effects.loadout_changed()
 	refresh()
+	if game.persistence != null: game.persistence.request_save()
 	return true
 
 func available(item: String) -> int:
@@ -279,6 +281,7 @@ func refresh() -> void:
 		return
 	var bonus := bonuses()
 	stats_label.text = "装备加成  /  " + Catalog.text(bonus, true) + "\nJ %d   K %d   L %d  ·  移速 %d\n已穿戴 %d / 6  ·  生命 %d / 100" % [26 + bonus.attack, 20 + bonus.attack, 42 + bonus.attack + (12 if effects.count("s2") >= 5 else 0), 260 + bonus.speed, equipped.size(), game.health]
+	stats_label.text += "\n防御减伤 %.0f%%（收益递减，上限70%%）" % (minf(0.70, float(bonus.defense) / (float(bonus.defense) + 40.0)) * 100.0)
 	var counts := Catalog.set_counts(equipped)
 	set_label.text = "追归 %d/5  ·  烽炉 %d/5  ·  镜潮 %d/5\n技能冷却 ×%.2f  ·  护盾 %d/18\n上方“套装与特效”查看激活条件与说明。" % [counts.s1, counts.s2, counts.s3, effects.cooldown_scale(), effects.shield_points]
 	_refresh_effects()

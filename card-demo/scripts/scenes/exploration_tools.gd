@@ -41,9 +41,15 @@ func _ready() -> void:
 	panel.add_child(layout)
 	layout.add_child(UI.label("返回游戏选择？", 26, Color("#f0d69a")))
 	var message := UI.label("海上进度已自动保存；返回后可从“海底水世界”继续。" if region == "water_activity" else "离开后，本次游玩的采集与战斗进度将重置。", 19)
+	if get_parent().has_method("leave_expedition"):
+		message.text = "保存福地的装备、委托与地图进度；下次进入继续探索。"
 	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	layout.add_child(message)
-	confirm_ok = UI.button("返回游戏选择", func() -> void: GameManager.goto_scene("menu"))
+	confirm_ok = UI.button("返回游戏选择", func() -> void:
+		if get_parent().has_method("leave_expedition"):
+			get_parent().leave_expedition()
+		else:
+			GameManager.goto_scene("menu"))
 	layout.add_child(confirm_ok)
 	layout.add_child(UI.button("继续游玩  /  Esc", func() -> void: confirm.hide()))
 	confirm.hide()

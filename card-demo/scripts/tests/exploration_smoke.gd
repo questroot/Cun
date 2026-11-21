@@ -7,6 +7,7 @@ var failures := 0
 var game
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(condition: bool, message: String) -> void:
@@ -168,8 +169,8 @@ func run_checks() -> void:
 	var combat_origin: Vector2 = Maps.MAPS.quarry.spawn * Maps.MAPS.quarry.size
 	game.player_foot = combat_origin
 	game.facing = Vector2.RIGHT
-	var front := {"position": combat_origin + Vector2(60, 0), "hp": 60, "flash": 0.0}
-	var behind := {"position": combat_origin - Vector2(60, 0), "hp": 60, "flash": 0.0}
+	var front: Dictionary = game.Guards.create(combat_origin + Vector2(60, 0), "melee").merged({"hp": 60, "flash": 0.0}, true)
+	var behind: Dictionary = game.Guards.create(combat_origin - Vector2(60, 0), "melee").merged({"hp": 60, "flash": 0.0}, true)
 	game.states.quarry.enemies = [front, behind]
 	key(KEY_J)
 	key(KEY_J, false)
@@ -195,18 +196,19 @@ func run_checks() -> void:
 	await capture("combat")
 	check(not game.attack("l"), "范围攻击冷却有效")
 	game.cooldowns.l = 0.0
-	game.states.quarry.enemies = [{"position": combat_origin + Vector2(300, 0), "hp": 60, "flash": 0.0}]
+	game.states.quarry.enemies = [game.Guards.create(combat_origin + Vector2(300, 0), "melee").merged({"hp": 60, "flash": 0.0}, true)]
 	game.attack("l")
 	check(game.states.quarry.enemies[0].hp == 60, "超出技能范围不受伤")
 	game.states.quarry.enemies[0].position = game.player_foot
+	game.states.quarry.enemies[0].merge({"guard_phase": "windup", "guard_left": 0.001, "guard_target": game.player_foot}, true)
 	game.hurt_timer = 0.0
 	game._process(0.1)
-	check(game.health == 90 and game.hurt_timer > 0, "接触守卫扣血并启用无敌间隔")
+	check(game.health == 90 and game.hurt_timer > 0, "守卫蓄力攻击扣血并启用无敌间隔")
 	game._process(0.1)
 	check(game.health == 90, "无敌间隔防止每帧扣血")
 	game.tools.switch_game()
 	await frames()
-	check(game.tools.confirm.visible, "切换福地前提示本轮进度重置")
+	check(game.tools.confirm.visible, "切换福地前显示保存并返回的确认提示")
 	await capture("switch_confirm")
 	var paused_health: int = game.health
 	game._process(2)
@@ -216,7 +218,8 @@ func run_checks() -> void:
 	await capture("fudi")
 	game.health = 10
 	game.hurt_timer = 0
-	game.states.grove.enemies = [{"position": game.player_foot, "hp": 60, "flash": 0.0}]
+	game.states.grove.enemies = [game.Guards.create(game.player_foot, "melee").merged({"hp": 60, "flash": 0.0}, true)]
+	game.states.grove.enemies[0].merge({"guard_phase": "windup", "guard_left": 0.001, "guard_target": game.player_foot}, true)
 	game._process(0.1)
 	check(game.finished and game.outcome.visible and game.health == 0, "生命归零显示失败与重开入口")
 	check(not game.attack("j"), "结算后禁止攻击")
@@ -467,6 +470,7 @@ func verify_large_maps() -> void:
 	key(KEY_ESCAPE, false)
 	key(KEY_B)
 	key(KEY_B, false)
+	game.book.select_page(2)
 	check(game.journal.visible and game.journal_text.get_parsed_text().contains("温砚") and game.journal_text.get_parsed_text().contains("30 / 30"), "B打开完整行囊和十域人物的已发现见闻")
 	var foot: Vector2 = game.player_foot
 	key(KEY_D)

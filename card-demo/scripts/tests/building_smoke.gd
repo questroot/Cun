@@ -57,6 +57,13 @@ func run_checks() -> void:
 		var footprint := BuildingCatalog.footprint(id)
 		check(Maps.obstacles(id)[2].encloses(footprint) and footprint.size.x >= 300, "大型建筑复用现有碰撞占地 " + id)
 		var door := BuildingCatalog.entrance(id)
+		if Maps.Art.has_art(id):
+			var art_rect: Rect2 = game.MaterialArt.building_rect(id, door)
+			var road_clear := true
+			for y in range(int(art_rect.position.y), int(art_rect.end.y), 16):
+				for x in range(int(art_rect.position.x), int(art_rect.end.x), 16):
+					if Maps.walkable(id, Vector2(x, y), 0): road_clear = false
+			check(road_clear, "高清建筑不覆盖既有可行走道路 " + id)
 		var reachable := reachable_cells(id)
 		check(Maps.walkable(id, door, 32) and reachable.has(Vector2i((door / 64).floor())), "入口从出生点连通且可站立 " + id)
 		var approach := door + Vector2(0, 220)
@@ -102,7 +109,7 @@ func run_checks() -> void:
 		var expected: Array = [33, 25, 53] if effect == "vigor" else [21, 16, 34]
 		var index := 0
 		for kind: String in ["j", "k", "l"]:
-			var enemy := {"position": game.player_foot + Vector2(80, 0), "hp": 500, "max_hp": 500, "flash": 0.0}
+			var enemy: Dictionary = game.Guards.create(game.player_foot + Vector2(80, 0), "melee").merged({"hp": 500, "max_hp": 500, "flash": 0.0}, true)
 			game.states.grove.enemies = [enemy]
 			game.facing = Vector2.RIGHT
 			game.cooldowns[kind] = 0.0
@@ -129,7 +136,7 @@ func run_checks() -> void:
 	game.inventory["s2-top"] = 1
 	game.equipment.equip_item("s2-top")
 	var defense: int = game.equipment.bonuses().defense
-	check(game.incoming_damage(20) == maxi(1, 19 - defense), "建筑效果与装备减伤共同进入伤害公式")
+	check(defense == 3 and game.incoming_damage(20) == 18, "建筑效果先结算为19伤害，3点防御收益递减后承受18点")
 	game.equipment.unequip_slot("top")
 	# Use the catalog's actual slot rather than relying on UI labels.
 	for slot: String in game.equipment.equipped.keys():
@@ -188,8 +195,9 @@ func run_checks() -> void:
 	structures.tick(0.01)
 	check(structures.active.buff.effect == effect_before and structures.states.grove.effect == "renewal", "跨图保留限时效果和建筑抽取结果")
 	game.open_journal()
+	game.book.select_page(3)
 	var text: String = game.journal_text.get_parsed_text()
-	check(text.contains("大型建筑") and text.contains("霜脊观星高台") and text.contains("青岚百味大食堂"), "B行囊展示十地建筑与当前效果")
+	check(text.contains("大型建筑") and text.contains("霜脊观星高台") and text.contains("青岚百味大食堂"), "B帮助页展示十地建筑与当前效果")
 	game.journal.hide()
 	await open_fudi()
 	structures = game.get_node("Buildings")

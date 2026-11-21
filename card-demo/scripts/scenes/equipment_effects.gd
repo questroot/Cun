@@ -49,7 +49,9 @@ func direct_damage(target: Dictionary, amount: int, kind: String) -> int:
 	return amount
 
 func incoming_damage(amount: int) -> int:
-	var damage := maxi(1, amount - int(gear.bonuses().defense))
+	# Defense has diminishing returns: 20 / 40 / 80 gives 33% / 50% / 67%.
+	# Even maximum fusion retains a reason to avoid a boss attack.
+	var damage := armor_damage(amount, int(gear.bonuses().defense))
 	if count("s3") >= 4:
 		damage = maxi(1, ceili(damage * 0.8))
 	if shield_points > 0 and count("s3") >= 5:
@@ -58,6 +60,9 @@ func incoming_damage(amount: int) -> int:
 		damage -= absorbed
 		pulse(game.player_foot, "镜潮吸收 %d" % absorbed, Color("#9ae7ff"))
 	return damage
+
+static func armor_damage(amount: int, defense: int) -> int:
+	return maxi(1, ceili(amount * maxf(0.30, 40.0 / (float(maxi(0, defense)) + 40.0))))
 
 func after_hit(target: Dictionary, kind: String) -> void:
 	if kind == "" or game.health <= 0:

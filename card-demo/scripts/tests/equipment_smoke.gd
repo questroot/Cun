@@ -7,6 +7,7 @@ var checks := 0
 var failures := 0
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(ok: bool, message: String) -> void:
@@ -146,7 +147,7 @@ func run_checks() -> void:
 	await key(KEY_C)
 	var attack: int = gear.bonuses().attack
 	# J and K run the actual action and collision paths, against living targets.
-	game.states[game.region].enemies = [{"position": game.player_foot + Vector2(80, 0), "hp": 500, "flash": 0.0}]
+	game.states[game.region].enemies = [game.Guards.create(game.player_foot + Vector2(80, 0), "melee").merged({"hp": 500, "flash": 0.0}, true)]
 	var enemy: Dictionary = game.states[game.region].enemies[0]
 	game.facing = Vector2.RIGHT
 	game.cooldowns.j = 0
@@ -160,13 +161,17 @@ func run_checks() -> void:
 	before = enemy.hp
 	check(game.attack("l") and enemy.hp == before - 42 - attack, "L范围攻击实际使用装备伤害")
 	var defense: int = gear.bonuses().defense
-	check(defense > 0 and game.incoming_damage(20) == 20 - defense and game.incoming_damage(1) == 1, "减伤计算生效且不能免疫全部伤害")
+	check(defense > 0 and game.incoming_damage(20) == ceili(20.0 * 40.0 / (40.0 + defense)) and game.incoming_damage(1) == 1, "减伤计算生效且不能免疫全部伤害")
 	enemy.position = game.player_foot
 	enemy.damage = 20
+	enemy.behavior = "melee"
+	enemy.guard_phase = "windup"
+	enemy.guard_left = 0.001
+	enemy.guard_target = game.player_foot
 	game.hurt_timer = 0
 	game.health = 100
 	game._process(0.01)
-	check(game.health == 100 - (20 - defense), "怪物接触伤害实际经过装备减伤")
+	check(game.health == 100 - (ceili(20.0 * 40.0 / (40.0 + defense))), "怪物蓄力攻击实际经过装备减伤")
 	game.health = 100
 	game.hurt_timer = 0
 	for y in range(500, 2000, 150):
@@ -176,7 +181,7 @@ func run_checks() -> void:
 	var hazard := {"damage": 20, "position": game.player_foot, "hit": false}
 	# Trap hit also exercises the shared incoming-damage hook directly.
 	traps._try_hit(hazard, {"radius": 100.0, "duration": 0.0, "push": 0.0, "name": "测试陷阱"})
-	check(game.health == 100 - (20 - defense), "地图陷阱实际经过装备减伤")
+	check(game.health == 100 - (ceili(20.0 * 40.0 / (40.0 + defense))), "地图陷阱实际经过装备减伤")
 	game.health = 100
 	game.hurt_timer = 0
 	traps.slow_left = 0
@@ -186,7 +191,7 @@ func run_checks() -> void:
 	boss.windup = 0.001
 	boss.target = game.player_foot
 	bosses.tick(0.01)
-	check(game.health == 100 - maxi(1, int(boss_config.damage) - defense), "首领预警攻击实际经过装备减伤")
+	check(game.health == 100 - ceili(float(boss_config.damage) * 40.0 / (40.0 + defense)), "首领预警攻击实际经过装备减伤")
 	# Exercise real movement input rather than merely reading the computed speed.
 	enemy.position = game.player_foot + Vector2(700, 0)
 	game.player_foot = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size

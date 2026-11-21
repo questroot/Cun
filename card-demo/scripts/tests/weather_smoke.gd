@@ -9,6 +9,7 @@ var game
 var weather
 
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 
 func check(condition: bool, message: String) -> void:
@@ -132,12 +133,14 @@ func run_checks() -> void:
 	check(weather.elapsed == 85 and weather.plots.grove[0].growth == grove_growth, "往返地图保留天气与药圃进度")
 	# Combat uses weather stats; controlled fixtures avoid unrelated enemies/pickups.
 	game.player_foot = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size
-	game.states.grove.enemies = [{"position": game.player_foot, "hp": 80, "max_hp": 80, "damage": 15, "speed": 60.0, "flash": 0.0, "drop": "warmflower"}]
+	game.states.grove.enemies = [game.Guards.create(game.player_foot, "melee").merged({"hp": 80, "max_hp": 80, "damage": 15, "speed": 60.0, "flash": 0.0, "drop": "warmflower"}, true)]
+	game.states.grove.enemies[0].merge({"guard_phase": "windup", "guard_left": 0.001, "guard_target": game.player_foot}, true)
 	game.hurt_timer = 0
 	game._process(0.1)
-	check(game.health == 85, "熔火怪实际接触伤害为15")
+	check(game.health == 85, "熔火怪蓄力攻击实际伤害为15")
 	game.states.grove.enemies[0].position = game.player_foot + Vector2(120, 0)
 	var enemy_start: Vector2 = game.states.grove.enemies[0].position
+	game.states.grove.enemies[0].guard_phase = "idle"
 	game._process(0.1)
 	check(is_equal_approx(enemy_start.distance_to(game.states.grove.enemies[0].position), 6.0), "熔火怪实际按60移速追击")
 	var loot_before: int = game.remaining_resources("grove").get("warmflower", 0)

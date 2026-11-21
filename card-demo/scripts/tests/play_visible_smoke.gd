@@ -2,6 +2,7 @@ extends SceneTree
 ## Boundary fixture only: deliberately positions actors/warnings; not real-input gameplay.
 var failures := 0
 func _initialize() -> void:
+	ProjectSettings.set_setting("fudi/persistence_enabled", false)
 	call_deferred("run_checks")
 func check(ok: bool, label: String) -> void:
 	print(("PASS: " if ok else "FAIL: ")+label)

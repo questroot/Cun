@@ -39,6 +39,21 @@ func _exit_tree() -> void:
 func level(item: String) -> int:
 	return int(Loot.ITEMS.get(item, {}).get("fusion_level", 0))
 
+func register_item(source: String, fusion_level: int) -> String:
+	if not Loot.ITEMS.has(source) or level(source) != 0 or fusion_level < 1 or fusion_level > MAX_LEVEL:
+		return ""
+	var id := "%s@fusion%d" % [source, fusion_level]
+	if not Loot.ITEMS.has(id):
+		var metadata: Dictionary = Loot.ITEMS[source].duplicate()
+		metadata.name = "%s +%d" % [metadata.name, fusion_level]
+		metadata["base_item"] = Loot.base_item(source)
+		metadata["fusion_source"] = source
+		metadata["fusion_level"] = fusion_level
+		Loot.ITEMS[id] = metadata
+		Items.ITEMS[id] = metadata
+		created.append(id)
+	return id
+
 func donor_count(target: String, donor: String) -> int:
 	if Catalog.slot(target) == "" or Catalog.slot(target) != Catalog.slot(donor) or level(donor) > 0:
 		return 0
@@ -96,16 +111,7 @@ func fuse(target: String, mode: int, material: String) -> Dictionary:
 		recipe.reason = "请先打开人物装备面板"
 	if not recipe.ok:
 		return recipe
-	var result_id := "%s@fusion%d" % [recipe.source, recipe.next_level]
-	if not Loot.ITEMS.has(result_id):
-		var metadata: Dictionary = Loot.ITEMS[recipe.source].duplicate()
-		metadata.name = "%s +%d" % [metadata.name, recipe.next_level]
-		metadata["base_item"] = Loot.base_item(recipe.source)
-		metadata["fusion_source"] = recipe.source
-		metadata["fusion_level"] = recipe.next_level
-		Loot.ITEMS[result_id] = metadata
-		Items.ITEMS[result_id] = metadata
-		created.append(result_id)
+	var result_id := register_item(recipe.source, int(recipe.next_level))
 	game.inventory[target] -= 1
 	game.inventory[material] -= int(recipe.cost_count)
 	game.inventory[result_id] = int(game.inventory.get(result_id, 0)) + 1
@@ -118,6 +124,7 @@ func fuse(target: String, mode: int, material: String) -> Dictionary:
 	notice = "融合成功：%s；已消耗 %s ×%d" % [Loot.ITEMS[result_id].name, recipe.cost_name, recipe.cost_count]
 	gear.refresh()
 	game._refresh_ui()
+	if game.persistence != null: game.persistence.request_save()
 	recipe["item"] = result_id
 	return recipe
 
