@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="192" viewBox="0 0 96 128">
+<title>岚 · 航线领航员</title>
+<g stroke="#203941" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+<!-- Wind lifts the silk pennant scarf behind the upturned storm collar -->
+<path fill="#73c1af" d="M50 40q12-5 20-15 7-7 19-5l-8 7 6 2q-11-1-16 5-7 11-21 14z"/><path d="M59 39q11-5 15-12" fill="none" stroke="#3d827e"/>
+<!-- Asymmetric coat tails, long legs, broad stance -->
+<path fill="#284554" d="M35 64l22-2 9 25 12 16q-20-1-28-12-9 9-29 10l8-19z"/>
+<path fill="#718287" d="M35 78l24-1 2 17 10 18-9 6-13-18-4-11-7 16-2 10-12-1 3-18z"/>
+<path fill="#273c49" d="M25 107l13 2-3 12-1 4H15q-1-4 8-8zm33 1 11-5 5 13 8 3 1 4-19 1z"/><path d="M18 122h14m35-1 13-1" fill="none" stroke="#c8a36c"/>
+<!-- Double-breasted survey coat, buff facing and cross-body chart case -->
+<path fill="#354f67" d="M32 41l9-6 11 1 11 7-2 23 7 18-13 5-9-11-13 12-11-3 8-26-5-9z"/>
+<path fill="#e6d1a6" d="M34 41l7-4 10 2-1 15-8 17-6-17z"/>
+<path fill="#56778a" d="M30 38l8 1 5 24-14-14 5-2zm25-3 6 7-9 8 3 2-12 12 8-21z"/>
+<path fill="#c29262" d="M54 39l5 4-24 35-6-3z"/><path fill="#f0d49b" d="M43 54l6 3-4 6-6-4z"/>
+<path d="M29 83l5 2 8-9m13 7 8-2" fill="none" stroke="#b3a47e" stroke-width="1.7"/>
+<path fill="#9b6a50" d="M23 69l13 5-5 13-14-5z"/><path fill="#bf9470" d="M22 68l15 5-3 6-14-5z"/>
+<!-- Open, creased chart in the low hand -->
+<path fill="#38566c" d="M29 43q-7 0-10 9l-6 12 6 8 11-9 5-11"/><path fill="#e4d2a3" d="M5 61l9-3 8 6 10-1-6 18-10 1-8-7-7 1z"/><path fill="none" stroke="#78938c" stroke-width="1.5" d="M14 60l-4 13m12-8-5 14M5 69l4-3 4 2 4-1 5 6 5-3"/>
+<path fill="#bd886a" d="M17 64l4-4 5 1 1 6-5 4-5-3z"/>
+<!-- Right arm points a brass spyglass into the wind -->
+<path fill="#436279" d="M58 43q7-4 11 7l6-14 8 4q-3 18-11 23-7 2-15-9"/><path fill="#d2b67f" d="M73 36l2-5 10 4-2 7z"/>
+<!-- Salt-grey swept hair beneath the watch cap, profile looking outward -->
+<path fill="#c5c4ab" d="M29 17q8-12 21-7l7 8-3 13-10 8-14-2 4-4-8-1 5-5-6 1z"/>
+<path fill="#bf8e71" d="M35 19l17-5 5 8 1 4 4 4-5 2-2 5-8 1-3 4-8-4 2-7-4-4q-5-1-3-6z"/>
+<path fill="#d6d0b0" d="M31 17l20-5 5 6-11 3-6 9-2-6-4 1z"/><path d="M50 24l4-1m-3 11h3" fill="none" stroke="#604f49" stroke-width="1.8"/>
+<path fill="#294652" d="M26 17Q23 9 35 7q8-6 19-4l4 9-9 6-17 4z"/><path fill="#568b88" d="M26 15q16-1 29-7l3 5q-15 8-30 8z"/><path fill="#253d4a" d="M43 17l13-6 10 1q-1 5-12 7l-10 1z"/>
+<path fill="#e5c688" d="M45 10l4-2 2 3-4 3z"/>
+<path fill="#bfa06b" d="M56 23l12-3 1 5-12 3z"/><path fill="#c9af78" d="M65 20l14-5 3 8-15 4z"/><path fill="#947749" d="M76 15l11-4 4 10-12 4z"/><path fill="#97d5c6" d="M86 12q3-4 6 3t-2 7z"/>
+<path fill="#c69370" d="M76 33l-2-8 2-3 2 3 3-2 3 3-1 8-3 2z"/>
+</g></svg>

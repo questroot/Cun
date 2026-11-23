@@ -16,7 +16,7 @@ var active_id: String = ""
 # Compile after autoload initialization, without running the sea's _ready/save paths.
 func memory_host_script() -> GDScript:
 	var script: GDScript = GDScript.new()
-	script.source_code = "extends \"res://scripts/scenes/water_activity.gd\"\nfunc _ready() -> void:\n\tmodel = HeroWalkScript.new()\n\tadd_child(model)\n\tpublic_project_result_button = Button.new()\n\tadd_child(public_project_result_button)\n\tpublic_project_result_button.hide()\nfunc _process(_delta: float) -> void: pass\nfunc _draw() -> void: pass\nfunc _input(_event: InputEvent) -> void: pass\nfunc _unhandled_input(_event: InputEvent) -> void: pass\nfunc _notification(_what: int) -> void: pass\nfunc _exit_tree() -> void: pass\n"
+	script.source_code = "extends \"res://scripts/scenes/water_activity.gd\"\nfunc _ready() -> void:\n\tmodel = SeaCrewActor.new()\n\tadd_child(model)\n\tpublic_project_result_button = Button.new()\n\tadd_child(public_project_result_button)\n\tpublic_project_result_button.hide()\nfunc _process(_delta: float) -> void: pass\nfunc _draw() -> void: pass\nfunc _input(_event: InputEvent) -> void: pass\nfunc _unhandled_input(_event: InputEvent) -> void: pass\nfunc _notification(_what: int) -> void: pass\nfunc _exit_tree() -> void: pass\n"
 	check(script.reload() == OK, "内存宿主适配脚本编译")
 	return script
 

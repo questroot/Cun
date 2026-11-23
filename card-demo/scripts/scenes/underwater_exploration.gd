@@ -1,12 +1,15 @@
 extends Control
 
 signal returned
-const FIELD := Rect2(70, 155, 1130, 470)
+const Art = preload("res://scripts/scenes/dive_art_chart.gd")
+const InstrumentTheme = preload("res://scripts/water_instrument_theme.gd")
+const Survey = preload("res://scripts/scenes/dive_survey.gd")
+const FIELD := Survey.FIELD
 const RADIUS := 12.0
 const SPEED := 230.0
 const Catalog = preload("res://scripts/scenes/underwater_catalog.gd")
 const BAG_RECT := Rect2(300, 220, 680, 310)
-const HeroWalk = preload("res://scripts/scenes/hero_walk_sprite.gd")
+const SeaCrewActor = preload("res://scripts/scenes/sea_crew_actor.gd")
 const BACKDROPS := {
 	"shoal": preload("res://assets/backgrounds/fudi/wetland.webp"),
 	"wreck": preload("res://assets/backgrounds/fudi/causeway.webp"),
@@ -14,7 +17,7 @@ const BACKDROPS := {
 }
 const CHEST_ART := preload("res://assets/pixel/fudi/chests/normal_closed.png")
 const SITE_MARKER := preload("res://assets/ui/quest-markers/blue-question.png")
-var model: HeroWalk
+var model: SeaCrewActor
 var oxygen := Catalog.OXYGEN
 var warned := false
 var warning_count := 0
@@ -39,7 +42,9 @@ var records_tabs: HBoxContainer
 var clues_tab: Button
 var species_tab: Button
 var orders_tab: Button
-var orders_content: Label
+const ArchiveFolio = preload("res://scripts/scenes/dive_archive_folio.gd")
+var folio: ArchiveFolio
+var orders_content: HBoxContainer
 var clues_content: VBoxContainer
 var species_content: VBoxContainer
 var species_count: Label
@@ -238,28 +243,30 @@ func build_records() -> void:
 	orders_tab.custom_minimum_size = Vector2(220, 42)
 	orders_tab.pressed.connect(show_records_page.bind("orders"))
 	records_tabs.add_child(orders_tab)
-	orders_content = Label.new()
-	orders_content.position = Vector2(100, 205)
-	orders_content.size = Vector2(1070, 410)
-	orders_content.add_theme_font_size_override("font_size", 17)
+	folio = ArchiveFolio.new()
+	for i in records_tabs.get_child_count():
+		var tab: Button = records_tabs.get_child(i)
+		tab.text = "%02d    %s" % [i + 1, tab.text]
+		tab.custom_minimum_size = Vector2(366, 42)
+	archive_button.theme_type_variation = &"HarborLaunch"
+	orders_content = HBoxContainer.new()
+	orders_content.position = Vector2(70, 205)
+	orders_content.size = Vector2(1130, 408)
+	orders_content.add_theme_constant_override("separation", 14)
 	add_child(orders_content)
+	folio.build_orders(orders_content)
 	clues_content = VBoxContainer.new()
-	clues_content.position = Vector2(100, 225)
-	clues_content.size = Vector2(1070, 350)
-	clues_content.add_theme_constant_override("separation", 45)
+	clues_content.position = Vector2(70, 206)
+	clues_content.size = Vector2(1130, 405)
+	clues_content.add_theme_constant_override("separation", 10)
 	add_child(clues_content)
-	for i in 4:
-		var label := Label.new()
-		label.add_theme_font_size_override("font_size", 23)
-		clues_content.add_child(label)
+	folio.build_clues(clues_content)
 	species_content = VBoxContainer.new()
 	species_content.position = Vector2(70, 197)
 	species_content.size = Vector2(1130, 426)
 	species_content.add_theme_constant_override("separation", 8)
 	add_child(species_content)
-	species_count = Label.new()
-	species_count.add_theme_font_size_override("font_size", 18)
-	species_content.add_child(species_count)
+	species_count = folio.build_species_header(species_content)
 	var regions := HBoxContainer.new()
 	regions.add_theme_constant_override("separation", 12)
 	species_content.add_child(regions)
@@ -269,8 +276,8 @@ func build_records() -> void:
 		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		column.add_theme_constant_override("separation", 8)
 		regions.add_child(column)
-		var region_label := Label.new()
-		column.add_child(region_label)
+		var region_index := ["shoal", "wreck", "trench"].find(region)
+		var region_label := ArchiveFolio.label(column, "", 18, ArchiveFolio.INKS[region_index])
 		species_regions[region] = region_label
 		for id in entries:
 			var entry: Dictionary = entries[id]
@@ -283,15 +290,22 @@ func build_records() -> void:
 			var icon := Control.new()
 			icon.custom_minimum_size = Vector2(66, 100)
 			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var serial := entries.keys().find(id) + 1
 			icon.draw.connect(func() -> void:
-				draw_creature(icon, Vector2(33, 49), entry.shape, entry.color if host.species_records.get(id, false) else Color("#344658"), not host.species_records.get(id, false)))
+				var accent: Color = ArchiveFolio.INKS[region_index]
+				icon.draw_rect(Rect2(0, 0, 61, icon.size.y), Color("#0a202a"))
+				icon.draw_arc(Vector2(30, 52), 25, 0, TAU, 40, Color("#395866"), 1.0, true)
+				icon.draw_string(ThemeDB.fallback_font, Vector2(7, 16), "E / %02d" % serial, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, accent)
+				draw_creature(icon, Vector2(30, 52), entry.shape, entry.color if host.species_records.get(id, false) else Color("#506879"), not host.species_records.get(id, false)))
 			row.add_child(icon)
-			var text := Label.new()
-			text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var details := VBoxContainer.new()
+			details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			details.alignment = BoxContainer.ALIGNMENT_CENTER
+			row.add_child(details)
+			var text := ArchiveFolio.label(details, "", 16)
 			text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			text.add_theme_font_size_override("font_size", 15)
-			row.add_child(text)
-			species_cards[id] = {"text": text, "icon": icon}
+			var stamps := ArchiveFolio.label(details, "", 15, ArchiveFolio.INKS[region_index])
+			species_cards[id] = {"text": text, "icon": icon, "stamps": stamps}
 
 func refresh_records() -> void:
 	var locations := {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}
@@ -301,17 +315,7 @@ func refresh_records() -> void:
 	species_content.visible = records_page == "species"
 	orders_tab.button_pressed = records_page == "orders"
 	orders_content.visible = records_page == "orders"
-	var order_lines: Array[String] = ["阿汐委托 · 成功入库统一交付；新单从下次归档起结算。"]
-	if not host.tide_table: order_lines.append("建成潮测台后开放三单。")
-	for order in host.dive_archive.orders:
-		var config: Dictionary = Catalog.ORDER_POOL[int(order.kind)]
-		var request: String = ("观察" + String(Catalog.species()[config.observe].name)) if config.has("observe") else (Catalog.item_name(config.item) + " ×%d" % int(config.amount))
-		order_lines.append("#%d  %s → %s ×%d" % [int(order.id), request, {"wood": "木", "scrap": "废", "fiber": "纤维", "water": "清水", "salt": "盐"}[config.reward], int(config.count)])
-	order_lines.append("\n安全航程 %d · 每5次一条线索（最多10条）" % int(host.dive_archive.voyages))
-	for i in mini(10, int(host.dive_archive.voyages) / 5): order_lines.append("%d. %s" % [i + 1, Catalog.VOYAGE_CLUES[i]])
-	orders_content.text = "\n".join(order_lines)
-	var lines := ["珊瑚浅滩：" + ("船舷金属片，光迹指向船尾。" if host.dive_shoal else "尚未调查"), "侧倾沉船：" + ("声呐台记录间歇光带与海沟方向。" if host.dive_sonar else "尚未调查"), "发光海沟：" + ("唯一回声核心已带回。" if host.dive_core else "尚未发现"), "归档：" + ("浅滩 → 船尾声呐 → 海沟核心；深处信号仍未解。" if host.dive_archived else "待取得核心并在浮台归档")]
-	for i in lines.size(): clues_content.get_child(i).text = lines[i]
+	folio.refresh(host)
 	var counts := {"shoal": 0, "wreck": 0, "trench": 0}
 	var totals := {"shoal": 0, "wreck": 0, "trench": 0}
 	var total := 0
@@ -323,13 +327,14 @@ func refresh_records() -> void:
 		if recorded:
 			counts[entry.place] += 1
 			total += 1
-		species_cards[id].text.text = (entry.name + " · 已记录\n" + locations[entry.place] + "\n" + entry.description) if recorded else ("未知生物 · 未记录\n" + locations[entry.place] + "\n靠近48像素，持续观察2秒解锁。")
-		species_cards[id].text.text += "\n安全 %s · 活捕 %s" % ["✓" if host.dive_archive.safe[id] else "—", "✓" if host.dive_archive.captured[id] else "—"]
+		species_cards[id].text.text = (entry.name + " · 已记录\n" + entry.description) if recorded else "未知生物 · 未记录\n靠近48像素，持续观察2秒解锁。"
+		species_cards[id].stamps.text = "安全认证 %s     活捕 %s" % ["✓" if host.dive_archive.safe[id] else "—", "✓" if host.dive_archive.captured[id] else "—"]
 		species_cards[id].icon.queue_redraw()
 	for region in counts:
 		species_regions[region].text = "%s · %d/%d" % [locations[region], counts[region], totals[region]]
 	var safe_count: int = host.dive_archive.safe.values().count(true)
-	species_count.text = "观察 %d/9 · 安全 %d/9 · 安全3/5/7/9种解锁捕网/护腕/捕网II/护腕II" % [total, safe_count]
+	species_count.text = "观察 %d/9   ·   安全 %d/9   /   装备门槛" % [total, safe_count]
+	folio.update_milestones(safe_count)
 	update_records_focus()
 
 func cancel_opening(reason: String) -> void:
@@ -403,6 +408,8 @@ func _exit_tree() -> void:
 func has_core() -> bool:
 	return host.dive_core or pending_core
 var oxygen_label: Label
+var bag_meter: Label
+var tide_meter: Label
 var settlement: Dictionary = {}
 var settlement_saved := false
 var return_secured := false
@@ -650,27 +657,31 @@ var close_button: Button
 var archive_button: Button
 
 func _ready() -> void:
-	model = HeroWalk.new()
-	model.scale = Vector2.ONE * 0.105
-	model.modulate = Color("#c5f7ff")
+	theme = InstrumentTheme.build()
+	model = SeaCrewActor.new()
+	model.submerged = true
 	add_child(model)
 	oxygen = oxygen_max()
 	drops = host.recoverable_drops.duplicate(true) if not read_only else []
-	oxygen_label = _label(Vector2(70, 133), 16)
+	oxygen_label = _label(Vector2(345, 39), 22)
+	bag_meter = _label(Vector2(612, 39), 21)
+	tide_meter = _label(Vector2(780, 39), 20)
+	bag_meter.visible = not read_only
+	tide_meter.visible = not read_only
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	focus_mode = Control.FOCUS_NONE
-	heading = _label(Vector2(70, 30), 30)
-	feedback = _label(Vector2(70, 90), 20)
-	prompt = _label(Vector2(70, 640), 19)
-	rules_label = _label(Vector2(70, 72), 16)
-	rules_label.text = "耗尽丢整袋/新核心；安全上浮入库认证。靠近生物观察2秒；J推开，硬直时E活捕（需捕网/2格）。"
+	heading = _label(Vector2(74, 36), 31)
+	feedback = _label(Vector2(74, 78 if read_only else 103), 16)
+	prompt = _label(Vector2(70 if read_only else 204, 641), 18)
+	rules_label = _label(Vector2(74, 80), 15)
+	rules_label.text = "安全上浮入库 · 耗尽丢失整袋和新核心　｜　靠近生物观察 2 秒，J 推开，E 活捕（需捕网与 2 格）。"
 	rules_label.visible = not read_only
-	feedback.position.y = 94
-	feedback.add_theme_font_size_override("font_size", 14)
+	feedback.add_theme_color_override("font_color", Color("#b6d9d2"))
 	close_button = Button.new()
 	close_button.text = "关闭记录 / Esc" if read_only else "安全点返航 / Esc"
-	close_button.position = Vector2(980, 30)
+	close_button.theme_type_variation = &"HarborPrimary"
+	close_button.position = Vector2(980, 20)
 	close_button.size = Vector2(220, 44)
 	close_button.pressed.connect(request_return)
 	add_child(close_button)
@@ -684,11 +695,11 @@ func _ready() -> void:
 		close_button.grab_focus()
 	)
 	add_child(archive_button)
-	heading.size.x = 900
-	feedback.size = Vector2(1130, 36)
+	heading.size.x = 260
+	feedback.size = Vector2(890, 48)
 	feedback.clip_text = true
 	feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	prompt.size = Vector2(680 if read_only else 1130, 70)
+	prompt.size = Vector2(680 if read_only else 995, 70)
 	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if not read_only and ResourceLoader.exists("res://scripts/scenes/underwater_audio.gd"):
 		audio = load("res://scripts/scenes/underwater_audio.gd").new()
@@ -696,14 +707,14 @@ func _ready() -> void:
 		audio.enter(place)
 		var mute := Button.new()
 		mute.text = "静音"
-		mute.position = Vector2(780, 30)
+		mute.position = Vector2(980, 79)
 		mute.size = Vector2(90, 40)
 		mute.pressed.connect(func() -> void:
 			audio.set_muted(not audio.muted)
 			mute.text = "恢复声音" if audio.muted else "静音")
 		add_child(mute)
 		var volume := HSlider.new()
-		volume.position = Vector2(875, 40)
+		volume.position = Vector2(1090, 87)
 		volume.size = Vector2(95, 24)
 		volume.max_value = 100
 		volume.value = 70
@@ -728,11 +739,7 @@ func _label(at: Vector2, font_size: int) -> Label:
 	return label
 
 func obstacles() -> Array[Rect2]:
-	match place:
-		"shoal": return [Rect2(430, 155, 65, 190), Rect2(430, 435, 65, 190)]
-		"wreck": return [Rect2(390, 155, 90, 300 if narrow_wreck else 280), Rect2(390, 535, 90, 90), Rect2(480, 155, 570, 70), Rect2(480, 555, 570, 70)]
-		"trench": return [Rect2(70, 155, 1130, 175), Rect2(70, 490, 1130, 135), Rect2(960, 155, 240, 470)]
-	return []
+	return Survey.obstacles(place, narrow_wreck)
 
 func can_stand(point: Vector2) -> bool:
 	if not FIELD.grow(-RADIUS).has_point(point):
@@ -752,11 +759,7 @@ func move_step(motion: Vector2) -> void:
 		if can_stand(next): foot = next
 
 func sites() -> Array:
-	match place:
-		"shoal": return [["光迹", Vector2(650, 390)], ["船尾航路", Vector2(1080, 490)], ["上浮出口", Vector2(145, 520)]]
-		"wreck": return [["声呐台", Vector2(720, 375)], ["海沟入口", Vector2(1080, 480)], ["返回浅滩", Vector2(145, 490)], ["上浮出口", Vector2(1100, 290)]]
-		"trench": return [["回声核心", Vector2(875, 410)], ["返回沉船", Vector2(145, 410)], ["上浮出口", Vector2(350, 410)]]
-	return []
+	return Survey.sites(place)
 
 func site_text(site: String) -> String:
 	match site:
@@ -853,21 +856,29 @@ func refresh() -> void:
 		if bag_open or settling or ascending > 0: model.update_movement(Vector2.ZERO, 0)
 	if not is_instance_valid(heading) or not settlement.is_empty(): return
 	oxygen_label.visible = not read_only
-	oxygen_label.text = "氧气 %.1f / %.0f 秒 ×%.2f  网袋 %d/%d · B查看 · 光柱附近Esc上浮" % [oxygen, oxygen_max(), Catalog.RATES[place], used_slots(), capacity()]
-	oxygen_label.text += " · %s %ds · J推开/E活捕" % [tide().name, ceili(tide().left)]
+	oxygen_label.text = "%.1f / %.0f 秒" % [oxygen, oxygen_max()]
+	oxygen_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	oxygen_label.tooltip_text = "当地耗氧倍率 ×%.2f" % Catalog.RATES[place]
+	bag_meter.text = "%02d / %02d 格" % [used_slots(), capacity()]
+	var current_tide := tide()
+	tide_meter.text = "%s · %ds" % [current_tide.name, ceili(current_tide.left)]
 	if is_instance_valid(audio):
 		audio.set_tide(tide().rising)
 		audio.set_oxygen(oxygen / oxygen_max())
-	if warned: oxygen_label.text += " · 低氧警告！耗尽整袋丢失，立即前往光柱"
-	oxygen_label.modulate = Color.YELLOW if warned else Color.WHITE
-	heading.text = "浮台 · 探索记录" if read_only else {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}[place] + " · WASD / 方向键 / 点击移动"
+	if warned: oxygen_label.text = "低氧警告 %.1fs · 整袋丢失" % oxygen
+	oxygen_label.add_theme_font_size_override("font_size", 17 if warned else 22)
+	oxygen_label.modulate = Art.AMBER if warned else Art.GLASS
+	heading.text = "浮台 · 探索记录" if read_only else {"shoal": "珊瑚浅滩", "wreck": "侧倾沉船", "trench": "发光海沟"}[place]
 	feedback.text = (host._dive_summary() + ("\n" + message if message.contains("失败") else "")) if read_only else message
 	archive_button.visible = read_only and records_page == "clues"
 	archive_button.disabled = not host.dive_core or host.core_reward_claimed
 	archive_button.text = "已归档领奖 · 无需重复" if host.core_reward_claimed else ("补领工坊位＋木2废2" if host.dive_archived else ("首次归档：工坊位＋木2废2" if host.dive_core else "尚未取得核心 · 暂不可归档"))
 	if read_only:
 		refresh_records()
-		prompt.text = "已归档 · 可随时重访" if host.dive_archived else ("带回核心，点击归档完成记录" if host.dive_core else "可提前返航；已调查线索持续保留")
+		match records_page:
+			"clues": prompt.text = "已归档 · 可随时重访" if host.dive_archived else ("核心已带回 · 在右侧归档领取奖励" if host.dive_core else "已调查线索持续保留；安全带回核心后可归档。")
+			"species": prompt.text = "图鉴只读   /   观察后记录物种，安全入库后认证。"
+			"orders": prompt.text = "航务只读   /   交付与航程在安全入库时结算。"
 	else:
 		prompt.text = safety_hint()
 		var chosen := nearest_target()
@@ -904,7 +915,7 @@ func _input(event: InputEvent) -> void:
 				refresh()
 			if event.keycode == KEY_ESCAPE: request_return()
 			elif event.keycode == KEY_C:
-				message = "装备只读：面具%d / 瓶%d / 蹼%d级；制造请返回浮台C工坊。" % [host.equipment_level("mask"), host.equipment_level("tank"), host.equipment_level("fins")]
+				message = "装备只读：面具 %d · 氧气瓶 %d · 脚蹼 %d · 网袋 %d　｜　捕网 %d · 护腕 %d；制造请返回浮台 C 工坊。" % [host.equipment_level("mask"), host.equipment_level("tank"), host.equipment_level("fins"), host.net_expansion, host.equipment_level("capture_net"), host.equipment_level("wrist")]
 				refresh()
 			elif event.keycode == KEY_B and not read_only and not settling and ascending <= 0:
 				reset_observation()
@@ -1030,22 +1041,27 @@ func draw_species() -> void:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#071b2b"))
 	if not settlement.is_empty(): return
-	if read_only: return
+	if read_only:
+		draw_rect(Rect2(52, 12, 1166, 120), Color("#102b38"))
+		draw_rect(Rect2(52, 12, 4, 120), Art.AMBER)
+		draw_string(ThemeDB.fallback_font, Vector2(74, 34), "探索档案   /   FIELD ARCHIVE", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Art.AMBER)
+		draw_rect(Rect2(52, 192, 1166, 436), Color("#102b38"))
+		draw_rect(Rect2(52, 635, 1166, 76), Color("#17353e"))
+		draw_rect(Rect2(52, 635, 4, 76), Art.GLASS)
+		return
 	# 福地背景仅作水下氛围；通行区域和真实障碍始终使用原矩形。
 	draw_texture_rect(BACKDROPS[place], FIELD, false, Color("#78cbdc"))
 	draw_rect(FIELD, {"shoal": Color(0.03, 0.28, 0.36, 0.72), "wreck": Color(0.02, 0.17, 0.26, 0.78), "trench": Color(0.01, 0.10, 0.22, 0.82)}[place])
+	Art.water(self, place, elapsed)
 	for obstacle in obstacles():
 		draw_rect(obstacle, {"shoal": Color("#365962"), "wreck": Color("#3a4855"), "trench": Color("#202d44")}[place])
 		for y in range(int(obstacle.position.y + 14), int(obstacle.end.y), 24):
 			draw_line(Vector2(obstacle.position.x + 4, y), Vector2(minf(obstacle.position.x + 20, obstacle.end.x - 4), minf(y + 12, obstacle.end.y - 3)), Color("#66828c"), 2)
-	if place == "shoal":
-		draw_colored_polygon(PackedVector2Array([Vector2(825, 235), Vector2(1120, 270), Vector2(1050, 315), Vector2(850, 290)]), Color("#17404f"))
-		draw_line(Vector2(960, 270), Vector2(940, 180), Color("#17404f"), 7)
-	elif place == "wreck":
-		draw_line(Vector2(480, 260), Vector2(1020, 310), Color("#987b62"), 12)
+		Art.barrier(self, obstacle, place)
+	if place == "wreck":
 		draw_string(ThemeDB.fallback_font, Vector2(275, 285), "船头堵死", HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Color.WHITE)
 		draw_string(ThemeDB.fallback_font, Vector2(350, 510), "船尾缺口 →", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
-	else:
+	elif place == "trench":
 		for i in 12:
 			var glow := 0.45 + 0.4 * sin(elapsed * 2.5 - i * 0.5)
 			draw_circle(Vector2(220 + i * 60, 440), 9, Color(0.25, 0.95, 0.9, glow))
@@ -1062,13 +1078,13 @@ func _draw() -> void:
 	# 暗区也保留碰撞边界，避免背景里的桥路被误认为实际通道。
 	draw_rect(FIELD, Color("#83bccb"), false, 2)
 	for obstacle in obstacles(): draw_rect(obstacle, Color("#8bb3bd"), false, 2)
-	draw_string(ThemeDB.fallback_font, Vector2(80, 178), "福地素材试景 · 背景仅氛围 / 实线框与斜纹为不可通行区", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#d0eef3"))
+	Art.hud(self, FIELD, place)
 	if not at_safety():
 		var arrow := (safety_position() - foot).normalized()
 		var tip := foot + arrow * 48
-		draw_line(foot + arrow * 24, tip, Color.CYAN, 3)
-		draw_line(tip, tip - arrow.rotated(0.55) * 12, Color.CYAN, 3)
-		draw_line(tip, tip - arrow.rotated(-0.55) * 12, Color.CYAN, 3)
+		draw_line(foot + arrow * 24, tip, Art.GLASS, 3)
+		draw_line(tip, tip - arrow.rotated(0.55) * 12, Art.GLASS, 3)
+		draw_line(tip, tip - arrow.rotated(-0.55) * 12, Art.GLASS, 3)
 	if moving:
 		draw_arc(target, 10, 0, TAU, 20, Color("#ffe6a4"), 2)
 		draw_line(target - Vector2(15, 0), target + Vector2(15, 0), Color("#ffe6a4"), 2)
@@ -1078,20 +1094,16 @@ func _draw() -> void:
 		draw_string(ThemeDB.fallback_font, shell[1] - Vector2(35, 22), "临时贝群 · E", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 	for site in sites():
 		if site[0] == "上浮出口":
-			draw_rect(Rect2(Vector2(site[1].x - 15, FIELD.position.y), Vector2(30, site[1].y - FIELD.position.y)), Color(0.5, 1.0, 0.9, 0.22))
-		draw_circle(site[1], 19, Color(0.2, 0.8, 0.8, 0.25))
-		draw_arc(site[1], 19, 0, TAU, 32, Color("#84e6d5"), 2)
-		if site[0] == "上浮出口":
-			draw_arc(site[1], Catalog.SAFETY_RADIUS, 0, TAU, 48, Color(0.5, 1, 0.9, 0.6), 2)
-			draw_line(site[1] + Vector2(0, 10), site[1] - Vector2(0, 12), Color.WHITE, 3)
-			draw_line(site[1] - Vector2(0, 12), site[1] + Vector2(-8, -4), Color.WHITE, 3)
-			draw_line(site[1] - Vector2(0, 12), site[1] + Vector2(8, -4), Color.WHITE, 3)
+			Art.beacon(self, site[1], Catalog.SAFETY_RADIUS, elapsed)
 		else:
+			draw_circle(site[1], 19, Art.INK)
+			draw_arc(site[1], 19, 0, TAU, 32, Color("#84b9bc"), 1.5)
 			draw_texture_rect(SITE_MARKER, Rect2(site[1] - Vector2(10, 13), Vector2(20, 25)), false)
 		var text := site_text(site[0])
 		var width := ThemeDB.fallback_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 		var label_at := Vector2(clampf(site[1].x - width / 2, FIELD.position.x, FIELD.end.x - width), site[1].y - 30)
-		draw_string(ThemeDB.fallback_font, label_at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+		draw_rect(Rect2(label_at - Vector2(3, 18), Vector2(width + 6, 23)), Color("#0b2034d9"))
+		draw_string(ThemeDB.fallback_font, label_at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Art.GLASS if site[0] == "上浮出口" else Color.WHITE)
 	draw_circle(foot, RADIUS, Color(0.03, 0.12, 0.18, 0.65))
 	draw_arc(foot, RADIUS, 0, TAU, 24, Color("#fff4cf"), 2)
 	for node in Catalog.NODES[place]:
@@ -1119,16 +1131,30 @@ func _draw() -> void:
 	var chosen := nearest_target()
 	if not chosen.is_empty(): draw_arc(chosen.position, 25, 0, TAU, 24, Color.YELLOW, 3)
 	var ratio := oxygen / oxygen_max()
-	draw_rect(Rect2(980, 82, 220, 10), Color("#18394a"))
-	draw_rect(Rect2(980, 82, 220 * ratio, 10), Color.YELLOW if warned else Color.CYAN)
+	draw_rect(Rect2(345, 69, 232, 4), Color("#284a53"))
+	draw_rect(Rect2(345, 69, 232 * ratio, 4), Art.AMBER if warned else Art.GLASS)
+	for i in range(1, 8):
+		draw_line(Vector2(345 + i * 29, 69), Vector2(345 + i * 29, 73), Art.INK, 1)
 	if ratio <= 0.15:
 		var shade := Color(0, 0, 0, 0.65 * (1.0 - ratio / 0.15))
 		for edge in [Rect2(0, 0, 45, 720), Rect2(1235, 0, 45, 720), Rect2(0, 0, 1280, 20), Rect2(0, 700, 1280, 20)]: draw_rect(edge, shade)
 	if bag_open:
-		draw_rect(BAG_RECT, Color("#102535"))
-		draw_string(ThemeDB.fallback_font, Vector2(320, 260), "临时网袋 %d/%d格 · 按件占格无堆叠" % [used_slots(), capacity()], HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
-		draw_string(ThemeDB.fallback_font, Vector2(320, 290), "从任一占用格按住拖出面板丢弃 · B关闭 · 氧气继续消耗", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color.YELLOW)
-		for i in capacity(): draw_rect(bag_slot(i), Color("#608b94"), false, 2)
+		draw_rect(FIELD, Color("#04131eb8"))
+		draw_rect(BAG_RECT, Color("#102b38"))
+		draw_rect(BAG_RECT, Color("#69958f"), false, 1)
+		draw_rect(Rect2(301, 221, 678, 63), Color("#21434c"))
+		draw_string(ThemeDB.fallback_font, Vector2(320, 244), "打捞装备   /   CARGO NET", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Art.GLASS)
+		draw_string(ThemeDB.fallback_font, Vector2(320, 273), "临时网袋", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(800, 264), "%02d / %02d  格" % [used_slots(), capacity()], HORIZONTAL_ALIGNMENT_RIGHT, 155, 24, Art.AMBER)
+		draw_string(ThemeDB.fallback_font, Vector2(320, 302), "按件占格 · 拖出面板丢弃", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Art.GLASS)
+		for i in capacity():
+			var slot_rect := bag_slot(i)
+			draw_rect(slot_rect, Color("#183540"))
+			draw_rect(slot_rect, Color("#395d65"), false, 1)
+			draw_string(ThemeDB.fallback_font, slot_rect.position + Vector2(7, 17), "%02d" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#9db8b7"))
+		draw_line(Vector2(320, 486), Vector2(958, 486), Color("#45636b"))
+		draw_string(ThemeDB.fallback_font, Vector2(320, 511), "注意  /  氧气继续消耗，安全上浮后才会入库。", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Art.AMBER)
+		draw_string(ThemeDB.fallback_font, Vector2(872, 511), "[ B ]  关闭", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Art.GLASS)
 		var slot := 0
 		for i in bag.size():
 			var id: String = bag[i]

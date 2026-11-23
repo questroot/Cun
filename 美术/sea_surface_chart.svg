@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1232 552" width="1232" height="552">
+ <defs>
+  <linearGradient id="sea" x2="1" y2=".85" gradientUnits="objectBoundingBox"><stop stop-color="#2a6669"/><stop offset=".39" stop-color="#174854"/><stop offset=".68" stop-color="#123a4c"/><stop offset="1" stop-color="#102f41"/></linearGradient>
+  <linearGradient id="shelf" x2="1" y2="1"><stop stop-color="#5a9487"/><stop offset="1" stop-color="#30656a"/></linearGradient>
+  <pattern id="grid" width="96" height="76" patternUnits="userSpaceOnUse"><path d="M96 0H0V76" fill="none" stroke="#8abab2" stroke-opacity=".23"/><path d="M45 38h6m-3-3v6" stroke="#9bbeb2" stroke-opacity=".25"/></pattern>
+  <pattern id="wave" width="157" height="91" patternUnits="userSpaceOnUse"><path d="M8 12q7-4 16-1t18-2m37 48q5-3 12-1t9-1m39 24h5" stroke="#a2d4c4" stroke-opacity=".24" fill="none" stroke-width="1.25" stroke-linecap="round"/></pattern>
+  <path id="bank" d="M-210 310C-85 282 11 311 56 220S112 179 174 167 231 81 304 71 431 99 474 35 543 6 619-30L630-260H-230Z"/>
+  <path id="shoal" d="M1234 235c-82 17-84 85-168 113s-98 14-155 54-75 81-145 91-93 37-137 65l40 132h790V218Z"/>
+  <g id="rock"><path d="m-13 5 5-7 9-3 10 4 5 7-19 3Z" fill="#647f78"/><path d="m-13 5 6-8 9-2 6 3-9 1-6 6Z" fill="#a3b6a0"/><path d="m-18 9 10 3 28-3" fill="none" stroke="#a1c8b4"/></g>
+  <g id="tick" fill="#8cb5ab"><rect width="1" height="8"/><path d="M12 0h1v3h-1zm12 0h1v4h-1zm12 0h1v3h-1zm12 0h1v6h-1zm12 0h1v3h-1zm12 0h1v4h-1zm12 0h1v3h-1z"/></g>
+  <pattern id="scale" width="96" height="8" patternUnits="userSpaceOnUse"><use xlink:href="#tick"/></pattern>
+ </defs>
+ <rect width="1232" height="552" fill="url(#sea)"/>
+ <use xlink:href="#bank" fill="#275965" transform="translate(94 67)"/><use xlink:href="#bank" fill="#31666a" transform="translate(38 25)"/><use xlink:href="#bank" fill="url(#shelf)"/>
+ <g fill="none" stroke="#a3cabc" stroke-opacity=".33"><use xlink:href="#bank" transform="translate(-18 -10)"/><use xlink:href="#bank"/><use xlink:href="#bank" transform="translate(16 14)"/><use xlink:href="#bank" transform="translate(38 25)"/><use xlink:href="#bank" transform="translate(57 44)"/><use xlink:href="#bank" transform="translate(94 67)"/><use xlink:href="#bank" transform="translate(165 98)" stroke-dasharray="5 4"/></g>
+ <use xlink:href="#shoal" fill="#174a55" transform="translate(-82 -39)"/><use xlink:href="#shoal" fill="#225963" transform="translate(-19 -12)"/><use xlink:href="#shoal" fill="#32666b" transform="translate(28 18)"/>
+ <g fill="none" stroke="#81b6a8" stroke-opacity=".4"><use xlink:href="#shoal" transform="translate(-125 -55)" stroke-dasharray="5 6"/><use xlink:href="#shoal" transform="translate(-82 -39)"/><use xlink:href="#shoal" transform="translate(-44 -24)"/><use xlink:href="#shoal" transform="translate(-19 -12)"/><use xlink:href="#shoal" transform="translate(10 5)"/><use xlink:href="#shoal" transform="translate(28 18)"/><use xlink:href="#shoal" transform="translate(47 31)"/></g>
+ <rect width="1232" height="552" fill="url(#grid)"/><rect width="1232" height="552" fill="url(#wave)"/>
+ <use xlink:href="#rock" transform="translate(42 110) rotate(-10)"/><use xlink:href="#rock" transform="translate(58 119) scale(.5)"/><use xlink:href="#rock" transform="translate(1210 486)"/><use xlink:href="#rock" transform="translate(1190 499) scale(.7)"/>
+ <g transform="translate(1194 60)"><g fill="none" stroke="#a9c6ae" stroke-opacity=".7"><circle r="17"/><circle r="21" stroke-dasharray="1 5"/><path d="M-24 0h48m-24-28v54"/></g><path d="M0-25-5 4 0 0Z" fill="#f5cc86"/><path d="M0-25 5 4 0 0Z" fill="#d29b58"/><path d="M0 15-4 1l4 3 4-3Z" fill="#a3bfaf"/><path d="M-3-29v-7l6 7v-7" fill="none" stroke="#d2dbc3" stroke-width="1.4"/></g>
+ <g fill="url(#scale)"><rect width="1232" height="8"/><rect width="1232" height="8" transform="translate(0 552) scale(1 -1)"/></g>
+ <rect x=".5" y=".5" width="1231" height="551" stroke="#8caa98" fill="none"/>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="192" viewBox="0 0 96 128">
+<title>阿汐 · 雨水收集员</title>
+<g stroke="#203941" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+<!-- Bell-mouthed inlet, brass collars and graduated sea-glass tank -->
+<path fill="#ae8755" d="M15 48l-2-18-8-6 1-4 23 2-1 4-8 6 3 15z"/><path fill="#28464c" d="M5 21q10-3 24 1l-1 3Q15 25 5 22z"/>
+<path fill="#548d90" d="M11 42q6-7 16-2l6 7 2 34q-9 11-24 4L7 78 6 52z"/><path fill="#83d5cb" stroke="none" d="M10 58q6-4 12-1l3 23q-7 4-13 0z"/><path d="M12 52l1 12m2 5 1 6" fill="none" stroke="#d6f6dd"/><path fill="#b99760" d="M7 47q9-5 21-4l2 6q-13 0-23 5zm2 29q8 4 22 0l1 7q-12 6-22 0z"/>
+<!-- Split waterproof trousers and heavy deck boots -->
+<path fill="#38505e" d="M29 83l32-2 5 20-4 14-11 2-5-18-5 14-12 1-4-18z"/><path fill="#243c47" d="M26 107l16 1-4 11-1 5H17q-2-5 6-8zm24 1 15-2 1 11 8 4-1 4H52z"/><path fill="none" stroke="#b49b73" d="M19 122h16m20 1h16"/>
+<!-- Waxed smock, overlapping bib and tool belt -->
+<path fill="#5ca69d" d="M37 40l16-1 12 7 6 16-10 6 3 16 4 11q-18 8-45-1l5-24-8-5 5-19z"/><path fill="#427b7d" stroke="none" d="M55 49l7 8-6 12 3 23-10 4 1-26z"/>
+<path fill="#e2ca9a" d="M33 44l5-1 4 13 9-1 3-13 5 2-2 16 1 24-25-1 1-24z"/><path fill="#b6986d" d="M32 77l26 1 2 13-28-2z"/><path fill="#416968" d="M37 60l14-1v9l-6 3-7-3z"/><path fill="#c9eee0" stroke="none" d="M45 61q-6 6-1 7 5-1 1-7z"/><path fill="#805d4b" d="M28 74q15 5 31 0l1 5q-18 5-32 0z"/><path fill="#d6af69" d="M42 76h8v5h-8z"/>
+<!-- Hose curls from the tank to a hand-held sampling spout -->
+<path d="M13 84c-4 19 8 22 15 14" fill="none" stroke-width="5"/><path d="M13 84c-4 19 8 22 15 14" fill="none" stroke="#bb945c" stroke-width="2"/>
+<path fill="#77bcb0" d="M25 48q-7 4-8 15l4 17 10-3-3-13 6-10"/><path fill="#d6ac79" d="M21 77l9-3 4 6-3 9-7-2z"/>
+<path fill="#7fbeb0" d="M61 47q8 1 10 13l6 4-4 9-14-7-3-8"/><path fill="#dbaa7c" d="M71 64l6-3 6 2-1 6-8 4-5-4z"/><path fill="#c59a59" d="M75 63l1-9 7-6 4 4-6 6v6z"/><path fill="#c5e7df" d="M86 55q-6 7-2 8 6 1 2-8z"/>
+<!-- Kerchief, dark curls, warm face and a broad sloping rain brim -->
+<path fill="#427579" d="M33 35l19-1 5 9-11 8-12-6-8 4 4-10z"/><path fill="#674e42" d="M30 18q9-11 23-4l6 10-3 11-4 5-19-2-5-8z"/>
+<path fill="#dfaa80" d="M35 19q8-5 18 0l4 7-1 7-6 7-8 1-6-5-3-7-3-1q-3-6 2-6l3 2z"/><path fill="#453e3e" d="M31 19l20-4 4 6-9 2-1-4-6 7-4-2-2 6z"/><path d="M41 28h2m8-2h2" fill="none"/><path d="M45 35q3 1 6-2" fill="none" stroke="#985f4d" stroke-width="1.4"/>
+<path fill="#69a8a0" d="M25 19l6-10q5-6 15-5 11 0 14 12l6 3q-18 6-41 4z"/><path fill="#c5a365" d="M28 15q14 0 30-4l2 5q-14 5-34 4z"/><path fill="#8ac7b5" d="M17 23q4-5 12-5 15 0 31-5l7 3q-1 4-18 7-21 4-32 2z"/>
+</g></svg>

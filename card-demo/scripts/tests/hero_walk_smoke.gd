@@ -104,10 +104,17 @@ func run_checks() -> void:
 		zone.target = Vector2(390, 490)
 		zone.moving = true
 		zone._process(0.11)
-		check(zone.model.walking and zone.model.facing == "NW" and zone.model.frame > 0, scene_name + "点击移动使用西北动画")
+		if scene_name == "WaterActivity":
+			check(zone.model.get_script() == preload("res://scripts/scenes/sea_crew_actor.gd") and not zone.model.submerged, "浮台使用甲板船员而非共享冒险角色")
+			check(zone.model.walking and zone.model.facing == "NW" and zone.model.stride_phase > 0.0, "甲板船员西北行走带动步态")
+		else:
+			check(zone.model.walking and zone.model.facing == "NW" and zone.model.frame > 0, scene_name + "点击移动使用西北动画")
 		zone.moving = false
 		zone._process(0.11)
-		check(not zone.model.walking and zone.model.frame == 0 and zone.model.facing == "NW" and zone.model.texture == HeroWalkScript.IDLE_ART and zone.model.hframes == 1 and zone.model.vframes == 1, scene_name + "停步显示完整待机图并记住移动朝向")
+		if scene_name == "WaterActivity":
+			check(not zone.model.walking and zone.model.stride_phase == 0.0 and zone.model.facing == "NW", "甲板停步收脚并保留朝向")
+		else:
+			check(not zone.model.walking and zone.model.frame == 0 and zone.model.facing == "NW" and zone.model.texture == HeroWalkScript.IDLE_ART and zone.model.hframes == 1 and zone.model.vframes == 1, scene_name + "停步显示完整待机图并记住移动朝向")
 		await capture(scene_name)
 		zone.free()
 	var portrait: Texture2D = load("res://scripts/battle/sprite_atlas.gd").pet_texture("hero")

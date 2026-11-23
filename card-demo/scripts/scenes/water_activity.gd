@@ -275,20 +275,17 @@ func _clear_public_project_results() -> void:
 	_public_project_operation = ""
 	public_project_service.invalidate_preview()
 
-const SEA_BACKDROPS := {
-	"home": preload("res://assets/backgrounds/fudi/wetland.webp"),
-	"salt": preload("res://assets/backgrounds/fudi/causeway.webp"),
-	"wreck": preload("res://assets/backgrounds/fudi/ruins.webp"),
-}
-const BUILDING_ART := {
-	"core": preload("res://assets/pixel/fudi/buildings/ruins.png"),
-	"collector": preload("res://assets/pixel/fudi/buildings/wetland.png"),
-	"workshop": preload("res://assets/pixel/fudi/buildings/kilnwood.png"),
-	"tide": preload("res://assets/pixel/fudi/buildings/causeway.png"),
-	"filter": preload("res://assets/pixel/fudi/buildings/grove.png"),
-}
-const RESIDENT_ART := preload("res://assets/characters/npcs/lu-yan.png")
-const PARTNER_ART := preload("res://assets/characters/npcs/ye-ting.png")
+const SurfaceArt = preload("res://scripts/scenes/sea_surface_art.gd")
+const SEA_CHART := preload("res://assets/backgrounds/sea_surface_chart.webp")
+const Structures = preload("res://scripts/scenes/harbor_structures.gd")
+var rear_buildings: Structures
+var front_buildings: Structures
+const RESIDENT_ART := preload("res://assets/characters/sea_crew/axi.svg")
+# Leave the entire center of the raft to building silhouettes and their labels.
+const RESIDENT_FOOT := Vector2(226, 572)
+const RESIDENT_RANGE := 76.0
+const RESIDENT_PORTRAIT := Vector2(64, 84)
+const RESIDENT_PROMPT := Vector2(124, 40)
 var resources := DiveCatalog.resources()
 var node_states := DiveCatalog.defaults()
 # 仅保留本潜内存快照；存量和时间戳一起恢复，避免失败重抽。
@@ -350,38 +347,11 @@ func _show_dive_workshop() -> void:
 	if at_salt or at_wreck or sailing:
 		result_label.text = "请先返回浮台，再使用潜水工坊。"
 		return
-	var popup := AcceptDialog.new()
-	popup.title = "浮台 · 潜水工坊 / C"
-	popup.min_size = Vector2i(780, 500)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 14)
-	popup.add_child(box)
-	var info := Label.new()
-	info.text = "核心附属工坊位：" + ("已建成" if dive_workshop_built else ("已解锁 · 建造需木2废2" if dive_workshop_unlocked else "首次归档核心解锁并获木2废2")) + "\n面具照亮120→200→260；氧气90→120→150；脚蹼230→280→320；网袋8→12→16\n珍珠用于面具/氧气瓶二级；安全记录3/5/7/9种解锁捕网/护腕/捕网二级/护腕二级。"
-	box.add_child(info)
-	var build := Button.new()
-	build.text = "建造潜水工坊（核心附属位） · 木2 废2 · 缺木%d 废%d" % [maxi(0, 2 - wood), maxi(0, 2 - scrap)]
-	build.disabled = not dive_workshop_unlocked or dive_workshop_built or wood < 2 or scrap < 2
-	build.pressed.connect(func() -> void:
-		popup.hide()
-		popup.queue_free()
-		_open_build("dive_workshop"))
-	box.add_child(build)
-	for id in DiveCatalog.RECIPES:
-		var button := Button.new()
-		var level := net_expansion if id == "net_expansion" else equipment_level(id)
-		button.text = ("网袋扩容" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id]) + " · 当前%d级 · " % level + recipe_text(id)
-		button.disabled = not dive_workshop_built or level >= 2 or not DiveCatalog.recipe_unlocked(id, level, dive_archive)
-		button.pressed.connect(func() -> void:
-			craft_equipment(id)
-			popup.hide()
-			popup.queue_free()
-			_show_dive_workshop())
-		box.add_child(button)
+	var popup := preload("res://scripts/scenes/sea_workshop_ui.gd").new()
 	add_child(popup)
-	popup.popup_centered()
-	popup.confirmed.connect(popup.queue_free)
-	popup.canceled.connect(popup.queue_free)
+	moving = false
+	popup.open_station(self)
+
 var recoverable_drops: Array = []
 var last_dive_summary := ""
 var exploration_tools: ExplorationTools
@@ -413,14 +383,7 @@ func _show_warehouse() -> void:
 	if _sea_modal(): return
 	var popup := AcceptDialog.new()
 	popup.title = "背包 · 海面仓库 / B"
-	var lines := PackedStringArray(["木%d 废%d 盐晶%d 清水%d 纤维%d 绳索%d" % [wood, scrap, salt, water, fiber, rope]])
-	lines.append("待领产出：清水%d / 纤维%d（经营 → 生产领取）" % [pending_water, pending_fiber])
-	lines.append(last_dive_summary)
 	moving = false
-	lines.append("木料：扩建/建筑/面具L1；废料：建筑/氧气瓶L1；盐晶：过滤架供水")
-	lines.append("清水：订单；纤维：加工绳索/脚蹼L1；绳索：订单/脚蹼L2/网袋扩容")
-	for id in resources: lines.append("%s × %d → %s" % [DiveCatalog.ITEMS[id][0], resources[id], DiveCatalog.USES[id]])
-	for id in DiveCatalog.RECIPES: lines.append(("网袋" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id]) + "：" + recipe_text(id))
 	popup.dialog_text = ""
 	popup.get_label().hide()
 	popup.get_label().custom_minimum_size = Vector2.ZERO
@@ -435,12 +398,15 @@ func _show_warehouse() -> void:
 	contents.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	contents.add_theme_constant_override("separation", 18)
 	scroll.add_child(contents)
-	_inventory_section(contents, "海面材料", [lines[0], lines[3], lines[4]])
-	_inventory_section(contents, "待领与本潜收获", [lines[1], lines[2] if not lines[2].is_empty() else "尚无本潜收获记录。"])
-	var materials: Array = []
+	var surface := _inventory_section(contents, "01　海面材料", "库存用途")
+	for item in [["木料", wood, "扩建 / 建筑 / 面具L1"], ["废料", scrap, "建筑 / 氧气瓶L1"], ["盐晶", salt, "过滤架供水"], ["清水", water, "订单"], ["纤维", fiber, "加工绳索 / 脚蹼L1"], ["绳索", rope, "订单 / 脚蹼L2 / 网袋扩容"]]:
+		_inventory_entry(surface, "%s　× %d" % [item[0], item[1]], item[2])
+	var harvest := _inventory_section(contents, "02　待领与本潜收获", "领取与结算说明")
+	_inventory_entry(harvest, "待领产出", "清水 %d　/　纤维 %d\n经营 → 生产领取" % [pending_water, pending_fiber])
+	_inventory_entry(harvest, "本潜记录", last_dive_summary if not last_dive_summary.is_empty() else "尚无本潜收获记录。")
+	var materials := _inventory_section(contents, "03　海底材料", "用途 / 可投入下方公共工程")
 	for id in resources:
-		materials.append("%s × %d → %s" % [DiveCatalog.ITEMS[id][0], resources[id], DiveCatalog.USES[id]])
-	_inventory_section(contents, "海底材料 · 数量与用途", materials)
+		_inventory_entry(materials, "%s　× %d" % [DiveCatalog.ITEMS[id][0], resources[id]], DiveCatalog.USES[id])
 	for id in resources:
 		var resource_id: String = id
 		var donate := Button.new()
@@ -450,31 +416,45 @@ func _show_warehouse() -> void:
 			popup.hide()
 			popup.queue_free()
 			open_public_project_editor(resource_id))
-	var recipes: Array = []
+	var recipes := _inventory_section(contents, "04　装备配方", "下一等级 · C 工坊制作")
 	for id in DiveCatalog.RECIPES:
 		var level := net_expansion if id == "net_expansion" else equipment_level(id)
-		recipes.append(("网袋" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id]) + " · 当前%d级：" % level + recipe_text(id))
-	_inventory_section(contents, "装备与下一等级配方 · C工坊制作", recipes)
+		_inventory_entry(recipes, "%s　·　当前%d级" % ["网袋" if id == "net_expansion" else DiveCatalog.EQUIPMENT[id], level], recipe_text(id))
 	add_child(popup)
 	popup.popup_centered()
 	popup.confirmed.connect(popup.queue_free)
 	popup.canceled.connect(popup.queue_free)
-func _inventory_section(parent: VBoxContainer, heading: String, rows: Array) -> void:
-	var section := VBoxContainer.new()
-	section.add_theme_constant_override("separation", 8)
+
+func _inventory_section(parent: VBoxContainer, heading: String, caption: String) -> GridContainer:
+	var section := GridContainer.new()
+	section.columns = 2
+	section.add_theme_constant_override("h_separation", 2)
+	section.add_theme_constant_override("v_separation", 2)
 	parent.add_child(section)
-	var title := Label.new()
-	title.text = heading
-	title.add_theme_font_size_override("font_size", 21)
-	title.add_theme_color_override("font_color", Color("#ffe5a0"))
-	section.add_child(title)
-	for text in rows:
-		var row := Label.new()
-		row.text = text
-		row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_theme_font_size_override("font_size", 18)
-		section.add_child(row)
+	_inventory_cell(section, heading, true, true)
+	_inventory_cell(section, caption, false, true)
+	return section
+
+func _inventory_entry(section: GridContainer, name_and_count: String, detail: String) -> void:
+	_inventory_cell(section, name_and_count, true, false)
+	_inventory_cell(section, detail, false, false)
+
+func _inventory_cell(section: GridContainer, value: String, key: bool, header: bool) -> void:
+	var label := Label.new()
+	label.text = value
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_vertical = Control.SIZE_FILL
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_stretch_ratio = 2.0 if key else 3.0
+	label.add_theme_font_size_override("font_size", 20 if header and key else (18 if key else 16))
+	var plate := StyleBoxFlat.new()
+	plate.bg_color = Color("#234954") if header else (Color("#173641") if key else Color("#142e38"))
+	plate.content_margin_left = 12
+	plate.content_margin_right = 10
+	plate.content_margin_top = 7
+	plate.content_margin_bottom = 7
+	label.add_theme_stylebox_override("normal", plate)
+	section.add_child(label)
 
 const Underwater = preload("res://scripts/scenes/underwater_exploration.gd")
 var dive_shoal := false
@@ -515,7 +495,8 @@ func _refresh_dive_ui() -> void:
 	records_button.tooltip_text = ("探索记录 · 已完成" if dive_archived else "探索记录 · 回看") + "\n" + _dive_summary()
 	dive_button.disabled = at_salt or at_wreck or sailing or public_project.pending_bag != null
 	records_button.disabled = at_salt or at_wreck or sailing
-	dive_button.tooltip_text = "返航袋已安全封存，请先整袋入库；可回基地腾仓或查看探索记录。" if public_project.pending_bag != null else ""
+	if public_project.pending_bag != null:
+		dive_button.tooltip_text = "返航袋已安全封存，请先整袋入库；可回基地腾仓或查看探索记录。"
 
 func _sea_window_open() -> bool:
 	for child in get_children():
@@ -670,7 +651,7 @@ func _commit_dive(key: String) -> bool:
 	_refresh_dive_ui()
 	return saved
 
-const HeroWalkScript = preload("res://scripts/scenes/hero_walk_sprite.gd")
+const SeaCrewActor = preload("res://scripts/scenes/sea_crew_actor.gd")
 const SEA := Rect2(72, 238, 744, 414)
 const SEA_VIEW := Rect2(24, 104, 1232, 552)
 
@@ -682,7 +663,6 @@ func screen_to_world(point: Vector2) -> Vector2:
 
 func _sync_hero() -> void:
 	model.position = world_to_screen(player_foot)
-	model.scale = Vector2(0.27, 0.27)
 const PLAYER_SPEED := 220.0
 const PICKUP_RADIUS := 35.0
 const DEBRIS_INTERVAL := 6.0
@@ -761,7 +741,7 @@ var player_foot := Vector2(240, 480)
 var debris: Array[Vector2] = []
 var target := Vector2.ZERO
 var moving := false
-var model: HeroWalkScript
+var model: SeaCrewActor
 var processing_flash := 0.0
 var initial_state: Dictionary = {}
 var button_hints: Array[Label] = []
@@ -868,11 +848,14 @@ func _navigation_action() -> void:
 		_show_management()
 
 func configure_exploration_actions(bar: HBoxContainer) -> void:
-	bar.position = Vector2(872, 58)
+	bar.position = Vector2(907, 44)
+	bar.theme = theme
 	bar.add_theme_constant_override("separation", 8)
 	for button in bar.get_children():
-		button.custom_minimum_size = Vector2(92, 40)
-		button.add_theme_font_size_override("font_size", 16)
+		button.custom_minimum_size = Vector2(92, 42)
+		for state in [&"normal", &"hover", &"pressed"]:
+			button.remove_theme_stylebox_override(state)
+		button.add_theme_font_size_override("font_size", 17)
 	bar.get_child(1).hide()
 
 func _configure_water_window() -> void:
@@ -956,6 +939,17 @@ func _action(page: int, text: String, action: Callable) -> Button:
 	button.add_theme_font_size_override("font_size", 17)
 	return button
 
+func _management_group(page: int, text: String) -> void:
+	var group := _page_label(page, text)
+	var strip := StyleBoxFlat.new()
+	strip.bg_color = Color("#1a3843")
+	strip.border_color = Color("#83c8be")
+	strip.border_width_left = 3
+	strip.content_margin_left = 10
+	strip.content_margin_top = 4
+	strip.content_margin_bottom = 4
+	group.add_theme_stylebox_override("normal", strip)
+
 func _page_label(page: int, text: String) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -981,19 +975,26 @@ func _short_goal() -> String:
 	return "浮台已稳定生产；可下潜探索或继续经营。"
 
 func _ready() -> void:
+	theme = preload("res://scripts/water_instrument_theme.gd").build()
 	_previous_auto_accept_quit = get_tree().is_auto_accept_quit()
 	get_tree().set_auto_accept_quit(false)
 	technology.host = self
 	public_project_service.host = self
 	_configure_water_window()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	model = HeroWalkScript.new()
-	model.scale = Vector2(0.18, 0.18)
+	rear_buildings = Structures.new()
+	rear_buildings.sea = self
+	add_child(rear_buildings)
+	model = SeaCrewActor.new()
 	add_child(model)
+	front_buildings = Structures.new()
+	front_buildings.sea = self
+	front_buildings.foreground = true
+	add_child(front_buildings)
 	var title := Label.new()
-	title.text = "海底水世界 · 漂流浮台"
-	title.position = Vector2(24, 14)
-	title.add_theme_font_size_override("font_size", 32)
+	title.text = "漂流浮台"
+	title.position = Vector2(40, 33)
+	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color("#f5efd7"))
 	add_child(title)
 	var rules := Label.new()
@@ -1012,16 +1013,23 @@ func _ready() -> void:
 	add_child(status_label)
 	status_label.hide()
 	goal_label = Label.new()
-	goal_label.position = Vector2(24, 60)
-	goal_label.size = Vector2(550, 38)
+	goal_label.position = Vector2(337, 12)
+	goal_label.size = Vector2(503, 34)
+	goal_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	goal_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	goal_label.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			goal_label.accept_event()
+			_show_guide())
+	goal_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	goal_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	goal_label.add_theme_font_size_override("font_size", 19)
 	goal_label.add_theme_color_override("font_color", Color("#ffe5a0"))
 	add_child(goal_label)
 	result_label = Label.new()
 	feedback_scroll = ScrollContainer.new()
-	feedback_scroll.position = Vector2(24, 664)
-	feedback_scroll.size = Vector2(1232, 48)
+	feedback_scroll.position = Vector2(337, 49)
+	feedback_scroll.size = Vector2(537, 48)
 	feedback_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(feedback_scroll)
 	result_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1029,14 +1037,18 @@ func _ready() -> void:
 	result_label.add_theme_font_size_override("font_size", 17)
 	result_label.add_theme_color_override("font_color", Color("#d7f1f0"))
 	feedback_scroll.add_child(result_label)
-	management_button = _make_button("浮台经营", Vector2(1008, 8), Vector2(116, 42), _show_management)
-	backpack_button = _make_button("背包 B", Vector2(1140, 8), Vector2(116, 42), _show_warehouse)
+	management_button = _make_button("浮台经营", Vector2(687, 666), Vector2(132, 46), _show_management)
+	management_button.theme_type_variation = &"HarborPrimary"
+	backpack_button = _make_button("背包 B", Vector2(835, 667), Vector2(88, 44), _show_warehouse)
+	backpack_button.flat = true
 	reset_dialog = ConfirmationDialog.new()
 	reset_dialog.dialog_text = "只清除海上首章进度（包括蓝图）；灵伴存档与十关完全不变。确定重开？"
 	reset_dialog.confirmed.connect(_start_round)
 	add_child(reset_dialog)
-	settings_button = _make_button("设置", Vector2(1080, 58), Vector2(72, 40), _show_display_settings)
-	var back := _make_button("返回选择", Vector2(1164, 58), Vector2(92, 40), func() -> void: _request_leave())
+	settings_button = _make_button("设置", Vector2(1085, 44), Vector2(62, 42), _show_display_settings)
+	settings_button.flat = true
+	var back := _make_button("返回选择", Vector2(1153, 44), Vector2(94, 42), func() -> void: _request_leave())
+	back.flat = true
 	back.name = "ReturnButton"
 	leave_dialog = ConfirmationDialog.new()
 	leave_dialog.title = "放弃本次航战？"
@@ -1077,12 +1089,22 @@ func _ready() -> void:
 		box.add_theme_constant_override("separation", 14)
 		margin.add_child(box)
 		action_pages.append(box)
+		var page := action_pages.size() - 1
+		var titles := ["甲板与设施", "产出与加工", "居民名册", "航线调度", "打捞研究"]
+		var heading := _page_label(page, "%02d / 05　　%s" % [page + 1, titles[page]])
+		heading.add_theme_font_size_override("font_size", 24)
+		box.add_child(HSeparator.new())
+	_management_group(0, "专用设施")
+	_management_group(1, "自动打捞")
+	_management_group(4, "研究目录")
 	_action(4, "科技研究 · 预览七项科技与材料缺口", func() -> void: technology.show_page("tech"))
 	_page_label(4, "基础解析 → 浅海打捞 → 沉船 / 海沟；经营货仓与主动探索独立分支。研究台不需要核心或居民。")
 	_action(0, "研究台 / 打捞器 · 专用设施建造预览", func() -> void: technology.show_page("build"))
 	_action(1, "打捞器 · 领取 / 继续 / 维护包", func() -> void: technology.show_page("device"))
+	_management_group(0, "航站与甲板")
 	core_button = _action(0, "航站核心", func() -> void: _open_build("core"))
-	guide_button = _make_button("任务板", Vector2(976, 58), Vector2(92, 40), _show_guide)
+	guide_button = _make_button("任务板", Vector2(1004, 44), Vector2(76, 42), _show_guide)
+	guide_button.flat = true
 	build_dialog = ConfirmationDialog.new()
 	build_dialog.title = "基地建造预览"
 	build_dialog.min_size = Vector2i(430, 240)
@@ -1094,9 +1116,11 @@ func _ready() -> void:
 	slot_picker.position = Vector2(20, 105)
 	expand_button = _action(0, "扩建浮台 · 木3 废2", _expand_raft)
 	collector_button = _action(0, "建集水打捞站 · 木2 废3", _build_collector)
+	_management_group(1, "集水站")
 	claim_button = _action(1, "领取产出", _claim_production)
 	upgrade_button = _action(1, "升级自动收取 · 木2 废2", _upgrade_collector)
 	workshop_button = _action(0, "建简易工坊 · 木2 废2", _build_workshop)
+	_management_group(1, "工坊与委托")
 	process_button = _action(1, "搓绳 · 纤维1 → 绳索1", _process_fiber)
 	order_button = _action(1, "交付委托 · 清水2 绳索2", _fulfill_order)
 	for button in [expand_button, collector_button, claim_button, upgrade_button, workshop_button, process_button, order_button]:
@@ -1106,9 +1130,11 @@ func _ready() -> void:
 		button_hints.append(hint)
 	_page_label(1, "建站每4秒产出。升级后自动领取；简易工坊自动搓绳。海上进度自动保存。")
 	_page_label(2, "居民与伙伴 · 点击场景中的阿汐 / 岚也可直达此页；灰色按钮的缺少条件见下方。")
+	_management_group(2, "阿汐　/　集水员")
 	resident_button = _action(2, "接纳阿汐 · 清水1", _accept_resident)
 	job_button = _action(2, "安排阿汐集水岗位", _assign_resident)
 	resident_hint = _page_label(2, "")
+	_management_group(2, "岚　/　领航员")
 	partner_button = _action(2, "信标：邀请伙伴岚", _recruit_partner)
 	partner_hint = _page_label(2, "")
 	_page_label(2, "接纳需已有集水站和清水1；安排岗位后每批清水+1。完成首单且阿汐在岗，才能邀请岚。")
@@ -1144,13 +1170,19 @@ func _ready() -> void:
 	exploration_tools.region = "water_activity"
 	exploration_tools.modal_blocker = func() -> bool: return is_instance_valid(dive_layer) or _sea_window_open()
 	add_child(exploration_tools)
-	dive_button = _make_button("下潜探索", Vector2(600, 8), Vector2(116, 42), func() -> void: _open_dive())
-	records_button = _make_button("探索记录", Vector2(600, 58), Vector2(116, 40), func() -> void: _open_dive(true))
-	dive_workshop_button = _make_button("潜水工坊 C", Vector2(732, 8), Vector2(140, 42), _show_dive_workshop)
-	technology_button = _make_button("科技 / 打捞", Vector2(732, 58), Vector2(124, 40), func() -> void: technology.show_page("tech"))
-	navigation_button = _make_button("航行", Vector2(888, 8), Vector2(104, 42), _navigation_action)
+	dive_button = _make_button("下潜探索", Vector2(125, 665), Vector2(174, 48), func() -> void: _open_dive())
+	dive_button.theme_type_variation = &"HarborLaunch"
+	dive_button.add_theme_font_size_override("font_size", 22)
+	navigation_button = _make_button("航行", Vector2(310, 667), Vector2(114, 44), _navigation_action)
+	records_button = _make_button("探索记录", Vector2(435, 667), Vector2(123, 44), func() -> void: _open_dive(true))
+	records_button.flat = true
+	dive_workshop_button = _make_button("潜水工坊 C", Vector2(934, 667), Vector2(148, 44), _show_dive_workshop)
+	dive_workshop_button.flat = true
+	technology_button = _make_button("科技 / 打捞", Vector2(1093, 667), Vector2(153, 44), func() -> void: technology.show_page("tech"))
+	technology_button.flat = true
 	public_project_result_button = _make_button("", Vector2(872, 108), Vector2(192, 44), _open_pending_public_project_result)
 	public_project_result_button.hide()
+	_management_group(2, "存档操作")
 	_action(2, "重开海上档", func() -> void:
 		_close_management()
 		reset_dialog.popup_centered()
@@ -1895,14 +1927,9 @@ func _guide_step() -> String:
 func _show_guide() -> void:
 	if _sea_modal(): return
 	moving = false
-	var popup := AcceptDialog.new()
-	popup.title = "海上任务板 / 基础操作"
-	popup.dialog_autowrap = true
-	popup.min_size = Vector2i(760, 460)
-	popup.dialog_text = "当前目标：%s\n\n海底下一步：%s\n安全光柱上浮才入库；耗尽氧气整袋及新核心丢失。\n\nWASD / 方向键或点击水域移动，靠近漂浮物拾荒。\n点击经营打开建造 / 生产 / 居民 / 航行四类操作，可滚动查看；建筑点击先预览，确认才扣费。\n建站每4秒产出，近岸漂浮物每6秒补充；B背包，C潜水工坊，F11全屏。\n全部材料、库存、用途及待领产出在B背包；详细缺口可悬停按钮或打开建造预览。" % [_guide_step(), _dive_summary()]
-	add_child(popup)
-	popup.popup_centered()
-	popup.confirmed.connect(popup.queue_free)
+	var board := preload("res://scripts/scenes/sea_task_board.gd").new()
+	add_child(board)
+	board.open_board(self)
 
 func _refresh_ui() -> void:
 	_refresh_dive_ui()
@@ -1913,8 +1940,8 @@ func _refresh_ui() -> void:
 	if is_instance_valid(navigation_button):
 		navigation_button.text = "立即返港" if at_salt or at_wreck else ("航战操作" if sailing else "航行")
 		navigation_button.tooltip_text = "打开航行页：攻击 / 防御、首航与邻岛探索"
-	goal_label.text = "当前目标：" + _short_goal()
-	goal_label.tooltip_text = _guide_step()
+	goal_label.text = _short_goal()
+	goal_label.tooltip_text = _guide_step() + "\n点击当前任务查看值班簿。"
 	core_button.tooltip_text = _build_reason("core")
 	expand_button.disabled = sailing or at_salt or at_wreck
 	collector_button.disabled = sailing or at_salt or at_wreck
@@ -2010,6 +2037,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_show_dive_workshop()
 		get_viewport().set_input_as_handled()
 		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E and _resident_nearby():
+		_show_residents()
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
 		_show_warehouse()
 		get_viewport().set_input_as_handled()
@@ -2022,25 +2053,53 @@ func _unhandled_input(event: InputEvent) -> void:
 				if Rect2(242, 264, 110, 66).has_point(point) or Rect2(612, 264, 110, 66).has_point(point):
 					moving = false
 					target = player_foot
-					technology.show_page("tech" if point.x < 400 else "device")
+					technology.show_facility("research" if point.x < 400 else "machine")
 					get_viewport().set_input_as_handled()
 					return
-				for foot in [Vector2(130, 550), Vector2(720, 550)]:
-					if Rect2(foot - Vector2(49, 64), Vector2(98, 112)).has_point(point):
-						_show_residents()
-						get_viewport().set_input_as_handled()
-						return
+				if _resident_nearby() and (_resident_portrait_rect().has_point(screen) or _resident_prompt_rect().has_point(screen)):
+					_show_residents()
+					get_viewport().set_input_as_handled()
+					return
 				if dive_workshop_unlocked and Rect2(105, 365, 108, 86).has_point(point):
 					_show_dive_workshop()
+					return
+				rear_buildings.rebuild()
+				var silhouette := rear_buildings.pick(screen)
+				if silhouette != "":
+					_open_harbor_building(silhouette)
+					get_viewport().set_input_as_handled()
 					return
 				for i in mini(raft_tiles, MAX_TILES):
 					var tile := Vector2(360 + (i % 4) * 81, 374 + (i / 4) * 78)
 					if Rect2(tile, Vector2(72, 68)).has_point(point):
-						if building_slots[i] == "core": _open_build("core")
-						else: _show_management()
+						_open_harbor_building(building_slots[i])
 						return
 			target = Vector2(clampf(point.x, SEA.position.x + 24, SEA.end.x - 24), clampf(point.y, SEA.position.y + 96, SEA.end.y - 12))
 			moving = true
+
+func _resident_nearby() -> bool:
+	return not at_salt and not at_wreck and not sailing and player_foot.distance_squared_to(RESIDENT_FOOT) <= RESIDENT_RANGE * RESIDENT_RANGE
+
+func _resident_portrait_rect() -> Rect2:
+	var foot := world_to_screen(RESIDENT_FOOT)
+	return Rect2(foot - Vector2(RESIDENT_PORTRAIT.x * 0.5, RESIDENT_PORTRAIT.y), RESIDENT_PORTRAIT)
+
+func _resident_prompt_rect() -> Rect2:
+	var foot := world_to_screen(RESIDENT_FOOT)
+	return Rect2(foot + Vector2(-RESIDENT_PROMPT.x * 0.5, 7), RESIDENT_PROMPT)
+
+func _open_harbor_building(kind: String) -> void:
+	match kind:
+		"research", "machine": technology.show_facility(kind)
+		"dive_workshop": _show_dive_workshop()
+		"core": _open_build("core")
+		"workshop":
+			moving = false
+			model.update_movement(Vector2.ZERO, 0)
+			var bench := preload("res://scripts/scenes/sea_facility_desk.gd").new()
+			add_child(bench)
+			bench.open_crafter(self)
+		_: _show_management()
 
 func _process(delta: float) -> void:
 	tide_clock += maxf(0, delta)
@@ -2140,12 +2199,23 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color("#102e40"))
+	if is_instance_valid(rear_buildings):
+		rear_buildings.rebuild()
+		front_buildings.entries = rear_buildings.entries
+		rear_buildings.queue_redraw()
+		front_buildings.queue_redraw()
+	SurfaceArt.frame(self, size)
+	draw_texture_rect(SEA_CHART, SEA_VIEW, false, Color("#dac5ad") if at_wreck else Color("#d7d8f0") if at_salt else Color.WHITE)
+	if at_wreck:
+		SurfaceArt.location(self, "风障废船带", "船体 %d/3   ·   阵风间隔 5s" % wreck_hp, "03")
+	elif at_salt:
+		SurfaceArt.location(self, "盐雾滩", "盐晶 %d   ·   水面晶簇 %d" % [salt, salt_nodes.size()], "02")
+	elif sailing:
+		SurfaceArt.location(self, "首航海域", "船体 %d   /   浮礁 %d" % [sail_hp, enemy_hp], "04")
+	else:
+		SurfaceArt.location(self, "浮台锚地", "核心 Lv.%d   ·   甲板 %02d / %02d" % [core_level, raft_tiles, MAX_TILES], "01")
 	var zoom := SEA_VIEW.size / SEA.size
 	draw_set_transform(SEA_VIEW.position - SEA.position * zoom, 0.0, zoom)
-	draw_rect(SEA.grow(4.0), Color("#d1b988"))
-	draw_texture_rect(SEA_BACKDROPS["salt" if at_salt else "wreck" if at_wreck else "home"], SEA, false)
-	draw_rect(SEA, Color(0.03, 0.23, 0.31, 0.42))
 	if moving and not _sea_modal():
 		draw_arc(target, 12, 0, TAU, 24, Color("#ffe5a0"), 2)
 		draw_line(target - Vector2(5, 0), target + Vector2(5, 0), Color("#ffe5a0"), 2)
@@ -2153,8 +2223,7 @@ func _draw() -> void:
 	if at_wreck:
 		for i in 7:
 			var mast := Vector2(125 + i * 102, 310 + (i % 2) * 185)
-			draw_line(mast, mast + Vector2(42, -40), Color("#83919a"), 5.0)
-			draw_line(mast + Vector2(42, -40), mast + Vector2(83, -12), Color("#c2d4dc"), 2.0)
+			SurfaceArt.hulk(self, mast)
 		for point in wreck_nodes:
 			draw_colored_polygon(PackedVector2Array([point + Vector2(-23, 10), point + Vector2(-14, -12), point + Vector2(18, -8), point + Vector2(23, 10)]), Color("#ac593d"))
 			draw_line(point + Vector2(-8, 0), point + Vector2(12, 0), Color("#e2a474"), 3.0)
@@ -2163,57 +2232,34 @@ func _draw() -> void:
 	if at_salt:
 		for i in 9:
 			var ridge := Vector2(120 + i * 78, 300 + (i % 3) * 95)
-			draw_arc(ridge, 43, 0, PI, 16, Color("#d0c7bc"), 5.0)
+			SurfaceArt.shoal(self, ridge, 22.0 + float(i % 3) * 5.0)
 		for point in salt_nodes:
 			draw_colored_polygon(PackedVector2Array([point + Vector2(-18, 12), point + Vector2(-8, -13), point + Vector2(0, 0), point + Vector2(9, -22), point + Vector2(18, 12)]), Color("#e9d9f5"))
 			draw_circle(point + Vector2(0, 5), 5, Color("#a579b5"))
 		draw_string(ThemeDB.fallback_font, Vector2(305, 350), "盐雾滩 · 紫白晶簇可采集", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
 		return
-	for row in 6:
-		for column in 9:
-			var x := SEA.position.x + 40.0 + column * 83.0 + sin(wave_elapsed + float(row)) * 6.0
-			var y := SEA.position.y + 34.0 + row * 67.0
-			draw_arc(Vector2(x, y), 14.0, 0.15, PI - 0.15, 12, Color("#8ed8d0", 0.32), 2.0)
 	for point in debris:
-		var bob := sin(wave_elapsed * 2.0 + point.x) * 3.0
-		var log_rect := Rect2(point + Vector2(-17, -8 + bob), Vector2(34, 16))
-		draw_rect(log_rect, Color("#9c6741"))
-		draw_rect(Rect2(log_rect.position + Vector2(3, 3), Vector2(28, 10)), Color("#bd9161"))
-		draw_line(point + Vector2(-10, bob), point + Vector2(10, bob), Color("#ead3a0"), 2.0)
-	for i in mini(raft_tiles, MAX_TILES):
-		var center := Vector2(360 + (i % 4) * 81, 374 + (i / 4) * 78)
-		draw_rect(Rect2(center, Vector2(72, 68)), Color("#745b40"))
-		draw_rect(Rect2(center + Vector2(5, 5), Vector2(62, 58)), Color("#d5b581"))
-		var kind: String = building_slots[i]
-		if BUILDING_ART.has(kind):
-			draw_texture_rect(BUILDING_ART[kind], Rect2(center + Vector2(0, -2), Vector2(72, 48)), false)
-			draw_rect(Rect2(center + Vector2(3, 46), Vector2(66, 19)), Color("#223f49"))
-			var caption: String = {"core": "核心%d" % core_level, "collector": "打捞站", "workshop": "工坊", "tide": "潮测台", "filter": "过滤架"}[kind]
-			draw_string(ThemeDB.fallback_font, center + Vector2(8, 61), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
-		else:
-			draw_string(ThemeDB.fallback_font, center + Vector2(19, 41), "空位%d" % i, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#625540"))
-	for facility in [[Vector2(242, 264), "研究台", technology.state.research_built, BUILDING_ART.workshop], [Vector2(612, 264), "打捞器", technology.state.machine_built, BUILDING_ART.collector]]:
-		var origin: Vector2 = facility[0]
-		draw_rect(Rect2(origin, Vector2(110, 66)), Color("#245968") if facility[2] else Color("#3d505b"))
-		draw_texture_rect(facility[3], Rect2(origin + Vector2(31, -6), Vector2(48, 40)), false)
-		draw_string(ThemeDB.fallback_font, origin + Vector2(8, 46), facility[1] + (" · 已建" if facility[2] else " · 待建"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
-		draw_string(ThemeDB.fallback_font, origin + Vector2(8, 62), "点击 · " + ("科技研究" if facility[1] == "研究台" else "设备管理"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#ffe5a0"))
-	# 人物和名牌均可点击，直达既有居民页，不改变招募条件。
-	for person in [[RESIDENT_ART, Vector2(130, 550), "阿汐 · " + ("集水中" if resident_working else "已接纳" if resident else "待接纳")], [PARTNER_ART, Vector2(720, 550), "岚 · " + ("已加入" if partner else "待邀请")]]:
-		draw_texture_rect(person[0], Rect2(person[1] - Vector2(24, 64), Vector2(48, 64)), false)
-		draw_rect(Rect2(person[1] + Vector2(-49, 6), Vector2(98, 22)), Color("#193745"))
-		draw_string(ThemeDB.fallback_font, person[1] + Vector2(-44, 22), person[2], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
-		draw_rect(Rect2(person[1] + Vector2(-49, 28), Vector2(98, 20)), Color("#193745"))
-		draw_string(ThemeDB.fallback_font, person[1] + Vector2(-44, 43), "点击 · 居民管理", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#ffe5a0"))
+		SurfaceArt.flotsam(self, point, wave_elapsed)
 	if dive_workshop_unlocked:
-		draw_line(Vector2(360, 408), Vector2(213, 408), Color("#d5b581"), 12)
-		draw_rect(Rect2(105, 365, 108, 86), Color("#745b40"))
-		draw_rect(Rect2(111, 371, 96, 74), Color("#398e9d") if dive_workshop_built else Color("#586776"))
-		if dive_workshop_built:
-			draw_texture_rect(BUILDING_ART.workshop, Rect2(121, 365, 76, 50), false)
-		else:
-			draw_rect(Rect2(121, 379, 76, 30), Color("#b5f5ef"), false, 2)
-		draw_string(ThemeDB.fallback_font, Vector2(115, 424), "潜水工坊 / C", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
-		draw_string(ThemeDB.fallback_font, Vector2(114, 441), "已建成" if dive_workshop_built else "已解锁·待建", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+		draw_line(Vector2(360,408),Vector2(213,408),Color("#72593f"),13)
+		draw_line(Vector2(360,405),Vector2(213,405),Color("#d2ac77"),8)
+		SurfaceArt.plot(self,Vector2(105,365),Vector2(108,86),dive_workshop_built)
+	for i in mini(raft_tiles, MAX_TILES):
+		var center := Vector2(360 + (i % 4) * 81, 374 + floori(i / 4.0) * 78)
+		SurfaceArt.deck(self, center, Vector2(72,68))
+		if building_slots[i] == "empty":
+			draw_string(ThemeDB.fallback_font, center + Vector2(19,41), "空位%d" % i, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#625540"))
+		else: SurfaceArt.cast_shadow(self,center+Vector2(36,46),28)
+	SurfaceArt.plot(self,Vector2(242,264),Vector2(110,66),technology.state.research_built)
+	SurfaceArt.plot(self,Vector2(612,264),Vector2(110,66),technology.state.machine_built)
 	if workshop_built and processing_flash > 0.0:
 		draw_string(ThemeDB.fallback_font, Vector2(492, 340), "工坊加工 +绳索", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#fff0a1"))
+	if sailing: return
+	draw_set_transform(Vector2.ZERO)
+	draw_texture_rect(RESIDENT_ART, _resident_portrait_rect(), false)
+	if _resident_nearby() and not _sea_modal():
+		var prompt := _resident_prompt_rect()
+		draw_rect(prompt, Color("#102934f5"))
+		draw_rect(prompt, Color("#537f81"), false, 1)
+		SurfaceArt.text(self, prompt.position + Vector2(10, 16), "阿汐", 14, SurfaceArt.PAPER)
+		SurfaceArt.text(self, prompt.position + Vector2(10, 34), "[E]  居民管理", 14, SurfaceArt.BRASS)

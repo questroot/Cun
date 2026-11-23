@@ -46,8 +46,8 @@ func _build() -> void:
 		child.queue_free()
 	inputs.clear()
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_label(self, "公共工程 · 投料腾仓")
-	_label(self, "投料永久消耗，不发放奖励。仅使用已入库资源；关闭后不保留草稿。")
+	_label(self, "公共工程 · 投料腾仓").theme_type_variation = &"HarborHeading"
+	_label(self, "投料永久消耗，不发放奖励。仅使用已入库资源；关闭后不保留草稿。").theme_type_variation = &"HarborCaption"
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -88,6 +88,8 @@ func _build() -> void:
 	message = _label(self, "")
 	preview_button = _button(self, "预览投料", _preview)
 	confirm_button = _button(self, "确认永久投料", _confirm)
+	preview_button.theme_type_variation = &"HarborPrimary"
+	confirm_button.theme_type_variation = &"HarborLaunch"
 	confirm_button.disabled = true
 	_button(self, "取消并返回基地", func() -> void: close_requested.emit())
 	if inputs.has(_focus_resource): inputs[_focus_resource].grab_focus.call_deferred()

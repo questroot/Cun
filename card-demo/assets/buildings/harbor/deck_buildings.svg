@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1920" height="448" viewBox="0 0 480 112" stroke-linecap="round" stroke-linejoin="round">
+ <defs>
+  <linearGradient id="wood" x2="0.22" y2="1"><stop stop-color="#dda56c"/><stop offset="1" stop-color="#ab7150"/></linearGradient>
+  <linearGradient id="sea" x2="0.68" y2="1"><stop stop-color="#83cabe"/><stop offset=".55" stop-color="#478f8b"/><stop offset="1" stop-color="#306867"/></linearGradient>
+  <linearGradient id="tank"><stop stop-color="#477d78"/><stop offset=".22" stop-color="#9dc9b4"/><stop offset=".53" stop-color="#72a999"/><stop offset="1" stop-color="#345954"/></linearGradient>
+  <linearGradient id="gold"><stop stop-color="#ae7649"/><stop offset=".34" stop-color="#ffe29a"/><stop offset="1" stop-color="#ab764c"/></linearGradient>
+  <linearGradient id="lit" x2="0.15" y2="1"><stop stop-color="#fff0b3"/><stop offset="1" stop-color="#f4ac55"/></linearGradient>
+  <g id="base" stroke="#283738" stroke-width="1.35">
+   <path fill="#615047" d="M5 83 33 68 91 84 91 90 63 104.25 5 88.5Z"/><path fill="#877566" d="M5 83 63 99 63 104.25 5 88.5Z"/><path fill="#bcac8e" d="M5 83 33 68 91 84 63 99Z"/>
+   <path d="m11 83 52 14 23-12M23 89v3m19 2v3m29-3v4m11-10v4" fill="none" stroke="#746659" stroke-width=".85"/>
+  </g>
+  <g id="window" stroke="#34423e"><path d="M0 0h10v12H0z" fill="#6a5142" stroke-width="1.4"/><path d="M1.6 1.7h6.8v8.6H1.6z" fill="url(#lit)" stroke="none"/><path d="M5 1v10M1 6h8" fill="none" stroke-width="1"/><path d="M-1 12h12" stroke="#e9ba7b" stroke-width="1.5"/></g>
+  <g id="door" stroke="#34423e" stroke-width="1.2"><path fill="#70513e" d="M0 0h11v19H0z"/><path fill="#946a48" d="M2 2h7v16H2z"/><path fill="url(#lit)" d="M3 3h5v5H3z"/><circle cx="7.6" cy="12.7" r=".8" fill="#f4cb7c" stroke="none"/></g>
+  <!-- Compact gabled port office: slope, fascia, shaded gable and two timber walls. -->
+  <g id="shed" stroke="#283738" stroke-width="1.45">
+   <g transform="matrix(1 .28 0 1 0 0)"><path fill="url(#wood)" d="M0 0h40v23H0z"/><path d="M1 5h38M1 11h38M1 17h38" stroke="#99694d" fill="none" stroke-width=".7"/><path d="M1.2 1v21M38 1v21" stroke="#77573f" stroke-width="2.4"/><use xlink:href="#window" x="5" y="4"/><use xlink:href="#door" x="22" y="4"/></g>
+   <path fill="#8e674b" d="M40 11.2 60 .2v23l-20 11z"/><g transform="matrix(.92 -.506 0 1 44 14)"><use xlink:href="#window"/></g>
+   <path fill="#bc8860" d="M39 11 50-5 61 0Z"/><path fill="#436a63" d="m50-7 12 6-1.5 3-11-6Z"/>
+   <path fill="url(#sea)" d="M-3-1 8-17 51-5 40 11Z"/><path fill="#315e5b" d="M-3-1 40 11 40 14-3 2Z"/><path fill="none" stroke="#a1d5bd" stroke-width=".9" d="m1-2 9-13m1 16 9-13m1 16 9-13m1 16 9-13"/><path fill="none" stroke="#deb579" stroke-width="1.8" d="M8-17 51-5 62 0"/>
+  </g>
+  <g id="vessel" stroke="#2b3e3d" stroke-width="1.4"><path fill="url(#tank)" d="M-13 0q13-6 26 0v23c0 6-26 6-26 0z"/><ellipse cy="0" rx="13" ry="4.5" fill="#abd0b8"/><path fill="none" stroke="#395b54" stroke-width="2.3" d="M-13 7c4 5 22 5 26 0m-26 12c4 5 22 5 26 0"/><path fill="none" stroke="#ddbc7f" stroke-width=".8" d="M-12 6.7c4 4 20 4 24 0m-24 12c4 4 20 4 24 0"/><ellipse cy="-1" rx="4.3" ry="1.6" fill="#bd9b66"/></g>
+ </defs>
+ <g id="core"><use xlink:href="#base"/>
+  <use xlink:href="#shed" transform="translate(35 65) scale(.82 .88)"/>
+  <g stroke="#273c3b" stroke-width="1.45">
+   <path fill="#ba9c75" d="m9 78 16-7 19 6v7l-16 7-19-6Z"/><path fill="#e3c79e" d="m13 77 4-39 12 4v41Z"/><path fill="#b29373" d="m29 42 11-5 1 41-12 5Z"/>
+   <path fill="#528783" d="m15.4 55 13.6 5 11.5-5v8L29 68l-14.5-5Z"/><path fill="url(#lit)" d="m20 43 5 2v9l-5-2z"/><path fill="#77573f" d="m18 78 .6-9q2.6-4 6 1v10z"/>
+   <path fill="#ac8456" d="m11 34 15-7 18 5v6l-15 7-18-6Z"/><path fill="#edca86" d="m11 34 15-7 18 5-15 7Z"/>
+   <path fill="url(#lit)" d="m16 20 11-5 12 4v13l-11 5-12-4Z"/><path d="M22 22v12m6-10v13m6-15v12" fill="none" stroke-width="2"/>
+   <path fill="url(#sea)" d="m12 20 13-12 4 .4 14 10-15 7Z"/><path fill="#386866" d="m28 24-1-15 16 9.4Z"/><path d="M27 9V5" stroke="#815f43"/><circle cx="27" cy="5" r="1.65" fill="#f0c576"/>
+  </g></g>
+ <g id="collector" transform="translate(96)"><use xlink:href="#base"/>
+  <g stroke="#303e39" stroke-width="1.65"><path fill="#98704e" d="M13 49h4v30l-4-1zm22 5h4v30l-4-1zm10-5h3v26l-3 2Z"/><path fill="none" stroke="#805d43" stroke-width="2.8" d="m16 57 20 22m0-20L16 74"/></g>
+  <use xlink:href="#vessel" transform="translate(30 29) scale(1.42 1.14)"/>
+  <path d="M12 37H9v29q0 4 4 5l8 2" fill="none" stroke="#32423c" stroke-width="5"/><path d="M12 37H9v29q0 4 4 5l8 2" fill="none" stroke="#c39c68" stroke-width="2.6"/>
+  <use xlink:href="#shed" transform="translate(33 64) scale(.84 .9)"/>
+  <path d="M32 62.5 68 72.6v13q0 3 2 3" fill="none" stroke="#deba7c" stroke-width="1.65"/>
+ </g>
+ <g id="workshop" transform="translate(192)"><use xlink:href="#base"/>
+  <g stroke="#303c39" stroke-width="1.45"><path fill="#9c7057" d="m53 61 2.3-41 9.4 2 2.7 42-7.1 4Z"/><path fill="#c58a63" d="m53 61 2.3-41 5.7 2-.3 45Z"/>
+   <path fill="#a87855" d="M53 17.5 59 15l8 2.1v5.7l-6 2.6-8-2.5Z"/><path fill="#514841" d="m53 17.5 6-2.5 8 2.1-6 2.7Z"/><path d="m55 30 6 2 4-2m-10.5 7.5 6.5 2 4.4-2m-8-6.5v4m5.5 5v3.6" stroke="#775643" fill="none" stroke-width="1"/></g>
+  <use xlink:href="#shed" transform="translate(13 58) scale(1.11 1.13)"/>
+  <g stroke="#2c3b39" stroke-width="1.25"><path fill="#ad8054" d="m50 75 3 1v16l-3-.8zm20 5 2-1v12l-2 1z"/><path fill="#588b7f" d="m42 71 23-11 13 9-25 13Z"/><path fill="#b79866" d="m42 71 11 8 25-12v3L53 83l-11-9Z"/><path d="m49 69 9 7m-1-11 8 7" stroke="#93bd9e"/>
+   <path fill="#b69764" d="m15 77 13 3.6v2L15 79z"/><path d="m17 80 0 5m9-3v5" stroke-width="2.4"/></g>
+ </g>
+ <g id="tide" transform="translate(288)"><use xlink:href="#base"/>
+  <g stroke="#2b3e3e" stroke-width="1.4"><path fill="#8b7453" d="m28 65 9-42 4 .4 7 47-4-1-5.5-37-6.5 35Z"/><path fill="none" stroke="#b39464" stroke-width="1.7" d="m36 33 6 7-9 5 11 7-13 6"/><path d="M39 24V11" stroke-width="2.2"/><path d="m28 14 19 6m-16-7v4m7-2v5m7-3v5" stroke="#526960" stroke-width="1.6"/><circle cx="39" cy="10" r="2.15" fill="#f5c271"/></g>
+  <use xlink:href="#shed" transform="translate(14 62) scale(.89 .99)"/>
+  <g stroke="#2c403f" stroke-width="1.4"><path fill="#8b6951" d="m64 63 10 2 4 15-8 4-9-4Z"/><path fill="#dfaa62" d="M60 62q0-5 8-7 8-1 11 5l2 5q-9 8-22 2Z"/><path fill="#43827c" d="m59 66 1 4q10 5 20-2l1-4q-10 7-22 2Z"/><path fill="#d3b07a" d="M67 54V41l3 .3 1 14-2 2Z"/><path fill="url(#lit)" d="m65 40 4-3 4 2v5l-4 2-4-2Z"/><path d="m62 37 7-3 6 3m-6-3v-5" fill="none" stroke-width="1.7"/></g>
+ </g>
+ <g id="filter" transform="translate(384)"><use xlink:href="#base"/>
+  <g stroke="#30433e" stroke-width="1.5"><path fill="#9e7855" d="M14 44h4v33l-4-1zm28 7h4v33l-4-1z"/><path d="m16 52 27 24m-1-22L17 72" fill="none" stroke="#8d6d4e" stroke-width="2.7"/></g>
+  <use xlink:href="#vessel" transform="translate(23 35) scale(.92 1.05)"/><use xlink:href="#vessel" transform="translate(45 31) scale(.85 1.17)"/>
+  <g stroke-linecap="round" fill="none"><path d="M20 32v-9l7-4 17 4v6m-13-7v7" stroke="#30423d" stroke-width="4.5"/><path d="M20 32v-9l7-4 17 4v6m-13-7v7" stroke="#c5a36f" stroke-width="2.2"/></g>
+  <use xlink:href="#shed" transform="translate(38 66) scale(.76 .87)"/>
+  <g stroke="#35453f" stroke-width="1.15"><path fill="#976e4b" d="M10 72 34 79v10l-2-.5v-7l-19-5v7l-3-1Z"/><path fill="#bc9669" d="m9 72 11-11 23 6-9 12Z"/><path fill="#d9ded0" d="m13 71 7-7 18 5-6 7Z"/><path d="m16 68 18 5m-10-8-7 8m14-6-7 8" fill="none" stroke="#a7997b"/></g>
+ </g>
+</svg>

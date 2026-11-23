@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="96" viewBox="0 0 640 64">
+<!-- Maritime equipment plates. Ten cells at 64 units each, transparent substrate. -->
+<g stroke="#102b35" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+<!-- Survey visor -->
+<g><path d="M6 31q1-12 11-14h30q9 2 11 13v9l-7 3H13l-7-4z" fill="#647d79"/><path d="M9 24q22-10 46 0l-2 15-8 6-10-1-4-7-4 7-12-1-6-7z" fill="#dfb878"/><path d="M13 26q8-4 17-3l-2 9-6 7-8-3zm22-3q9 0 16 3l-2 10-8 3-5-7z" fill="#76bcad"/><path d="m16 30 7-4m15 1 5-1" stroke="#e7f2d6"/></g>
+<!-- Air cylinder and regulator -->
+<g transform="translate(64)"><g transform="rotate(16 32 32)"><rect x="20" y="15" width="24" height="42" rx="9" fill="#81b6aa"/><path d="M20 29h24v6H20zm0 15h24v6H20z" fill="#dbb77e"/><rect x="27" y="8" width="11" height="8" rx="2" fill="#bd925d"/><path d="M25 8h15m-7 0V5m-9 16v6" stroke="#e9dbb5"/><path d="M38 12q12-2 13 7v11" fill="none" stroke="#75958f"/></g></g>
+<!-- Pair of flippers -->
+<g transform="translate(128)"><path d="m14 9 9 1 3 17 1 23-19 4 4-26z" fill="#6aab9f"/><path d="m16 14 4-1 2 11-8 2z" fill="#203e47"/><path d="m33 9 10-2 5 16 10 24-20 7-5-25z" fill="#91c6b7"/><path d="m36 13 5-1 4 10-9 2z" fill="#294851"/><path d="m16 32-3 14m8-15 1 15m17-16 4 15m1-16 7 13" stroke="#ddbc83"/></g>
+<!-- Cargo sling -->
+<g transform="translate(192)"><path d="M13 20q1-13 13-8m12 0q10-3 13 8" fill="none" stroke="#a1cbbb"/><path d="m9 23 46-1-6 28-14 7-17-5z" fill="#497d79"/><path d="m14 26 24 28m-13-28 21 23m-9-24 13 13m-32 8 21-22m-12 28 26-26m-37 9 12-12" fill="none" stroke="#c4ab78"/><path d="M10 19h44l1 6H9z" fill="#deb777"/></g>
+<!-- Capture net -->
+<g transform="translate(256)"><path d="m29 35 6 5-19 20-5-4z" fill="#bb915e"/><path d="M23 16Q38 7 54 17q4 20-13 30l-13-8z" fill="#517f79"/><path d="m28 18 17 22m-11-24 17 16m-20 5 17-20m-12 25 15-19" stroke="#a0cbba"/><ellipse cx="38" cy="18" rx="17" ry="9" transform="rotate(-18 38 18)" fill="#21424d" stroke="#e2bd80" stroke-width="3"/></g>
+<!-- Braced gauntlet -->
+<g transform="translate(320)"><path d="m17 13 21-5 13 36-25 11-12-25z" fill="#668f88"/><path d="m21 17 13-4 7 18-13 5z" fill="#c6a26e"/><path d="m27 18 4-1 4 11-4 1z" fill="#edd39a"/><path d="m17 30 27-9 2 6-26 10zm5 14 25-10 3 7-25 11z" fill="#e1be86"/></g>
+<!-- Research station -->
+<g transform="translate(384)"><path d="m16 12 25 24q-10 6-20-3-9-9-5-21z" fill="#8dc2b1"/><path d="m15 12 27 24m-16-9 15-15" stroke="#dfc085" stroke-width="3"/><circle cx="42" cy="11" r="3" fill="#eec98c"/><path d="m28 37-7 13h-7v5h36v-5h-8l-8-12z" fill="#739c90"/><path d="M19 50h25" stroke="#e4bf82"/></g>
+<!-- Salvage winch -->
+<g transform="translate(448)"><path d="M9 49h45v6H9z" fill="#ab8e65"/><path d="M14 47V20l30-12 5 5-24 14v21z" fill="#97b7a3"/><path d="m19 24 22-10-18 16zm1 9v9l6-13z" fill="#294954"/><path d="M45 14v16m0 0q8 1 5 9t-11 0" fill="none" stroke="#e7c18a" stroke-width="3"/></g>
+<!-- Construction -->
+<g transform="translate(512)"><path d="m12 46 27-30 7 6-26 32q-7 3-8-8z" fill="#c59b65"/><path d="m28 15 9-8 11 2 9 8-6 8-7-5-7 6z" fill="#97bcac"/><path d="m12 10 8 1-3 6 4 4 6-3-1 8 25 22q2 6-6 7L21 31Q8 33 8 20z" fill="#75a29c"/><circle cx="47" cy="49" r="2" fill="#f2cf91"/></g>
+<!-- Supply kit -->
+<g transform="translate(576)"><path d="M21 19v-5q1-4 5-4h12q5 0 5 4v5" fill="none" stroke="#dbb785" stroke-width="3.5"/><rect x="8" y="19" width="48" height="33" rx="5" fill="#729e92"/><path d="M9 26h46v7H9z" fill="#43696a"/><path d="M26 27h12v9H26z" fill="#d7b67c"/><path d="M13 40v6h8m28-7v7h-6" fill="none" stroke="#c9cfad"/></g></g></svg>

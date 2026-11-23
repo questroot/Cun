@@ -81,6 +81,8 @@ func _build() -> void:
 	var header: HBoxContainer = HBoxContainer.new()
 	layout.add_child(header)
 	title_label = _label(header, "公共工程 · 投料结果")
+	title_label.remove_theme_font_size_override("font_size")
+	title_label.theme_type_variation = &"HarborHeading"
 	title_label.focus_mode = Control.FOCUS_ALL
 	var close_button: Button = _button(header, "关闭")
 	close_button.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -102,6 +104,7 @@ func _build() -> void:
 		card.name = key
 		_body.add_child(card)
 		var heading: Label = _label(card)
+		heading.theme_type_variation = &"HarborCaption"
 		heading.focus_mode = Control.FOCUS_ALL
 		var facts: Label = _label(card)
 		var deficits: Label = _label(card)
@@ -116,6 +119,7 @@ func _build() -> void:
 	_persistence_note = _label(layout)
 	_action_note = _label(layout)
 	main_button = _button(layout, "返回基地")
+	main_button.theme_type_variation = &"HarborPrimary"
 	main_button.button_down.connect(_capture_press)
 	main_button.pressed.connect(_activate_main)
 	main_button.button_up.connect(_clear_press_later)

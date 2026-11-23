@@ -22,7 +22,16 @@ var confirmation: ConfirmationDialog
 var _contents: VBoxContainer
 var _page := "tech"
 var _selection: Dictionary = {}
-var _expanded := {"设备与海域": true, "经营能力": true, "主动探索": true}
+const StationIcons = preload("res://scripts/scenes/sea_station_icons.gd")
+const BRANCHES := {"基础研究": ["T0"], "设备与海域": ["T1", "T2", "T4"], "经营能力": ["T3", "T5"], "主动探索": ["T6"]}
+const PAGE_NAMES := {"tech": "研究", "device": "设备", "maintenance": "维护", "build": "建造"}
+const PAGE_ICONS := {"tech": "research", "device": "machine", "maintenance": "pack", "build": "build"}
+var _picked := {"tech": "T0", "device": "运行面板", "maintenance": "普通维护包", "build": "research"}
+var _tabs: HBoxContainer
+var _index: VBoxContainer
+var _scroll: ScrollContainer
+var _feedback: Label
+var _focus_key := ""
 var _message := ""
 var _settlement_failed := false
 
@@ -357,36 +366,133 @@ func _equipment_warning(cost: Dictionary) -> String:
 		if can_before and not can_after: conflicts.append(("网袋扩容" if slot == "net_expansion" else Catalog.EQUIPMENT[slot]) + " L%d" % (level + 1))
 	return "警告：本次会使当前材料已足够的装备配方变为不足：" + "、".join(conflicts) + "。仍可继续，不会替你锁料。" if not conflicts.is_empty() else "未影响当前已足料的下一等级装备配方。"
 
+func show_facility(id: String) -> void:
+	if id not in ["research", "machine"] or not _surface() or host._sea_modal(): return
+	var desk := preload("res://scripts/scenes/sea_facility_desk.gd").new()
+	host.add_child(desk)
+	host.moving = false
+	desk.open(self, id)
+
+func open_item(page: String, entry: String) -> void:
+	_picked[page] = entry
+	show_page(page)
+
 func show_page(page: String = "tech") -> void:
 	if not _surface():
 		_say("请先返回浮台，再使用科技与设备。")
 		return
 	if is_instance_valid(host.management) and host.management.visible: host._close_management()
-	if not _allowed(): return
-	if is_instance_valid(confirmation) and confirmation.visible: return
-	_page = page if page in ["tech", "device", "build", "production", "machine"] else "tech"
-	if _page in ["production", "machine"]: _page = "device"
+	if not _allowed() or (is_instance_valid(confirmation) and confirmation.visible): return
+	_page = page if PAGE_NAMES.has(page) else ("device" if page in ["production", "machine"] else "tech")
 	host.moving = false
-	if not is_instance_valid(dialog):
-		dialog = AcceptDialog.new()
-		dialog.name = "TechnologyDialog"
-		dialog.title = "浮台 · 科技与打捞设备"
-		dialog.get_ok_button().text = "关闭"
-		var scroll := ScrollContainer.new()
-		scroll.name = "TechnologyScroll"
-		scroll.custom_minimum_size = Vector2(760, 470)
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		dialog.add_child(scroll)
-		_contents = VBoxContainer.new()
-		_contents.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_contents.add_theme_constant_override("separation", 12)
-		scroll.add_child(_contents)
-		host.add_child(dialog)
-		# 窗口由宿主持有；关闭只隐藏，避免信号闭包引用已释放窗口。
-		dialog.confirmed.connect(dialog.hide)
-		dialog.canceled.connect(dialog.hide)
+	if not is_instance_valid(dialog): _make_station()
 	_redraw()
-	dialog.popup_centered(Vector2i(800, 550))
+	dialog.popup_centered(_station_size())
+	_focus("page:" + _page)
+
+func _station_size() -> Vector2i:
+	var screen: Vector2i = host.get_window().size.min(Vector2i(host.get_viewport_rect().size))
+	return Vector2i(976, 586).min(screen - Vector2i(64, 64)).max(Vector2i(768, 456))
+
+func _make_station() -> void:
+	dialog = AcceptDialog.new()
+	dialog.name = "TechnologyDialog"
+	dialog.title = "浮台港务   /   海事科技工作台"
+	dialog.theme = host.theme
+	dialog.get_ok_button().text = "返回浮台  Esc"
+	host.add_child(dialog)
+	dialog.visibility_changed.connect(func() -> void:
+		if not dialog.visible and is_instance_valid(host.technology_button): host.technology_button.grab_focus())
+	var desk := VBoxContainer.new()
+	desk.custom_minimum_size = Vector2(744, 382)
+	desk.add_theme_constant_override("separation", 8)
+	dialog.add_child(desk)
+	_tabs = HBoxContainer.new()
+	desk.add_child(_tabs)
+	for page in PAGE_NAMES:
+		var key: String = page
+		var tab := _button(_tabs, PAGE_NAMES[key], func() -> void: _open(key))
+		_tag(tab, "page:" + key)
+		tab.toggle_mode = true
+	var split := HBoxContainer.new()
+	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	split.add_theme_constant_override("separation", 12)
+	desk.add_child(split)
+	var rail := ScrollContainer.new()
+	rail.custom_minimum_size.x = 212
+	rail.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rail.follow_focus = true
+	split.add_child(rail)
+	_index = _stack(rail)
+	_scroll = ScrollContainer.new()
+	_scroll.name = "TechnologyScroll"
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.follow_focus = true
+	split.add_child(_scroll)
+	_contents = _stack(_scroll)
+	_feedback = _label(desk, "")
+	_feedback.max_lines_visible = 2
+	_feedback.add_theme_font_size_override("font_size", 15)
+
+func _stack(parent: Control) -> VBoxContainer:
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 7)
+	parent.add_child(box)
+	return box
+
+func _card(parent: Control, caption: String) -> VBoxContainer:
+	var plate := PanelContainer.new()
+	parent.add_child(plate)
+	var box := _stack(plate)
+	_kicker(box, caption)
+	return box
+
+func _kicker(parent: Control, text: String) -> void:
+	var label := _label(parent, text)
+	label.theme_type_variation = &"HarborCaption"
+	label.add_theme_font_size_override("font_size", 15)
+
+func _hero(parent: Control, tag: String, title: String, detail: String) -> void:
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 14)
+	parent.add_child(head)
+	head.add_child(StationIcons.make(PAGE_ICONS[_page], 54))
+	var text := _stack(head)
+	_kicker(text, tag)
+	var label := _label(text, title)
+	label.theme_type_variation = &"HarborHeading"
+	label.add_theme_font_size_override("font_size", 25)
+	if detail != "": _label(parent, detail)
+
+func _tag(button: Button, key: String) -> void:
+	button.set_meta("station_key", key)
+
+func _focus(key: String) -> void:
+	for node in dialog.find_children("*", "Button", true, false):
+		if node.get_meta("station_key", "") == key and not node.disabled:
+			node.grab_focus.call_deferred()
+			return
+	if key != "page:" + _page: _focus("page:" + _page)
+
+func _open(page: String) -> void:
+	_page = page
+	_redraw()
+	_scroll.scroll_vertical = 0
+	_focus("page:" + page)
+
+func _index_item(id: String, text: String) -> void:
+	var key := "item:" + id
+	var b := _button(_index, text, func() -> void:
+		_picked[_page] = id
+		_redraw()
+		_scroll.scroll_vertical = 0
+		_focus(key))
+	_tag(b, key)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.toggle_mode = true
+	b.set_pressed_no_signal(id == _picked[_page])
 
 func _label(parent: Control, text: String) -> Label:
 	var label := Label.new()
@@ -404,43 +510,71 @@ func _button(parent: Control, text: String, action: Callable, disabled: bool = f
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.disabled = disabled
+	_tag(button, "action:" + text)
+	button.focus_entered.connect(func() -> void: _focus_key = button.get_meta("station_key"))
 	button.pressed.connect(action)
 	parent.add_child(button)
 	return button
 
 func _action(action: Callable) -> void:
+	var origin := _focus_key
 	action.call()
 	_redraw()
+	_focus(origin)
 
 func _redraw() -> void:
-	if not is_instance_valid(_contents): return
-	for child in _contents.get_children():
-		_contents.remove_child(child)
-		child.queue_free()
-	var tabs := HBoxContainer.new()
-	_contents.add_child(tabs)
-	for pair in [["tech", "科技研究"], ["device", "设备与维护包"], ["build", "专用设施建造"]]:
-		var page: String = pair[0]
-		_button(tabs, pair[1], func() -> void:
-			_page = page
-			_redraw(), _page == page)
-	if _message != "": _label(_contents, _message)
-	_label(_contents, "跟踪目标：" + (TECHS[state.tracked].name if state.tracked != "" else "无") + "（仅标记，不预扣、不锁定材料）")
-	if state.tracked != "":
-		var tracked: String = state.tracked
-		_label(_contents, _research_reason(tracked) + " " + ("任意海底材料共2件" if tracked == "T0" else _cost_text(TECHS[tracked].cost)))
-	if _page == "build": _build_ui()
-	elif _page == "device": _device_ui()
-	else: _tech_ui()
+	for box in [_index, _contents]:
+		for child in box.get_children():
+			box.remove_child(child)
+			child.queue_free()
+	for tab in _tabs.get_children(): tab.set_pressed_no_signal(tab.get_meta("station_key") == "page:" + _page)
+	_feedback.text = _message if _message != "" else "Tab 切换控件   ·   Enter 执行   ·   Esc 返回"
+	_feedback.tooltip_text = _feedback.text
+	var id: String = _picked[_page]
+	match _page:
+		"tech":
+			for branch in BRANCHES:
+				_kicker(_index, branch)
+				for item in BRANCHES[branch]: _index_item(item, "%s   %s" % [item, TECHS[item].name])
+			_tech_card(id, _contents)
+		"build":
+			_kicker(_index, "专用附属位")
+			_index_item("research", "01   浮台研究台")
+			_index_item("machine", "02   自动打捞器")
+			_build_ui(id)
+		"device":
+			_kicker(_index, "打捞器控制台")
+			for item in ["运行面板", "目标预约", "设备货仓"]: _index_item(item, item)
+			_device_ui(id)
+		"maintenance":
+			_kicker(_index, "补给配方")
+			for item in ["普通维护包", "进阶维护包"]: _index_item(item, item)
+			_pack_ui(id == "进阶维护包")
 
-func _build_ui() -> void:
-	_label(_contents, "设施各限一座，使用独立附属位，不挤占原建筑槽；不拆除、不出售。")
-	for kind in BUILD_COSTS:
-		var id: String = kind
-		var built: bool = state.research_built if id == "research" else state.machine_built
-		_label(_contents, ("研究台：" if id == "research" else "打捞器：") + _cost_text(BUILD_COSTS[id]))
-		_button(_contents, "已建成" if built else ("建研究台" if id == "research" else "建打捞器（需T1）"), func() -> void:
-			_confirm("建造确认", _cost_text(BUILD_COSTS[id]) + "\n" + _equipment_warning(BUILD_COSTS[id]), func() -> bool: return build(id)), built)
+func _primary(parent: Control, text: String, action: Callable, disabled: bool = false) -> Button:
+	var b := _button(parent, text, action, disabled)
+	b.theme_type_variation = &"HarborPrimary"
+	return b
+
+func _build_ui(id: String) -> void:
+	var lab := id == "research"
+	var built: bool = state.research_built if lab else state.machine_built
+	var title := "浮台研究台" if lab else "自动打捞器"
+	var cost: Dictionary = BUILD_COSTS[id]
+	_hero(_contents, "设施建造   /   单座设施", title, "解锁海底材料研究。无需核心或居民。" if lab else "按预约目标生产材料；需先研究 T1 浅海打捞。")
+	var bill := _card(_contents, "建造用料   /   一次性")
+	_cost_rows(bill, cost)
+	_primary(_contents, "已建成" if built else "核对建造费用", func() -> void:
+		_confirm("建造确认", title, cost, "设施使用独立附属位，不占原建筑槽。", func() -> bool: return build(id)), built)
+	_kicker(_contents, "每种设施限一座，不可拆除或出售。")
+
+func _cost_rows(parent: Control, cost: Dictionary) -> void:
+	for item in cost:
+		var n := int(cost[item])
+		if n <= 0: continue
+		var owned := _count(item)
+		var label := _label(parent, "%s × %d     /     库存 %d     ·     %s" % [_name(item), n, owned, "余 %d" % (owned - n) if owned >= n else "尚缺 %d" % (n - owned)])
+		if owned < n: label.add_theme_color_override("font_color", Color("f7cd85"))
 
 func _track(id: String) -> bool:
 	if not _allowed() or not TECHS.has(id): return false
@@ -448,88 +582,93 @@ func _track(id: String) -> bool:
 	state.tracked = "" if state.tracked == id else id
 	return _save(before, "跟踪已更新；未预扣材料。")
 
-func _tech_ui() -> void:
-	_label(_contents, "研究台：" + ("已建" if state.research_built else "未建（木2废2，无核心前置）") + "\n旧档仅按现有对应材料补手动区域记录；已花光的历史材料无法追溯，需再次安全带回。")
-	var found := PackedStringArray()
-	for region in REGIONS: found.append(REGIONS[region] + ("：已手动发现" if state.manual[region] else "：待手动带回"))
-	_label(_contents, " / ".join(found))
-	if not state.research_built:
-		_button(_contents, "前往建造研究台", func() -> void:
-			_page = "build"
-			_redraw())
-	_tech_card("T0", _contents)
-	var branches := {"设备与海域": ["T1", "T2", "T4"], "经营能力": ["T3", "T5"], "主动探索": ["T6"]}
-	for branch in branches:
-		var key: String = branch
-		_button(_contents, ("▼ " if _expanded[key] else "▶ ") + key, func() -> void:
-			_expanded[key] = not _expanded[key]
-			_redraw())
-		if _expanded[key]:
-			for id in branches[key]: _tech_card(id, _contents)
-	_button(_contents, "快捷：前往设施建造", func() -> void:
-		_page = "build"
-		_redraw())
-	_button(_contents, "快捷：查看打捞器与维护包", func() -> void:
-		_page = "device"
-		_redraw())
-
 func _tech_card(id: String, parent: Control) -> void:
 	var tech: Dictionary = TECHS[id]
-	_label(parent, "%s · %s%s\n%s\n前置：%s\n%s" % [id, tech.name, " · 已研究" if researched(id) else "", tech.effect, "研究台＋手动安全带回任意材料" if id == "T0" else tech.pre, _research_reason(id)])
+	var reason := _research_reason(id)
+	_hero(parent, "研究档案   /   " + id, tech.name + ("  ·  已完成" if researched(id) else ""), tech.effect)
+	var bill := _card(parent, "研究费用   /   自选两件" if id == "T0" else "研究费用")
 	if id == "T0" and not researched(id):
-		_label(parent, "任意选2件（初始全为0；不会默认消耗珍珠）：")
+		var sum_label := _label(bill, "")
+		var update := func() -> void:
+			var n := 0
+			for value in _selection.values(): n += int(value)
+			sum_label.text = "已选 %d / 2 件   ·   不会自动使用珍珠" % n
+		update.call()
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 14)
+		bill.add_child(grid)
 		for material in Catalog.ITEMS:
 			var item: String = material
 			var row := HBoxContainer.new()
-			parent.add_child(row)
-			_label(row, "%s 库存%d · 装备用途：%s" % [_name(item), _count(item), Catalog.USES[item]])
-			var spin := SpinBox.new()
-			spin.min_value = 0
-			spin.max_value = 2
-			spin.step = 1
-			spin.value = int(_selection.get(item, 0))
-			spin.custom_minimum_size = Vector2(100, 42)
-			spin.value_changed.connect(func(value: float) -> void: _selection[item] = int(value))
-			row.add_child(spin)
-	else:
-		_label(parent, "费用：" + ("任意2件" if id == "T0" else _cost_text(tech.cost)))
-		for material in tech.cost:
-			_label(parent, _name(material) + "装备用途：" + Catalog.USES[material])
-	_button(parent, "取消跟踪" if state.tracked == id else "跟踪此目标（不预扣）", func() -> void: _action(func() -> bool: return _track(id)))
-	_button(parent, "查看扣费确认", func() -> void: _confirm_research(id), researched(id))
+			row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			grid.add_child(row)
+			var caption := _label(row, "%s · 库存%d" % [_name(item), _count(item)])
+			caption.tooltip_text = Catalog.USES[item]
+			var spin := _quantity(row, 0, 2, int(_selection.get(item, 0)))
+			spin.value_changed.connect(func(value: float) -> void:
+				_selection[item] = int(value)
+				update.call())
+	elif id == "T0": _label(bill, "任意海底材料 × 2")
+	else: _cost_rows(bill, tech.cost)
+	var info := _card(parent, "办理条件   /   " + ("研究台" if tech.pre == "" else tech.pre + " " + TECHS[tech.pre].name))
+	_label(info, reason if reason != "" else "前置条件已满足，确认时扣除材料。")
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+	_primary(row, "核对研究费用", func() -> void: _confirm_research(id), researched(id))
+	_button(row, "取消跟踪" if state.tracked == id else "跟踪目标", func() -> void: _action(func() -> bool: return _track(id)))
+	if not state.research_built: _button(parent, "前往建造研究台", func() -> void:
+		_picked.build = "research"
+		_open("build"))
+	_kicker(parent, "跟踪：%s（不预扣材料）" % (TECHS[state.tracked].name if state.tracked != "" else "无"))
+	var record := _card(parent, "手动发现记录")
+	var found := PackedStringArray()
+	for region in REGIONS: found.append(REGIONS[region] + ("：已发现" if state.manual[region] else "：待带回"))
+	_label(record, "   /   ".join(found))
+	_kicker(record, "旧档仅按现存材料补记录；历史材料已用尽时，需再次手动安全带回。")
+	if not tech.cost.is_empty():
+		var uses := _card(parent, "材料的其他用途")
+		for material in tech.cost: _kicker(uses, _name(material) + "：" + Catalog.USES[material])
 
 func _confirm_research(id: String) -> void:
 	var cost: Dictionary = _selection.duplicate(true) if id == "T0" else TECHS[id].cost.duplicate(true)
-	var lines := PackedStringArray([TECHS[id].name + "；不可撤销。", _research_reason(id)])
-	var total := 0
-	for material in cost:
-		if int(cost[material]) == 0: continue
-		total += int(cost[material])
-		lines.append("%s：当前%d / 消耗%d / 剩余%d" % [_name(material), _count(material), int(cost[material]), _count(material) - int(cost[material])])
-	if id == "T0": lines.append("本次选料合计%d件，必须正好2件。" % total)
-	lines.append(_equipment_warning(cost))
-	_confirm("研究扣费确认", "\n".join(lines), func() -> bool: return research(id, cost))
+	var condition := _research_reason(id)
+	if id == "T0":
+		var n := 0
+		for value in cost.values(): n += int(value)
+		condition += " 本次选料 %d / 2 件，必须正好两件。" % n
+	_confirm("研究扣费确认", TECHS[id].name, cost, condition.strip_edges(), func() -> bool: return research(id, cost))
 
-func _confirm(title: String, text: String, action: Callable) -> void:
+func _confirm(title: String, item: String, cost: Dictionary, condition: String, action: Callable) -> void:
 	if is_instance_valid(confirmation): return
 	dialog.hide()
 	confirmation = ConfirmationDialog.new()
 	confirmation.title = title
+	confirmation.theme = host.theme
 	confirmation.get_ok_button().text = "确认扣料"
+	confirmation.get_ok_button().theme_type_variation = &"HarborPrimary"
 	confirmation.get_cancel_button().text = "取消，保留选料"
 	confirmation.dialog_hide_on_ok = false
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(690, 330)
+	scroll.custom_minimum_size = Vector2(545, 300)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
 	confirmation.add_child(scroll)
-	_label(scroll, text)
+	var body := _stack(scroll)
+	_hero(body, "港务签发   /   " + title, item, "核对后再扣料；成功后无法撤销。")
+	var bill := _card(body, "本次材料清单")
+	_cost_rows(bill, cost)
+	if bill.get_child_count() == 1: _label(bill, "尚未选择材料。")
+	if condition != "": _label(body, condition)
+	_label(body, _equipment_warning(cost))
 	host.add_child(confirmation)
 	confirmation.confirmed.connect(func() -> void:
 		var success: bool = action.call()
 		if success: _selection.clear()
 		_finish_confirm())
 	confirmation.canceled.connect(_finish_confirm)
-	confirmation.popup_centered(Vector2i(730, 420))
+	confirmation.popup_centered(Vector2i(680, 440))
+	confirmation.get_cancel_button().grab_focus()
 
 func _finish_confirm() -> void:
 	if is_instance_valid(confirmation):
@@ -537,24 +676,38 @@ func _finish_confirm() -> void:
 		confirmation.queue_free()
 	confirmation = null
 	_redraw()
-	if is_instance_valid(dialog): dialog.popup_centered(Vector2i(800, 550))
+	dialog.popup_centered(_station_size())
+	_focus(_focus_key)
 
-func _device_ui() -> void:
-	var cargo := PackedStringArray()
-	for id in state.cargo: cargo.append("%s%d" % [_name(id), int(state.cargo[id])])
-	_label(_contents, "%s\n当前：%s · 剩余%.1f秒 / 预约：%s\n货仓%d/%d件：%s\n可用额度%d/24（不含当前已投入1次） · 普通包%d / 进阶包%d" % [status_text(), _name(state.current) if state.current != "" else "无", float(state.remaining), _name(state.target), _cargo_count(), capacity(), " / ".join(cargo), int(state.credits), int(state.packs.normal), int(state.packs.advanced)])
-	_label(_contents, "仅在线海面经营且无模态时推进；下潜、后台、关闭不补算。主动暂停须手动继续；无额度/满仓不扣下一轮。目标选择只预约，当前周期不变。不产珍珠/核心，不消耗海底箱存量。")
-	if not state.machine_built:
-		_label(_contents, "打捞器费用：" + _cost_text(BUILD_COSTS.machine))
-		_button(_contents, "前往建造打捞器", func() -> void:
-			_page = "build"
-			_redraw())
-	for id in TARGETS:
-		var target: String = id
-		_button(_contents, "预约%s · %.0f秒/件 · %s" % [_name(target), TARGETS[target][1], "已许可" if researched(TARGETS[target][0]) else "需" + TARGETS[target][0]], func() -> void: _action(func() -> bool: return select_target(target)), not state.machine_built or not researched(TARGETS[target][0]))
-	_button(_contents, "启动 / 继续 / 重试结算", func() -> void: _action(resume), not state.machine_built)
-	_button(_contents, "主动暂停（保留本周期投入）", func() -> void: _action(pause), not state.machine_built or state.paused)
-	_button(_contents, "一键领取全部货仓", func() -> void: _action(claim), _cargo_count() == 0)
+func _device_ui(id: String) -> void:
+	_hero(_contents, "自动打捞器   /   作业调度", id, status_text())
+	if id == "运行面板":
+		var board := _card(_contents, "当前周期")
+		_label(board, "当前：%s     剩余 %.1f 秒" % [_name(state.current) if state.current != "" else "无作业", float(state.remaining)])
+		_label(board, "下轮：%s     可用额度 %d / 24     货仓 %d / %d" % [_name(state.target), int(state.credits), _cargo_count(), capacity()])
+		if not state.machine_built:
+			_primary(_contents, "前往建造打捞器", func() -> void:
+				_picked.build = "machine"
+				_open("build"))
+		else:
+			_primary(_contents, "启动 / 继续 / 重试结算", func() -> void: _action(resume))
+			_button(_contents, "主动暂停（保留本周期投入）", func() -> void: _action(pause), state.paused)
+		_button(_contents, "前往维护补给", func() -> void: _open("maintenance"))
+		_kicker(_contents, "每周期耗 1 额度。关闭面板、聚焦浮台才计时；下潜或离线不补算。")
+	elif id == "目标预约":
+		var board := _card(_contents, "下轮预约   /   " + _name(state.target))
+		_label(board, "仅更改下一轮；本周期投入与进度不变。不生产珍珠或核心，不消耗手动宝箱存量。")
+		for item in TARGETS:
+			var target: String = item
+			var permit: String = TARGETS[target][0]
+			_button(_contents, "%s   ·   %.0f 秒/件   ·   %s" % [_name(target), TARGETS[target][1], "已许可" if researched(permit) else "需 " + permit], func() -> void: _action(func() -> bool: return select_target(target)), not state.machine_built or not researched(permit))
+	else:
+		var cargo := _card(_contents, "设备货仓   /   %d 格已用，共 %d 格" % [_cargo_count(), capacity()])
+		for item in state.cargo: _label(cargo, "%s   × %d" % [_name(item), int(state.cargo[item])])
+		_primary(_contents, "领取全部货仓", func() -> void: _action(claim), _cargo_count() == 0)
+		_cargo_route()
+
+func _cargo_route() -> void:
 	var space := Catalog.resources()
 	var needs_space := false
 	for id in state.cargo:
@@ -568,31 +721,48 @@ func _device_ui() -> void:
 		_button(_contents, "前往公共工程腾仓（不自动领取）", func() -> void:
 			dialog.hide()
 			host.open_public_project_editor("", space))
-	_button(_contents, ("▼ " if _expanded.get("维护包", true) else "▶ ") + "维护包批量制作 / 投入", func() -> void:
-		_expanded["维护包"] = not _expanded.get("维护包", true)
-		_redraw())
-	if not _expanded.get("维护包", true): return
-	_label(_contents, "维护耗材用绳索：早期可在经营→生产用纤维1搓绳1，工坊自动加工后直接供应。普通包6轮中留1轮补贝群，净余5件；进阶包12轮中留2轮补贝群与藻，净余10件（另耗绳索1）。库存上限1000000；整包换额度，上限24，超出整批拒绝。")
-	for advanced in [false, true]:
-		var is_advanced: bool = advanced
-		var cost := {"shell": 1, "rope": 1}
-		if is_advanced: cost.algae = 1
-		_label(_contents, ("进阶包（12次，需T5）：" if is_advanced else "普通包（6次，需T1）：") + _cost_text(cost))
-		var quantity := SpinBox.new()
-		quantity.min_value = 1
-		quantity.max_value = Catalog.RESOURCE_LIMIT
-		quantity.step = 1
-		quantity.value = 1
-		_contents.add_child(quantity)
-		_button(_contents, "制作所选数量" + ("进阶包" if is_advanced else "普通包"), func() -> void:
-			var n := int(quantity.value)
-			_action(func() -> bool: return craft_pack(is_advanced, n)), not researched("T5" if is_advanced else "T1"))
-		var fill := SpinBox.new()
-		fill.min_value = 1
-		fill.max_value = 2 if is_advanced else 4
-		fill.step = 1
-		fill.value = 1
-		_contents.add_child(fill)
-		_button(_contents, "投入所选数量" + ("进阶包" if is_advanced else "普通包"), func() -> void:
-			var n := int(fill.value)
-			_action(func() -> bool: return refuel(is_advanced, n)), not state.machine_built)
+
+func _quantity(parent: Control, lo: int, hi: int, initial: int) -> SpinBox:
+	var spin := SpinBox.new()
+	spin.min_value = lo
+	spin.max_value = hi
+	spin.step = 1
+	spin.value = initial
+	spin.custom_minimum_size = Vector2(92, 38)
+	parent.add_child(spin)
+	return spin
+
+func _pack_ui(advanced: bool) -> void:
+	var key := "advanced" if advanced else "normal"
+	var permit := "T5" if advanced else "T1"
+	var quota := 12 if advanced else 6
+	var title := "进阶维护包" if advanced else "普通维护包"
+	_hero(_contents, "维护补给   /   " + permit + (" 已许可" if researched(permit) else " 待解锁"), title, "每包含 %d 次额度   ·   现存 %d 包   ·   设备额度 %d / 24" % [quota, int(state.packs[key]), int(state.credits)])
+	var cost := {"shell": 1, "rope": 1}
+	if advanced: cost.algae = 1
+	var make := _card(_contents, "01   制作维护包")
+	var bill := _stack(make)
+	_cost_rows(bill, cost)
+	var maker := HBoxContainer.new()
+	make.add_child(maker)
+	var count := _quantity(maker, 1, Catalog.RESOURCE_LIMIT, 1)
+	count.value_changed.connect(func(value: float) -> void:
+		for child in bill.get_children():
+			bill.remove_child(child)
+			child.queue_free()
+		var batch := {}
+		for item in cost: batch[item] = int(value) * int(cost[item])
+		_cost_rows(bill, batch))
+	_primary(maker, "制作所选数量", func() -> void:
+		var n := int(count.value)
+		_action(func() -> bool: return craft_pack(advanced, n)), not researched(permit))
+	var fuel := _card(_contents, "02   整包投入设备")
+	var fuel_note := _label(fuel, "增加 %d 次额度   ·   超出上限 24 时整批不投入" % quota)
+	var filler := HBoxContainer.new()
+	fuel.add_child(filler)
+	var fill := _quantity(filler, 1, 2 if advanced else 4, 1)
+	fill.value_changed.connect(func(value: float) -> void: fuel_note.text = "增加 %d 次额度   ·   超出上限 24 时整批不投入" % (quota * int(value)))
+	_primary(filler, "投入所选数量", func() -> void:
+		var n := int(fill.value)
+		_action(func() -> bool: return refuel(advanced, n)), not state.machine_built)
+	_kicker(_contents, "早期可在经营 → 生产用纤维搓绳；工坊成熟后自动供应。普通包补贝群后净余 5 件，进阶包补贝群与藻后净余 10 件，另耗绳索 1。包库存上限 1000000。")

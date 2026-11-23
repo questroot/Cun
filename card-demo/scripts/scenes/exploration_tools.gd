@@ -19,7 +19,7 @@ func _ready() -> void:
 	bar.add_child(UI.button("切换游戏", switch_game))
 	if get_parent().has_method("configure_exploration_actions"):
 		get_parent().configure_exploration_actions(bar)
-	atlas = Atlas.new()
+	atlas = preload("res://scripts/scenes/sea_world_atlas.gd").new() if region == "water_activity" else Atlas.new()
 	add_child(atlas)
 	confirm = Control.new()
 	confirm.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

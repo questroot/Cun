@@ -353,7 +353,7 @@ func run_checks() -> void:
 			instance._confirm_build()
 			instance.build_dialog.hide()
 			check(instance.raft_tiles == 1 and instance.wood == 0 and not instance._fulfill_order(), "锁定预览不能绕过建造或交付门槛")
-			check(instance.model.texture.resource_path == "res://assets/characters/hero/idle/hero_idle.png" and instance.model.hframes == 1 and instance.debris.size() == 5, "水域显示主角站立图及可拾取漂浮物")
+			check(instance.model.get_script() == preload("res://scripts/scenes/sea_crew_actor.gd") and instance.model.is_visible_in_tree() and not instance.model.submerged and not instance.model.walking and instance.debris.size() == 5, "水域显示待机打捞员及可拾取漂浮物")
 			for point in instance.debris.duplicate():
 				instance.player_foot = point
 				instance._collect_nearby()
