@@ -174,8 +174,10 @@ func run_checks() -> void:
 		modal.hide()
 	game.tools.atlas.open("grove")
 	var before_pause: float = structures.active.buff.left
+	var ripple_before_pause: float = structures.ripple_time
 	structures.tick(5)
 	check(structures.active.buff.left == before_pause, "地图暂停建筑状态倒计时")
+	check(structures.ripple_time == ripple_before_pause, "地图暂停地面涟漪")
 	await capture("atlas")
 	game.tools.atlas.close()
 	game.finished = true
@@ -189,6 +191,7 @@ func run_checks() -> void:
 	await create_timer(0.25).timeout
 	game.set_process(false)
 	check(structures.active.buff.left < before_pause, "真实逐帧运行推进建筑效果")
+	check(structures.ripple_time != ripple_before_pause, "继续探索后地面涟漪推进")
 	var effect_before: String = structures.active.buff.effect
 	game.enter_region("post")
 	game.player_foot = Maps.MAPS.post.spawn * Maps.MAPS.post.size

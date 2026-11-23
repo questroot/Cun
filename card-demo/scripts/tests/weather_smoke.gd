@@ -85,9 +85,16 @@ func run_checks() -> void:
 	game._update_camera()
 	await capture("rain_garden")
 	if DisplayServer.get_name() != "headless":
-		var marker: Vector2 = weather.garden.get_global_transform_with_canvas() * Vector2(plot.position) + Vector2(21, 0)
-		var pixel := root.get_texture().get_image().get_pixelv(Vector2i(marker))
-		check(pixel.g > 0.5 and pixel.r > 0.35, "成熟药圃标记真实渲染，跨图后绘制区域正确")
+		var foot: Vector2 = game.world_to_screen(plot.position)
+		var plant_area := Rect2i(Vector2i(foot) - Vector2i(24, 60), Vector2i(48, 58))
+		var plant_base := Vector2i(foot) + Vector2i(0, 10)
+		var with_garden := root.get_texture().get_image()
+		weather.garden.hide()
+		await frames()
+		await RenderingServer.frame_post_draw
+		var without_garden := root.get_texture().get_image()
+		weather.garden.show()
+		check(with_garden.get_region(plant_area).get_data() != without_garden.get_region(plant_area).get_data() and with_garden.get_pixelv(plant_base) == without_garden.get_pixelv(plant_base), "成熟植株真实渲染且脚下不绘制底圈")
 	var before: int = game.inventory[plot.item]
 	game._collect_nearby()
 	check(game.inventory[plot.item] == before + 1, "成熟植物采集进现有材料行囊")

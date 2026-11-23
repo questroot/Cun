@@ -18,12 +18,16 @@ func run() -> void:
 	var before := FileAccess.get_file_as_string(spirit_path)
 	await open_game()
 	if "--verify-relaunch" in OS.get_cmdline_user_args():
-		check(game.book.tracked == "stove" and game.inventory.field_bandage == 2, "新进程恢复追踪任务和制作的补给")
+		check(game.book.tracked == "stove" and game.inventory.field_bandage == 1, "新进程恢复追踪任务和使用后剩余的补给")
 		check(game.states.grove.enemies[0].behavior == "charger" and game.states.grove.enemies[0].guard_phase == "idle" and game.guards.shots.is_empty(), "保存守卫角色，读档取消旧攻击与飞弹")
 		check(game.states.grove.rested, "修补后再次使用的休息次数被保存")
+		check(is_equal_approx(game.mana, 26.5) and game.inventory.wakeleaf_potion == 1, "新进程恢复法力和药水库存")
 	else:
 		await check_guards()
+		await check_enemy_feedback()
+		await check_player_ailments()
 		await check_book_and_supplies()
+		await check_mana_supplies()
 		await check_legacy_save()
 	check(FileAccess.get_file_as_string(spirit_path) == before, "改进系统不修改灵伴存档")
 	print("FUDI_REFINEMENTS_RESULT: %d checks, %d failures" % [checks, failures])
@@ -175,6 +179,80 @@ func check_guards() -> void:
 	game.health = 100
 	game.player_foot = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size
 
+func check_enemy_feedback() -> void:
+	game.enter_region("grove")
+	var enemy: Dictionary = game.Guards.create(game.player_foot + Vector2(80, 0), "melee")
+	game.guards.recover(enemy)
+	game.states.grove.enemies.append(enemy)
+	var point: Vector2 = enemy.position
+	game._damage(enemy, 1)
+	var bursts: Array = game.enemy_feedback.bursts
+	check(enemy.hp < 60 and enemy.flash > 0 and enemy.hit_direction == Vector2.RIGHT and enemy.position == point and not bursts[-1].fallen, "实际受伤触发方向性受击反馈，碰撞位置保持原位")
+	await capture("guard-hit")
+	game.journal.show()
+	game._process(0.3)
+	check(bursts.size() == 1 and bursts[0].age == 0.0, "行囊暂停受击火花")
+	game.journal.hide()
+	game._process(0.3)
+	check(bursts.is_empty() and enemy.position == point, "火花正常结束，守卫无击退位移")
+	game.equipment.effects.secondary_damage(enemy, 999, "测试追加伤害", Color.WHITE)
+	game._remove_dead()
+	check(not game.combat_targets().has(enemy) and bursts.size() == 1 and bursts[0].fallen, "追加伤害击杀后目标立即移除，原地保留阵亡特效")
+	game._damage(enemy, 999)
+	check(bursts.size() == 1, "死亡目标不会重复产生阵亡特效")
+	game.enemy_feedback.tick(0.15)
+	await capture("guard-fallen")
+	game._process(0.6)
+	check(bursts.is_empty(), "阵亡特效播完自动清除")
+	var boss: Dictionary = game.get_node("Bosses").bosses.H02
+	game.player_foot = boss.position - Vector2(135, 0)
+	game._damage(boss, 9999)
+	game._remove_dead()
+	check(not game.combat_targets().has(boss) and bursts.size() == 1 and bursts[0].fallen and bursts[0].boss, "地图首领阵亡特效与掉落同步触发")
+	game.enemy_feedback.tick(0.20)
+	await capture("boss-fallen")
+	game.enter_region("post")
+	check(bursts.is_empty(), "切图清除阵亡特效")
+	game.enter_region("grove")
+
+func check_player_ailments() -> void:
+	var ailments: Dictionary = game.player_ailments
+	for weather: String in game.Guards.HIT_AILMENTS:
+		var enemy := guard_fixture("melee", 60)
+		enemy.weather = weather
+		enemy.guard_target = game.player_foot
+		game.guards.release(enemy)
+		var key: String = game.Guards.HIT_AILMENTS[weather]
+		check(game.health < 100 and ailments.has(key), "属性攻击造成伤害并附着对应特效 " + weather)
+		if weather == "heat":
+			await capture("player-burn")
+		game.journal.show()
+		game._process(0.5)
+		check(ailments[key].age == 0.0, "暂停冻结角色异常特效 " + weather)
+		game.journal.hide()
+		game._process(1.0)
+		check(ailments.is_empty(), "角色异常特效到期消失 " + weather)
+	var thrower := guard_fixture("ranged", 150)
+	thrower.weather = "storm"
+	game.guards.release(thrower)
+	thrower.weather = "clear"
+	game.guards.tick(0.5)
+	check(game.health < 100 and ailments.has("status-stun"), "飞石命中沿用出手时的雷属性")
+	game.take_enemy_hit(10, "status-freeze")
+	check(not ailments.has("status-freeze"), "受伤保护阻止异常伤害特效")
+	game.enter_region("archive")
+	check(ailments.is_empty(), "切图清除玩家异常特效")
+	var bosses = game.get_node("Bosses")
+	var frost_boss: Dictionary = bosses.bosses.H05
+	game.player_foot = frost_boss.position
+	bosses.Skills.lock(frost_boss, game.player_foot)
+	frost_boss.windup = 0.01
+	game.hurt_timer = 0.0
+	bosses.tick(0.02)
+	check(ailments.has("status-freeze"), "霜典记录者的实际技能命中附着冰霜")
+	game.enter_region("grove")
+	game.health = 100
+
 func check_wall_collision() -> void:
 	var wall_start := Vector2.ZERO
 	for y in range(100, 2200, 40):
@@ -191,7 +269,7 @@ func check_wall_collision() -> void:
 	game.player_foot = wall_start + Vector2(300, 0)
 	enemy.guard_phase = "recover"
 	enemy.guard_left = 3
-	game.guards.shots.append({"owner": enemy, "position": wall_start, "velocity": Vector2(310, 0), "damage": 10, "life": 2.0})
+	game.guards.shots.append({"owner": enemy, "position": wall_start, "velocity": Vector2(310, 0), "damage": 10, "life": 2.0, "weather": enemy.weather})
 	game.guards.tick(1.3)
 	check(game.health == 100 and game.guards.shots.is_empty(), "高速飞石逐段先撞墙，不能穿墙命中玩家")
 	enemy.behavior = "charger"
@@ -276,16 +354,65 @@ func check_book_and_supplies() -> void:
 	check(game.tools.atlas.has_meta("task_provider"), "地图接入实际追踪目标提供器")
 	game.tools.atlas.close()
 
+func check_mana_supplies() -> void:
+	game.enter_region("grove")
+	game.facing = Vector2.RIGHT
+	game.mana = 20
+	game.cooldowns = {"j": 0.0, "k": 0.0, "l": 0.0}
+	check(game.attack("j") and game.mana == 20, "斩击免费")
+	check(game.attack("k") and game.mana == 12, "灵弹实际消耗8法力")
+	check(not game.attack("l") and game.mana == 12 and game.cooldowns.l == 0, "法力不足不释放震荡也不触发冷却")
+	game._process(1.0)
+	check(game.mana == 16 and game.attack("l") and game.mana == 0, "自然回蓝每秒4点，震荡消耗16法力")
+	game.open_journal()
+	game._process(1.0)
+	check(game.mana == 0, "行囊暂停自然回蓝")
+	game.journal.hide()
+	game.inventory.dewleaf = 1
+	game.inventory.herb = 1
+	for pickup: Dictionary in game.states.grove.pickups:
+		if pickup.item == "dewleaf":
+			game.player_foot = pickup.position
+			game._collect_nearby()
+			break
+	check(game.inventory.dewleaf >= 2, "采集青露叶进入制作材料库存")
+	var leaves: int = game.inventory.dewleaf
+	game.open_journal()
+	game.book.select_page(0)
+	await click(game.book.craft_buttons.dewleaf_potion)
+	check(game.inventory.dewleaf == leaves - 2 and game.inventory.herb == 0 and game.inventory.dewleaf_potion == 1, "真实制作按钮用采集植物制作青露灵液")
+	game.inventory.wakeleaf = 2
+	game.inventory.mint = 1
+	game.book.refresh()
+	await click(game.book.craft_buttons.wakeleaf_potion)
+	check(game.inventory.wakeleaf == 0 and game.inventory.mint == 0 and game.inventory.wakeleaf_potion == 1, "醒神灵液配方精确扣除醒神叶和薄荷")
+	game.health = 60
+	game.mana = 80
+	game.journal.hide()
+	game._refresh_ui()
+	await click(game.potion_buttons.mana)
+	check(game.mana == 100 and game.health == 60 and game.inventory.dewleaf_potion == 0 and game.inventory.wakeleaf_potion == 1, "回蓝按钮优先消耗青露灵液，只补法力并封顶")
+	check(game.potion_buttons.mana.disabled and game.potion_buttons.mana.get_global_rect().end.x <= 800, "满蓝禁用药水按钮且按钮未挤入主导航")
+	await click(game.potion_buttons.health)
+	check(game.health == 85 and game.mana == 100 and game.inventory.field_bandage == 1, "回血按钮只补生命并扣除一份绷带")
+	await capture("quick-potions")
+	game.mana = 26.5
+
 func check_legacy_save() -> void:
 	game.states.grove.enemies[0].behavior = "charger"
 	check(game.persistence.save_now(), "新补给、任务追踪、守卫角色通过存档校验")
 	var snapshot: Dictionary = game.persistence.capture()
 	var legacy := snapshot.duplicate(true)
+	legacy.erase("mana")
+	legacy.inventory.erase("wakeleaf_potion")
+	legacy.inventory.erase("dewleaf_potion")
+	var v2 := {"version": 2, "data": Save.encode(legacy)}
+	var migrated: Dictionary = game.persistence.decode_snapshot(v2)
+	check(migrated.mana == 100 and migrated.inventory.field_bandage == 1, "v2旧档补入满法力并保留原补给")
 	legacy.erase("tracked_task")
 	for item: String in game.Catalog.SUPPLIES: legacy.inventory.erase(item)
 	for region: Dictionary in legacy.regions.values():
 		for actor: Dictionary in region.enemies: actor.erase("behavior")
-	check(game.persistence.valid(legacy), "此前v1存档缺少新字段仍可加载")
 	var bad := snapshot.duplicate(true)
 	bad.inventory.erase("herb")
 	check(not game.persistence.valid(bad), "边界拒绝缺失必需材料键的损坏库存")
@@ -296,7 +423,7 @@ func check_legacy_save() -> void:
 	file.store_string(JSON.stringify({"version": 1, "data": Save.encode(legacy)}, "", false, true))
 	file.close()
 	await open_game()
-	check(game.book.tracked == "" and game.states.grove.enemies[0].guard_phase == "idle", "旧档补上守卫角色，缺省不追踪任务")
-	check(Save.parse_text(FileAccess.get_file_as_string(Save.PATH)).version == 2, "真实v1文件加载后升级到v2，旧版本程序不会静默覆盖新字段")
+	check(game.book.tracked == "" and game.states.grove.enemies[0].guard_phase == "idle" and game.mana == 100, "真实v1旧档补上守卫角色和法力，缺省不追踪任务")
+	check(Save.parse_text(FileAccess.get_file_as_string(Save.PATH)).version == Save.VERSION, "真实v1文件加载后升级到v3")
 	game.persistence.apply(snapshot)
 	check(game.persistence.save_now(), "保留新功能跨进程复验存档")

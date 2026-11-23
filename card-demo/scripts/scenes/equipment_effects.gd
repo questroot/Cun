@@ -148,7 +148,7 @@ func tick(delta: float) -> void:
 		var burn: Dictionary = burns[i]
 		# Catch up all due ticks, including the final one at exactly three seconds.
 		while float(burn.next) <= elapsed + 0.00001 and float(burn.next) <= float(burn.until) + 0.00001 and int(burn.target.hp) > 0:
-			secondary_damage(burn.target, 6, "烽炉灼烧 -6", Color("#ff9e67"))
+			secondary_damage(burn.target, 6, "烽炉灼烧 -6", Color("#ff9e67"), "status-burn")
 			burn.next += 1.0
 		if elapsed >= float(burn.until) or int(burn.target.hp) <= 0:
 			burns.remove_at(i)
@@ -162,11 +162,10 @@ func tick(delta: float) -> void:
 	game._remove_dead()
 	game.world_canvas.queue_redraw()
 
-func secondary_damage(target: Dictionary, amount: int, label: String, color: Color) -> void:
+func secondary_damage(target: Dictionary, amount: int, label: String, color: Color, ailment: String = "") -> void:
 	if int(target.hp) <= 0:
 		return
-	target.hp = maxi(0, int(target.hp) - amount)
-	target.flash = 0.14
+	game._apply_enemy_damage(target, amount, ailment)
 	pulse(target.position, label, color)
 
 func pulse(point: Vector2, label: String, color: Color, radius: float = 38.0) -> void:
@@ -179,20 +178,28 @@ func pulse(point: Vector2, label: String, color: Color, radius: float = 38.0) ->
 		banner.text = label
 
 func draw_world() -> void:
-	# Status auras: shield while it holds, heal on trigger, burn and root on their targets.
+	# Shield while it holds, heal on trigger.
 	if shield_points > 0 and count("s3") >= 5:
 		PixelVFX.draw(game.world_canvas, "status-shield", game.player_foot - Vector2(0, 34), elapsed, Vector2.ONE * 1.7, 0.0, Color(1, 1, 1, 0.85), true)
 	if heal_glow > 0.0:
 		PixelVFX.draw(game.world_canvas, "status-heal", game.player_foot - Vector2(0, 34), elapsed, Vector2.ONE * 1.7, 0.0, Color(1, 1, 1, minf(1.0, heal_glow / 0.8)), true)
-	for burn: Dictionary in burns:
-		if int(burn.target.hp) > 0:
-			PixelVFX.draw(game.world_canvas, "status-burn", Vector2(burn.target.position) - Vector2(0, 24), elapsed, Vector2.ONE * 1.4, 0.0, Color(1, 1, 1, 0.85), true)
-	for target: Dictionary in slowed:
-		if float(target.get("gear_slow_until", 0.0)) > elapsed and int(target.hp) > 0:
-			PixelVFX.draw(game.world_canvas, "status-freeze", Vector2(target.position) - Vector2(0, 24), elapsed, Vector2.ONE * 1.4, 0.0, Color(1, 1, 1, 0.85), true)
 	for effect: Dictionary in visuals:
 		var color: Color = effect.color
 		color.a = clampf(float(effect.life) / 0.75, 0, 1)
 		var radius := float(effect.radius) * (1.15 - float(effect.life) * 0.4)
 		game.world_canvas.draw_arc(effect.position - Vector2(0, 22), radius, 0, TAU, 36, color, 3.0, true)
 		game.world_canvas.draw_string(ThemeDB.fallback_font, effect.position + Vector2(-45, -85 - (0.75 - float(effect.life)) * 30), effect.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, color)
+
+func draw_ailments() -> void:
+	for burn: Dictionary in burns:
+		if int(burn.target.hp) > 0:
+			draw_target_ailment(burn.target, "status-burn", burn.until - elapsed)
+	for target: Dictionary in slowed:
+		if float(target.gear_slow_until) > elapsed and int(target.hp) > 0:
+			draw_target_ailment(target, "status-freeze", float(target.gear_slow_until) - elapsed)
+
+func draw_target_ailment(target: Dictionary, key: String, time_left: float) -> void:
+	var size := 2.0 if target.has("skill_index") else 1.0
+	var center: Vector2 = target.position - Vector2(0, 35 * size)
+	var alpha := 0.85 * minf(1.0, time_left / 0.24)
+	PixelVFX.draw(game.world_canvas, key, center, elapsed, Vector2.ONE * size, 0.0, Color(1, 1, 1, alpha), true)

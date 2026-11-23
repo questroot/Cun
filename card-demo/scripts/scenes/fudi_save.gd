@@ -1,7 +1,7 @@
 extends Node
 ## A data-only expedition snapshot. Spirit and sea saves are never read or written.
 const PATH := "user://fudi_expedition_v1.json"
-const VERSION := 2
+const VERSION := 3
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Items = preload("res://scripts/scenes/exploration_catalog.gd")
 const Loot = preload("res://scripts/scenes/loot_catalog.gd")
@@ -126,7 +126,7 @@ func capture() -> Dictionary:
 	for id: String in game.get_node("Bosses").bosses:
 		bosses[id] = _actor(game.get_node("Bosses").bosses[id])
 	var fx = game.equipment.effects
-	return {"region": game.region, "health": game.health, "facing": game.facing, "finished": game.finished, "cleared": game.round_cleared,
+	return {"region": game.region, "health": game.health, "mana": game.mana, "facing": game.facing, "finished": game.finished, "cleared": game.round_cleared,
 		"inventory": game.inventory.duplicate(), "equipped": game.equipment.equipped.duplicate(), "cooldowns": game.cooldowns.duplicate(), "regions": regions,
 		"bosses": bosses, "weather_time": weather.elapsed, "building_states": game.buildings.states.duplicate(true), "building_active": game.buildings.active.duplicate(true),
 		"tasks": game.npcs.tasks.duplicate(), "tracked_task": game.book.tracked, "wander_region": game.npcs.wander_region, "wander_foot": game.npcs.wander_foot, "wander_wait": game.npcs.wander_wait,
@@ -201,6 +201,7 @@ func valid(data: Variant) -> bool:
 	var tracked: Variant = data.get("tracked_task", "") # Pre-journal v1 saves have no tracked task.
 	if not tracked is String or (tracked not in ["", "stove"] and not game.npcs.DEFINITIONS.has(tracked)): return false
 	if not integer(data.get("health"), 0, 100) or not data.get("finished") is bool or not data.get("cleared") is bool or not data.get("facing") is Vector2: return false
+	if not number(data.get("mana"), 0, game.MAX_MANA): return false
 	if not data.facing.is_finite() or data.facing.length() > 1.01 or (data.health == 0 and not data.finished) or (data.finished and data.health > 0 and not data.cleared): return false
 	for key: String in ["inventory", "equipped", "regions", "bosses", "cooldowns", "building_states", "building_active", "tasks", "stock", "effects", "traps", "rng"]:
 		if not data.get(key) is Dictionary: return false
@@ -292,12 +293,19 @@ func read_save() -> Dictionary:
 		var raw: Variant = parse_text(file.get_as_text())
 		if not raw is Dictionary: continue
 		if number(raw.get("version"), VERSION + 1, 1000000): return {}
-		if not integer(raw.get("version"), 1, VERSION) or not raw.get("data") is Dictionary: continue
-		var data: Variant = decode(raw.data)
-		if valid(data):
+		var data := decode_snapshot(raw)
+		if not data.is_empty():
 			status = "已从备份恢复探索" if path.ends_with(".bak") else "已继续上次探索"
 			return data
 	return {}
+
+func decode_snapshot(raw: Variant) -> Dictionary:
+	if not raw is Dictionary or not integer(raw.get("version"), 1, VERSION) or not raw.get("data") is Dictionary:
+		return {}
+	var data: Variant = decode(raw.data)
+	if raw.version < 3 and data is Dictionary:
+		data["mana"] = game.MAX_MANA
+	return data if valid(data) else {}
 
 static func parse_text(text: String) -> Variant:
 	var parser := JSON.new()
@@ -315,13 +323,12 @@ func write_snapshot(data: Dictionary) -> Error:
 	# Only promote a validated previous primary to the recovery slot.
 	if FileAccess.file_exists(PATH):
 		var previous: Variant = parse_text(FileAccess.get_file_as_string(PATH))
-		if previous is Dictionary and integer(previous.get("version"), 1, VERSION) and valid(decode(previous.get("data"))):
+		if not decode_snapshot(previous).is_empty():
 			error = DirAccess.copy_absolute(PATH, PATH + ".bak")
 			if error != OK: return error
 	# A confirmed new expedition also replaces an unusable old recovery file.
 	var backup: Variant = parse_text(FileAccess.get_file_as_string(PATH + ".bak")) if FileAccess.file_exists(PATH + ".bak") else null
-	var backup_valid: bool = backup is Dictionary and integer(backup.get("version"), 1, VERSION) and valid(decode(backup.get("data")))
-	if not backup_valid:
+	if decode_snapshot(backup).is_empty():
 		error = DirAccess.copy_absolute(PATH + ".tmp", PATH + ".bak")
 		if error != OK: return error
 	return DirAccess.rename_absolute(PATH + ".tmp", PATH)
@@ -336,6 +343,7 @@ func apply(data: Dictionary) -> void:
 	game.region = data.region
 	game.player_foot = data.regions[data.region].foot
 	game.health = int(data.health)
+	game.mana = float(data.mana)
 	game.facing = data.facing
 	game.cooldowns = data.cooldowns.duplicate()
 	game.round_cleared = data.cleared

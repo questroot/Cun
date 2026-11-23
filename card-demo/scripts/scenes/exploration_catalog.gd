@@ -30,10 +30,13 @@ const MATERIALS := {
 	"berry": {"name": "甘露莓", "color": "#e99f9e"},
 }
 const SUPPLIES := {
-	"field_bandage": {"name": "止血绷带", "color": "#d5d9be", "heal": 25, "cost": {"bloodgrass": 2, "fiber": 1}},
-	"herbal_draught": {"name": "灵草药饮", "color": "#8fe1ac", "heal": 35, "cost": {"herb": 2, "dewleaf": 1}},
-	"berry_tonic": {"name": "甘露薄荷饮", "color": "#e99f9e", "heal": 45, "cost": {"berry": 2, "mint": 1}},
+	"field_bandage": {"name": "止血绷带", "color": "#d5d9be", "resource": "health", "restore": 25, "cost": {"bloodgrass": 2, "fiber": 1}},
+	"herbal_draught": {"name": "灵草药饮", "color": "#8fe1ac", "resource": "health", "restore": 35, "cost": {"herb": 2, "dewleaf": 1}},
+	"berry_tonic": {"name": "甘露薄荷饮", "color": "#e99f9e", "resource": "health", "restore": 45, "cost": {"berry": 2, "mint": 1}},
+	"dewleaf_potion": {"name": "青露灵液", "color": "#8cd8ed", "resource": "mana", "restore": 30, "cost": {"dewleaf": 2, "herb": 1}},
+	"wakeleaf_potion": {"name": "醒神灵液", "color": "#9cb3f5", "resource": "mana", "restore": 50, "cost": {"wakeleaf": 2, "mint": 1}},
 }
+const SUPPLY_LABELS := {"health": "生命", "mana": "法力"}
 static var ITEMS: Dictionary = _all_items()
 
 static func _all_items() -> Dictionary:

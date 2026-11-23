@@ -6,6 +6,8 @@ const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
 const Skills = preload("res://scripts/scenes/boss_skills.gd")
 const VFX = preload("res://scripts/scenes/pixel_vfx.gd")
+const HealthBar = preload("res://scripts/scenes/fudi_boss_health_bar.gd")
+const EnemyFeedback = preload("res://scripts/scenes/fudi_enemy_feedback.gd")
 var game: Control
 var bosses: Dictionary = {}
 var banner: Label
@@ -16,6 +18,8 @@ func enter_region() -> void:
 	casts.clear()
 	for boss: Dictionary in bosses.values():
 		boss.windup = 0.0
+		boss.flash = 0.0
+		boss.erase("hp_trail")
 		boss["attack_pose"] = 0.0
 		boss.cooldown = maxf(1.8, float(boss.cooldown))
 	refresh()
@@ -109,6 +113,7 @@ func tick(delta: float) -> void:
 		var skill := Skills.current(boss)
 		var slow: float = game.equipment.effects.enemy_speed_scale(boss) if game.equipment != null else 1.0
 		boss.flash = maxf(0, float(boss.flash) - delta)
+		HealthBar.tick(boss, delta)
 		boss.attack_pose = maxf(0, float(boss.attack_pose) - delta)
 		var offset: Vector2 = game.player_foot - boss.position
 		if float(boss.windup) > 0:
@@ -117,14 +122,13 @@ func tick(delta: float) -> void:
 				boss.attack_pose = 0.28
 				# Lock geometry at cast time. Each cast resolves once, even across multi zones.
 				casts.append({"boss_id":boss.id,"skill":skill,"target":boss.target,"origin":boss.get("cast_origin",boss.position),"direction":boss.get("direction",Vector2.RIGHT),"zones":boss.get("zones",[boss.target]).duplicate(),"life":VFX.LIFETIME})
-				if Skills.hits(boss,game.player_foot) and game.hurt_timer <= 0:
-					game.health = maxi(0, game.health - game.incoming_damage(int(skill.damage)))
-					game.hurt_timer = 1.0
+				if Skills.hits(boss,game.player_foot):
+					game.take_enemy_hit(int(skill.damage), Skills.HIT_AILMENTS.get(boss.id, ""), Vector2(boss.cast_origin).direction_to(game.player_foot))
 				boss.cooldown = skill.cooldown
 				boss.skill_index = (int(boss.skill_index)+1)%5
 			continue
 		boss.cooldown = maxf(0, float(boss.cooldown) - delta)
-		if offset.length() > 520 or game.player_foot.distance_to(boss.home) > 650:
+		if offset.length() > Catalog.SIGHT_RANGE or game.player_foot.distance_to(boss.home) > Catalog.LEASH_RANGE:
 			boss.position = game.move_world(boss.position, boss.position.direction_to(boss.home) * minf(float(config.speed) * slow * delta, boss.position.distance_to(boss.home)))
 			continue
 		if offset.length() <= float(skill.reach) and float(boss.cooldown) <= 0 and visible_path(boss.position, game.player_foot):
@@ -154,7 +158,7 @@ func refresh() -> void:
 			if game.player_foot.distance_to(candidate.position) < game.player_foot.distance_to(boss.position):
 				boss = candidate
 		var config: Dictionary = Catalog.DEFINITIONS[boss.id]
-		nearby = game.visible_world().has_point(boss.position) and game.player_foot.distance_to(boss.position) <= 650
+		nearby = game.visible_world().has_point(boss.position) and game.player_foot.distance_to(boss.position) <= Catalog.SIGHT_RANGE
 		text = "%s  %d / %d" % [config.name, boss.hp, boss.max_hp]
 		if float(boss.windup) > 0:
 			var skill := Skills.current(boss)
@@ -175,16 +179,13 @@ func draw_world() -> void:
 		canvas.draw_circle(Vector2.ZERO, 48, Color(0.01, 0.02, 0.03, 0.55))
 		canvas.draw_set_transform(Vector2.ZERO)
 		var art: Texture2D = Catalog.ART[boss.id]
-		var extent := Vector2(art.get_width(), art.get_height()) * 1.08
+		var extent := art.get_size() * EnemyFeedback.BOSS_SCALE
 		# Keep the feet planted while the existing art compresses, strikes and recoils.
 		var scale := Vector2(1.10, 0.90) if boss.windup > 0 else Vector2(0.94, 1.06) if boss.attack_pose > 0 else Vector2.ONE
-		var lean := -0.08 if boss.flash > 0 else 0.07 if boss.attack_pose > 0 else -0.04 if boss.windup > 0 else 0.0
-		canvas.draw_set_transform(point, lean, scale)
-		canvas.draw_texture_rect(art, Rect2(Vector2(-extent.x * 0.5, -extent.y), extent), false, Color("#ffb19d") if float(boss.flash) > 0 else Color.WHITE)
-		canvas.draw_set_transform(Vector2.ZERO)
+		var lean := 0.07 if boss.attack_pose > 0 else -0.04 if boss.windup > 0 else 0.0
+		EnemyFeedback.draw_actor(canvas, boss, art, extent, Color.WHITE, lean, scale)
 		var top := point - Vector2(68, extent.y + 16)
-		canvas.draw_rect(Rect2(top, Vector2(136, 7)), Color("#221f29"))
-		canvas.draw_rect(Rect2(top, Vector2(136.0 * float(boss.hp) / float(boss.max_hp), 7)), color)
+		HealthBar.draw(canvas, Rect2(top, Vector2(136, 8)), boss, color)
 		canvas.draw_string(font, top + Vector2(-8, -9), config.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, color)
 	for cast: Dictionary in casts:
 		VFX.draw_cast(canvas,cast)

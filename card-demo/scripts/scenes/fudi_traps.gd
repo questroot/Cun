@@ -3,6 +3,7 @@ extends Node
 const Catalog = preload("res://scripts/scenes/trap_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const HIT_AILMENTS := {"spores": "status-poison", "fissure": "status-burn", "surge": "status-stun", "frost": "status-freeze"}
 var game: Control
 var rng := RandomNumberGenerator.new()
 var timers: Dictionary = {}
@@ -185,14 +186,15 @@ func _try_hit(hazard: Dictionary, config: Dictionary) -> void:
 		return
 	hazard.hit = true
 	records[region].hits += 1
-	var damage: int = game.incoming_damage(int(hazard.damage))
-	game.health = maxi(0, game.health - damage)
-	game.hurt_timer = 1.0
+	var direction: Vector2 = Vector2(hazard.position).direction_to(game.player_foot)
+	var damage: int = game.take_enemy_hit(int(hazard.damage), "", direction)
 	if float(config.duration) > 0:
 		slow_left = maxf(slow_left, float(config.duration))
 		slow_scale = float(config.slow)
+		var ailment: String = HIT_AILMENTS.get(hazard.kind, "")
+		if ailment != "":
+			game.show_player_ailment(ailment, float(config.duration))
 	if float(config.push) > 0:
-		var direction: Vector2 = (game.player_foot - Vector2(hazard.position)).normalized()
 		if direction == Vector2.ZERO:
 			direction = game.facing
 		game.player_foot = game.move_world(game.player_foot, direction * float(config.push))

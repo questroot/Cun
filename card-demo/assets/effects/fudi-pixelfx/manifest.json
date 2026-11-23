@@ -1,0 +1,632 @@
+{
+  "source": "https://github.com/patch-gg/pixelfx",
+  "revision": "5294518ce7c72e48b6100a744596e0acf57f2826",
+  "filter": "nearest",
+  "frameSize": [
+    96,
+    96
+  ],
+  "pivot": [
+    48,
+    48
+  ],
+  "frameCount": 8,
+  "effects": [
+    {
+      "key": "H01-slash",
+      "source": "melee/sword-slash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H01-thrust",
+      "source": "melee/thrust",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H01-banner",
+      "source": "melee/heavy-cleave",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H02-stomp",
+      "source": "nature/earth-spike",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H02-vine",
+      "source": "nature/thorns",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H02-charge",
+      "source": "nature/leaf-storm",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H03-burst",
+      "source": "water/geyser",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H03-jet",
+      "source": "water/water-jet",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H03-mine",
+      "source": "water/splash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H03-surge",
+      "source": "water/wave-crash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H04-feather",
+      "source": "holy/feather-burst",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H04-wing",
+      "source": "melee/scythe-reap",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H04-verdict",
+      "source": "holy/smite",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H05-seal",
+      "source": "arcane/rune-circle",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H05-icicle",
+      "source": "ice/ice-lance",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H05-spike",
+      "source": "ice/icicle-fall",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H06-hammer",
+      "source": "melee/hammer-smash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "player-w01",
+      "source": "fire/fire-ring",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "player-w02",
+      "source": "melee/heavy-cleave",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "player-w03",
+      "source": "melee/sword-slash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "player-w05",
+      "source": "melee/thrust",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "player-w06",
+      "source": "impacts/ground-slam",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "attack-slash",
+      "source": "melee/sword-slash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "attack-cast",
+      "source": "arcane/mana-burst",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "attack-bolt",
+      "source": "projectiles/plasma-shot",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "attack-quake",
+      "source": "lightning/thunderclap",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "impact-enemy",
+      "source": "impacts/hit-spark",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "impact-player",
+      "source": "impacts/blunt-hit",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "impact-fallen",
+      "source": "spawn/poof",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "guard-clear",
+      "source": "nature/leaf-storm",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "guard-fog",
+      "source": "shadow/shadow-flames",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "guard-heat",
+      "source": "fire/flame-pillar",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "guard-rain",
+      "source": "water/splash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "guard-snow",
+      "source": "ice/ice-spikes",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "guard-storm",
+      "source": "lightning/lightning-strike",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "guard-wind",
+      "source": "nature/tornado",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "status-buff",
+      "source": "holy/blessing",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "status-burn",
+      "source": "fire/spirit-flame",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "status-freeze",
+      "source": "ice/snowflake-burst",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "status-heal",
+      "source": "holy/heal-aoe",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "status-poison",
+      "source": "nature/poison-cloud",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "status-shield",
+      "source": "holy/divine-shield",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "status-stun",
+      "source": "lightning/zap-hit",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "weather-storm",
+      "source": "lightning/lightning-strike",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    }
+  ]
+}

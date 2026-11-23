@@ -17,7 +17,7 @@
 
 各地图保留开局的野生材料，另有六处可再生药圃（每种两处）。药圃在适生天气累计18–28秒成熟，不适生时保留生长进度；成熟后靠近自动采入原有行囊，随后重新生长。成熟而未采的药材不会重复堆积。地图中的剩余数量包含生长产物和怪物掉落，因此可以超过开局野生份数。
 
-2026-10-25 起，野外药材点和再生药圃改用细绘透明素材：11 种草药各有独立图标，10 种植物有三阶段横向图集；牛蒡根暂无三阶段源图，按单图随进度放大。药圃仍保留原生长圈、成熟光圈和近距完整标签，规则与采集距离不变。映射见 [fudi_material_art.gd](../card-demo/scripts/scenes/fudi_material_art.gd)，素材说明见 [card-demo/assets/fudi/fine/README.md](../card-demo/assets/fudi/fine/README.md)。
+野外药材点和再生药圃使用细绘透明素材。11 种草药各有独立图标，10 种植物有三阶段横向图集，牛蒡根使用单图随进度放大。药圃通过植株外观和近距文字显示生长与成熟状态。映射见 [fudi_material_art.gd](../card-demo/scripts/scenes/fudi_material_art.gd)，素材说明见 [card-demo/assets/fudi/fine/README.md](../card-demo/assets/fudi/fine/README.md)。
 
 | 怪物 | 生命 | 移速 | 攻击伤害 | 掉落 |
 | --- | --- | --- | --- | --- |

@@ -432,8 +432,25 @@ func verify_large_maps() -> void:
 		check(game.region == "grove" and not game.tools.atlas.visible and game.states[id].visited == [true, true, true], "跨区旅行保留人物线索与正确返回: " + id)
 	check(game._visited_total() == 30 and Maps.site_total() == 30, "十张地图共30处见闻可以完成")
 	game.enter_region("grove")
+	var door: Vector2 = game.Buildings.Catalog.entrance("grove")
+	game.player_foot = door + Vector2(0, 360)
+	game._update_camera()
+	var largest_step := 0.0
+	for move_key: int in [KEY_W, KEY_S]:
+		key(move_key)
+		for i in range(28):
+			var before_camera: Vector2 = game.camera_origin
+			game._process(0.05)
+			largest_step = maxf(largest_step, before_camera.distance_to(game.camera_origin))
+		key(move_key, false)
+		if move_key == KEY_W:
+			check(game.player_foot.distance_to(door) < 45, "真实W可从灶街道路走到大食堂入口")
+	check(game.player_foot.distance_to(door) > 350 and largest_step < 35.0, "进出大食堂取景区时镜头连续移动")
+	var blocked: Vector2 = game.move_world(door, Vector2(0, -220))
+	check(Maps.walkable("grove", blocked) and blocked.distance_to(door) < 120.0, "大食堂入口可站立，往建筑内走会在道路边缘停止")
 	# The long central north/south lane is visible in the finished painting.
 	game.player_foot = Vector2(0.53, 0.51) * Maps.MAPS.grove.size
+	game._update_camera()
 	var before_walk: Vector2 = game.player_foot
 	game.get_node("Buildings").active.clear()
 	key(KEY_S)

@@ -53,6 +53,18 @@ func force_boss_roll(wanted: bool) -> void:
 			return
 	check(false, "找不到守箱首领掉落分支种子")
 
+func force_chest_weapon(wanted: bool) -> void:
+	var probe := RandomNumberGenerator.new()
+	probe.seed = 405060
+	var choices := Loot.pool(Loot.REGIONS[game.region])
+	for i in range(100):
+		var before := probe.state
+		var item: String = choices[probe.randi_range(0, choices.size() - 1)]
+		if Gear.WEAPONS.has(item) == wanted:
+			chests.rng.state = before
+			return
+	check(false, "找不到宝箱护甲或武器掉落种子")
+
 func enhanced_drops(id: String) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for pickup: Dictionary in game.states[id].pickups:
@@ -109,8 +121,12 @@ func run_checks() -> void:
 	game.player_foot = normal.position
 	await capture("normal_sealed")
 	var count: int = game.states.grove.pickups.size()
+	force_chest_weapon(false)
 	key(KEY_E)
 	check(normal.state == "opened" and normal.rewarded and game.states.grove.pickups.size() == count + 4, "E开启普通箱：一件装备与三份材料")
+	var armor_boost: float = chests.weather_boost()
+	var armor_shake: float = chests.opening_shakes[normal.position].strength
+	check(armor_boost > 0, "护甲开箱启动箱体晃动与天气增强")
 	key(KEY_E)
 	chests.interact(normal)
 	check(game.states.grove.pickups.size() == count + 4, "重复按E和调用不能重复发箱内奖励")
@@ -123,6 +139,22 @@ func run_checks() -> void:
 		game.player_foot = point
 		game._collect_nearby()
 	check(game._inventory_total() >= total + 4, "宝箱奖励靠近实际入行囊")
+	var weapon_box: Dictionary = chests.regions.grove[1]
+	game.player_foot = weapon_box.position
+	force_chest_weapon(true)
+	chests.interact(weapon_box)
+	check(chests.opening_shakes[weapon_box.position].strength > armor_shake and chests.weather_boost() > armor_boost, "实际抽到武器时，晃动和天气增强强于护甲")
+	var marked_position: Vector2 = weapon_box.position
+	chests.tick(0.045)
+	game.player_foot = marked_position + Vector2(-130, 0)
+	await capture("weapon_chest_shake")
+	var fading_boost: float = chests.weather_boost()
+	game.journal.show()
+	chests.tick(0.3)
+	check(chests.weather_boost() == fading_boost, "打开行囊暂停开箱晃动")
+	game.journal.hide()
+	chests.tick(0.7)
+	check(chests.opening_shakes.is_empty() and chests.weather_boost() == 0.0 and weapon_box.position == marked_position, "开箱晃动和天气增强到期，箱体坐标保持原位")
 	var upgraded_item := ""
 	for index in range(Maps.IDS.size()):
 		var id: String = Maps.IDS[index]
@@ -177,6 +209,10 @@ func run_checks() -> void:
 			check(boss.hp == injured and boss.windup == 0 and boss.cooldown >= 1.8, "旅行保留守卫伤势并取消预警")
 			game.get_node("Weather").tick(76)
 			check(boss.hp == injured and boss.max_hp == ceili(float(base.hp) * 0.60), "天气不覆盖守箱首领")
+			game.equipment.effects.secondary_damage(boss, 24, "测试追加伤害", Color.WHITE)
+			check(boss.hp == injured - 24 and boss.hp_trail == injured, "守箱首领的追加伤害也触发血条拖尾")
+			game.player_foot = boss.position + Vector2(-150, 0)
+			await capture("boss_health_bar_hit")
 		# Kill the boss via real J input and prove the two loot branches.
 		var wanted := index % 2 == 0
 		force_boss_roll(wanted)
@@ -187,11 +223,16 @@ func run_checks() -> void:
 		game.cooldowns.j = 0.0
 		key(KEY_J)
 		check(int(boss.hp) == 0 and boss.paid and enhanced_drops(id).size() == loot_before + int(wanted), "实际J击杀，守箱首领概率分支 " + str(wanted) + " " + id)
+		if wanted:
+			check(chests.opening_shakes[chest.position].strength == 1.0, "实际掉出异变装备时触发最强晃动 " + id)
 		game._remove_dead()
 		check(enhanced_drops(id).size() == loot_before + int(wanted) and chest.state == "guarding", "首领不重复掉落且小怪存活仍锁箱 " + id)
 		if wanted and upgraded_item.is_empty():
 			var pickup: Dictionary = enhanced_drops(id)[-1]
 			upgraded_item = pickup.item
+			game.effects.clear()
+			game.player_foot = pickup.position + Vector2(130, 0)
+			await capture("rare_glint")
 			game.player_foot = pickup.position
 			game._collect_nearby()
 			check(game.inventory[upgraded_item] == 1 and Loot.base_item(upgraded_item) != upgraded_item, "强化品质装备拾取且与普通副本分开计数")
@@ -199,6 +240,11 @@ func run_checks() -> void:
 			game._damage(mob, 999)
 		game._remove_dead()
 		check(chest.state == "cleared" and chests.targets(id).is_empty(), "清空守卫后解锁箱内奖励 " + id)
+		if index == 0:
+			var deaths: Array = game.enemy_feedback.bursts.filter(func(effect: Dictionary) -> bool: return effect.fallen)
+			check(deaths.size() == 5 and deaths[0].boss and deaths[0].extent.x > deaths[-1].extent.x, "清箱后四小怪和首领阵亡特效继续播放，首领保留原体型")
+			game.enemy_feedback.tick(0.18)
+			await capture("chest_guards_fallen")
 		game.player_foot = chest.position
 		var loot_count: int = game.states[id].pickups.size()
 		key(KEY_E)

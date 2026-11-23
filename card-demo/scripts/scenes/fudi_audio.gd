@@ -123,8 +123,8 @@ func _boss_candidate(delta: float) -> String:
 	for boss: Dictionary in targets:
 		var id: String = boss.get("id", boss.get("art", "H01"))
 		var distance: float = game.player_foot.distance_to(boss.position)
-		var inside: bool = game.player_foot.distance_to(boss.home) <= 650
-		if inside and (distance <= 520 or float(boss.flash) > 0) and distance < nearest:
+		var inside: bool = game.player_foot.distance_to(boss.home) <= BossCatalog.LEASH_RANGE
+		if inside and (distance <= BossCatalog.SIGHT_RANGE or boss.has("art") or float(boss.flash) > 0) and distance < nearest:
 			found = id
 			nearest = distance
 	if not found.is_empty():

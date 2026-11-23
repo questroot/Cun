@@ -1,19 +1,23 @@
 extends RefCounted
-## Native 96px cells, nearest filtering; damage is resolved by combat, never by particles.
+## Native 96px cells, nearest filtering. Combat resolves damage.
 const SIZE := 96
 const DURATIONS := [0.09,0.07,0.05,0.10,0.08,0.08,0.10,0.13]
 const LIFETIME := 0.70
+const ORIGINAL_ATLAS := "res://assets/effects/pixel/%s.png"
+const FUDI_ATLAS := "res://assets/effects/fudi-pixelfx/%s.png"
 static var textures: Dictionary = {}
 
 ## Which status aura stands for which battle effect key.
 const STATUS_BY_EFFECT := {"stun": "status-stun", "shield": "status-shield", "damage_up": "status-buff", "damage_down": "status-poison"}
 
-static func exists(key: String) -> bool:
-	return ResourceLoader.exists("res://assets/effects/pixel/%s.png" % key)
-
-static func texture(key: String) -> Texture2D:
-	if not textures.has(key): textures[key] = load("res://assets/effects/pixel/%s.png" % key)
-	return textures[key]
+static func texture(key: String, use_fudi_art: bool = true) -> Texture2D:
+	var cache_key := "fudi/" + key if use_fudi_art else key
+	if not textures.has(cache_key):
+		var path := FUDI_ATLAS % key
+		if not use_fudi_art or not ResourceLoader.exists(path):
+			path = ORIGINAL_ATLAS % key
+		textures[cache_key] = load(path)
+	return textures[cache_key]
 
 ## First active status on a battle unit, empty when nothing is applied.
 static func status_for(unit) -> String:
@@ -31,8 +35,8 @@ static func frame_at(age: float) -> int:
 		if age < cursor: return i
 	return 7
 
-static func draw(canvas: CanvasItem, key: String, position: Vector2, age: float, scale: Vector2 = Vector2.ONE, angle: float = 0.0, tint: Color = Color.WHITE, loop: bool = false) -> void:
-	var art := texture(key)
+static func draw(canvas: CanvasItem, key: String, position: Vector2, age: float, scale: Vector2 = Vector2.ONE, angle: float = 0.0, tint: Color = Color.WHITE, loop: bool = false, use_fudi_art: bool = true) -> void:
+	var art := texture(key, use_fudi_art)
 	if art == null: return
 	var frame: int = int(floor(age / 0.12)) % 8 if loop else frame_at(age)
 	var pixel_scale := Vector2(maxf(1,roundf(scale.x)),maxf(1,roundf(scale.y)))
@@ -53,8 +57,10 @@ static func draw_cast(canvas: Control, cast: Dictionary) -> void:
 		for zone: Vector2 in cast.zones:
 			draw(canvas,s.fx,zone,age,Vector2.ONE*maxf(1,float(s.radius)/34.0),angle if s.shape == "sector" else 0.0)
 
-static func draw_weather(canvas: Control, weather: String, area: Vector2, elapsed: float) -> void:
+static func draw_weather(canvas: Control, weather: String, area: Vector2, elapsed: float, boost: float) -> void:
 	var count := 36 if weather in ["rain","snow","storm"] else (9 if weather == "fog" else 18)
+	count += roundi(count * boost * 0.65)
+	var flash_age := fmod(elapsed, 8.0)
 	for i in range(count):
 		var speed := 145.0 if weather in ["rain","storm"] else (20.0 if weather == "snow" else -12.0)
 		var point := Vector2(fposmod(i*137.0+elapsed*(16 if weather=="snow" else 35),area.x+160)-80,fposmod(i*79.0+elapsed*speed,area.y+110)-55)
@@ -65,7 +71,8 @@ static func draw_weather(canvas: Control, weather: String, area: Vector2, elapse
 			opacity = 0.16
 		if weather == "storm":
 			# One localized flash every eight seconds, rain throughout; no full-screen strobe.
-			if i == 0 and fmod(elapsed,8.0)<0.96:
-				draw(canvas,"weather-storm",Vector2(area.x*.72,area.y*.24),elapsed,Vector2(2,3),0,Color(1,1,1,.7),true)
-			draw(canvas,"weather-rain",point,elapsed+i*.17,Vector2.ONE,0,Color(1,1,1,.5),true)
-		else: draw(canvas,"weather-"+weather,point,elapsed+i*.17,scale,0,Color(1,1,1,opacity),true)
+			if i == 0 and flash_age < 0.96:
+				draw(canvas,"weather-storm",Vector2(area.x*.72,area.y*.24),flash_age,Vector2(2,3),0,Color(1,1,1,.7),true)
+			draw(canvas,"weather-rain",point,elapsed+i*.17,Vector2.ONE,0,Color(1,1,1,0.5 + boost * 0.24),true)
+		else:
+			draw(canvas, "weather-" + weather, point, elapsed + i * 0.17, scale, 0, Color(1, 1, 1, opacity * (1.0 + boost * 0.45)), true)

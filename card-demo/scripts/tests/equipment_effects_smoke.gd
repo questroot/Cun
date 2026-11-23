@@ -106,6 +106,8 @@ func run_checks() -> void:
 	check(enemy.hp == before - 6, "灼烧一秒实际扣6生命")
 	fx.tick(2.0)
 	check(enemy.hp == before - 18 and fx.burns.is_empty(), "灼烧完整三跳且不递归触发灼烧")
+	var last_burn: Dictionary = game.enemy_feedback.bursts[-1]
+	check(last_burn.ailment == "status-burn" and is_same(last_burn.target, enemy), "最后一跳灼烧的火光跟随实际受伤目标")
 	game.cooldowns.j = 0
 	game.attack("j")
 	var next: float = fx.burns[0].next
@@ -135,12 +137,14 @@ func run_checks() -> void:
 	await capture("shield")
 	enemy = target(0)
 	enemy.damage = 20
+	enemy.weather = "storm"
 	enemy.behavior = "melee"
 	enemy.guard_phase = "windup"
 	enemy.guard_left = 0.001
 	enemy.guard_target = game.player_foot
 	game._process(0.01)
 	check(game.health == 100 and fx.shield_points < 18, "护盾实际吸收怪物伤害")
+	check(game.player_ailments.is_empty(), "护盾完全抵消时不附加雷击特效")
 	var shield: int = fx.shield_points
 	var remainder: int = game.incoming_damage(100)
 	check(remainder == ceili(ceili(100.0 * 40.0 / (40.0 + int(gear.bonuses().defense))) * 0.8) - shield and fx.shield_points == 0, "大伤害击破护盾后剩余伤害正确")
@@ -161,6 +165,10 @@ func run_checks() -> void:
 	var hazard := {"damage": 20, "position": game.player_foot, "hit": false}
 	traps._try_hit(hazard, {"radius": 100.0, "duration": 0.0, "push": 0.0, "name": "护盾测试陷阱"})
 	check(hazard.hit and game.health == 100 and fx.shield_points < 18 and traps.notice.contains("-0生命"), "镜潮护盾实际吸收陷阱伤害并显示扣血0")
+	game.hurt_timer = 0.0
+	var spores := {"kind": "spores", "damage": 6, "position": game.player_foot, "hit": false}
+	traps._try_hit(spores, traps.Catalog.TRAPS.spores)
+	check(spores.hit and game.player_ailments["status-poison"].duration == traps.slow_left, "孢子命中时毒雾附着时间匹配已有异常")
 	fx.tick(8.0)
 	game.hurt_timer = 0
 	var bosses = game.get_node("Bosses")

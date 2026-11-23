@@ -2,6 +2,7 @@ extends SceneTree
 const Skills = preload("res://scripts/scenes/boss_skills.gd")
 const VFX = preload("res://scripts/scenes/pixel_vfx.gd")
 const Catalog = preload("res://scripts/scenes/boss_catalog.gd")
+const Loot = preload("res://scripts/scenes/loot_catalog.gd")
 var game
 var bosses
 var checks := 0
@@ -26,6 +27,7 @@ func capture(label: String) -> void:
 	game._update_camera()
 	game._refresh_ui()
 	game.world_canvas.queue_redraw()
+	game.status_canvas.queue_redraw()
 	game.get_node("Weather")._refresh()
 	await frames()
 	await RenderingServer.frame_post_draw
@@ -66,6 +68,13 @@ func run() -> void:
 	for entry: Dictionary in manifest.effects:
 		var art := VFX.texture(entry.key)
 		check(art!=null and art.get_width()==768 and art.get_height()==96,"eight native frames "+entry.key)
+	var pixelfx = JSON.parse_string(FileAccess.get_file_as_string("res://assets/effects/fudi-pixelfx/manifest.json"))
+	for entry: Dictionary in pixelfx.effects:
+		var art := VFX.texture(entry.key)
+		check(art != null and art.resource_path == VFX.FUDI_ATLAS % entry.key and art.get_size() == Vector2(768, 96), "Fudi plays eight-frame pixelfx atlas " + entry.key)
+	check(VFX.texture("H01-flag").resource_path == VFX.ORIGINAL_ATLAS % "H01-flag", "flag cast retains its unique silhouette")
+	for key: String in VFX.STATUS_BY_EFFECT.values():
+		check(VFX.texture(key, false).resource_path == VFX.ORIGINAL_ATLAS % key, "turn-based battle plays original aura " + key)
 	check(VFX.frame_at(.0)==0 and VFX.frame_at(.17)==2 and VFX.frame_at(.22)==3 and VFX.frame_at(.699)==7,"nonuniform frame timings")
 	var names := {}
 	for id: String in Skills.MOVES:
@@ -220,7 +229,7 @@ func run() -> void:
 		game.health=100
 		game.hurt_timer=0
 		game._process(.01)
-		check(enemy.attack_weather==element and float(enemy.attack_fx)>0,"guard elemental effect "+element)
+		check(enemy.attack_weather==element and is_equal_approx(enemy.attack_fx, VFX.LIFETIME),"guard elemental effect starts at first frame "+element)
 		check(game.health==100-int(weather.Ecology.WEATHER[element].damage),"guard charged damage preserved "+element)
 		enemy.attack_fx=VFX.LIFETIME-.22
 		weather.elapsed=.36
@@ -250,20 +259,61 @@ func run() -> void:
 	unit.add_effect("damage_up",2)
 	check(VFX.status_for(unit).begins_with("status-"),"stacked effects still resolve")
 	game.enter_region("post")
+	game.cooldowns["j"] = 0.0
+	check(game.attack("j") and game.effects[-1].fx == "attack-slash", "unarmed J plays the basic slash")
+	game.effects.clear()
 	game.inventory["w03-prism-saber"] = 1
 	check(game.equipment.equip_item("w03-prism-saber"),"weapon equips from inventory")
 	game.cooldowns["j"] = 0.0
 	game.health = 100
 	game.hurt_timer = 0.0
 	check(game.attack("j"),"melee attack fires")
-	check(game.effects.size()==1 and str(game.effects[0].get("swing",""))=="w03","swing keyed to equipped weapon")
+	check(game.effects.size() == 1 and game.effects[0].fx == "player-w03", "J plays the equipped weapon")
 	check(VFX.texture("player-w03")!=null,"swing atlas loads")
-	game.equipment.effects.shield_points = 18
-	game.equipment.effects.heal_glow = 0.5
-	await frames()
-	game.equipment.effects.shield_points = 0
-	game.equipment.effects.heal_glow = 0.0
+	game.effects[0].life = VFX.LIFETIME - 0.17
+	await capture("player_w03")
 	game.effects.clear()
+	game.cooldowns["k"] = 0.0
+	check(game.attack("k") and game.effects[-1].fx == "attack-cast" and game.projectiles.size() == 3, "K plays cast art and fires three prism bolts")
+	game.effects[0].life = VFX.LIFETIME - 0.09
+	for shot: Dictionary in game.projectiles:
+		shot.position += shot.velocity * 0.14
+		shot.life -= 0.14
+	await capture("player_cast")
+	game.effects.clear()
+	game.projectiles.clear()
+	game.cooldowns["l"] = 0.0
+	check(game.attack("l") and game.effects[-1].fx == "attack-quake", "L plays its own shockwave")
+	game.effects[0].life = VFX.LIFETIME - 0.09
+	await capture("player_quake")
+	game.effects.clear()
+	game.hurt_timer = 0.0
+	game.take_enemy_hit(11, "", Vector2.UP)
+	check(game.health == 89 and game.player_hit_left == game.PLAYER_HIT_DURATION and is_equal_approx(game.player_hit_angle, Vector2.UP.angle()), "actual player damage starts directional impact")
+	await capture("player_hit")
+	game.menu.show()
+	game._process(0.3)
+	check(game.player_hit_left == game.PLAYER_HIT_DURATION, "player impact pauses with menu")
+	game.menu.hide()
+	game._process(0.30)
+	check(game.player_hit_left == 0.0 and game.model.modulate == Color.WHITE, "player impact expires during invulnerability")
+	check(game.take_enemy_hit(11) == 0 and game.player_hit_left == 0.0, "invulnerability suppresses player impact")
+	game.hurt_timer = 0.0
+	game.take_enemy_hit(11)
+	game.enter_region("post")
+	check(game.player_hit_left == 0.0 and game.model.modulate == Color.WHITE, "travel clears the hit animation and tint")
+	for item: String in Loot.SETS["s3"]:
+		game.inventory[item] = 1
+		game.equipment.equip_item(item)
+	game.equipment.effects.shield_points = 18
+	await capture("status_shield")
+	game.hurt_timer = 0.0
+	check(game.take_enemy_hit(7) == 0 and game.player_hit_left == 0.0, "full shield absorption suppresses player impact")
+	game.equipment.effects.shield_points = 0
+	game.equipment.effects.heal_glow = 0.5
+	game.equipment.effects.elapsed = 0.36
+	await capture("status_heal")
+	game.equipment.effects.heal_glow = 0.0
 	check(FileAccess.get_file_as_string(data.SAVE_PATH)==saved,"existing isolated save unchanged")
 	game.queue_free()
 	await create_timer(.5).timeout

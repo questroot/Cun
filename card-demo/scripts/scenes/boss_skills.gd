@@ -40,6 +40,7 @@ const MOVES := {
 }
 const HALF_ANGLE := PI * 0.36
 const SHAPE_NAMES := {"circle":"圆形","ring":"环形","line":"直线","sector":"扇形","multi":"多点","cross":"十字"}
+const HIT_AILMENTS := {"H05": "status-freeze"}
 
 static func current(boss: Dictionary) -> Dictionary:
 	return MOVES[boss.id][int(boss.get("skill_index", 0)) % 5]

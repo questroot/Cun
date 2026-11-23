@@ -1,10 +1,12 @@
 extends Node
 ## Three readable attacks. Warnings lock their aim; travel cancels attacks and shots.
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
 const NAMES := {"melee": "蓄力守卫", "ranged": "投石守卫", "charger": "冲锋守卫"}
 const KINDS := ["melee", "ranged", "charger"]
 const SHOT_SPEED := 310.0
 const SHOT_LIFE := 1.6
+const HIT_AILMENTS := {"heat": "status-burn", "snow": "status-freeze", "storm": "status-stun"}
 var game
 var shots: Array[Dictionary] = []
 
@@ -42,7 +44,7 @@ func tick(delta: float) -> void:
 				enemy.position = game.move_world(start, enemy.guard_direction * 620.0 * slow * attack_step)
 				var nearest := Geometry2D.get_closest_point_to_segment(game.player_foot, start, enemy.position)
 				if not enemy.guard_hit and nearest.distance_to(game.player_foot) <= 32:
-					hit(enemy.damage)
+					hit(enemy.damage, enemy.weather, enemy.guard_direction)
 					enemy.guard_hit = true
 				if enemy.guard_left == 0 or enemy.position.distance_to(start) < 1: recover(enemy)
 			"recover":
@@ -75,7 +77,7 @@ func tick(delta: float) -> void:
 				stopped = true
 				break
 			if shot.position.distance_to(game.player_foot) <= 22:
-				hit(shot.damage)
+				hit(shot.damage, shot.weather, shot.velocity.normalized())
 				stopped = true
 				break
 		shot.life -= delta
@@ -83,15 +85,15 @@ func tick(delta: float) -> void:
 	if game.health <= 0: game._end_round(false)
 
 func release(enemy: Dictionary) -> void:
-	enemy["attack_fx"] = 0.28
+	enemy["attack_fx"] = PixelVFX.LIFETIME
 	enemy["attack_weather"] = enemy.weather
 	enemy["attack_point"] = enemy.guard_target
 	match enemy.behavior:
 		"melee":
-			if game.player_foot.distance_to(enemy.guard_target) <= 66 and game.get_node("Bosses").visible_path(enemy.position, game.player_foot): hit(enemy.damage)
+			if game.player_foot.distance_to(enemy.guard_target) <= 66 and game.get_node("Bosses").visible_path(enemy.position, game.player_foot): hit(enemy.damage, enemy.weather, enemy.guard_direction)
 			recover(enemy)
 		"ranged":
-			shots.append({"owner": enemy, "position": enemy.position, "velocity": enemy.guard_direction * SHOT_SPEED, "damage": enemy.damage, "life": SHOT_LIFE})
+			shots.append({"owner": enemy, "position": enemy.position, "velocity": enemy.guard_direction * SHOT_SPEED, "damage": enemy.damage, "life": SHOT_LIFE, "weather": enemy.weather})
 			recover(enemy)
 		"charger":
 			enemy.guard_phase = "charge"
@@ -101,10 +103,8 @@ func recover(enemy: Dictionary) -> void:
 	enemy.guard_phase = "recover"
 	enemy.guard_left = 1.3
 
-func hit(amount: int) -> void:
-	if game.hurt_timer > 0: return
-	game.health = maxi(0, game.health - game.incoming_damage(amount))
-	game.hurt_timer = 1.0
+func hit(amount: int, weather: String, direction: Vector2) -> void:
+	game.take_enemy_hit(amount, HIT_AILMENTS.get(weather, ""), direction)
 
 func play_visible() -> Array:
 	var warnings: Array = []

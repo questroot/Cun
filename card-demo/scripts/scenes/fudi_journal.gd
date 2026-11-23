@@ -69,27 +69,39 @@ func _ready() -> void:
 
 func build_supplies(row: HBoxContainer) -> void:
 	var supplies := VBoxContainer.new()
-	supplies.custom_minimum_size.x = 330
 	supplies.add_theme_constant_override("separation", 8)
 	row.add_child(supplies)
-	for id: String in Items.SUPPLIES:
-		var recipe: Dictionary = Items.SUPPLIES[id]
-		var costs: Array[String] = []
-		for material: String in recipe.cost: costs.append("%s%d" % [Items.ITEMS[material].name, recipe.cost[material]])
-		supplies.add_child(UI.label("%s · 恢复%d生命\n%s" % [recipe.name, recipe.heal, " ＋ ".join(costs)], 16))
-		var actions := HBoxContainer.new()
-		supplies.add_child(actions)
-		var craft := UI.button("制作1份", func() -> void: game.supplies.craft(id))
-		var use := UI.button("使用1份", func() -> void: game.supplies.use(id))
-		craft.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		use.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		actions.add_child(craft)
-		actions.add_child(use)
-		craft_buttons[id] = craft
-		use_buttons[id] = use
-	supplies.add_child(UI.label("在已用过的休息点附近修补\n木料3 ＋ 松脂1，恢复一次休息机会", 16))
+	var groups := HBoxContainer.new()
+	groups.add_theme_constant_override("separation", 12)
+	supplies.add_child(groups)
+	for resource: String in Items.SUPPLY_LABELS:
+		var column := VBoxContainer.new()
+		column.custom_minimum_size.x = 234
+		groups.add_child(column)
+		column.add_child(UI.label("回血补给" if resource == "health" else "回蓝药水", 18, Color("#f0d69a")))
+		for id: String in Items.SUPPLIES:
+			if Items.SUPPLIES[id].resource == resource:
+				add_recipe(column, id)
+	supplies.add_child(UI.label("修补休息点 · 木料3 ＋ 松脂1", 16))
 	repair_button = UI.button("修补当前休息点", func() -> void: game.supplies.repair())
 	supplies.add_child(repair_button)
+
+func add_recipe(column: VBoxContainer, id: String) -> void:
+	var recipe: Dictionary = Items.SUPPLIES[id]
+	var costs: Array[String] = []
+	for material: String in recipe.cost:
+		costs.append("%s%d" % [Items.ITEMS[material].name, recipe.cost[material]])
+	column.add_child(UI.label("%s · +%d%s\n%s" % [recipe.name, recipe.restore, Items.SUPPLY_LABELS[recipe.resource], " ＋ ".join(costs)], 15))
+	var actions := HBoxContainer.new()
+	column.add_child(actions)
+	var craft := UI.button("制作1份", func() -> void: game.supplies.craft(id))
+	var use := UI.button("使用", func() -> void: game.supplies.use(id))
+	for button: Button in [craft, use]:
+		game.style_hud_button(button)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		actions.add_child(button)
+	craft_buttons[id] = craft
+	use_buttons[id] = use
 
 func select_page(index: int) -> void:
 	tabs.current_tab = index
@@ -103,7 +115,9 @@ func open() -> void:
 	tabs.grab_focus()
 
 func purpose(id: String) -> String:
-	if Items.SUPPLIES.has(id): return "使用恢复%d生命" % Items.SUPPLIES[id].heal
+	if Items.SUPPLIES.has(id):
+		var recipe: Dictionary = Items.SUPPLIES[id]
+		return "使用恢复%d%s" % [recipe.restore, Items.SUPPLY_LABELS[recipe.resource]]
 	if Loot.ITEMS.has(id): return "C穿戴或融合"
 	match id:
 		"wood": return "修灶交付 / 修补休息点"
@@ -112,12 +126,14 @@ func purpose(id: String) -> String:
 		"ore", "iron", "copper": return "C装备融合"
 		"crystal": return "人物商店购买"
 		"bloodgrass", "fiber": return "制作止血绷带"
-		"dewleaf": return "制作灵草药饮"
-		"berry", "mint": return "制作甘露薄荷饮"
+		"dewleaf": return "制作灵草药饮 / 青露灵液"
+		"wakeleaf": return "制作醒神灵液"
+		"mint": return "制作甘露薄荷饮 / 醒神灵液"
+		"berry": return "制作甘露薄荷饮"
 		_: return "采集材料 · 当前无制作配方"
 
 func refresh() -> void:
-	var inventory: Array[String] = ["物品 · 共%d份\n装备数量包含穿戴；按C比较属性。\n右侧可制作补给，满血不会消耗恢复品。" % game._inventory_total()]
+	var inventory: Array[String] = ["物品 · 共%d份\n装备数量包含穿戴；按C比较属性。\n右侧可制作补给，对应数值满时不会消耗药品。" % game._inventory_total()]
 	for id: String in game.inventory:
 		if game.inventory[id] <= 0: continue
 		var info: Dictionary = Items.ITEMS[id]
@@ -143,8 +159,8 @@ func refresh() -> void:
 	texts[3].text = game.journal_help()
 	for id: String in Items.SUPPLIES:
 		craft_buttons[id].disabled = game.finished or not game.supplies.can_craft(id)
-		use_buttons[id].disabled = game.finished or game.health >= 100 or int(game.inventory.get(id, 0)) == 0
-		use_buttons[id].text = "使用1份（%d）" % game.inventory.get(id, 0)
+		use_buttons[id].disabled = not game.supplies.can_use(id)
+		use_buttons[id].text = "使用 ×%d" % game.inventory.get(id, 0)
 	repair_button.disabled = game.finished or not game.supplies.can_repair()
 	update_tracking()
 

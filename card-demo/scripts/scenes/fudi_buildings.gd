@@ -4,12 +4,14 @@ const Catalog = preload("res://scripts/scenes/building_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Art = preload("res://scripts/scenes/fudi_material_art.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const RIPPLE_PERIOD := 2.4
 var game
 var rng := RandomNumberGenerator.new()
 var states: Dictionary = {}
 var active: Dictionary = {}
 var region := ""
 var banner: Label
+var ripple_time := 0.0
 
 func play_visible() -> Dictionary:
 	if game == null or game._paused() or game.finished: return {}
@@ -54,6 +56,7 @@ func _process(delta: float) -> void:
 func tick(delta: float) -> void:
 	if delta <= 0 or game.finished or game._paused():
 		return
+	ripple_time = fmod(ripple_time + delta, RIPPLE_PERIOD)
 	if game.region != region:
 		states[region].inside = false
 		region = game.region
@@ -93,7 +96,8 @@ func multiplier(stat: String) -> float:
 	return value
 
 func camera_height() -> float:
-	return 0.90 if game.player_foot.distance_to(Catalog.entrance(game.region)) < 350 else 0.65
+	var distance: float = game.player_foot.distance_to(Catalog.entrance(game.region))
+	return lerpf(0.90, 0.65, smoothstep(220.0, 480.0, distance))
 
 func summary(id: String) -> String:
 	if not states.has(id):
@@ -144,10 +148,19 @@ func draw_world() -> void:
 
 func _draw_entrance(canvas: Control, id: String, door: Vector2, w: float, trim: Color, tint: Color) -> void:
 	var data: Dictionary = Catalog.REGIONS[id]
-	# Entrance clearly advertises both polarity and the precise activation boundary.
-	canvas.draw_circle(door, Catalog.RADIUS, Color(tint, 0.08))
-	canvas.draw_arc(door, Catalog.RADIUS, 0, TAU, 64, Color(tint, 0.7), 3, true)
-	canvas.draw_colored_polygon(PackedVector2Array([door + Vector2(0, -19), door + Vector2(19, 0), door + Vector2(0, 19), door + Vector2(-19, 0)]), Color(tint, 0.8))
+	# The steady rim marks the activation boundary while the waves fade inside it.
+	canvas.draw_circle(door, Catalog.RADIUS, Color(tint, 0.055))
+	canvas.draw_arc(door, Catalog.RADIUS - 3.0, 0, TAU, 64, Color(tint, 0.12), 7.0, true)
+	canvas.draw_arc(door, Catalog.RADIUS, 0, TAU, 64, Color(tint, 0.68), 2.0, true)
+	var crest := tint.lerp(Color.WHITE, 0.3)
+	for wave in range(3):
+		var progress := fposmod(ripple_time / RIPPLE_PERIOD + float(wave) / 3.0, 1.0)
+		var radius := lerpf(15.0, Catalog.RADIUS - 4.0, progress)
+		var strength := sin(progress * PI) * (1.0 - 0.35 * progress)
+		canvas.draw_arc(door, radius, 0, TAU, 48, Color(tint, 0.16 * strength), 5.0, true)
+		canvas.draw_arc(door, radius, 0, TAU, 48, Color(crest, 0.65 * strength), 1.6, true)
+	var marker := PackedVector2Array([door + Vector2(0, -11), door + Vector2(11, 0), door + Vector2(0, 11), door + Vector2(-11, 0)])
+	canvas.draw_colored_polygon(marker, Color(crest, 0.68))
 	var effect: Dictionary = Catalog.EFFECTS[states[id].effect]
 	var description := "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益", effect.name, effect.description]
 	var font := ThemeDB.fallback_font

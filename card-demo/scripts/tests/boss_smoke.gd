@@ -166,15 +166,21 @@ func run_checks() -> void:
 	check(target.hp == before - 26, "真实J键斩击首领")
 	key(KEY_L)
 	check(target.hp == before - 68, "真实L键震荡首领")
+	check(target.hp_trail == before and target.flash > 0, "连续命中保留旧血量拖尾，实际扣血立即生效")
+	await capture("health_bar_hit")
+	game.journal.show()
+	bosses.tick(0.3)
+	check(target.hp_trail == before, "暂停时血条拖尾保持原位")
+	game.journal.hide()
 	key(KEY_K)
 	game._tick_projectiles(0.2)
 	check(target.hp == before - 88 and game.projectiles.is_empty(), "真实K键灵弹沿轨迹命中首领")
 	var foot: Vector2 = target.position
-	game.player_foot = foot + Vector2(-400, 0)
+	game.player_foot = foot + Vector2(-680, 0)
 	target.cooldown = 2.0
 	bosses.tick(0.1)
-	check(target.position.distance_to(game.player_foot) < foot.distance_to(game.player_foot), "感知范围内追踪玩家")
-	game.player_foot = Maps.MAPS.grove.spawn * Maps.MAPS.grove.size
+	check(target.position.distance_to(game.player_foot) < foot.distance_to(game.player_foot), "首领在旧感知范围之外也会追踪玩家")
+	game.player_foot = target.home + Vector2(-950, 0)
 	var home_distance: float = target.position.distance_to(target.home)
 	bosses.tick(0.1)
 	check(target.position.distance_to(target.home) < home_distance, "脱战回到领地且不恢复血量")
@@ -186,6 +192,7 @@ func run_checks() -> void:
 	await create_timer(0.3).timeout
 	game.set_process(false)
 	check(target.position != before_frame and game.health == 100, "真实逐帧运行推进首领追踪")
+	check(not target.has("hp_trail"), "扣血拖尾收拢后只显示实际血量")
 	game.tools.atlas.open("grove")
 	var paused_position: Vector2 = target.position
 	bosses.tick(5)

@@ -21,7 +21,7 @@ func play_visible() -> Array:
 	for plot: Dictionary in plots[game.region]:
 		var point: Vector2 = game.world_to_screen(plot.position)
 		if not game.ARENA.has_point(point): continue
-		var entry := {"x":point.x,"y":point.y,"appearance":"圆形药圃与生长弧"}
+		var entry := {"x":point.x,"y":point.y,"appearance":"药圃植株"}
 		# Match the draw-time proximity rule and require the complete label to fit.
 		if game.player_foot.distance_to(plot.position)<200:
 			var progress := float(plot.growth)/float(Ecology.PLANTS[plot.item].time)
@@ -159,10 +159,6 @@ func _draw_garden() -> void:
 		var color := Color(Catalog.ITEMS[plot.item].color)
 		var progress := float(plot.growth) / float(Ecology.PLANTS[plot.item].time)
 		var point: Vector2 = plot.position
-		garden.draw_circle(point, 22, Color(0.12, 0.18, 0.1, 0.8))
-		garden.draw_arc(point, 22, -PI / 2, -PI / 2 + maxf(0.04, progress * TAU), 28, color, 3, true)
-		if plot.ripe:
-			garden.draw_circle(point - Vector2(0, 28), 30, Color(color, 0.14))
 		if not MaterialArt.draw_plant(garden, plot.item, point, progress, plot.ripe, Vector2(78, 78)):
 			garden.draw_line(point, point - Vector2(0, 12 + progress * 16), color, 3, true)
 			for side in [-1, 1]:
@@ -183,4 +179,5 @@ func _draw_weather() -> void:
 	if not initialized:
 		return
 	var weather: String = climates[game.region]
-	PixelVFX.draw_weather(overlay,weather,overlay.size,elapsed)
+	var boost: float = game.get_node("Chests").weather_boost()
+	PixelVFX.draw_weather(overlay, weather, overlay.size, elapsed, boost)

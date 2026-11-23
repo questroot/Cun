@@ -2,17 +2,21 @@ extends Node
 ## Optional round-owned encounters, isolated from weather guards and map bosses.
 const Rules = preload("res://scripts/scenes/chest_catalog.gd")
 const Loot = preload("res://scripts/scenes/loot_catalog.gd")
+const Gear = preload("res://scripts/scenes/equipment_catalog.gd")
 const Items = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Bosses = preload("res://scripts/scenes/boss_catalog.gd")
 const Skills = preload("res://scripts/scenes/boss_skills.gd")
 const VFX = preload("res://scripts/scenes/pixel_vfx.gd")
 const Art = preload("res://scripts/scenes/fudi_material_art.gd")
-const ENEMY_ART = preload("res://assets/characters/pet_enemy_stone.png")
+const HealthBar = preload("res://scripts/scenes/fudi_boss_health_bar.gd")
+const EnemyFeedback = preload("res://scripts/scenes/fudi_enemy_feedback.gd")
+const SHAKE_DURATION := 0.65
 var game
 var rng := RandomNumberGenerator.new()
 var regions: Dictionary = {}
 var initialized := false
+var opening_shakes: Dictionary = {}
 
 func play_visible() -> Array:
 	var result: Array = []
@@ -178,6 +182,7 @@ func _start_encounter(chest: Dictionary) -> void:
 	chest.boss.merge({"id":art_id,"skill_index":0,"cast_fx":{}})
 	chest.state = "guarding"
 	chest.warning = 1.2
+	_shake_chest(chest.position, 0.32)
 
 func _pay_chest(chest: Dictionary) -> void:
 	if chest.rewarded:
@@ -185,7 +190,10 @@ func _pay_chest(chest: Dictionary) -> void:
 	chest.rewarded = true
 	chest.state = "opened"
 	var choices := Loot.pool(Loot.REGIONS[game.region])
-	game._spawn_equipment(game.region, choices[rng.randi_range(0, choices.size() - 1)], chest.position, "chest_drop")
+	var item: String = choices[rng.randi_range(0, choices.size() - 1)]
+	game._spawn_equipment(game.region, item, chest.position, "chest_drop")
+	# Each pool has five armor pieces and one weapon.
+	_shake_chest(chest.position, 0.82 if Gear.WEAPONS.has(item) else 0.48)
 	var materials: Array = Items.REGIONS[game.region].resources.keys()
 	for i in range(3):
 		game.states[game.region].pickups.append({"item": materials[rng.randi_range(0, materials.size() - 1)], "position": chest.position + Vector2(i * 16, 0), "chest_drop": true})
@@ -224,6 +232,8 @@ func collect_defeated() -> void:
 					var choices := Loot.pool(Loot.REGIONS[id])
 					var item: String = choices[rng.randi_range(0, choices.size() - 1)] + "@mutated"
 					game._spawn_equipment(id, item, boss.position, "chest_boss_drop")
+					if id == game.region:
+						_shake_chest(chest.position, 1.0)
 			var living := int(int(boss.hp) > 0)
 			for mob: Dictionary in chest.mobs:
 				living += int(int(mob.hp) > 0)
@@ -237,13 +247,18 @@ func collect_defeated() -> void:
 				chest.warning = 0.0
 
 func enter_region() -> void:
+	opening_shakes.clear()
 	for chests: Array in regions.values():
 		for chest: Dictionary in chests:
 			if chest.state == "guarding":
 				chest.boss.windup = 0.0
+				chest.boss.flash = 0.0
+				chest.boss.erase("hp_trail")
 				chest.boss.cast_fx = {}
 				chest.boss.cooldown = maxf(1.8, float(chest.boss.cooldown))
-				for mob: Dictionary in chest.mobs: mob["attack_fx"] = 0.0
+				for mob: Dictionary in chest.mobs:
+					mob["attack_fx"] = 0.0
+					mob.flash = 0.0
 
 func _process(delta: float) -> void:
 	if initialized and game.is_processing() and not game.finished and not game._paused():
@@ -253,6 +268,11 @@ func tick(delta: float) -> void:
 	if not initialized or game.finished or game._paused() or delta <= 0:
 		return
 	collect_defeated()
+	for point: Vector2 in opening_shakes.keys():
+		var shake: Dictionary = opening_shakes[point]
+		shake.left -= delta
+		if shake.left <= 0:
+			opening_shakes.erase(point)
 	for chest: Dictionary in regions[game.region]:
 		if chest.state != "guarding":
 			continue
@@ -272,18 +292,21 @@ func tick(delta: float) -> void:
 				if game.hurt_timer <= 0:
 					mob["attack_fx"] = VFX.LIFETIME
 					mob["attack_point"] = game.player_foot
-				_hurt(int(mob.damage))
+				game.take_enemy_hit(int(mob.damage), "", Vector2(mob.position).direction_to(game.player_foot))
 		_tick_boss(chest.boss, delta)
 	if game.health <= 0:
 		game._end_round(false)
 	game.world_canvas.queue_redraw()
 	game.minimap.queue_redraw()
 
-func _hurt(amount: int) -> void:
-	if game.hurt_timer > 0:
-		return
-	game.health = maxi(0, game.health - game.incoming_damage(amount))
-	game.hurt_timer = 1.0
+func _shake_chest(point: Vector2, strength: float) -> void:
+	opening_shakes[point] = {"strength": strength, "left": SHAKE_DURATION}
+
+func weather_boost() -> float:
+	var boost := 0.0
+	for shake: Dictionary in opening_shakes.values():
+		boost = maxf(boost, shake.strength * shake.left / SHAKE_DURATION)
+	return boost
 
 func _tick_boss(boss: Dictionary, delta: float) -> void:
 	if int(boss.hp) <= 0:
@@ -294,18 +317,19 @@ func _tick_boss(boss: Dictionary, delta: float) -> void:
 		boss.cast_fx.life -= delta
 		if float(boss.cast_fx.life) <= 0: boss.cast_fx = {}
 	boss.flash = maxf(0, float(boss.flash) - delta)
+	HealthBar.tick(boss, delta)
 	if float(boss.windup) > 0:
 		boss.windup = maxf(0, float(boss.windup) - delta)
 		if float(boss.windup) == 0:
 			boss.cast_fx = {"skill":skill,"target":boss.target,"origin":boss.cast_origin,"direction":boss.direction,"zones":boss.zones.duplicate(),"life":VFX.LIFETIME}
 			if Skills.hits(boss,game.player_foot):
-				_hurt(ceili(float(skill.damage)*Rules.BOSS_DAMAGE_SCALE))
+				game.take_enemy_hit(ceili(float(skill.damage)*Rules.BOSS_DAMAGE_SCALE), Skills.HIT_AILMENTS.get(boss.id, ""), Vector2(boss.cast_origin).direction_to(game.player_foot))
 			boss.cooldown = skill.cooldown
 			boss.skill_index = (int(boss.skill_index)+1)%5
 		return
 	boss.cooldown = maxf(0, float(boss.cooldown) - delta)
 	var offset: Vector2 = game.player_foot - boss.position
-	if game.player_foot.distance_to(boss.home) > 650:
+	if game.player_foot.distance_to(boss.home) > Bosses.LEASH_RANGE:
 		boss.position = game.move_world(boss.position, boss.position.direction_to(boss.home) * minf(55 * delta, boss.position.distance_to(boss.home)))
 	elif offset.length() <= float(skill.reach) and float(boss.cooldown) <= 0 and _path_clear(game.region, boss.position, game.player_foot):
 		Skills.lock(boss,game.player_foot)
@@ -338,9 +362,20 @@ func draw_world() -> void:
 		var color := Color("#c38bff") if chest.mutated else Color("#e7c076")
 		if chest.state == "opened":
 			color = Color("#7b8c88")
-		canvas.draw_circle(point, 29, Color(color, 0.18))
 		var tint := Color(0.72, 0.78, 0.75, 0.92) if chest.state == "opened" else Color.WHITE
-		Art.draw_chest(canvas, Art.chest_texture(chest.mutated, str(chest.state)), point, 128, tint)
+		var texture := Art.chest_texture(chest.mutated, str(chest.state))
+		if opening_shakes.has(point):
+			var shake: Dictionary = opening_shakes[point]
+			var age: float = SHAKE_DURATION - shake.left
+			var amplitude: float = shake.strength * pow(shake.left / SHAKE_DURATION, 2)
+			var tilt := sin(age * TAU * 9.0) * amplitude * 0.14
+			var lift := sin(age * TAU * 4.5)
+			var motion := Vector2(tilt * 50, -lift * lift * amplitude * 13)
+			canvas.draw_set_transform(point + motion, tilt)
+			Art.draw_chest(canvas, texture, Vector2.ZERO, 128, tint.lerp(Color.WHITE, amplitude))
+			canvas.draw_set_transform(Vector2.ZERO)
+		else:
+			Art.draw_chest(canvas, texture, point, 128, tint)
 		var label := "异变宝箱" if chest.mutated else "普通宝箱"
 		match chest.state:
 			"guarding": label += " · 守卫中"
@@ -353,7 +388,7 @@ func draw_world() -> void:
 		for mob: Dictionary in chest.mobs:
 			if int(mob.hp) <= 0:
 				continue
-			_draw_guard(canvas, mob, ENEMY_ART, Vector2(66, 66), "异变守卫", 25)
+			_draw_guard(canvas, mob, EnemyFeedback.STONE, EnemyFeedback.CHEST_GUARD_SIZE, "异变守卫", 25)
 			if float(mob.get("attack_fx",0.0)) > 0:
 				VFX.draw(canvas,"guard-fog",mob.get("attack_point",mob.position),VFX.LIFETIME-float(mob.attack_fx),Vector2.ONE*2)
 		var boss: Dictionary = chest.boss
@@ -363,19 +398,37 @@ func draw_world() -> void:
 				var skill := Skills.current(boss)
 				canvas.draw_string(font,boss.target+Vector2(-90,-20),"%s · %s" % [skill.name,skill.hint],HORIZONTAL_ALIGNMENT_LEFT,-1,16,Color("#fff0c0"))
 			var art: Texture2D = Bosses.ART[boss.art]
-			var extent := Vector2(art.get_width(), art.get_height()) * 0.72
+			var extent := art.get_size() * EnemyFeedback.CHEST_BOSS_SCALE
 			_draw_guard(canvas, boss, art, extent, "守箱·" + str(Bosses.DEFINITIONS[boss.art].name), 56)
 			if not boss.cast_fx.is_empty(): VFX.draw_cast(canvas,boss.cast_fx)
 		if float(chest.warning) > 0:
 			canvas.draw_arc(point, 135, 0, TAU, 48, Color("#e3a3ff"), 4, true)
 			canvas.draw_string(font, point + Vector2(55, -55), "异变惊醒！准备迎战", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#e8c4ff"))
+	for pickup: Dictionary in game.states[game.region].pickups:
+		if pickup.get("chest_boss_drop", false):
+			_draw_loot_glint(canvas, pickup.position + Vector2(0, -66))
+
+func _draw_loot_glint(canvas: Control, center: Vector2) -> void:
+	var pulse := 0.5 + 0.5 * cos(game.loot_glint_time / 1.25 * TAU)
+	var tip := 9.0 + 7.0 * pulse
+	var inset := Vector2.ONE * (tip * 0.22)
+	canvas.draw_colored_polygon(PackedVector2Array([
+		center + Vector2(0, -tip), center + Vector2(inset.x, -inset.y),
+		center + Vector2(tip * 0.8, 0), center + inset,
+		center + Vector2(0, tip), center + Vector2(-inset.x, inset.y),
+		center + Vector2(-tip * 0.8, 0), center - inset,
+	]), Color(0.79, 0.48, 1.0, 0.55 + 0.45 * pulse))
+	canvas.draw_circle(center, 2.0 + 2.0 * pulse, Color("#fff5ff"))
 
 func _draw_guard(canvas: Control, guard: Dictionary, art: Texture2D, extent: Vector2, name: String, width: float) -> void:
 	var point: Vector2 = guard.position
-	canvas.draw_texture_rect(art, Rect2(point - Vector2(extent.x / 2, extent.y), extent), false, Color("#ffaaaa") if float(guard.flash) > 0 else Color("#dfb8ef"))
+	EnemyFeedback.draw_actor(canvas, guard, art, extent, Color("#dfb8ef"))
 	var top := point - Vector2(width, extent.y + 10)
-	canvas.draw_rect(Rect2(top, Vector2(width * 2, 5)), Color("#28212f"))
-	canvas.draw_rect(Rect2(top, Vector2(width * 2 * float(guard.hp) / float(guard.max_hp), 5)), Color("#cc9dee"))
+	if guard.has("skill_index"):
+		HealthBar.draw(canvas, Rect2(top, Vector2(width * 2, 8)), guard, Color("#cc9dee"))
+	else:
+		canvas.draw_rect(Rect2(top, Vector2(width * 2, 5)), Color("#28212f"))
+		canvas.draw_rect(Rect2(top, Vector2(width * 2 * float(guard.hp) / float(guard.max_hp), 5)), Color("#cc9dee"))
 	canvas.draw_string(ThemeDB.fallback_font, top + Vector2(-10, -7), name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("#e4c3f5"))
 
 func draw_minimap() -> void:

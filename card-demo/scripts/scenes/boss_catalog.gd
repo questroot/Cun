@@ -1,6 +1,8 @@
 extends RefCounted
 ## Runtime names and placements inferred from the supplied silhouettes; not NPC identities.
 const SKILLS = preload("res://scripts/scenes/boss_skills.gd").MOVES
+const SIGHT_RANGE := 760.0
+const LEASH_RANGE := 900.0
 const DEFINITIONS := {
 	"H01": {"name": "残旗剑士", "region": "causeway", "point": Vector2(0.73, 0.368), "hp": 240, "damage": 18, "speed": 72.0, "reach": 140.0, "radius": 110.0, "windup": 1.05, "cooldown": 3.4, "skill": "断旗斩", "drop": "iron", "count": 3, "color": "#e38e77"},
 	"H02": {"name": "荆冠鹿骑", "region": "grove", "point": Vector2(0.78, 0.39), "hp": 220, "damage": 16, "speed": 80.0, "reach": 160.0, "radius": 120.0, "windup": 1.2, "cooldown": 3.6, "skill": "荆棘践踏", "drop": "resin", "count": 3, "color": "#cbad6f"},

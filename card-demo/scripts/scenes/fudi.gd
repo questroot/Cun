@@ -22,15 +22,19 @@ const Story = preload("res://scripts/scenes/fudi_story.gd")
 const Guards = preload("res://scripts/scenes/fudi_guards.gd")
 const Journal = preload("res://scripts/scenes/fudi_journal.gd")
 const Supplies = preload("res://scripts/scenes/fudi_supplies.gd")
-const ENEMY_ART := preload("res://assets/characters/pet_enemy_stone.png")
+const EnemyFeedback := preload("res://scripts/scenes/fudi_enemy_feedback.gd")
 const ARENA := Rect2(16, 88, 1248, 560)
 const WORLD_ZOOM := 0.8
 const VIEW_SIZE := ARENA.size / WORLD_ZOOM
 const SPEED := 260.0
+const MAX_MANA := 100.0
+const MANA_RECOVERY := 4.0
+const PROJECTILE_LIFETIME := 0.85
+const PLAYER_HIT_DURATION := 0.24
 const ATTACKS := {
-	"j": {"damage": 26, "cooldown": 0.32, "radius": 112.0, "name": "斩击"},
-	"k": {"damage": 20, "cooldown": 0.85, "radius": 0.0, "name": "灵弹"},
-	"l": {"damage": 42, "cooldown": 3.5, "radius": 180.0, "name": "震荡"},
+	"j": {"damage": 26, "cooldown": 0.32, "radius": 112.0, "name": "斩击", "mana": 0},
+	"k": {"damage": 20, "cooldown": 0.85, "radius": 0.0, "name": "灵弹", "mana": 8},
+	"l": {"damage": 42, "cooldown": 3.5, "radius": 180.0, "name": "震荡", "mana": 16},
 }
 var region := "grove"
 var states: Dictionary = {}
@@ -38,10 +42,17 @@ var inventory: Dictionary = {"wood": 0, "herb": 0, "ore": 0, "crystal": 0}
 var player_foot := Vector2(640, 460)
 var facing := Vector2.RIGHT
 var health := 100
+var mana := MAX_MANA
 var hurt_timer := 0.0
+var status_canvas: Node2D
+var player_ailments: Dictionary = {}
+var player_hit_left := 0.0
+var player_hit_angle := 0.0
+var loot_glint_time := 0.0
 var cooldowns: Dictionary = {"j": 0.0, "k": 0.0, "l": 0.0}
 var projectiles: Array[Dictionary] = []
 var effects: Array[Dictionary] = []
+var enemy_feedback := EnemyFeedback.new()
 var model: Hero
 var tools: Tools
 var status: Label
@@ -67,6 +78,9 @@ var buildings: Buildings
 var gm: CanvasLayer
 var health_bar: ProgressBar
 var health_label: Label
+var mana_bar: ProgressBar
+var mana_label: Label
+var potion_buttons: Dictionary = {}
 var hud_actions: HBoxContainer
 var menu_button: Button
 var menu: Control
@@ -163,6 +177,9 @@ func _ready() -> void:
 	world_view.add_child(world_canvas)
 	model = Hero.new()
 	world_canvas.add_child(model)
+	status_canvas = Node2D.new()
+	status_canvas.draw.connect(_draw_player_feedback)
+	world_canvas.add_child(status_canvas)
 	_build_hud()
 	tools = Tools.new()
 	tools.region = region
@@ -209,6 +226,8 @@ func _ready() -> void:
 	persistence = Save.new()
 	persistence.name = "ExpeditionSave"
 	add_child(persistence)
+	world_canvas.draw.connect(equipment.effects.draw_ailments)
+	world_canvas.draw.connect(enemy_feedback.draw.bind(world_canvas))
 
 func combat_targets() -> Array[Dictionary]:
 	var targets: Array[Dictionary] = []
@@ -287,7 +306,27 @@ func _build_hud() -> void:
 	health_bar.add_theme_stylebox_override("background", track)
 	health_bar.add_theme_stylebox_override("fill", track.duplicate())
 	add_child(health_bar)
-	health_bar.size = Vector2(200, 7)
+	health_bar.size = Vector2(116, 7)
+	mana_label = UI.label("", 16, Color("#96cdef"))
+	mana_label.position = Vector2(458, 22)
+	add_child(mana_label)
+	mana_bar = health_bar.duplicate()
+	mana_bar.position.x = 458
+	var mana_fill: StyleBoxFlat = track.duplicate()
+	mana_fill.bg_color = Color("#72bcec")
+	mana_bar.add_theme_stylebox_override("fill", mana_fill)
+	add_child(mana_bar)
+	var x := 584.0
+	for resource: String in Catalog.SUPPLY_LABELS:
+		var button := UI.button("", func() -> void: supplies.use_quick(resource))
+		style_hud_button(button)
+		button.custom_minimum_size.x = 98
+		button.position = Vector2(x, 25)
+		button.focus_mode = Control.FOCUS_NONE
+		button.tooltip_text = "使用一份%s补给（优先使用恢复量较少的）" % Catalog.SUPPLY_LABELS[resource]
+		add_child(button)
+		potion_buttons[resource] = button
+		x += 104
 	hud_actions = HBoxContainer.new()
 	hud_actions.position = Vector2(800, 25)
 	hud_actions.add_theme_constant_override("separation", 8)
@@ -482,7 +521,9 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 	if world_canvas.size != Vector2.ZERO:
 		states[region].foot = player_foot
 	region = id
-	for enemy: Dictionary in states[id].enemies: enemy["attack_fx"] = 0.0
+	for enemy: Dictionary in states[id].enemies:
+		enemy["attack_fx"] = 0.0
+		enemy.flash = 0.0
 	if guards != null: guards.enter_region()
 	tools.region = id
 	var chests := get_node_or_null("Chests")
@@ -502,6 +543,11 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 	model.update_movement(Vector2.ZERO, 0)
 	projectiles.clear()
 	effects.clear()
+	enemy_feedback.bursts.clear()
+	player_ailments.clear()
+	player_hit_left = 0.0
+	model.modulate = Color.WHITE
+	status_canvas.queue_redraw()
 	hurt_timer = maxf(hurt_timer, 1.0)
 	_update_camera()
 	_refresh_ui()
@@ -567,6 +613,9 @@ func attack(kind: String) -> bool:
 	if not ATTACKS.has(kind) or finished or _paused() or float(cooldowns[kind]) > 0:
 		return false
 	var config: Dictionary = ATTACKS[kind]
+	if mana < config.mana:
+		return false
+	mana -= config.mana
 	sound_requested.emit({"j": "slash", "k": "cast", "l": "slam"}[kind])
 	cooldowns[kind] = config.cooldown * (equipment.effects.cooldown_scale() if equipment != null else 1.0)
 	if buildings != null:
@@ -574,22 +623,24 @@ func attack(kind: String) -> bool:
 	var radius := float(config.radius)
 	if equipment != null:
 		radius = equipment.effects.attack_radius(kind, radius)
-	var origin := player_foot - Vector2(0, 30)
-	# Swing art is keyed by the equipped weapon id; the arc stays as the range readout.
-	var swing: String = ""
-	if equipment != null:
-		swing = str(equipment.effects.weapon()).split("-")[0]
+	var art: String
 	if kind == "k":
+		var origin := player_foot - Vector2(0, 30)
 		var angles: Array = [-0.18, 0.0, 0.18] if equipment != null and equipment.effects.weapon() == "w03-prism-saber" else [0.0]
 		for angle: float in angles:
-			projectiles.append({"position": origin + facing * 30, "velocity": facing.rotated(angle) * 620, "life": 0.85})
-		effects.append({"position": origin, "radius": radius, "life": PixelVFX.LIFETIME, "kind": kind, "facing": facing, "swing": swing})
+			projectiles.append({"position": origin + facing * 30, "velocity": facing.rotated(angle) * 620, "life": PROJECTILE_LIFETIME})
+		art = "attack-cast"
 	else:
+		art = "attack-quake" if kind == "l" else "attack-slash"
+		if kind == "j" and equipment != null:
+			var weapon: String = equipment.effects.weapon().get_slice("-", 0)
+			if weapon != "":
+				art = "player-" + weapon
 		for enemy: Dictionary in combat_targets():
 			var offset: Vector2 = enemy.position - player_foot
 			if offset.length() <= radius and (kind == "l" or offset.length() < 25 or offset.normalized().dot(facing) >= 0.15):
 				_damage(enemy, int(config.damage), kind)
-		effects.append({"position": origin, "radius": radius, "life": PixelVFX.LIFETIME, "kind": kind, "facing": facing, "swing": swing})
+	effects.append({"position": player_foot, "radius": radius, "life": PixelVFX.LIFETIME, "kind": kind, "facing": facing, "fx": art})
 	if equipment != null:
 		equipment.effects.after_attack(kind, radius)
 	_remove_dead()
@@ -597,7 +648,7 @@ func attack(kind: String) -> bool:
 	world_canvas.queue_redraw()
 	return true
 
-func _damage(enemy: Dictionary, amount: int, kind: String = "") -> void:
+func _damage(enemy: Dictionary, amount: int, kind: String = "", direction: Vector2 = Vector2.ZERO) -> void:
 	if int(enemy.hp) <= 0:
 		return
 	if equipment != null:
@@ -605,11 +656,50 @@ func _damage(enemy: Dictionary, amount: int, kind: String = "") -> void:
 		amount = equipment.effects.direct_damage(enemy, amount, kind)
 	if buildings != null:
 		amount = ceili(amount * buildings.multiplier("attack"))
-	enemy.hp = maxi(0, int(enemy.hp) - amount)
+	_apply_enemy_damage(enemy, amount, "", direction)
 	sound_requested.emit("hit")
-	enemy.flash = 0.14
 	if equipment != null:
 		equipment.effects.after_hit(enemy, kind)
+
+func _apply_enemy_damage(enemy: Dictionary, amount: int, ailment: String = "", direction: Vector2 = Vector2.ZERO) -> void:
+	# Only bosses have a skill rotation and the delayed damage display.
+	if enemy.has("skill_index"):
+		enemy["hp_trail"] = maxf(enemy.get("hp_trail", enemy.hp), enemy.hp)
+	enemy.hp = maxi(0, int(enemy.hp) - amount)
+	enemy.flash = EnemyFeedback.HIT_FLASH
+	enemy["hit_direction"] = player_foot.direction_to(enemy.position) if direction == Vector2.ZERO else direction
+	enemy_feedback.record(enemy, enemy.hit_direction, ailment)
+
+func take_enemy_hit(amount: int, ailment: String = "", direction: Vector2 = Vector2.ZERO) -> int:
+	if hurt_timer > 0:
+		return 0
+	var damage := incoming_damage(amount)
+	health = maxi(0, health - damage)
+	hurt_timer = 1.0
+	if damage > 0:
+		player_hit_angle = direction.angle()
+		player_hit_left = PLAYER_HIT_DURATION
+		model.modulate = Color("#ff9c8c")
+		status_canvas.queue_redraw()
+		if ailment != "":
+			show_player_ailment(ailment, 0.96)
+	return damage
+
+func show_player_ailment(key: String, duration: float) -> void:
+	if player_ailments.has(key):
+		var current: Dictionary = player_ailments[key]
+		duration = maxf(duration, current.duration - current.age)
+	player_ailments[key] = {"age": 0.0, "duration": duration}
+	status_canvas.queue_redraw()
+
+func _draw_player_feedback() -> void:
+	for key: String in player_ailments:
+		var effect: Dictionary = player_ailments[key]
+		var alpha := 0.85 * minf(1.0, (effect.duration - effect.age) / 0.24)
+		PixelVFX.draw(status_canvas, key, player_foot - Vector2(0, 59), effect.age, Vector2.ONE * 2.0, 0.0, Color(1, 1, 1, alpha), true)
+	if player_hit_left > 0.0:
+		var progress := 1.0 - player_hit_left / PLAYER_HIT_DURATION
+		PixelVFX.draw(status_canvas, "impact-player", player_foot - Vector2(0, 53), progress * PixelVFX.LIFETIME, Vector2.ONE * 2, player_hit_angle)
 
 func incoming_damage(amount: int) -> int:
 	if buildings != null:
@@ -669,9 +759,27 @@ func _collect_nearby() -> void:
 			if persistence != null: persistence.request_save()
 
 func _process(delta: float) -> void:
-	if _paused() or finished:
+	if _paused():
 		model.update_movement(Vector2.ZERO, 0)
 		return
+	if player_hit_left > 0.0:
+		player_hit_left = maxf(0.0, player_hit_left - delta)
+		model.modulate = Color.WHITE.lerp(Color("#ff9c8c"), player_hit_left / PLAYER_HIT_DURATION)
+		status_canvas.queue_redraw()
+	if not player_ailments.is_empty():
+		for key: String in player_ailments.keys():
+			player_ailments[key].age += delta
+			if player_ailments[key].age >= player_ailments[key].duration:
+				player_ailments.erase(key)
+		status_canvas.queue_redraw()
+	if not enemy_feedback.bursts.is_empty():
+		enemy_feedback.tick(delta)
+		world_canvas.queue_redraw()
+	if finished:
+		model.update_movement(Vector2.ZERO, 0)
+		return
+	loot_glint_time = fmod(loot_glint_time + delta, 1.25)
+	mana = minf(MAX_MANA, mana + delta * MANA_RECOVERY)
 	if equipment != null:
 		equipment.effects.tick(delta)
 		if finished:
@@ -690,7 +798,6 @@ func _process(delta: float) -> void:
 	model.position = player_foot
 	model.update_movement(player_foot - previous, delta)
 	hurt_timer = maxf(0, hurt_timer - delta)
-	model.modulate = Color("#ff9c8c") if hurt_timer > 0.75 else Color.WHITE
 	for key: String in cooldowns:
 		cooldowns[key] = maxf(0, float(cooldowns[key]) - delta)
 	guards.tick(minf(delta, 0.1))
@@ -704,7 +811,7 @@ func _process(delta: float) -> void:
 	if health <= 0:
 		_end_round(false)
 	_refresh_ui()
-	_update_camera()
+	_update_camera(delta)
 	world_canvas.queue_redraw()
 
 func _tick_projectiles(delta: float) -> void:
@@ -730,7 +837,7 @@ func _tick_projectiles(delta: float) -> void:
 				hit = enemy
 				nearest = start.distance_to(closest)
 		if not hit.is_empty():
-			_damage(hit, int(ATTACKS.k.damage), "k")
+			_damage(hit, int(ATTACKS.k.damage), "k", shot.velocity.normalized())
 			shot.life = 0.0
 		if blocked or float(shot.life) <= 0 or not Maps.walkable(region, shot.position, 0):
 			projectiles.remove_at(i)
@@ -754,11 +861,25 @@ func _refresh_ui() -> void:
 	status.text = Catalog.REGIONS[region].name
 	health_label.text = "生命 %d / 100" % health
 	health_bar.value = health
+	mana_label.text = "法力 %d / %d" % [floori(mana), MAX_MANA]
+	mana_bar.value = mana
+	if supplies != null:
+		for resource: String in potion_buttons:
+			var count: int = supplies.quick_count(resource)
+			var button: Button = potion_buttons[resource]
+			button.text = "%s ×%d" % ["回血" if resource == "health" else "回蓝", count]
+			button.disabled = finished or count == 0 or not supplies.needs_recovery(resource)
 	var fill := health_bar.get_theme_stylebox("fill") as StyleBoxFlat
 	fill.bg_color = Color("#e78f82") if health <= 30 else Color("#9bceb2")
 	var parts: Array[String] = []
 	for key: String in cooldowns:
-		parts.append("%s %s" % [key.to_upper(), ATTACKS[key].name if float(cooldowns[key]) <= 0 else "%.1fs" % cooldowns[key]])
+		var cost: int = ATTACKS[key].mana
+		var label: String = ATTACKS[key].name if cost == 0 else "%s %d蓝" % [ATTACKS[key].name, cost]
+		if float(cooldowns[key]) > 0:
+			label = "%.1fs" % cooldowns[key]
+		elif mana < cost:
+			label = "法力不足"
+		parts.append("%s %s" % [key.to_upper(), label])
 	skills.text = "   ·   ".join(parts)
 	var target := interaction_target()
 	var next: int = states[region].visited.find(false)
@@ -796,9 +917,12 @@ func _draw_world() -> void:
 		var info: Dictionary = Catalog.ITEMS[pickup.item]
 		var color := Color(info.color)
 		var icon: Texture2D = info.get("icon")
-		canvas.draw_circle(pickup.position, 19, Color(color, 0.16))
+		var is_herb := MaterialArt.HERBS.has(pickup.item)
+		if not is_herb:
+			canvas.draw_circle(pickup.position, 19, Color(color, 0.16))
 		if icon != null:
-			canvas.draw_arc(pickup.position, 24, 0, TAU, 32, color, 2, true)
+			if not is_herb:
+				canvas.draw_arc(pickup.position, 24, 0, TAU, 32, color, 2, true)
 			canvas.draw_texture_rect(icon, Rect2(pickup.position - Vector2(24, 26), Vector2(48, 48)), false)
 		else:
 			canvas.draw_circle(pickup.position, 7, color)
@@ -808,11 +932,10 @@ func _draw_world() -> void:
 		canvas.draw_set_transform(point, 0, Vector2(1, 0.30))
 		canvas.draw_circle(Vector2.ZERO, 29, Color(0.02, 0.04, 0.05, 0.45))
 		canvas.draw_set_transform(Vector2.ZERO)
-		var scale := Vector2(1.12, 0.85) if enemy.guard_phase == "windup" else Vector2(0.9, 1.12) if enemy.guard_phase == "charge" or float(enemy.get("attack_fx", 0.0)) > 0 else Vector2.ONE
-		var lean: float = -0.12 if float(enemy.flash) > 0 else (0.12 * enemy.guard_direction.x if enemy.guard_phase == "windup" else 0.0)
-		canvas.draw_set_transform(point, lean, scale)
-		canvas.draw_texture_rect(ENEMY_ART, Rect2(Vector2(-38, -76), Vector2(76, 76)), false, Color("#ffbca0") if float(enemy.flash) > 0 else Color(enemy.get("tint", Color.WHITE)))
-		canvas.draw_set_transform(Vector2.ZERO)
+		var attack_pose := float(enemy.get("attack_fx", 0.0)) > PixelVFX.LIFETIME - 0.28
+		var scale := Vector2(1.12, 0.85) if enemy.guard_phase == "windup" else Vector2(0.9, 1.12) if enemy.guard_phase == "charge" or attack_pose else Vector2.ONE
+		var lean: float = 0.12 * enemy.guard_direction.x if enemy.guard_phase == "windup" else 0.0
+		EnemyFeedback.draw_actor(canvas, enemy, EnemyFeedback.STONE, EnemyFeedback.GUARD_SIZE, Color(enemy.get("tint", Color.WHITE)), lean, scale)
 		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56, 5)), Color("#18212b"))
 		canvas.draw_rect(Rect2(point - Vector2(28, 84), Vector2(56 * float(enemy.hp) / float(enemy.get("max_hp", 60)), 5)), Color("#dc947e"))
 		if float(enemy.get("attack_fx",0.0)) > 0:
@@ -820,16 +943,25 @@ func _draw_world() -> void:
 	var origin := player_foot - Vector2(0, 30)
 	canvas.draw_line(origin + facing * 26, origin + facing * 48, Color("#f5d69b"), 3, true)
 	for shot: Dictionary in projectiles:
-		canvas.draw_circle(shot.position, 10, Color("#9ceafa"))
-		canvas.draw_circle(shot.position, 4, Color.WHITE)
+		PixelVFX.draw(canvas, "attack-bolt", shot.position, PROJECTILE_LIFETIME - float(shot.life), Vector2.ONE, shot.velocity.angle(), Color.WHITE, true)
 	for effect: Dictionary in effects:
-		var color := Color("#b9a0f5") if effect.kind == "l" else Color("#ffe6ab")
-		color.a = clampf(float(effect.life) / 0.22, 0, 1)
+		var age := PixelVFX.LIFETIME - float(effect.life)
 		var angle: float = effect.facing.angle()
-		canvas.draw_arc(effect.position, float(effect.radius), 0 if effect.kind == "l" else angle - 1.4, TAU if effect.kind == "l" else angle + 1.4, 48, color, 7, true)
-		var swing: String = str(effect.get("swing", ""))
-		if swing != "" and PixelVFX.exists("player-" + swing):
-			PixelVFX.draw(canvas, "player-" + swing, effect.position + effect.facing * 30, PixelVFX.LIFETIME - float(effect.life), Vector2.ONE * 2, angle, Color(1, 1, 1, 0.9))
+		var point: Vector2 = effect.position
+		var radius: float = effect.radius
+		var range_alpha := 0.50 * maxf(0.0, 1.0 - age / 0.23)
+		match effect.kind:
+			"j":
+				var half_arc := acos(0.15)
+				if range_alpha > 0.0:
+					canvas.draw_arc(point, radius, angle - half_arc, angle + half_arc, 36, Color(Color("#ffe6ab"), range_alpha), 2.0, true)
+				PixelVFX.draw(canvas, effect.fx, point + effect.facing * minf(radius * 0.50, 66.0) - Vector2(0, 30), age, Vector2.ONE * 2, angle)
+			"k":
+				PixelVFX.draw(canvas, effect.fx, point + effect.facing * 30 - Vector2(0, 30), age)
+			"l":
+				if range_alpha > 0.0:
+					canvas.draw_arc(point, radius, 0, TAU, 48, Color(Color("#d2c5ff"), range_alpha), 2.0, true)
+				PixelVFX.draw(canvas, effect.fx, point, age, Vector2(radius / 36.0, radius / 52.0))
 
 func _paused() -> bool:
 	return (restart_confirm != null and restart_confirm.visible) or (persistence != null and persistence.blocked) or menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
@@ -847,10 +979,12 @@ func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
 			point.y = vertical.y
 	return point
 
-func _update_camera() -> void:
+func _update_camera(delta: float = 0.0) -> void:
 	# Leave headroom for tall boss silhouettes and their health bars.
 	var headroom := buildings.camera_height() if buildings != null else 0.65
-	camera_origin = (player_foot - VIEW_SIZE * Vector2(0.5, headroom)).clamp(Vector2.ZERO, Maps.MAPS[region].size - VIEW_SIZE)
+	var limit: Vector2 = Maps.MAPS[region].size - VIEW_SIZE
+	var target := (player_foot - VIEW_SIZE * Vector2(0.5, headroom)).clamp(Vector2.ZERO, limit)
+	camera_origin = camera_origin.lerp(target, 1.0 - exp(-12.0 * delta)) if delta > 0.0 else target
 	world_canvas.position = -camera_origin * WORLD_ZOOM
 	minimap.queue_redraw()
 
@@ -938,7 +1072,7 @@ func open_journal() -> void:
 	book.open()
 
 func journal_help() -> String:
-	var lines: Array[String] = ["帮助 · WASD移动，J/K/L攻击，E交互，M地图，B行囊，C装备。\n蓄力守卫：走出黄圈；投石守卫：横移躲开锁定射线；冲锋守卫：避开预警直道，等出招后反击。\n物品页可制作/使用补给，木料3与松脂1可修补已用过的休息点。\nEsc保存或确认重新开始；进度独立保存，离线不推进。"]
+	var lines: Array[String] = ["帮助 · WASD移动，J/K/L攻击，E交互，M地图，B行囊，C装备。\nJ斩击免费，K灵弹8法力，L震荡16法力。法力每秒恢复4点。\n蓄力守卫：走出黄圈；投石守卫：横移躲开锁定射线；冲锋守卫：避开预警直道，等出招后反击。\nB物品页用植物制作回血与回蓝补给，顶部按钮可在战斗中快速使用。木料3与松脂1可修补已用过的休息点。\nEsc保存或确认重新开始；进度独立保存，离线不推进。"]
 	var chests := get_node_or_null("Chests")
 	if chests != null:
 		lines.append("\n宝箱 · 金色方块为普通箱，紫色方块为异变箱；靠近按E开启。")
