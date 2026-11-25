@@ -16,6 +16,7 @@ var enabled := true
 var ready_to_save := false
 var blocked := false
 var status := ""
+var save_stage := ""
 var elapsed := 0.0
 var queued := false
 var old_auto_quit := true
@@ -61,11 +62,7 @@ func _exit_tree() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and enabled and ready_to_save:
-		if blocked or save_now():
-			get_tree().quit()
-		else:
-			game.menu_info.text = status + "\n请重试保存后再关闭窗口。"
-			game.menu.show()
+		game.leave_expedition("quit")
 
 func _process(delta: float) -> void:
 	if notice != null and notice_left > 0:
@@ -89,7 +86,10 @@ func save_now() -> bool:
 	if not ready_to_save or blocked: return false
 	var error := write_snapshot(capture())
 	elapsed = 0.0
-	status = "已保存 · " + Time.get_time_string_from_system() if error == OK else "保存失败，进度仍在当前窗口；请检查磁盘后重试。"
+	status = "已保存 · " + Time.get_time_string_from_system()
+	if error != OK:
+		status = "保存失败（%s，错误 %d），本次进度仍在游戏中。" % [save_stage, error]
+		push_warning("Fudi save failed: %s (%s, %d)" % [save_stage, error_string(error), error])
 	show_notice(error != OK)
 	if game.menu.visible: game.menu_info.text = status
 	return error == OK
@@ -312,7 +312,9 @@ static func parse_text(text: String) -> Variant:
 	return parser.data if parser.parse(text) == OK else null
 
 func write_snapshot(data: Dictionary) -> Error:
+	save_stage = "校验进度"
 	if not valid(data): return ERR_INVALID_DATA
+	save_stage = "写入临时存档"
 	var file := FileAccess.open(PATH + ".tmp", FileAccess.WRITE)
 	if file == null: return FileAccess.get_open_error()
 	file.store_string(JSON.stringify({"version": VERSION, "data": encode(data)}, "", false, true))
@@ -320,6 +322,7 @@ func write_snapshot(data: Dictionary) -> Error:
 	var error := file.get_error()
 	file.close()
 	if error != OK: return error
+	save_stage = "更新备份"
 	# Only promote a validated previous primary to the recovery slot.
 	if FileAccess.file_exists(PATH):
 		var previous: Variant = parse_text(FileAccess.get_file_as_string(PATH))
@@ -331,6 +334,7 @@ func write_snapshot(data: Dictionary) -> Error:
 	if decode_snapshot(backup).is_empty():
 		error = DirAccess.copy_absolute(PATH + ".tmp", PATH + ".bak")
 		if error != OK: return error
+	save_stage = "替换正式存档"
 	return DirAccess.rename_absolute(PATH + ".tmp", PATH)
 
 func apply(data: Dictionary) -> void:

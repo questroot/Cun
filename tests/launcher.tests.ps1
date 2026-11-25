@@ -48,7 +48,9 @@ public class CunLauncherFixture {
       if (Environment.GetEnvironmentVariable("CUN_FIXTURE_IMPORT_SKIP_CACHE") != "1") {
         string project = args[Array.IndexOf(args, "--path") + 1];
         string cache = Path.Combine(project, ".godot");
-        Directory.CreateDirectory(cache);
+        string artifacts = Path.Combine(cache, "imported");
+        Directory.CreateDirectory(artifacts);
+        File.WriteAllText(Path.Combine(artifacts, "fixture.ctex"), "fixture artifact");
         File.WriteAllText(Path.Combine(cache, "global_script_class_cache.cfg"), "fixture only, not real Godot import");
       }
       return 0;
@@ -97,6 +99,32 @@ foreach ($selection in @('Spirit', 'Fudi', 'Water')) {
     Assert-Cun ($argv -contains $expected) ('Selected scene survives process arguments: ' + $selection)
     $run.Process.Dispose()
 }
+$run = Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Embedded launch passes through the engine fixture'
+$argv = [IO.File]::ReadAllLines($env:CUN_FIXTURE_ARGS)
+Assert-Cun (($argv -join '|') -ceq "--wid|123456|--single-window|--position|-30000,-30000|--path|$($paths.Project)|res://scenes/WaterActivity.tscn|--|--cun-scroll") 'Embedded route passes exact HWND, scene and handoff flag'
+$run.Process.Dispose()
+$receiptPath = Join-Path $paths.Project '.godot\.cun-import-v1'
+Assert-Cun ([IO.File]::Exists($receiptPath)) 'Successful embedded import writes a local reuse receipt'
+# Failing the import sentinel proves the next call never invokes it on a hit.
+$env:CUN_FIXTURE_IMPORT_ERROR = '1'
+$run = Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Unchanged cached resources bypass the importer'
+$run.Process.Dispose()
+[IO.File]::Delete((Join-Path $paths.Project '.godot\imported\fixture.ctex'))
+$blocked = $false
+try { Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456 | Out-Null } catch { $blocked = $true }
+Assert-Cun ($blocked -and -not [IO.File]::Exists($receiptPath)) 'Deleted import artifact forces validation; failed import leaves no receipt'
+Remove-Item Env:CUN_FIXTURE_IMPORT_ERROR
+$run = Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Clean import recovers after artifact loss'
+$run.Process.Dispose()
+[IO.File]::AppendAllText((Join-Path $paths.Project 'scenes\WaterActivity.tscn'), "`n; resource edit")
+$env:CUN_FIXTURE_IMPORT_ERROR = '1'
+$blocked = $false
+try { Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456 | Out-Null } catch { $blocked = $true }
+Assert-Cun ($blocked -and -not [IO.File]::Exists($receiptPath)) 'Source changes invalidate the import receipt'
+Remove-Item Env:CUN_FIXTURE_IMPORT_ERROR
 $shell = [PowerShell]::Create()
 $task = { param($CoreFile, $Paths, $Engine) $ErrorActionPreference='Stop'; . $CoreFile; Start-CunProject $Paths $Engine 'Game' }
 $shell.AddScript($task.ToString()).AddArgument((Join-Path $root 'launcher\Launcher.Core.ps1')).AddArgument($paths).AddArgument($fixture) | Out-Null
@@ -107,6 +135,12 @@ $workerRun = $result[0].PSObject.BaseObject
 Assert-Cun (-not $shell.HadErrors -and $result.Count -eq 1 -and $workerRun.Mode -eq 'Game') 'Background worker returns the real process record to UI timer'
 $workerRun.Process.WaitForExit(5000) | Out-Null
 $workerRun.Process.Dispose(); $shell.Dispose()
+$prefs = ([Environment]::GetFolderPath('ApplicationData') + '/Godot/editor_settings-4.7.tres').Replace('\','/')
+$noise = "ERROR: Failed to read the root certificate store.`nERROR: Cannot save file '$prefs'.`nERROR: Error saving editor settings to $prefs"
+Assert-Cun (-not (Get-CunBlockingImportError $noise)) 'Offline import ignores only the reported editor-profile diagnostics'
+foreach ($real in @('ERROR: Cannot save file ''res://editor_settings-4.7.tres''.', 'SCRIPT ERROR: invalid preload', 'Parse Error: unexpected token', 'ERROR: Failed to import res://art.png')) {
+    Assert-Cun ((Get-CunBlockingImportError ($noise + "`n" + $real)) -ceq $real) ('Real failure survives editor noise: ' + $real)
+}
 $env:CUN_FIXTURE_IMPORT_ERROR = '1'
 $blocked = $false
 try { Start-CunProject $paths $fixture 'Game' | Out-Null } catch { $blocked = $true }
@@ -149,6 +183,14 @@ $manifestPath = Join-Path $bundle 'manifest.json'
 $extracted = Initialize-CunBundledEngine $paths
 Assert-Cun (Test-Path -LiteralPath (Join-Path $extracted $names[0])) 'Verified bundled fixture archive extracts locally'
 Assert-Cun ((Initialize-CunBundledEngine $paths) -eq $extracted) 'Cached bundled files are idempotent'
+$originalGodotOverride = $env:GODOT_EXE
+try {
+    $env:GODOT_EXE = ''
+    Assert-Cun ((Find-CunDesktopEngine $paths) -eq (Join-Path $extracted $names[0])) 'Desktop discovers the cached GUI engine without global search'
+    $env:GODOT_EXE = $fixture
+    Assert-Cun ((Find-CunDesktopEngine $paths) -eq $fixture) 'Desktop honors the explicit environment engine override'
+    Assert-Cun ((Find-CunDesktopEngine $paths (Join-Path $extracted $names[0])) -eq (Join-Path $extracted $names[0])) 'Desktop saved engine retains highest precedence'
+} finally { $env:GODOT_EXE = $originalGodotOverride }
 $manifest.archive_sha256 = '0' * 64
 [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 5), [Text.Encoding]::UTF8)
 $blocked = $false
@@ -160,5 +202,16 @@ $manifest.files[0].name = '../escape.exe'
 $blocked = $false
 try { Initialize-CunBundledEngine $paths | Out-Null } catch { $blocked = $true }
 Assert-Cun $blocked 'Unsafe entry descriptors cannot escape the local cache'
+$channel = Join-Path $tempRoot 'fake session'
+$entryScene = 'scenes/AddedGame.tscn'
+[IO.File]::WriteAllText((Join-Path $paths.Project $entryScene),'[gd_scene format=3]')
+$run = Start-CunProject $paths $fixture 'Game' -ParentWindow 123456 -EntryScene $entryScene -WarmChannel $channel
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Registered scene can launch without a hardcoded route'
+$argv = [IO.File]::ReadAllLines($env:CUN_FIXTURE_ARGS)
+Assert-Cun (($argv -join '|') -ceq "--wid|123456|--single-window|--position|-30000,-30000|--path|$($paths.Project)|res://$entryScene|--|--cun-scroll|--cun-warm|$channel") 'Resident launch preserves exact scene and opaque local channel arguments'
+$run.Process.Dispose()
+[IO.File]::WriteAllText($channel + '.stop','')
+$run = Start-CunProject $paths $fixture 'Game' -ParentWindow 123456 -EntryScene $entryScene -WarmChannel $channel
+Assert-Cun ($null -eq $run) 'A retired prewarm never launches another GUI process'
 Remove-Item Env:CUN_FIXTURE_ARGS,Env:CUN_FIXTURE_VERSION -ErrorAction SilentlyContinue
 Write-Output ('LAUNCHER TESTS PASS: ' + $script:checks + ' checks. Fixture results are not Godot/gameplay verification.')

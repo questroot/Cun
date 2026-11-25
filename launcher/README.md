@@ -1,11 +1,23 @@
 # Windows 游戏启动器
 
+**正式入口：《山海行卷·竹影》**。Windows 双击仓库根目录的 [Launch.cmd](../Launch.cmd)，会出现独立的「山海行卷 · Cun」应用窗口；没有浏览器、WebView 或本地 HTTP 服务。首次启动用 Windows 自带 .NET Framework 编译并缓存桌面 EXE，之后直接打开。点卷上一境，游戏直接在同一个窗口内运行。游戏里已有的「返回游戏选择」回卷轴，不重播展卷；「退出游戏」或关闭桌面窗口则退出整个应用。游戏内部的返回主城、浮台或身份选择不变。经典启动器与独立活动入口保留原有行为。启动诊断见 `.local/mirror-launch.log` 与 `.local/launcher.log`。需要引擎选择或编辑器时使用 [Launch-Classic.cmd](../Launch-Classic.cmd)。
+
+[6 秒演示](handscroll-bamboo/preview.mp4) · [历史网页美术样片](handscroll-bamboo/index.html)仅用于对照，不是应用入口。
+
 支持已有“灵伴回合冒险”与新增“福地”动作试玩，共用现有 Godot 工程；不是独立游戏安装包。福地试玩不代表候选石化世界全部玩法已实施。
 
-## 使用
+大厅先显示，展卷期间后台准备并启动一个共享 Godot 工程。灵伴、福地和海底水世界点选后复用这个进程，才读取存档并加载所选场景。末班渡船等独立工程按需启动；如果共享进程在等待，会先停止它。首次或资源变动仍需导入，未变则复用已验证的缓存；预热失败时点选仍走独立启动。福地保存失败可取消并重试，也可明确确认不保存本次进度后返回/退出；已有存档不会被清空。
+
+## 接入新游戏
+
+1. 把独立 Godot 工程放在自己的活动目录，例如 `activities/my-game/game/`，提供 `project.godot` 和可直接进入的 `.tscn` 场景。使用工程自己的独立存档配置，不搬已有存档。
+2. 在 [入口清单](entries.tsv) 加一行：小写唯一 ID、显示名、仓库相对工程目录、工程相对场景、`ondemand`，五列用 Tab 隔开。例如 `my-game<Tab>我的游戏<Tab>activities/my-game/game<Tab>main.tscn<Tab>ondemand`。同一个共享工程才可用 `warm`；不为每个独立游戏开一个后台进程。路径由字母、数字、下划线、点和短横线组成，不用绝对路径或 `..`。
+3. 每卷四个入口，第五个自动出现在下一卷，不用改 WPF 或 PowerShell 启动代码。新入口需实测原窗口填充和正常退出。Godot 内「返回游戏选择」在收到 `--cun-scroll` 参数时用 `get_tree().quit(42)`；「退出游戏」和系统关窗仍退出应用（退出码 `0`）。非 Godot 可执行程序不在这份清单的支持范围内。
+
+## 经典启动器用法
 
 1. 下载/克隆**完整仓库**，保留 `card-demo/` 和 `launcher/`；不要只下载一个脚本。
-2. Windows 双击根 [Launch.cmd](../Launch.cmd)，进入原生桌面启动器。
+2. Windows 双击根 [Launch-Classic.cmd](../Launch-Classic.cmd)，进入经典 WPF 窗口。
 3. 发现已有Godot则检测版本；完整仓库已包含 [4.7.2压缩包](../.setup/Godot/README.md)，没有已有引擎时会校验并解压到 `.local/godot/`，不联网。也可点“选择Godot”手动指定可信的Windows编辑器 `.exe`。
 4. 在下拉框选择“游戏选择大厅 / 灵伴回合冒险 / 福地”，环境就绪后点“启动游戏”。启动器先在后台执行Godot资源/脚本导入，完成且无错误后才打开选择的游戏；界面会显示准备状态，首次需要等待。需要开发时点“在Godot编辑器打开”。
 

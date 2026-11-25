@@ -96,6 +96,8 @@ var npc_exchange: Node
 var persistence: Node
 var story: Node
 var restart_confirm: ConfirmationDialog
+var unsaved_confirm: ConfirmationDialog
+var unsaved_action := ""
 var guards: Node
 var book: Node
 var supplies: Node
@@ -440,6 +442,14 @@ func _build_hud() -> void:
 	restart_confirm.cancel_button_text = "保留进度"
 	restart_confirm.confirmed.connect(restart)
 	add_child(restart_confirm)
+	unsaved_confirm = ConfirmationDialog.new()
+	unsaved_confirm.title = "福地进度未保存"
+	unsaved_confirm.cancel_button_text = "留在福地"
+	unsaved_confirm.canceled.connect(unsaved_confirm.hide)
+	unsaved_confirm.confirmed.connect(func() -> void:
+		unsaved_confirm.hide()
+		finish_leaving(unsaved_action))
+	add_child(unsaved_confirm)
 	var update_shade := func() -> void: modal_shade.visible = outcome.visible or dialogue.visible or journal.visible
 	for panel: Control in [outcome, dialogue, journal]:
 		panel.visibility_changed.connect(update_shade)
@@ -568,13 +578,27 @@ func restart() -> void:
 	GameManager.set_meta("fudi_new_expedition", true)
 	GameManager.goto_scene("fudi")
 
-func leave_expedition() -> void:
+func leave_expedition(action: String = "menu") -> void:
+	if unsaved_confirm.visible or restart_confirm.visible:
+		return
 	if persistence == null or persistence.blocked or persistence.save_now():
-		GameManager.goto_scene("menu")
+		finish_leaving(action)
+		return
+	tools.confirm.hide()
+	menu_info.text = persistence.status
+	menu.show()
+	unsaved_action = action
+	var verb := "退出游戏" if action == "quit" else "返回游戏选择"
+	unsaved_confirm.dialog_text = persistence.status + "\n可留在福地重试。确认离开将丢失本次未保存的进度，不清空已有存档。"
+	unsaved_confirm.ok_button_text = "不保存，" + verb
+	unsaved_confirm.popup_centered(Vector2i(550, 195))
+	unsaved_confirm.get_cancel_button().grab_focus()
+
+func finish_leaving(action: String) -> void:
+	if action == "quit":
+		get_tree().quit()
 	else:
-		tools.confirm.hide()
-		menu_info.text = persistence.status + "\n请重试保存后再返回。"
-		menu.show()
+		GameManager.goto_scene("menu")
 
 func resume_exploration() -> void:
 	finished = false
@@ -989,7 +1013,7 @@ func _draw_world() -> void:
 				PixelVFX.draw(canvas, effect.fx, point, age, Vector2(radius / 36.0, radius / 52.0))
 
 func _paused() -> bool:
-	return (restart_confirm != null and restart_confirm.visible) or (persistence != null and persistence.blocked) or menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
+	return (unsaved_confirm != null and unsaved_confirm.visible) or (restart_confirm != null and restart_confirm.visible) or (persistence != null and persistence.blocked) or menu.visible or get_meta("audio_settings_open", false) or get_meta("fudi_gm_open", false) or tools.is_open() or dialogue.visible or journal.visible or (equipment != null and equipment.is_open())
 
 func move_world(origin: Vector2, displacement: Vector2) -> Vector2:
 	var point := origin
@@ -1147,8 +1171,9 @@ func _draw_minimap() -> void:
 	var extent: Vector2 = Maps.MAPS[region].size
 	minimap.draw_style_box(UI.panel(Color(0.03, 0.08, 0.1, 0.93)), Rect2(Vector2.ZERO, minimap.size))
 	minimap.draw_string(ThemeDB.fallback_font, Vector2(12, 22), "%s  %d × %d" % [Catalog.REGIONS[region].name, int(extent.x), int(extent.y)], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#e7d4a8"))
-	if Maps.Art.has_art(region):
-		minimap.draw_texture_rect(Maps.Art.TEXTURES[region], rect, false, Color(0.8, 0.8, 0.8))
+	var painting := Maps.Art.texture(region)
+	if painting != null:
+		minimap.draw_texture_rect(painting, rect, false, Color(0.8, 0.8, 0.8))
 	for road: Array in Maps.MAPS[region].roads:
 		var points := PackedVector2Array()
 		for point: Vector2 in road:

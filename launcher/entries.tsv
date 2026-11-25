@@ -1,0 +1,5 @@
+# id	title	project	entry scene	startup (warm/ondemand)
+city	灵伴回合冒险	card-demo	scenes/MainCity.tscn	warm
+fudi	福地	card-demo	scenes/Fudi.tscn	warm
+water	海底水世界	card-demo	scenes/WaterActivity.tscn	warm
+ferry	末班渡船	activities/last-ferry/game	main.tscn	ondemand

@@ -71,6 +71,24 @@ func run() -> void:
 		game.inventory.wood = 6
 		game.persistence.notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
 		check(game.persistence.read_save().health == 82, "关闭窗口通知先保存完整进度")
+	elif "--discard-on-close" in OS.get_cmdline_user_args() or "--discard-to-menu" in OS.get_cmdline_user_args():
+		var to_menu := "--discard-to-menu" in OS.get_cmdline_user_args()
+		var before := FileAccess.get_file_as_string(Save.PATH)
+		var backup := FileAccess.get_file_as_string(Save.PATH + ".bak")
+		game.health = 73
+		check(DirAccess.make_dir_absolute(Save.PATH + ".tmp") == OK, "注入本次临时存档写入失败")
+		var action := "menu" if to_menu else "quit"
+		if to_menu: game.leave_expedition()
+		else: game.persistence.notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
+		check(game.unsaved_confirm.visible and game.unsaved_action == action, "保存失败时提供对应的不保存离开选项")
+		game.unsaved_confirm.canceled.emit()
+		check(not game.unsaved_confirm.visible and current_scene == game and game.health == 73, "取消退出后保留本次进度")
+		if to_menu: game.leave_expedition()
+		else: game.persistence.notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
+		check(game.unsaved_confirm.visible, "取消后可再次发起同一操作")
+		game.unsaved_confirm.confirmed.emit()
+		check(FileAccess.get_file_as_string(Save.PATH) == before and FileAccess.get_file_as_string(Save.PATH + ".bak") == backup, "确认不保存后原主档和备份逐字保留")
+		DirAccess.remove_absolute(Save.PATH + ".tmp")
 	elif "--verify-close" in OS.get_cmdline_user_args():
 		check(game.health == 82 and game.inventory.wood == 6, "关闭窗口后新进程恢复最新进度")
 	elif "--verify-relaunch" in OS.get_cmdline_user_args():
@@ -226,10 +244,14 @@ func check_storage() -> void:
 	DirAccess.make_dir_absolute(Save.PATH + ".tmp")
 	check(not storage.save_now() and FileAccess.get_file_as_string(Save.PATH) == before, "临时路径不可写时保留原存档并报告失败")
 	storage.notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
-	check(game.menu.visible and game.menu_info.text.contains("重试") and FileAccess.get_file_as_string(Save.PATH) == before, "关闭时保存失败保留窗口与原档，允许重试")
+	check(game.menu.visible and game.unsaved_confirm.visible and game.unsaved_action == "quit" and FileAccess.get_file_as_string(Save.PATH) == before, "关闭时保存失败保留窗口与原档，允许重试")
+	game.unsaved_confirm.canceled.emit()
 	game.leave_expedition()
-	check(current_scene == game and game.menu.visible and game.menu_info.text.contains("失败"), "保存失败时保留当前窗口并允许重试")
+	check(current_scene == game and game.unsaved_confirm.visible and game.unsaved_action == "menu" and game.menu_info.text.contains("写入临时存档"), "切换游戏失败时报告具体步骤并提供不保存返回")
+	game.unsaved_confirm.canceled.emit()
 	DirAccess.remove_absolute(Save.PATH + ".tmp")
+	check(storage.save_now(), "写入恢复后可重试保存")
+	before = FileAccess.get_file_as_string(Save.PATH)
 	game.close_menu()
 	file = FileAccess.open(Save.PATH, FileAccess.WRITE)
 	file.store_string('{"version":999,"data":{}}')

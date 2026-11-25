@@ -13,7 +13,18 @@ const SEA_BACKUP := "user://sea_chapter_v1.json.bak"
 var sea_save_error := ""
 
 func _ready() -> void:
-	load_sea_save()
+	if "--cun-warm" not in OS.get_cmdline_user_args():
+		load_sea_save()
+
+func launcher_scene_ready(path: String) -> void:
+	# A parked native window may not draw. SceneTree emits scene_changed
+	# after the scene enters the tree; let deferred setup run before mounting.
+	await get_tree().process_frame
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		get_tree().quit(1)
+	else:
+		file.store_string("ready")
 
 func _read_sea_file(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
@@ -236,6 +247,12 @@ func save_sea_state(state: Dictionary) -> bool:
 
 ## 统一切换场景，避免 UI 模块直接依赖关卡实现。
 func goto_scene(scene_name: String) -> void:
+	# Only the embedded session hands the game-selection action back to the scroll.
+	# Standalone and classic launches still use MainMenu; saves before returning
+	# remain the responsibility of the game that called goto_scene().
+	if scene_name == "menu" and "--cun-scroll" in OS.get_cmdline_user_args():
+		get_tree().quit(42)
+		return
 	if scene_name == "fudi":
 		stage_pending = false
 		UIManager.close_popup()
