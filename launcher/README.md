@@ -1,8 +1,8 @@
 # Windows 游戏启动器
 
-**正式入口：《山海行卷·竹影》**。Windows 双击仓库根目录的 [Launch.cmd](../Launch.cmd)，保持启动窗口开启，默认浏览器会自动打开卷轴。点画中一境即可启动对应 Godot 游戏，无需再次确认；首次导入可能较慢。正常关闭游戏窗口，页面会恢复到刚才的入口。不安装 Python/Node，不要求管理员权限，服务只监听本机回环地址。启动诊断见 `.local/mirror-launch.log` 与 `.local/launcher.log`。打不开默认浏览器时可复制控制台显示的本机地址；想切回原界面，使用 [Launch-Classic.cmd](../Launch-Classic.cmd)。
+**正式入口：《山海行卷·竹影》**。Windows 双击仓库根目录的 [Launch.cmd](../Launch.cmd)，会出现独立的「山海行卷 · Cun」应用窗口；没有浏览器、WebView 或本地 HTTP 服务。首次启动用 Windows 自带 .NET Framework 编译并缓存桌面 EXE，之后直接打开。点卷上一境即可进入对应 Godot 游戏，无需再次确认；关窗后返回原位。启动诊断见 `.local/mirror-launch.log` 与 `.local/launcher.log`。需要引擎选择或编辑器时使用 [Launch-Classic.cmd](../Launch-Classic.cmd)。
 
-[6 秒演示](handscroll-bamboo/preview.mp4) · [同一画面的离线预览](handscroll-bamboo/index.html)：直接打开 HTML 仅浏览，不启动游戏。
+[6 秒演示](handscroll-bamboo/preview.mp4) · [历史网页美术样片](handscroll-bamboo/index.html)仅用于对照，不是应用入口。
 
 支持已有“灵伴回合冒险”与新增“福地”动作试玩，共用现有 Godot 工程；不是独立游戏安装包。福地试玩不代表候选石化世界全部玩法已实施。
 

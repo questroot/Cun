@@ -1,6 +1,6 @@
 # Cun 共享项目状态
 
-2026-11-25：《山海行卷·竹影》成为 Windows [默认启动入口](Launch.cmd)，保留[经典窗口](Launch-Classic.cmd)、[离线预览](launcher/handscroll-bamboo/index.html)及[6 秒演示](launcher/handscroll-bamboo/preview.mp4)。在独立临时存档与无引擎缓存的完整副本中，经根入口、浏览器卷轴、内置 Godot 4.7.2 实测：四境各单击进入正确游戏窗口；正常关窗后均回到原入口、不重播。只验证进出，不代表通关。
+2026-11-25：《山海行卷·竹影》成为 Windows [默认启动入口](Launch.cmd)，保留[经典窗口](Launch-Classic.cmd)、[离线预览](launcher/handscroll-bamboo/index.html)及[6 秒演示](launcher/handscroll-bamboo/preview.mp4)。正式大厅改为本地 Windows WPF 独立 EXE；不打开浏览器、不嵌网页、不需要 HTTP 服务。已在命名隔离存档的完整副本中，从根入口打开原生窗口，用四个真实窗口按钮启动内置 Godot 4.7.2：四境各单击进入正确游戏窗口；正常关窗后均回到原入口、不重播。只验证进出，不代表通关。
 
 最近核对：2026-11-24。维护责任：实际承担本轮工作的成员/Agent。**每次工作先读本文件，结束核对并按事实更新**，规则见 [AGENTS.md](AGENTS.md)。这里只写现状，不把候选当批准、不复制私人对话或大段日志。
 
