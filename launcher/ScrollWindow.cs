@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -27,7 +30,32 @@ namespace Cun {
         readonly bool animate = SystemParameters.ClientAreaAnimation;
         enum Phase { Opening, Hall, Entering, Playing, Failed }
         Phase phase = Phase.Opening; double phaseStart, lastAmbient = -100; int chosen; bool laidOut;
-        Process game; static readonly FontFamily Serif = new FontFamily("Georgia, KaiTi, SimSun");
+        Process game;
+        IntPtr hostHandle, gameHandle;
+        uint enginePid;
+        bool closeRequested;
+        double launchTime, closeTime;
+        static readonly FontFamily Serif = new FontFamily("Georgia, KaiTi, SimSun");
+        const int WindowStyleIndex = -16, ExStyle = -20, WmClose = 0x10;
+        const uint Child = 0x40000000, Popup = 0x80000000;
+        [StructLayout(LayoutKind.Sequential)] struct RECT { public int L,T,R,B; }
+        delegate bool WindowVisitor(IntPtr hwnd, IntPtr unused);
+        [DllImport("user32.dll")] static extern bool EnumWindows(WindowVisitor visit, IntPtr unused);
+        [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr hwnd, uint code);
+        [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+        [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetClassName(IntPtr hwnd, StringBuilder name, int length);
+        [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr hwnd);
+        [DllImport("user32.dll")] static extern uint GetWindowLong(IntPtr hwnd,int index);
+        [DllImport("user32.dll")] static extern uint SetWindowLong(IntPtr hwnd,int index,uint value);
+        [DllImport("user32.dll", SetLastError=true)] static extern IntPtr SetParent(IntPtr hwnd, IntPtr parent);
+        [DllImport("user32.dll")] static extern IntPtr GetParent(IntPtr hwnd);
+        [DllImport("user32.dll")] static extern bool GetClientRect(IntPtr hwnd, out RECT rect);
+        [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hwnd,IntPtr after,int x,int y,int w,int h,uint flags);
+        [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr hwnd,int command);
+        [DllImport("user32.dll")] static extern bool PostMessage(IntPtr hwnd,int msg,IntPtr wp,IntPtr lp);
+        [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")] static extern bool AttachThreadInput(uint a,uint b,bool attach);
+        [DllImport("user32.dll")] static extern IntPtr SetFocus(IntPtr hwnd);
         static readonly Brush Gold = BrushFrom("#C8B38C"), Ivory = BrushFrom("#F1E4CA");
         static SolidColorBrush BrushFrom(string hex){var b=(SolidColorBrush)new BrushConverter().ConvertFromString(hex);b.Freeze();return b;}
         static TextBlock Text(string s,double z,Brush brush){return new TextBlock {Text=s,FontSize=z,FontFamily=Serif,Foreground=brush,IsHitTestVisible=false};}
@@ -43,7 +71,10 @@ namespace Cun {
             for(int i=0;i<4;i++){int index=i;var b=Flat(names[i],ids[i]);var caption=new TextBlock{FontFamily=Serif,FontSize=20,Foreground=Ivory};caption.Inlines.Add(new System.Windows.Documents.Run(numerals[i]+"  "){FontSize=12,Foreground=Gold});caption.Inlines.Add(names[i]);b.Content=caption;b.IsEnabled=Available(i);if(!b.IsEnabled){b.Opacity=.42;b.ToolTip="此副本未包含完整作品";}b.Click+=delegate{Enter(index);};b.MouseEnter+=delegate{caption.TextDecorations=TextDecorations.Underline;};b.MouseLeave+=delegate{caption.TextDecorations=b.IsKeyboardFocused?TextDecorations.Underline:null;};b.GotKeyboardFocus+=delegate{caption.TextDecorations=TextDecorations.Underline;};b.LostKeyboardFocus+=delegate{if(!b.IsMouseOver)caption.TextDecorations=null;};places[i]=b;labels.Children.Add(b);}
             action=Flat("跳过展卷  Esc","scrollAction");labels.Children.Add(action);action.Click+=delegate{if(phase==Phase.Opening||phase==Phase.Entering||phase==Phase.Failed)Hall(true);else if(phase==Phase.Hall)Open();};
             PreviewKeyDown+=delegate(object s,KeyEventArgs e){if(e.Key==Key.Escape&&(phase==Phase.Opening||phase==Phase.Entering||phase==Phase.Failed)){Hall(true);e.Handled=true;}else if(phase==Phase.Hall&&(e.Key==Key.Left||e.Key==Key.Right)){int i=Array.FindIndex(places,z=>z.IsKeyboardFocused);for(int k=1;k<=4;k++){int next=(i+(e.Key==Key.Left?-k:k)+8)%4;if(places[next].IsEnabled){places[next].Focus();break;}}e.Handled=true;}};
-            labels.SizeChanged+=delegate{Relayout();};Loaded+=delegate{Relayout();Open();timer.Start();};Closed+=delegate{timer.Stop();};Closing+=delegate(object s,System.ComponentModel.CancelEventArgs e){if(phase==Phase.Playing&&game!=null&&!game.HasExited){e.Cancel=true;System.Media.SystemSounds.Beep.Play();}};
+            labels.SizeChanged+=delegate{Relayout();FitGame();};
+            SourceInitialized+=delegate{hostHandle=new WindowInteropHelper(this).Handle;};
+            Loaded+=delegate{Relayout();Open();timer.Start();};Closed+=delegate{timer.Stop();};
+            Closing+=delegate(object s,System.ComponentModel.CancelEventArgs e){if(game!=null){e.Cancel=true;RequestGameClose();}};
             timer.Interval=TimeSpan.FromMilliseconds(33);timer.Tick+=delegate{Tick();};}
         static double Smooth(double t){t=Math.Max(0,Math.Min(1,t));return t*t*t*(10+t*(-15+t*6));}
         static void Pos(UIElement e,double x,double y){Canvas.SetLeft(e,x);Canvas.SetTop(e,y);}
@@ -54,15 +85,79 @@ namespace Cun {
         void Open(){phaseStart=clock.Elapsed.TotalSeconds;phase=Phase.Opening;notice.Text="";art.Zoom=0;art.Open=0;SetUI(false,true,"跳过展卷  Esc");if(!animate)Hall(false);else art.InvalidateVisual();}
         void Hall(bool focus){phase=Phase.Hall;notice.Text="";art.Open=1;art.Zoom=0;SetUI(true,true,"重展手卷 ↶");if(focus&&places[chosen].IsEnabled)places[chosen].Focus();art.InvalidateVisual();}
         void Enter(int i){if(phase!=Phase.Hall||!places[i].IsEnabled)return;phase=Phase.Entering;phaseStart=clock.Elapsed.TotalSeconds;chosen=i;art.Selection=i;SetUI(false,false,null);notice.Text="";}
-        void Tick(){if(!laidOut)return;double now=clock.Elapsed.TotalSeconds,dt=now-phaseStart;if(phase==Phase.Playing||WindowState==WindowState.Minimized)return;if(phase==Phase.Hall||phase==Phase.Failed){if(!animate||!IsActive||now-lastAmbient<.066)return;lastAmbient=now;}art.TimeSeconds=animate?now:0;
+        void Tick(){if(!laidOut)return;double now=clock.Elapsed.TotalSeconds,dt=now-phaseStart;if(phase==Phase.Playing){PollGame(now);return;}if(WindowState==WindowState.Minimized)return;if(phase==Phase.Hall||phase==Phase.Failed){if(!animate||!IsActive||now-lastAmbient<.066)return;lastAmbient=now;}art.TimeSeconds=animate?now:0;
             if(phase==Phase.Opening){art.Open=Smooth((dt-.16)/2.56);if(dt>=3)Hall(false);}else if(phase==Phase.Entering){art.Zoom=animate?Smooth(dt/.92):1;if(!animate||dt>=.92)StartGame();}art.InvalidateVisual();}
         void Append(string s){lock(logLock){File.AppendAllText(log,s+Environment.NewLine,new UTF8Encoding(false));}}
         void Fail(string message){phase=Phase.Failed;SetUI(false,false,"返回全卷 ↶");notice.Text=message;action.Focus();}
+        void Log(string s){try{Append(s);}catch(IOException){}catch(UnauthorizedAccessException){}}
+        // --wid identifies the owned Godot window from its first frame. Godot
+        // 4.7 on Windows uses WS_POPUP, so make it a real child before showing it.
+        void FitGame(){RECT r;uint pid;
+            if(gameHandle==IntPtr.Zero||GetWindowThreadProcessId(gameHandle,out pid)==0||pid!=enginePid)return;
+            if(GetClientRect(hostHandle,out r)&&r.R>0&&r.B>0)
+                SetWindowPos(gameHandle,IntPtr.Zero,0,0,r.R,r.B,0x4214); // no z-order/activation, async
+        }
+        void FocusGame(){if(GetForegroundWindow()!=hostHandle)return;
+            uint ignored, from=GetWindowThreadProcessId(hostHandle,out ignored),to=GetWindowThreadProcessId(gameHandle,out ignored);
+            if(to==0||!AttachThreadInput(from,to,true))return;
+            try{SetFocus(gameHandle);}finally{AttachThreadInput(from,to,false);}}
+        void MountGame(){IntPtr found=IntPtr.Zero;
+            EnumWindows(delegate(IntPtr h,IntPtr unused){uint pid;
+                if(GetWindowThreadProcessId(h,out pid)==0||pid!=enginePid||!IsWindowVisible(h)||GetWindow(h,4)!=hostHandle)return true;
+                var name=new StringBuilder(48);GetClassName(h,name,name.Capacity);if(name.ToString()!="Engine")return true;
+                found=h;return false;
+            },IntPtr.Zero);
+            if(found==IntPtr.Zero)return;
+            uint original=GetWindowLong(found,WindowStyleIndex), ex=GetWindowLong(found,ExStyle);
+            ShowWindow(found,0);
+            SetWindowLong(found,WindowStyleIndex,(original&~(Popup|0x00CF0000u))|Child|0x04000000u);
+            SetWindowLong(found,ExStyle,ex&~(0x00040000u|0x00000100u));
+            SetParent(found,hostHandle);
+            if(GetParent(found)!=hostHandle||(GetWindowLong(found,WindowStyleIndex)&Child)==0){
+                SetWindowLong(found,WindowStyleIndex,original);SetWindowLong(found,ExStyle,ex);
+                Log("Desktop mount failed: game="+ids[chosen]);PostMessage(found,WmClose,IntPtr.Zero,IntPtr.Zero);return;
+            }
+            gameHandle=found;notice.Text="";FitGame();
+            Log("Desktop mounted: game="+ids[chosen]+"; hwnd="+found.ToInt64());
+            if(closeRequested)PostMessage(found,WmClose,IntPtr.Zero,IntPtr.Zero);
+            else {ShowWindow(found,4);FocusGame();}
+        }
+        void RequestGameClose(){
+            if(closeRequested)return;closeRequested=true;closeTime=clock.Elapsed.TotalSeconds;notice.Text="正在退出…";
+            uint pid;if(gameHandle!=IntPtr.Zero&&GetWindowThreadProcessId(gameHandle,out pid)!=0&&pid==enginePid)
+                PostMessage(gameHandle,WmClose,IntPtr.Zero,IntPtr.Zero);
+        }
+        void PollGame(double now){
+            if(game==null||game.HasExited)return;
+            if(enginePid!=0&&gameHandle==IntPtr.Zero)MountGame();
+            // A normal exit is requested through Godot's window-close event. If
+            // the user closes during import, the request is delivered on mount.
+            if(closeRequested&&now-closeTime>4&&gameHandle==IntPtr.Zero)
+                notice.Text="正在等待资源准备结束后退出…";
+            else if(!closeRequested&&now-launchTime>20&&gameHandle==IntPtr.Zero)
+                notice.Text="仍在准备「"+names[chosen]+"」…";
+        }
         void StartGame(){if(phase!=Phase.Entering)return;phase=Phase.Playing;SetUI(false,false,null);notice.Text="正在进入「"+names[chosen]+"」…  首次启动需要准备游戏资源。";
-            var p=new Process();string adapter=Path.Combine(root,"launcher/Mirror.Game.ps1");p.StartInfo=new ProcessStartInfo(Path.Combine(Environment.SystemDirectory,@"WindowsPowerShell\v1.0\powershell.exe"),"-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \""+adapter+"\" -Game "+ids[chosen]){WorkingDirectory=root,UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};
-            DataReceivedEventHandler receive=delegate(object sender,DataReceivedEventArgs e){if(e.Data!=null){try{Append(e.Data);}catch(IOException){}catch(UnauthorizedAccessException){}}};p.OutputDataReceived+=receive;p.ErrorDataReceived+=receive;
-            p.EnableRaisingEvents=true;p.Exited+=delegate{Dispatcher.BeginInvoke(new Action(delegate{if(game!=p)return;p.WaitForExit();int code=p.ExitCode;game=null;p.Dispose();try{Append("Desktop adapter exited: game="+ids[chosen]+"; code="+code);}catch(IOException){}if(WindowState==WindowState.Minimized)WindowState=WindowState.Normal;Activate();if(code==0)Hall(true);else Fail("未能正常运行「"+names[chosen]+"」。请查看 .local/mirror-launch.log，或使用经典启动器检查引擎。");}));};
-            try{Directory.CreateDirectory(Path.GetDirectoryName(log));Append("\n["+DateTimeOffset.Now.ToString("o")+"] Mirror / "+ids[chosen]);game=p;if(!p.Start())throw new IOException("Process did not start");}catch(Exception ex){game=null;p.Dispose();Fail("无法启动「"+names[chosen]+"」："+ex.Message);return;}p.BeginOutputReadLine();p.BeginErrorReadLine();}
+            enginePid=0;gameHandle=IntPtr.Zero;closeRequested=false;launchTime=clock.Elapsed.TotalSeconds;
+            var p=new Process();string adapter=Path.Combine(root,"launcher/Mirror.Game.ps1"), id=ids[chosen];
+            p.StartInfo=new ProcessStartInfo(Path.Combine(Environment.SystemDirectory,@"WindowsPowerShell\v1.0\powershell.exe"),"-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \""+adapter+"\" -Game "+id+" -ParentWindow "+hostHandle.ToInt64().ToString(CultureInfo.InvariantCulture)){WorkingDirectory=root,UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};
+            DataReceivedEventHandler receive=delegate(object sender,DataReceivedEventArgs e){if(e.Data!=null)Log(e.Data);};
+            p.OutputDataReceived+=receive;p.ErrorDataReceived+=receive;
+            p.OutputDataReceived+=delegate(object sender,DataReceivedEventArgs e){
+                string prefix="Mirror engine launcher started: game="+id+"; launch_pid=";uint pid;
+                if(e.Data!=null&&e.Data.StartsWith(prefix,StringComparison.Ordinal)&&uint.TryParse(e.Data.Substring(prefix.Length),out pid))
+                    Dispatcher.BeginInvoke(new Action(delegate{if(game==p)enginePid=pid;}));
+            };
+            p.EnableRaisingEvents=true;p.Exited+=delegate{Dispatcher.BeginInvoke(new Action(delegate{
+                if(game!=p)return;p.WaitForExit();int code=p.ExitCode;bool mounted=gameHandle!=IntPtr.Zero;game=null;gameHandle=IntPtr.Zero;enginePid=0;p.Dispose();
+                Log("Desktop adapter exited: game="+id+"; code="+code);
+                if(closeRequested||code==0){Close();return;}
+                if(WindowState==WindowState.Minimized)WindowState=WindowState.Normal;
+                Activate();if(code==42)Hall(true);
+                else if(mounted) Close();
+                else Fail("未能正常运行「"+names[chosen]+"」。请查看 .local/mirror-launch.log，或使用经典启动器检查引擎。");
+            }));};
+            try{Directory.CreateDirectory(Path.GetDirectoryName(log));Append("\n["+DateTimeOffset.Now.ToString("o")+"] Mirror / "+id);game=p;if(!p.Start())throw new IOException("Process did not start");}catch(Exception ex){game=null;p.Dispose();Fail("无法启动「"+names[chosen]+"」："+ex.Message);return;}p.BeginOutputReadLine();p.BeginErrorReadLine();}
         [STAThread] public static int Main(string[] args){try{string dir=Path.GetDirectoryName(typeof(ScrollWindow).Assembly.Location);while(dir!=null&&!File.Exists(Path.Combine(dir,"launcher/Mirror.Game.ps1")))dir=Path.GetDirectoryName(dir);if(dir==null)throw new DirectoryNotFoundException("请从完整游戏目录启动。");var app=new Application();app.Run(new ScrollWindow(dir));return 0;}catch(Exception e){MessageBox.Show(e.GetBaseException().Message,"山海行卷",MessageBoxButton.OK,MessageBoxImage.Error);return 1;}}
     }
 }

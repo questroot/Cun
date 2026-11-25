@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('city', 'fudi', 'water', 'ferry')][string]$Game,
     [string]$EnginePath = '',
+    [long]$ParentWindow = 0,
     [switch]$IsolatedFerry
 )
 
@@ -12,7 +13,7 @@ $ErrorActionPreference = 'Stop'
 $paths = Get-CunPaths
 $run = $null
 try {
-    # The browser launcher does not attach to an inherited play bridge.
+    # The desktop launcher does not attach to an inherited play bridge.
     Remove-Item Env:CUN_PLAY_PORT,Env:CUN_PLAY_TOKEN -ErrorAction SilentlyContinue
     if ($IsolatedFerry -and $Game -ne 'ferry') { throw '隔离试玩仅支持末班渡船。' }
     # This distinction is specific to the new lobby; leave the classic entry's behavior intact.
@@ -108,11 +109,11 @@ try {
         }
         # Use the project's own run/main_scene. The shared runner bounds import
         # time and returns the engine process (or its wait-and-exit-code wrapper).
-        $run = Start-CunProject $activityPaths $EnginePath 'Game' -SkipVersionCheck -NoGlobalClasses
+        $run = Start-CunProject $activityPaths $EnginePath 'Game' -SkipVersionCheck -NoGlobalClasses -ParentWindow $ParentWindow
     } else {
         $target = @{ city = 'Spirit'; fudi = 'Fudi'; water = 'Water' }[$Game]
         # The shared runner validates exact scene availability before import.
-        $run = Start-CunProject $paths $EnginePath 'Game' -Game $target
+        $run = Start-CunProject $paths $EnginePath 'Game' -Game $target -ParentWindow $ParentWindow
     }
     [Console]::Out.WriteLine(('Mirror engine launcher started: game={0}; launch_pid={1}' -f $Game, $run.Process.Id))
     $run.Process.WaitForExit()
@@ -122,6 +123,7 @@ try {
     $errText = $run.Stderr.Result
     if ($outText) { [Console]::Out.WriteLine($outText) }
     if ($errText) { [Console]::Error.WriteLine($errText) }
+    if ($ParentWindow -gt 0 -and $Game -ne 'ferry' -and $exitCode -eq 42) { exit 42 }
     if ($exitCode -ne 0 -or ($outText + "`n" + $errText) -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error)') {
         throw '游戏报告运行错误，请查看启动日志。'
     }

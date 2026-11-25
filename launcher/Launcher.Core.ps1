@@ -219,9 +219,15 @@ function Invoke-CunProjectImport {
 }
 
 function Start-CunProject {
-    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi', 'Water')][string]$Game = 'Menu', [switch]$NoGlobalClasses)
+    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi', 'Water')][string]$Game = 'Menu', [switch]$NoGlobalClasses, [long]$ParentWindow = 0)
     $project = Get-CunProjectInfo $Paths
     $launchArguments = Get-CunLaunchArguments $Paths $Mode $Game
+    if ($ParentWindow -gt 0) {
+        if ($Mode -ne 'Game') { throw 'Only games may use the embedded launch path.' }
+        # Godot creates an owned borderless window first. Start it out of view until
+        # the desktop host has mounted it as a real child of its client surface.
+        $launchArguments = @('--wid', $ParentWindow.ToString([Globalization.CultureInfo]::InvariantCulture), '--single-window', '--position', '-30000,-30000') + $launchArguments + @('--', '--cun-scroll')
+    }
     if (-not $SkipVersionCheck) {
         $engine = Get-CunEngineInfo $EnginePath $project.RequiredVersion
         if (-not $engine.Ready) { throw $engine.Message }

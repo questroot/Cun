@@ -97,6 +97,11 @@ foreach ($selection in @('Spirit', 'Fudi', 'Water')) {
     Assert-Cun ($argv -contains $expected) ('Selected scene survives process arguments: ' + $selection)
     $run.Process.Dispose()
 }
+$run = Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Embedded launch passes through the engine fixture'
+$argv = [IO.File]::ReadAllLines($env:CUN_FIXTURE_ARGS)
+Assert-Cun (($argv -join '|') -ceq "--wid|123456|--single-window|--position|-30000,-30000|--path|$($paths.Project)|res://scenes/WaterActivity.tscn|--|--cun-scroll") 'Embedded route passes exact HWND, scene and handoff flag'
+$run.Process.Dispose()
 $shell = [PowerShell]::Create()
 $task = { param($CoreFile, $Paths, $Engine) $ErrorActionPreference='Stop'; . $CoreFile; Start-CunProject $Paths $Engine 'Game' }
 $shell.AddScript($task.ToString()).AddArgument((Join-Path $root 'launcher\Launcher.Core.ps1')).AddArgument($paths).AddArgument($fixture) | Out-Null

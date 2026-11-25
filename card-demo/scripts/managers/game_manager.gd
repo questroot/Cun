@@ -236,6 +236,12 @@ func save_sea_state(state: Dictionary) -> bool:
 
 ## 统一切换场景，避免 UI 模块直接依赖关卡实现。
 func goto_scene(scene_name: String) -> void:
+	# Only the embedded session hands the game-selection action back to the scroll.
+	# Standalone and classic launches still use MainMenu; saves before returning
+	# remain the responsibility of the game that called goto_scene().
+	if scene_name == "menu" and "--cun-scroll" in OS.get_cmdline_user_args():
+		get_tree().quit(42)
+		return
 	if scene_name == "fudi":
 		stage_pending = false
 		UIManager.close_popup()

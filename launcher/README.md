@@ -1,6 +1,6 @@
 # Windows 游戏启动器
 
-**正式入口：《山海行卷·竹影》**。Windows 双击仓库根目录的 [Launch.cmd](../Launch.cmd)，会出现独立的「山海行卷 · Cun」应用窗口；没有浏览器、WebView 或本地 HTTP 服务。首次启动用 Windows 自带 .NET Framework 编译并缓存桌面 EXE，之后直接打开。点卷上一境即可进入对应 Godot 游戏，无需再次确认；关窗后返回原位。启动诊断见 `.local/mirror-launch.log` 与 `.local/launcher.log`。需要引擎选择或编辑器时使用 [Launch-Classic.cmd](../Launch-Classic.cmd)。
+**正式入口：《山海行卷·竹影》**。Windows 双击仓库根目录的 [Launch.cmd](../Launch.cmd)，会出现独立的「山海行卷 · Cun」应用窗口；没有浏览器、WebView 或本地 HTTP 服务。首次启动用 Windows 自带 .NET Framework 编译并缓存桌面 EXE，之后直接打开。点卷上一境，游戏直接在同一个窗口内运行。游戏里已有的「返回游戏选择」回卷轴，不重播展卷；「退出游戏」或关闭桌面窗口则退出整个应用。游戏内部的返回主城、浮台或身份选择不变。经典启动器与独立活动入口保留原有行为。启动诊断见 `.local/mirror-launch.log` 与 `.local/launcher.log`。需要引擎选择或编辑器时使用 [Launch-Classic.cmd](../Launch-Classic.cmd)。
 
 [6 秒演示](handscroll-bamboo/preview.mp4) · [历史网页美术样片](handscroll-bamboo/index.html)仅用于对照，不是应用入口。
 
