@@ -107,6 +107,12 @@ $workerRun = $result[0].PSObject.BaseObject
 Assert-Cun (-not $shell.HadErrors -and $result.Count -eq 1 -and $workerRun.Mode -eq 'Game') 'Background worker returns the real process record to UI timer'
 $workerRun.Process.WaitForExit(5000) | Out-Null
 $workerRun.Process.Dispose(); $shell.Dispose()
+$prefs = ([Environment]::GetFolderPath('ApplicationData') + '/Godot/editor_settings-4.7.tres').Replace('\','/')
+$noise = "ERROR: Failed to read the root certificate store.`nERROR: Cannot save file '$prefs'.`nERROR: Error saving editor settings to $prefs"
+Assert-Cun (-not (Get-CunBlockingImportError $noise)) 'Offline import ignores only the reported editor-profile diagnostics'
+foreach ($real in @('ERROR: Cannot save file ''res://editor_settings-4.7.tres''.', 'SCRIPT ERROR: invalid preload', 'Parse Error: unexpected token', 'ERROR: Failed to import res://art.png')) {
+    Assert-Cun ((Get-CunBlockingImportError ($noise + "`n" + $real)) -ceq $real) ('Real failure survives editor noise: ' + $real)
+}
 $env:CUN_FIXTURE_IMPORT_ERROR = '1'
 $blocked = $false
 try { Start-CunProject $paths $fixture 'Game' | Out-Null } catch { $blocked = $true }

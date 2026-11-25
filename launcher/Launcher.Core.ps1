@@ -175,6 +175,21 @@ function Get-CunLaunchArguments {
     return $arguments
 }
 
+# The offline game import need not persist global editor preferences or read TLS roots.
+# Match whole diagnostic lines, never a resource filename or script error by substring.
+function Get-CunBlockingImportError {
+    param([string]$OutputText)
+    $appData = [Environment]::GetFolderPath('ApplicationData').Replace('\','/').TrimEnd('/')
+    $settings = [regex]::Escape($appData + '/Godot/editor_settings-') + '\d+\.\d+\.tres'
+    foreach ($line in ($OutputText -split '\r?\n')) {
+        if ($line -notmatch '(SCRIPT ERROR:|ERROR:|Parse Error)') { continue }
+        $msg = $line.Trim().Replace('\','/')
+        if ($msg -ceq 'ERROR: Failed to read the root certificate store.') { continue }
+        if ($msg -match ("^ERROR: Cannot save file '" + $settings + "'\.$") -or $msg -match ('^ERROR: Error saving editor settings to ' + $settings + '$')) { continue }
+        return $line.Trim()
+    }
+}
+
 function Invoke-CunProjectImport {
     param([hashtable]$Paths, [string]$EnginePath, [switch]$NoGlobalClasses)
     Get-CunProjectInfo $Paths | Out-Null
@@ -194,10 +209,12 @@ function Invoke-CunProjectImport {
         if (-not $process.WaitForExit(180000)) { $process.Kill(); throw '资源导入超过3分钟，已停止本次导入，未启动游戏。' }
         $output = $stdout.Result + "`n" + $stderr.Result
         if ($output) { Write-CunLog $Paths $output }
-        if ($process.ExitCode -ne 0 -or $output -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error)') { throw '资源/脚本导入报告错误，游戏未启动。请查看启动日志中的具体文件与错误。' }
+        if ($process.ExitCode -ne 0) { throw ('Godot 资源导入失败，退出码：' + $process.ExitCode) }
+        $blocking = Get-CunBlockingImportError $output
+        if ($blocking) { throw ('资源/脚本导入失败：' + $blocking) }
         $cache = Join-Path $Paths.Project '.godot\global_script_class_cache.cfg'
         if (-not $NoGlobalClasses -and -not (Test-Path -LiteralPath $cache -PathType Leaf)) { throw '导入后仍缺少脚本类型缓存，已阻止空白游戏窗口。请查看启动日志。' }
-        Write-CunLog $Paths 'Godot import completed with no reported errors; launching game.'
+        Write-CunLog $Paths 'Godot import completed with no blocking errors; launching game.'
     } finally { $process.Dispose() }
 }
 
