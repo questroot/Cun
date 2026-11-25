@@ -374,6 +374,7 @@ func draw_world() -> void:
 			canvas.draw_set_transform(point + motion, tilt)
 			Art.draw_chest(canvas, texture, Vector2.ZERO, 128, tint.lerp(Color.WHITE, amplitude))
 			canvas.draw_set_transform(Vector2.ZERO)
+			VFX.draw(canvas, "pickup-flash", point + motion - Vector2(0, 43), age, Vector2.ONE, 0.0, color.lerp(Color.WHITE, 0.5))
 		else:
 			Art.draw_chest(canvas, texture, point, 128, tint)
 		var label := "异变宝箱" if chest.mutated else "普通宝箱"
@@ -402,23 +403,11 @@ func draw_world() -> void:
 			_draw_guard(canvas, boss, art, extent, "守箱·" + str(Bosses.DEFINITIONS[boss.art].name), 56)
 			if not boss.cast_fx.is_empty(): VFX.draw_cast(canvas,boss.cast_fx)
 		if float(chest.warning) > 0:
-			canvas.draw_arc(point, 135, 0, TAU, 48, Color("#e3a3ff"), 4, true)
+			VFX.cue_arc(canvas, point, 135.0, 0.0, TAU, 5.0, Color("#e3a3ff"))
 			canvas.draw_string(font, point + Vector2(55, -55), "异变惊醒！准备迎战", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#e8c4ff"))
 	for pickup: Dictionary in game.states[game.region].pickups:
 		if pickup.get("chest_boss_drop", false):
-			_draw_loot_glint(canvas, pickup.position + Vector2(0, -66))
-
-func _draw_loot_glint(canvas: Control, center: Vector2) -> void:
-	var pulse := 0.5 + 0.5 * cos(game.loot_glint_time / 1.25 * TAU)
-	var tip := 9.0 + 7.0 * pulse
-	var inset := Vector2.ONE * (tip * 0.22)
-	canvas.draw_colored_polygon(PackedVector2Array([
-		center + Vector2(0, -tip), center + Vector2(inset.x, -inset.y),
-		center + Vector2(tip * 0.8, 0), center + inset,
-		center + Vector2(0, tip), center + Vector2(-inset.x, inset.y),
-		center + Vector2(-tip * 0.8, 0), center - inset,
-	]), Color(0.79, 0.48, 1.0, 0.55 + 0.45 * pulse))
-	canvas.draw_circle(center, 2.0 + 2.0 * pulse, Color("#fff5ff"))
+			VFX.draw(canvas, "loot-glint", pickup.position + Vector2(0, -66), game.loot_glint_time * (0.96 / 1.25), Vector2.ONE, 0.0, Color.WHITE, true)
 
 func _draw_guard(canvas: Control, guard: Dictionary, art: Texture2D, extent: Vector2, name: String, width: float) -> void:
 	var point: Vector2 = guard.position

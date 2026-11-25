@@ -2,9 +2,9 @@
 
 2026-10-21按用户要求，用pixel-art-studio绘制38组8帧像素动画并接入福地：24种首领技能、7种小怪攻击和7种天气。2026-10-28扩到56组448帧：首领补第五招共30种，新增5类玩家武器攻击与7种通用状态光环。美术源、原生图集、4倍图与GIF见 [素材说明](../pixel-art/combat-weather/README.md)，运行清单见 [manifest.json](../card-demo/assets/effects/pixel/manifest.json)，招式的提示词描述见 [prompts/](../pixel-art/combat-weather/prompts/)。
 
-2026-11-24在福地接入44组 pixelfx 图集，覆盖17招首领技能、5把武器、7种守卫攻击、7种状态、雷雨闪电及7组基础攻击和命中反馈。旗桩、外圈、十字等专用造型沿用原图集。新素材使用96×96单帧、8帧横排和中心锚点，并按招式调整取样区间、大小和色板。灵伴回合战斗读取原状态图集。招式预警和伤害按下文的规则运行。
+2026-11-25福地十域的56个旧特效键全部切换到 pixelfx。当前有71张96×96八帧横排图集，覆盖30招首领技能、5把武器、7种守卫攻击、7种状态、7种天气和新增的攻击、命中、投石、掉落、建筑、灶火和陷阱素材。攻击预警、范围提示和场景光圈使用 pixelfx 纹理贴合原区域。十字招式沿两轴绘制，外圈招式沿环带绘制。街道传送门独立使用[三张图集](fudi-maps.md)。灵伴回合战斗读取原状态图集。招式预警和伤害按下文的规则运行。
 
-每张新图集的上游特效名和提交记录在 [pixelfx 清单](../card-demo/assets/effects/fudi-pixelfx/manifest.json)。素材附带上游 [MIT 许可证](../card-demo/assets/effects/fudi-pixelfx/LICENSE) 和 [署名说明](../card-demo/assets/effects/fudi-pixelfx/NOTICE.md)。从仓库根目录运行导入脚本可重建图集，最后一个参数为 [上游源码](https://github.com/patch-gg/pixelfx/tree/5294518ce7c72e48b6100a744596e0acf57f2826) 的解压目录。
+每张图集的效果名和源版本记录在 [pixelfx 清单](../card-demo/assets/effects/fudi-pixelfx/manifest.json)，带 `local/` 的效果由 [福地像素特效源码](../pixel-art/combat-weather/scene-pixelfx.mjs) 使用 pixelfx 绘制。素材附带上游 [MIT 许可证](../card-demo/assets/effects/fudi-pixelfx/LICENSE) 和 [署名说明](../card-demo/assets/effects/fudi-pixelfx/NOTICE.md)。从仓库根目录运行导入脚本可重建图集，最后一个参数为 [上游源码](https://github.com/patch-gg/pixelfx/tree/5294518ce7c72e48b6100a744596e0acf57f2826) 的解压目录。
 
 ```powershell
 node pixel-art/combat-weather/import-pixelfx.mjs ../pixelfx

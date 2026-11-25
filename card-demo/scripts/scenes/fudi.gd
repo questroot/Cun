@@ -17,6 +17,8 @@ const GMTools = preload("res://scripts/scenes/fudi_gm.gd")
 const NPCs = preload("res://scripts/scenes/fudi_npcs.gd")
 const NpcExchange = preload("res://scripts/scenes/fudi_npc_exchange.gd")
 const PixelVFX = preload("res://scripts/scenes/pixel_vfx.gd")
+const GateVFX = preload("res://scripts/scenes/fudi_gate_vfx.gd")
+const Mailbox = preload("res://scripts/scenes/fudi_mailbox.gd")
 const Save = preload("res://scripts/scenes/fudi_save.gd")
 const Story = preload("res://scripts/scenes/fudi_story.gd")
 const Guards = preload("res://scripts/scenes/fudi_guards.gd")
@@ -53,6 +55,8 @@ var cooldowns: Dictionary = {"j": 0.0, "k": 0.0, "l": 0.0}
 var projectiles: Array[Dictionary] = []
 var effects: Array[Dictionary] = []
 var enemy_feedback := EnemyFeedback.new()
+var gate_vfx := GateVFX.new()
+var mailbox := Mailbox.new()
 var model: Hero
 var tools: Tools
 var status: Label
@@ -544,7 +548,9 @@ func enter_region(id: String, via_gate: bool = false) -> void:
 	projectiles.clear()
 	effects.clear()
 	enemy_feedback.bursts.clear()
+	gate_vfx.reset()
 	player_ailments.clear()
+	mailbox.enter_region(self)
 	player_hit_left = 0.0
 	model.modulate = Color.WHITE
 	status_canvas.queue_redraw()
@@ -795,6 +801,8 @@ func _process(delta: float) -> void:
 	player_foot = move_world(player_foot, direction * move_speed * movement_scale * minf(delta, 0.1))
 	if direction != Vector2.ZERO:
 		facing = direction
+	var map: Dictionary = Maps.MAPS[region]
+	gate_vfx.tick(delta, map.exits, map.size, player_foot)
 	model.position = player_foot
 	model.update_movement(player_foot - previous, delta)
 	hurt_timer = maxf(0, hurt_timer - delta)
@@ -808,6 +816,7 @@ func _process(delta: float) -> void:
 		if float(effects[i].life) <= 0:
 			effects.remove_at(i)
 	_collect_nearby()
+	mailbox.tick(self, delta)
 	if health <= 0:
 		_end_round(false)
 	_refresh_ui()
@@ -900,17 +909,32 @@ func _draw_world() -> void:
 	for i in range(data.sites.size()):
 		var site: Array = data.sites[i]
 		var point: Vector2 = site[1] * data.size
-		Landscape.landmark(canvas, point, site[3], Color(data.accent), Maps.Art.has_art(region))
+		var caption := "已记录" if states[region].visited[i] else "靠近按 E 调查"
+		var caption_x := -65.0
+		if region == "post" and i == 0:
+			var stage := Mailbox.stage(states.post.visited)
+			mailbox.draw(canvas, point, stage, loot_glint_time)
+			match stage:
+				Mailbox.Stage.IDLE: caption = "E 接取调查"
+				Mailbox.Stage.BURNING: caption = "火势正旺 · 久留会灼伤"
+				Mailbox.Stage.COMPLETE: caption = "调查完成 · 火焰已熄"
+			caption_x = -font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x * 0.5
+		else:
+			Landscape.landmark(canvas, point, site[3], Color(data.accent), Maps.Art.has_art(region))
 		canvas.draw_string(font, point + Vector2(-76, 44), str(site[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(data.accent))
-		canvas.draw_string(font, point + Vector2(-65, 68), "已记录" if states[region].visited[i] else "靠近按 E 调查", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("#c4d3c9"))
+		canvas.draw_string(font, point + Vector2(caption_x, 68), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("#c4d3c9"))
 	var rest: Vector2 = data.spawn * data.size
-	canvas.draw_circle(rest, 38, Color("#68c7c0", 0.3))
-	canvas.draw_arc(rest, 38, 0, TAU, 36, Color("#a4ded2"), 3, true)
+	PixelVFX.cue_circle(canvas, rest, 38.0, Color("#68c7c0", 0.22))
+	PixelVFX.cue_arc(canvas, rest, 38.0, 0.0, TAU, 3.0, Color("#a4ded2"))
 	canvas.draw_string(font, rest + Vector2(-72, 60), "休息点 · E 恢复一次", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color("#b1e6d9"))
 	for exit: Array in data.exits:
 		var point: Vector2 = exit[1] * data.size
-		canvas.draw_arc(point - Vector2(0, 35), 42, 0, TAU, 32, Color("#88cce3"), 5, true)
-		canvas.draw_string(font, point + Vector2(-70, 36), "E → " + str(Catalog.REGIONS[exit[0]].name), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#a2d8e4"))
+		gate_vfx.draw(canvas, point, exit[0])
+		var label := "E → " + str(Catalog.REGIONS[exit[0]].name)
+		var label_width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+		var baseline := point + Vector2(-label_width * 0.5, 42)
+		canvas.draw_string_outline(font, baseline, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 4, Color("#122a3b"))
+		canvas.draw_string(font, baseline, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#dffaff"))
 	for pickup: Dictionary in states[region].pickups:
 		if pickup.get("weather_growth", false):
 			continue # Renewable plants are drawn by the weather module with growth rings.
@@ -919,10 +943,10 @@ func _draw_world() -> void:
 		var icon: Texture2D = info.get("icon")
 		var is_herb := MaterialArt.HERBS.has(pickup.item)
 		if not is_herb:
-			canvas.draw_circle(pickup.position, 19, Color(color, 0.16))
+			PixelVFX.cue_circle(canvas, pickup.position, 19.0, Color(color, 0.20))
 		if icon != null:
 			if not is_herb:
-				canvas.draw_arc(pickup.position, 24, 0, TAU, 32, color, 2, true)
+				PixelVFX.cue_arc(canvas, pickup.position, 24.0, 0.0, TAU, 3.0, color)
 			canvas.draw_texture_rect(icon, Rect2(pickup.position - Vector2(24, 26), Vector2(48, 48)), false)
 		else:
 			canvas.draw_circle(pickup.position, 7, color)
@@ -941,7 +965,8 @@ func _draw_world() -> void:
 		if float(enemy.get("attack_fx",0.0)) > 0:
 			PixelVFX.draw(canvas,"guard-"+str(enemy.get("attack_weather","clear")),enemy.get("attack_point",point),PixelVFX.LIFETIME-float(enemy.attack_fx),Vector2.ONE*2)
 	var origin := player_foot - Vector2(0, 30)
-	canvas.draw_line(origin + facing * 26, origin + facing * 48, Color("#f5d69b"), 3, true)
+	if facing != Vector2.ZERO:
+		PixelVFX.cue_segment(canvas, origin + facing * 26, origin + facing * 48, 3.0, Color("#f5d69b"))
 	for shot: Dictionary in projectiles:
 		PixelVFX.draw(canvas, "attack-bolt", shot.position, PROJECTILE_LIFETIME - float(shot.life), Vector2.ONE, shot.velocity.angle(), Color.WHITE, true)
 	for effect: Dictionary in effects:
@@ -954,13 +979,13 @@ func _draw_world() -> void:
 			"j":
 				var half_arc := acos(0.15)
 				if range_alpha > 0.0:
-					canvas.draw_arc(point, radius, angle - half_arc, angle + half_arc, 36, Color(Color("#ffe6ab"), range_alpha), 2.0, true)
+					PixelVFX.cue_arc(canvas, point, radius, angle - half_arc, angle + half_arc, 3.0, Color(Color("#ffe6ab"), range_alpha))
 				PixelVFX.draw(canvas, effect.fx, point + effect.facing * minf(radius * 0.50, 66.0) - Vector2(0, 30), age, Vector2.ONE * 2, angle)
 			"k":
 				PixelVFX.draw(canvas, effect.fx, point + effect.facing * 30 - Vector2(0, 30), age)
 			"l":
 				if range_alpha > 0.0:
-					canvas.draw_arc(point, radius, 0, TAU, 48, Color(Color("#d2c5ff"), range_alpha), 2.0, true)
+					PixelVFX.cue_arc(canvas, point, radius, 0.0, TAU, 3.0, Color(Color("#d2c5ff"), range_alpha))
 				PixelVFX.draw(canvas, effect.fx, point, age, Vector2(radius / 36.0, radius / 52.0))
 
 func _paused() -> bool:
@@ -1052,6 +1077,11 @@ func interact() -> void:
 			else:
 				states[region].visited[index] = true
 				dialogue_text.text = "%s · %s\n%s\n\n%s" % [data.npc, data.chapter, data.sites[index][2], "十域人物见闻已收齐。后续复苏与调查的故事仍待继续。" if _visited_total() == Maps.site_total() else "已记入见闻。B 可回看。"]
+				if region == "post":
+					if index == 0 and Mailbox.stage(states.post.visited) == Mailbox.Stage.BURNING:
+						dialogue_text.text += "\n邮箱着火了。靠近停留 2 秒会灼伤 5 秒。"
+					elif index == 2:
+						dialogue_text.text += "\n未寄出的邮局 · 邮箱上的火焰熄灭了。"
 			if region == "grove" and index == 0 and story != null:
 				story.present()
 	if persistence != null: persistence.request_save()

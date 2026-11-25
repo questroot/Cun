@@ -1,5 +1,6 @@
 extends RefCounted
 ## Four authored moves per boss. Geometry is shared by telegraphs, damage and observations.
+const VFX := preload("res://scripts/scenes/pixel_vfx.gd")
 const MOVES := {
 	"H01": [
 		{"name":"断旗斩", "fx":"H01-slash", "shape":"circle", "radius":110.0, "reach":140.0, "windup":1.05, "damage":18, "cooldown":3.4, "hint":"退出红圈"},
@@ -103,7 +104,7 @@ static func polygons(boss: Dictionary) -> Array[PackedVector2Array]:
 			var pts := PackedVector2Array()
 			var sector: bool = s.shape == "sector"
 			if sector: pts.append(zone)
-			for i in range(65):
+			for i in range(65 if sector else 64):
 				var a: float = d.angle() - HALF_ANGLE + HALF_ANGLE*2*i/64.0 if sector else TAU*i/64.0
 				pts.append(zone + Vector2.from_angle(a)*float(s.radius))
 			result.append(pts)
@@ -118,12 +119,15 @@ static func bounds(boss: Dictionary) -> Rect2:
 static func draw_warning(canvas: Control, boss: Dictionary) -> void:
 	var s := current(boss)
 	var progress := 1.0 - float(boss.windup) / float(s.windup)
-	for polygon: PackedVector2Array in polygons(boss):
-		canvas.draw_colored_polygon(polygon, Color(0.94,0.18,0.12,0.18+progress*0.16))
-		if s.shape != "ring":
-			var outline := polygon.duplicate()
-			outline.append(polygon[0])
-			canvas.draw_polyline(outline,Color("#ffae78"),2.0,false)
+	var danger := Color(0.98, 0.25, 0.13, 0.25 + progress * 0.19)
 	if s.shape == "ring":
-		for radius: float in [s.inner,s.radius]: canvas.draw_arc(boss.target,radius,0,TAU,64,Color("#ffae78"),2,false)
-	canvas.draw_arc(boss.target,18,-PI/2,-PI/2+maxf(.02,progress*TAU),24,Color("#fff1c9"),3,false)
+		var width: float = s.radius - s.inner
+		VFX.cue_arc(canvas, boss.target, float(s.inner) + width * 0.5, 0.0, TAU, width, danger)
+		for radius: float in [s.inner,s.radius]:
+			VFX.cue_arc(canvas, boss.target, radius, 0.0, TAU, 3.0, Color("#ffae78"))
+	else:
+		for polygon: PackedVector2Array in polygons(boss):
+			VFX.cue_fill(canvas, polygon, danger)
+			for i in range(polygon.size()):
+				VFX.cue_segment(canvas, polygon[i], polygon[(i + 1) % polygon.size()], 3.0, Color("#ffae78"))
+	VFX.cue_arc(canvas, boss.target, 18.0, -PI/2, -PI/2 + maxf(0.02, progress * TAU), 4.0, Color("#fff1c9"))

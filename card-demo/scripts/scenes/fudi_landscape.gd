@@ -1,4 +1,5 @@
 extends RefCounted
+const VFX := preload("res://scripts/scenes/pixel_vfx.gd")
 ## Map paintings and roadside props; snowridge retains its authored ground geometry.
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Art = preload("res://scripts/scenes/fudi_material_art.gd")
@@ -108,8 +109,8 @@ static func building(canvas: CanvasItem, rect: Rect2, wall: Color, accent: Color
 		canvas.draw_rect(Rect2(point - Vector2(9, 18), Vector2(18, 24)), Color(accent, 0.4))
 
 static func landmark(canvas: CanvasItem, point: Vector2, kind: String, accent: Color, baked: bool = false) -> void:
-	canvas.draw_circle(point, 65, Color(accent, 0.08))
-	canvas.draw_arc(point, 56, 0, TAU, 48, Color(accent, 0.55), 2, true)
+	VFX.cue_circle(canvas, point, 65.0, Color(accent, 0.10))
+	VFX.cue_arc(canvas, point, 56.0, 0.0, TAU, 3.0, Color(accent, 0.65))
 	if baked:
 		return # Keep the painted structure visible; only the interaction ring is added.
 	match kind:
@@ -125,7 +126,7 @@ static func landmark(canvas: CanvasItem, point: Vector2, kind: String, accent: C
 			canvas.draw_circle(point - Vector2(0, 108), 28, accent)
 			canvas.draw_circle(point - Vector2(0, 108), 19, Color("#253c43"))
 			canvas.draw_line(point - Vector2(0, 108), point - Vector2(-11, 117), accent, 3, true)
-			canvas.draw_arc(point - Vector2(0, 108), 38, 0, TAU, 32, Color(accent, 0.2), 3, true)
+			VFX.cue_arc(canvas, point - Vector2(0, 108), 38.0, 0.0, TAU, 3.0, Color(accent, 0.28))
 		"statue":
 			canvas.draw_rect(Rect2(point - Vector2(33, 12), Vector2(66, 18)), Color("#758485"))
 			canvas.draw_colored_polygon(PackedVector2Array([point + Vector2(-24, -12), point + Vector2(-14, -68), point + Vector2(14, -68), point + Vector2(24, -12)]), Color("#9fa9a4"))

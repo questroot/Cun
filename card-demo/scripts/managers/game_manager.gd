@@ -242,6 +242,7 @@ func goto_scene(scene_name: String) -> void:
 		get_tree().call_deferred("change_scene_to_file", "res://scenes/Fudi.tscn")
 		return
 	var paths := {"menu": "res://scenes/MainMenu.tscn", "city": "res://scenes/MainCity.tscn", "team": "res://scenes/TeamSelect.tscn", "battle": "res://scenes/Battle.tscn", "stages": "res://scenes/StageSelect.tscn", "outskirts": "res://scenes/Outskirts.tscn", "water_activity": "res://scenes/WaterActivity.tscn"}
+	paths["stone_court"] = "res://scenes/StoneCourt.tscn"
 	if paths.has(scene_name):
 		if scene_name in ["city", "menu"]:
 			stage_pending = false

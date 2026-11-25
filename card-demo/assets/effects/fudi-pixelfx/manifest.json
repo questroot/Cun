@@ -55,6 +55,34 @@
       ]
     },
     {
+      "key": "H01-spin",
+      "source": "melee/spin-slash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H01-flag",
+      "source": "local/war-flag",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
       "key": "H02-stomp",
       "source": "nature/earth-spike",
       "durations": [
@@ -85,6 +113,34 @@
     {
       "key": "H02-charge",
       "source": "nature/leaf-storm",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H02-seed",
+      "source": "local/seed-burst",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H02-grove",
+      "source": "nature/root-snare",
       "durations": [
         90,
         70,
@@ -153,6 +209,20 @@
       ]
     },
     {
+      "key": "H03-tide",
+      "source": "water/wave-crash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
       "key": "H04-feather",
       "source": "holy/feather-burst",
       "durations": [
@@ -183,6 +253,34 @@
     {
       "key": "H04-verdict",
       "source": "holy/smite",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H04-spears",
+      "source": "ice/ice-lance",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H04-halo",
+      "source": "holy/heal-aoe",
       "durations": [
         90,
         70,
@@ -237,8 +335,92 @@
       ]
     },
     {
+      "key": "H05-script",
+      "source": "arcane/arcane-beam",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H05-frost",
+      "source": "ice/frost-nova",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
       "key": "H06-hammer",
       "source": "melee/hammer-smash",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H06-echo",
+      "source": "impacts/ground-slam",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H06-chain",
+      "source": "local/rust-chain",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H06-resonance",
+      "source": "nature/quake",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "H06-pendulum",
+      "source": "local/pendulum-chain",
       "durations": [
         90,
         70,
@@ -517,6 +699,20 @@
       ]
     },
     {
+      "key": "guard-stone",
+      "source": "local/stone-shot",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
       "key": "status-buff",
       "source": "holy/blessing",
       "durations": [
@@ -627,6 +823,192 @@
         120,
         120
       ]
+    },
+    {
+      "key": "weather-rain",
+      "source": "local/rain",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "weather-snow",
+      "source": "local/snow",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "weather-fog",
+      "source": "local/fog",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "weather-wind",
+      "source": "local/wind",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "weather-heat",
+      "source": "local/embers",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "weather-clear",
+      "source": "local/sun-motes",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "loot-glint",
+      "source": "local/loot-glint",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "pickup-flash",
+      "source": "pickups/collect-burst",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "building-ripple",
+      "source": "water/ripples",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "stove-flame",
+      "source": "fire/campfire",
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "key": "trap-spores",
+      "source": "nature/spore-burst",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "trap-fissure",
+      "source": "nature/quake",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
+    },
+    {
+      "key": "trap-debris",
+      "source": "explosions/dirt-explosion",
+      "durations": [
+        90,
+        70,
+        50,
+        100,
+        80,
+        80,
+        100,
+        130
+      ]
     }
-  ]
+  ],
+  "cueTexture": {
+    "file": "warning-pattern.png",
+    "source": "local/warning-pattern"
+  }
 }

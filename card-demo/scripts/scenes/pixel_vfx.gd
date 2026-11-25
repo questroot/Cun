@@ -5,6 +5,7 @@ const DURATIONS := [0.09,0.07,0.05,0.10,0.08,0.08,0.10,0.13]
 const LIFETIME := 0.70
 const ORIGINAL_ATLAS := "res://assets/effects/pixel/%s.png"
 const FUDI_ATLAS := "res://assets/effects/fudi-pixelfx/%s.png"
+const CUE_ART := preload("res://assets/effects/fudi-pixelfx/warning-pattern.png")
 static var textures: Dictionary = {}
 
 ## Which status aura stands for which battle effect key.
@@ -13,10 +14,7 @@ const STATUS_BY_EFFECT := {"stun": "status-stun", "shield": "status-shield", "da
 static func texture(key: String, use_fudi_art: bool = true) -> Texture2D:
 	var cache_key := "fudi/" + key if use_fudi_art else key
 	if not textures.has(cache_key):
-		var path := FUDI_ATLAS % key
-		if not use_fudi_art or not ResourceLoader.exists(path):
-			path = ORIGINAL_ATLAS % key
-		textures[cache_key] = load(path)
+		textures[cache_key] = load((FUDI_ATLAS if use_fudi_art else ORIGINAL_ATLAS) % key)
 	return textures[cache_key]
 
 ## First active status on a battle unit, empty when nothing is applied.
@@ -52,10 +50,46 @@ static func draw_cast(canvas: Control, cast: Dictionary) -> void:
 		var center: Vector2 = cast.origin + cast.direction * float(s.reach)*.5
 		draw(canvas,s.fx,center,age,Vector2(float(s.reach)/70.0,float(s.radius)/14.0),angle)
 	elif s.shape == "cross":
-		draw(canvas,s.fx,cast.target,age,Vector2.ONE*4,angle)
+		for axis: float in [angle, angle + PI * 0.5]:
+			draw(canvas, s.fx, cast.target, age, Vector2(4, 2), axis)
+	elif s.shape == "ring":
+		var radius := (float(s.inner) + float(s.radius)) * 0.5
+		for i in range(8):
+			var heading := TAU * i / 8.0
+			var point: Vector2 = cast.target + Vector2.from_angle(heading) * radius
+			draw(canvas, s.fx, point, age, Vector2.ONE, heading + PI * 0.5)
 	else:
 		for zone: Vector2 in cast.zones:
 			draw(canvas,s.fx,zone,age,Vector2.ONE*maxf(1,float(s.radius)/34.0),angle if s.shape == "sector" else 0.0)
+
+static func cue_fill(canvas: CanvasItem, points: PackedVector2Array, color: Color) -> void:
+	var bounds := Rect2(points[0], Vector2.ZERO)
+	for point: Vector2 in points:
+		bounds = bounds.expand(point)
+	var uv := PackedVector2Array()
+	for point: Vector2 in points:
+		uv.append(Vector2(0.04, 0.04) + (point - bounds.position) / bounds.size * 0.92)
+	canvas.draw_polygon(points, PackedColorArray([color]), uv, CUE_ART)
+
+static func cue_circle(canvas: CanvasItem, center: Vector2, radius: float, color: Color) -> void:
+	var points := PackedVector2Array()
+	for i in range(48):
+		points.append(center + Vector2.from_angle(TAU * float(i) / 48.0) * radius)
+	cue_fill(canvas, points, color)
+
+static func cue_arc(canvas: CanvasItem, center: Vector2, radius: float, start: float, end: float, width: float, color: Color) -> void:
+	var sweep := minf(end - start, TAU - 0.002)
+	var steps := maxi(2, ceili(sweep * 10.0))
+	var points := PackedVector2Array()
+	for i in range(steps + 1):
+		points.append(center + Vector2.from_angle(start + sweep * i / steps) * (radius + width * 0.5))
+	for i in range(steps, -1, -1):
+		points.append(center + Vector2.from_angle(start + sweep * i / steps) * (radius - width * 0.5))
+	cue_fill(canvas, points, color)
+
+static func cue_segment(canvas: CanvasItem, a: Vector2, b: Vector2, width: float, color: Color) -> void:
+	var side := a.direction_to(b).orthogonal() * (width * 0.5)
+	cue_fill(canvas, PackedVector2Array([a + side, b + side, b - side, a - side]), color)
 
 static func draw_weather(canvas: Control, weather: String, area: Vector2, elapsed: float, boost: float) -> void:
 	var count := 36 if weather in ["rain","snow","storm"] else (9 if weather == "fog" else 18)

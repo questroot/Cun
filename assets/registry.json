@@ -3113,6 +3113,45 @@
       "status": "review",
       "notes": "Runtime integration 2026-11-21. Exact source variant, output dimensions and SHA256 in card-demo/assets/fudi/fine/manifest.json. Visual acceptance does not establish source license or release rights.",
       "sha256": "9d26d7b52a3831d6090657345234c0c8f1d0f88ea912176aad25593e1fd8caea"
+    },
+    {
+      "id": "asset_1d6bbd308abbabd0",
+      "name": "stone-brick-guofeng",
+      "path": "card-demo/assets/stone-court/stone-brick-guofeng.png",
+      "kind": "image",
+      "tags": ["fudi", "ground"],
+      "source": "User-specified stone-brick-guofeng-clean.png, SHA-256 a0c4b47043c6891bdefa480b80e55fdc3fc296fb9693aa46e72f25e2cb27fae6",
+      "license": "unknown",
+      "author": "unknown",
+      "status": "review",
+      "notes": "Alpha mask and rectangular crop (140,216,887,826), 747x610. RGB pixels match the supplied source crop exactly.",
+      "sha256": "e4f022bfcc98a4c4666cf04b6825cc47f8218b7f39b20a316b0971d0f4f1edfd"
+    },
+    {
+      "id": "asset_be66cee357a25a19",
+      "name": "stone-court-tide",
+      "path": "card-demo/assets/stone-court/stone-court-tide.png",
+      "kind": "image",
+      "tags": ["fudi", "pixelfx", "shore"],
+      "source": "Baked from pixel-art/fudi-world/stone-court-tide.mjs with pixelfx.",
+      "license": "unknown",
+      "author": "Cun project",
+      "status": "review",
+      "notes": "48 frames at 12 fps in an 8x6 atlas. Frame size 320x334, top-left pivot.",
+      "sha256": "bd998d483eca18063145e9cbd8d5be8086d8f67f17dd2d17528885453877fb78"
+    },
+    {
+      "id": "asset_9e46276f306d1a74",
+      "name": "stone-court-phoenix",
+      "path": "card-demo/assets/stone-court/stone-court-phoenix.png",
+      "kind": "image",
+      "tags": ["fudi", "pixelfx", "phoenix"],
+      "source": "Baked from pixel-art/fudi-world/stone-court-phoenix.mjs with pixelfx. Silhouette and colors based on the user reference.",
+      "license": "unknown",
+      "author": "Cun project",
+      "status": "review",
+      "notes": "80 frames at 20 fps in an 8x10 atlas. Frame size 352x228, sea pivot (46,176).",
+      "sha256": "80abf33652e19bc064d78caf20691a243b72b705474c0b03634a21a6e3e11131"
     }
   ]
 }

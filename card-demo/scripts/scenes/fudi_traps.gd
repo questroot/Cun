@@ -3,7 +3,13 @@ extends Node
 const Catalog = preload("res://scripts/scenes/trap_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const VFX := preload("res://scripts/scenes/pixel_vfx.gd")
 const HIT_AILMENTS := {"spores": "status-poison", "fissure": "status-burn", "surge": "status-stun", "frost": "status-freeze"}
+const TRAP_ART := {
+	"thorns": "H02-vine", "spores": "trap-spores", "floor": "H06-echo", "sign": "trap-debris",
+	"rockfall": "trap-debris", "fissure": "trap-fissure", "surge": "guard-storm", "geyser": "H03-burst",
+	"frost": "H05-frost", "debris": "guard-wind",
+}
 var game: Control
 var rng := RandomNumberGenerator.new()
 var timers: Dictionary = {}
@@ -232,41 +238,17 @@ func _draw_hazards() -> void:
 		var active: bool = float(hazard.age) >= float(config.warning)
 		var color := Color("#f27866") if active else Color("#f1cd70")
 		var radius: float = config.radius
-		canvas.draw_circle(point, radius, Color(color, 0.23 if active else 0.11))
-		canvas.draw_arc(point, radius, 0, TAU, 48, color, 3, true)
+		VFX.cue_circle(canvas, point, radius, Color(color, 0.30 if active else 0.16))
+		VFX.cue_arc(canvas, point, radius, 0.0, TAU, 4.0, color)
 		if not active:
-			canvas.draw_arc(point, radius - 7, -PI / 2, -PI / 2 + TAU * float(hazard.age) / float(config.warning), 40, Color(config.color), 4, true)
-			canvas.draw_line(point - Vector2(12, 12), point + Vector2(12, 12), color, 3, true)
-			canvas.draw_line(point + Vector2(12, -12), point + Vector2(-12, 12), color, 3, true)
+			var sweep := maxf(0.02, TAU * float(hazard.age) / float(config.warning))
+			VFX.cue_arc(canvas, point, radius - 7, -PI / 2, -PI / 2 + sweep, 5.0, Color(config.color))
+			VFX.cue_segment(canvas, point - Vector2(12, 12), point + Vector2(12, 12), 4.0, color)
+			VFX.cue_segment(canvas, point + Vector2(12, -12), point + Vector2(-12, 12), 4.0, color)
 		else:
-			_draw_effect(hazard.kind, point, radius, Color(config.color))
+			var age := (float(hazard.age) - float(config.warning)) / float(config.active) * VFX.LIFETIME
+			VFX.draw(canvas, TRAP_ART[hazard.kind], point, age, Vector2.ONE * (radius / 36.0), 0.0, Color(config.color).lerp(Color.WHITE, 0.50))
 		canvas.draw_string(ThemeDB.fallback_font, point + Vector2(-52, radius + 23), "%s · %s" % [config.name, "爆发" if active else "%.1fs" % (float(config.warning) - float(hazard.age))], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, color)
-
-func _draw_effect(kind: String, point: Vector2, radius: float, color: Color) -> void:
-	match kind:
-		"thorns", "frost":
-			for index in range(8):
-				var tip := point + Vector2.from_angle(index * TAU / 8) * radius * 0.8
-				canvas.draw_line(point, tip, color, 4, true)
-				canvas.draw_line(tip, tip + Vector2(-8, 14), color, 3, true)
-		"spores":
-			for index in range(12):
-				canvas.draw_circle(point + Vector2.from_angle(index * 2.4) * (18 + index * 3), 7, Color(color, 0.75))
-		"floor", "sign", "rockfall":
-			for index in range(5):
-				var offset := Vector2((index - 2) * 18, sin(index * 2) * 22)
-				canvas.draw_style_box(UI.panel(Color(color, 0.8)), Rect2(point + offset - Vector2(9, 12), Vector2(18, 24)))
-		"fissure", "surge":
-			var points := PackedVector2Array()
-			for index in range(7):
-				points.append(point + Vector2((index - 3) * 17, -18 if index % 2 == 0 else 18))
-			canvas.draw_polyline(points, color, 6, true)
-		"geyser":
-			for index in range(3):
-				canvas.draw_arc(point, radius * (0.3 + index * 0.25), 0, TAU, 30, color, 4, true)
-		"debris":
-			for index in range(5):
-				canvas.draw_line(point + Vector2(-45, (index - 2) * 17), point + Vector2(45, (index - 2) * 17 - 12), color, 4, true)
 
 func _draw_minimap() -> void:
 	if not initialized:

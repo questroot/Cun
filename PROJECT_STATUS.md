@@ -1,10 +1,30 @@
 # Cun 共享项目状态
 
-最近核对：2026-11-24。维护责任：实际承担本轮工作的成员/Agent。**每次工作先读本文件，结束核对并按事实更新**，规则见 [AGENTS.md](AGENTS.md)。这里只写现状，不把候选当批准、不复制私人对话或大段日志。
+最近核对：2026-11-25。维护责任：实际承担本轮工作的成员/Agent。**每次工作先读本文件，结束核对并按事实更新**，规则见 [AGENTS.md](AGENTS.md)。这里只写现状，不把候选当批准、不复制私人对话或大段日志。
 
 2026-11-23：[天气效果 V2 源码预览](shared/godot/weather-v2/README.md)提供天气状态与七个可选材质；与 V1 独立，不改现有游戏。原场景已做无窗行为验证，独立接入后的视觉与性能待游戏方验收。
 
 ## 当前阶段与范围
+
+- GitHub同步（2026-11-25）：用户授权获取最新更新并同步当前代码。已确认同工作区无其他运行会话，获取远端 `75ca62f`（含手卷大厅与启动优化）；本地石庭、邮箱、传送门和pixelfx更新先提交，再保留双方历史合并。按用户要求本轮不重跑回归，下方“未提交”为各开发轮次当时状态，已有验证记录不代表本轮重新验证。最终远端版本以推送后查询为准。
+
+- 星纹石庭水凤凰（2026-11-25，本地）：按参考图的冰青双翼、三叉羽冠与卷尾绘制像素凤凰。第3、6、9轮潮汐开头出海，首现约8秒，之后每12秒一次。先旋涡蓄势，沿半圆掠过海滩，俯冲右侧石砖并炸开成水冠和落滴。pixelfx 80帧图集检查通过，无警告。Godot独立桌面渲染31项通过，核对漩涡、飞行、落砖画面。证据 `.local/stone-court-test-e96bca0516f543169cc37be5f5eafed5/stone-court-phoenix-render.log`。未提交。
+
+- 福地建筑入口（2026-11-25，本地）：移除固定大光圈和半透明圆形底色，入口保留贴地涟漪与名称提示，距入口 100 世界像素内仍自动触发。隔离 Godot 无窗口建筑专项 115 项、独立桌面渲染 126 项通过，已核对灶街和邮驿入口截图。证据 `.local/building-test-30be448cff164d6884b6e1755f79572a`、`.local/building-ring-test-81f201c5ef6b4154a22e704aee049a79/building-ring-render.log`。未提交。
+
+- 旧城邮驿调查中火焰（2026-11-25，本地）：pixelfx 前后两层火焰从底座左侧涌向箱面和箱顶右侧后回落，48 帧、2.5 秒一轮。独立桌面 Godot 渲染核对 48 帧、循环回到首帧和暂停。启动器导入、无窗口探索 327 项、走路 46 项、GM 29 项及经营 smoke 通过。证据 `.local/mailbox-wave-test-7fdbc000ccae4ccabad3631d86f8ad6a/mailbox-wave-render.log`、`.local/fudi-mailbox-wave-in-game.gif`、`.local/exploration-test-afab57ed7aea4a188b9ed5701a4bdb69`。未提交。
+
+- 旧城邮驿邮箱（2026-11-25，本地）：pixel-art-studio 绘制灰色和红铜色邮箱，pixelfx 生成投信口小火苗和包住箱体的双层火焰。以既有三段调查进度切换未接取、燃烧及完成状态。燃烧时距邮箱 96 世界像素内停满 2 秒附加灼烧，持续 5 秒、每秒扣 3 点生命。启动器导入成功，隔离 Godot 无窗口探索 327 项、走路 46 项、GM 29 项及经营 smoke 通过。独立桌面渲染探索 369 项通过，已核对三态截图。证据 `.local/exploration-test-0abd49b765524fe2a128b3049695f43c`、`.local/exploration-test-08e8a8708dd04fcc992c9450e3155bea/mailbox-render.log`、`.local/fudi-mailbox-in-game.png`。未提交。
+
+- 星纹石庭左侧海岸（2026-11-25，本地）：左半边铺沙滩、湿沙和海水，pixelfx生成48帧、4秒循环的往复潮线与泡沫，Godot运行时播放图集。右侧保留可踩陷的国风石砖，沙滩与水面沿用移动规则。Godot 4.7.2独立桌面渲染20项通过，核对涨退潮截图。pixelfx检查无错误，有离线绘制耗时警告。证据 `.local/stone-court-test-e96bca0516f543169cc37be5f5eafed5/stone-court-tide-render.log`，生成入口 `pixel-art/fudi-world/stone-court-tide.mjs`。未提交。
+
+- 福地十域 pixelfx 全部替换（2026-11-25，本地）：56个旧图集键全部映射到 pixelfx，福地加载器直接读取新素材。当前71张八帧图集、3张独立传送门图集和1张预警纹理。补齐13招首领、6种天气，并接入建筑涟漪、守卫飞石与尾迹、宝箱与掉落、灶火、追踪和陷阱表现。预警纹理继续贴合命中范围，旗桩、十字、外环各用对应布局。Godot隔离实机特效801项、探索351项、走路46项、GM29项及经营smoke通过。建筑126项、天气136项、宝箱157项分别通过。陷阱仅在隔离副本启用验证218项通过。证据 `.local/pixel-vfx-test-bd45e0f8c2284e4ca887d610f0b178fd`、`.local/exploration-test-b08697425ac04b2fa86f910609a8d1c9`、`.local/building-test-aae785a294d24e6f90d84dead507b704`、`.local/weather-test-c1767a0f62ac41c59d209f707bf10f8e`、`.local/chests-test-edcff9e07a084cedab8eb2441de836a1`、`.local/pixel-vfx-test-efdde96e429f4189ab9734aa359b674f/traps-render.log`。本轮未提交。
+
+- 福地 pixelfx 传送门（2026-11-24，本地）：用 pixelfx 水波与裂隙光流重做街道出口。新增48帧待机涟漪、25帧升柱与开门、36帧流动门洞三张图集，刻纹门框与光粒随开合显现。开门末帧与光流首帧像素一致。启动器导入通过，隔离实机探索351项、走路46项、GM29项和完整经营smoke均通过。证据 `.local/exploration-test-fc49304f4bc1412f8acc179424b151a7`，游戏截图 `.local/fudi-gate-pixelfx-in-game.png`，动态图 `.local/fudi-gate-pixelfx.gif`。本轮未提交。
+
+- 福地星纹石庭（2026-11-24，本地）：游戏选择新增可进入的独立石砖地图。地面已换成 `stone-brick-guofeng-clean.png` 去底后的完整砖块，保留原图颜色、侧面和砖间距。WASD / 方向键移动，踩中砖面才下沉最多6世界像素并点亮脚边淡蓝星光，离开回弹。Esc或返回按钮退出，独立场景不写福地探索档。Godot 4.7.2 在独立 Windows 桌面以 OpenGL 后台渲染，17项通过，核对720p国风砖铺设和星光截图。证据 `.local/stone-court-test-e96bca0516f543169cc37be5f5eafed5/stone-court-guofeng-render.log`。未提交。
+
+- 福地街道传送门（2026-11-24，本地）：十域出口改用缓慢扩散的贴地涟漪。人物走到58世界像素内，青蓝光柱升起并在0.82秒内向两侧展开成拱门，离开时收回。动画随菜单、地图暂停，切图清除开门进度，E通行及安全落点沿用现行规则。启动器导入通过，Godot隔离实机探索347项、走路46项、GM29项和完整经营smoke均通过。核对待机、升柱、展开和开门截图，证据 `.local/exploration-test-84b90039b4684308818b84339e7d3fad`，汇总图 `.local/fudi-gate-vfx-preview.png`。本轮未提交。
 
 - GitHub同步（2026-11-24）：用户授权集中提交本地福地战斗反馈、首领血条、法力与制药、建筑涟漪及44组pixelfx素材和文档。同工作区其他会话未运行；fetch确认上次 `12e71cc` 已在远端，远端新增 `c1e82a8`、`9573eab`，本轮保留两边历史合并。按用户要求未重跑回归，以下证据为开发轮次既有记录；本轮提交及推送结果以完成后的Git查询为准。
 

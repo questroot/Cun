@@ -67,12 +67,12 @@ func run() -> void:
 	check(manifest.effects.size()==56,"56 authored VFX assets")
 	for entry: Dictionary in manifest.effects:
 		var art := VFX.texture(entry.key)
-		check(art!=null and art.get_width()==768 and art.get_height()==96,"eight native frames "+entry.key)
+		check(art != null and art.resource_path == VFX.FUDI_ATLAS % entry.key and art.get_size() == Vector2(768, 96), "legacy effect has a pixelfx replacement " + entry.key)
 	var pixelfx = JSON.parse_string(FileAccess.get_file_as_string("res://assets/effects/fudi-pixelfx/manifest.json"))
 	for entry: Dictionary in pixelfx.effects:
 		var art := VFX.texture(entry.key)
 		check(art != null and art.resource_path == VFX.FUDI_ATLAS % entry.key and art.get_size() == Vector2(768, 96), "Fudi plays eight-frame pixelfx atlas " + entry.key)
-	check(VFX.texture("H01-flag").resource_path == VFX.ORIGINAL_ATLAS % "H01-flag", "flag cast retains its unique silhouette")
+	check(VFX.CUE_ART.get_size() == Vector2(96, 96), "pixelfx texture used for hazard boundaries")
 	for key: String in VFX.STATUS_BY_EFFECT.values():
 		check(VFX.texture(key, false).resource_path == VFX.ORIGINAL_ATLAS % key, "turn-based battle plays original aura " + key)
 	check(VFX.frame_at(.0)==0 and VFX.frame_at(.17)==2 and VFX.frame_at(.22)==3 and VFX.frame_at(.699)==7,"nonuniform frame timings")

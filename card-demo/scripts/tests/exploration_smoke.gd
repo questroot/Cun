@@ -1,6 +1,7 @@
 extends SceneTree
 const Catalog = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const Mailbox = preload("res://scripts/scenes/fudi_mailbox.gd")
 const NAV_CELL := 32.0 # Resolve narrow painted lanes and resource clearance without 64px cell aliasing.
 var checks := 0
 var failures := 0
@@ -355,6 +356,8 @@ func verify_compact_hud() -> void:
 
 func verify_large_maps() -> void:
 	await verify_connections()
+	await verify_gate_effect()
+	await verify_mailbox()
 	for id: String in Maps.IDS:
 		game.enter_region(id)
 		var extent: Vector2 = Maps.MAPS[id].size
@@ -499,6 +502,113 @@ func verify_large_maps() -> void:
 	key(KEY_B, false)
 	check(not game.journal.visible, "B关闭行囊")
 	game.health = 100
+
+func verify_gate_effect() -> void:
+	game.enter_region("post")
+	var gate: Vector2 = Maps.MAPS.post.exits[0][1] * Maps.MAPS.post.size
+	game.player_foot = Maps.arrival_point("post", "grove")
+	game._process(0.20)
+	game._update_camera()
+	check(game.gate_vfx.ripple_time > 0.0 and game.gate_vfx.openings["grove"] == 0.0, "距离门口100像素时只播放待机涟漪")
+	await capture("gate_idle")
+	key(KEY_A)
+	for i in range(5):
+		game._process(0.08)
+	key(KEY_A, false)
+	var opening: float = game.gate_vfx.openings["grove"]
+	check(game.player_foot.distance_to(gate) < 22.0 and opening > 0.0 and opening < 0.33, "实际走上传送口先升起光柱")
+	check(game.gate_vfx.openings["quarry"] == 0.0 and game.gate_vfx.openings["causeway"] == 0.0, "走上单个出口只开启所在传送门")
+	await capture("gate_column")
+	var ripple: float = game.gate_vfx.ripple_time
+	game.menu.show()
+	game._process(1.0)
+	check(game.gate_vfx.openings["grove"] == opening and game.gate_vfx.ripple_time == ripple, "菜单暂停传送门与涟漪")
+	game.menu.hide()
+	game._process(0.35)
+	check(game.gate_vfx.openings["grove"] > 0.33 and game.gate_vfx.openings["grove"] < 1.0, "原地站立时光柱向两侧展开")
+	await capture("gate_spread")
+	game._process(0.30)
+	check(game.gate_vfx.openings["grove"] == 1.0 and game.region == "post", "光门完整展开并等待E通行")
+	await capture("gate_open")
+	check(game.gate_vfx.flow_times["grove"] == 0.0, "开门末帧接到光流循环首帧")
+	game._process(0.80)
+	check(is_equal_approx(game.gate_vfx.flow_times["grove"], 0.80), "站在门内时光流持续播放")
+	await capture("gate_flow")
+	key(KEY_D)
+	for i in range(5):
+		game._process(0.08)
+	key(KEY_D, false)
+	check(game.gate_vfx.openings["grove"] < 1.0 and game.gate_vfx.openings["grove"] > 0.0, "实际走离传送口时门逐渐收拢")
+	game._process(0.45)
+	check(game.gate_vfx.openings["grove"] == 0.0 and game.region == "post", "离开后复归待机涟漪")
+	key(KEY_E)
+	key(KEY_E, false)
+	check(game.region == "grove" and Maps.walkable("grove", game.player_foot) and game.gate_vfx.openings.is_empty() and game.gate_vfx.flow_times.is_empty(), "真实E可从原范围通行，切图清除开门与光流进度")
+
+func verify_mailbox() -> void:
+	game.enter_region("post")
+	var post: Dictionary = game.states.post
+	var saved_enemies: Array = post.enemies
+	post.enemies = []
+	var point := Maps.site_position("post", 0)
+	var nearby := point + Vector2(64, 0)
+	game.player_foot = nearby
+	game.health = 100
+	game._process(2.0)
+	game._update_camera()
+	check(Mailbox.stage(post.visited) == Mailbox.Stage.IDLE and game.mailbox.exposure == 0.0, "未接取时是投信口小火，邮箱旁久留不灼伤")
+	await capture("mailbox_idle")
+	key(KEY_E)
+	key(KEY_E, false)
+	check(Mailbox.stage(post.visited) == Mailbox.Stage.BURNING and game.dialogue.visible, "在邮箱旁实际按E接取调查并点燃邮箱")
+	game._process(3.0)
+	check(game.mailbox.exposure == 0.0, "接取对白暂停靠近计时")
+	game.dialogue.hide()
+	game._process(0.75)
+	await capture("mailbox_burning")
+	game.player_foot = point + Vector2(97, 0)
+	game._process(0.25)
+	check(game.mailbox.exposure == 0.0, "走出96像素范围清空尚未触发的计时")
+	game.player_foot = nearby
+	game._process(1.75)
+	check(game.health == 100 and not game.player_ailments.has("status-burn"), "连续靠近不足两秒不附加灼烧")
+	game._process(0.25)
+	check(game.mailbox.burn_left == 5.0 and game.player_ailments.has("status-burn"), "停满两秒后附加五秒灼烧特效")
+	game.menu.show()
+	game._process(3.0)
+	check(game.mailbox.burn_left == 5.0 and game.health == 100, "暂停时灼烧计时和生命保持")
+	game.menu.hide()
+	game._process(0.75)
+	check(game.health == 100, "灼烧首跳前生命不变")
+	game._process(0.25)
+	check(game.health == 97, "灼烧满一秒扣3点生命")
+	game._process(4.0)
+	check(game.health == 85 and game.mailbox.burn_left == 0.0 and not game.player_ailments.has("status-burn"), "五秒内完整结算五跳并熄灭玩家灼烧")
+	game._process(2.0)
+	check(game.health == 85 and game.mailbox.burn_left == 0.0, "一次连续停留只附加一次灼烧")
+	game.player_foot = point + Vector2(97, 0)
+	game._process(0.25)
+	game.player_foot = nearby
+	game._process(2.25)
+	check(game.mailbox.burn_left == 4.75, "重新靠近可再次触发，触发帧超出的时间计入灼烧")
+	game.enter_region("grove")
+	check(game.mailbox.exposure == 0.0 and game.player_ailments.has("status-burn"), "切图重置范围计时并恢复已有灼烧表现")
+	game.enter_region("post")
+	for index in [1, 2]:
+		game.player_foot = Maps.site_position("post", index)
+		key(KEY_E)
+		key(KEY_E, false)
+		game.dialogue.hide()
+	check(Mailbox.stage(post.visited) == Mailbox.Stage.COMPLETE and game.mailbox.burn_left == 4.75, "实际完成两处后续调查会换成彩色邮箱，已附着的灼烧继续")
+	game.player_foot = nearby
+	game._process(4.75)
+	game._update_camera()
+	check(game.health == 70 and game.mailbox.burn_left == 0.0 and game.mailbox.exposure == 0.0, "已完成时靠近邮箱只结算之前附着的灼烧")
+	await capture("mailbox_complete")
+	post.visited = [false, false, false]
+	post.enemies = saved_enemies
+	game.health = 100
+	game.enter_region("grove")
 
 func verify_connections() -> void:
 	var reached := {"grove": true}

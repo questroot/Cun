@@ -130,14 +130,13 @@ func draw_world() -> void:
 		canvas.draw_string(ThemeDB.fallback_font, enemy.position + Vector2(-90, -96), enemy.name + " · " + NAMES[enemy.behavior], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, color)
 		if enemy.guard_phase != "windup": continue
 		if enemy.behavior == "melee":
-			canvas.draw_circle(enemy.guard_target, 66, Color(1, 0.55, 0.2, 0.18))
-			canvas.draw_arc(enemy.guard_target, 66, 0, TAU, 40, color, 3, true)
+			PixelVFX.cue_circle(canvas, enemy.guard_target, 66.0, Color(1, 0.55, 0.2, 0.25))
+			PixelVFX.cue_arc(canvas, enemy.guard_target, 66.0, 0.0, TAU, 4.0, color)
 		else:
 			var side: Vector2 = enemy.guard_direction.orthogonal() * (32 if enemy.behavior == "charger" else 22)
 			var end: Vector2 = enemy.position + enemy.guard_direction * (225 if enemy.behavior == "charger" else SHOT_SPEED * SHOT_LIFE)
-			canvas.draw_colored_polygon(PackedVector2Array([enemy.position + side, end + side, end - side, enemy.position - side]), Color(1, 0.55, 0.2, 0.20))
-			canvas.draw_circle(end, 32 if enemy.behavior == "charger" else 22, Color(1, 0.55, 0.2, 0.20))
-			canvas.draw_line(enemy.position, end, color, 3, true)
+			PixelVFX.cue_fill(canvas, PackedVector2Array([enemy.position + side, end + side, end - side, enemy.position - side]), Color(1, 0.55, 0.2, 0.26))
+			PixelVFX.cue_circle(canvas, end, side.length(), Color(1, 0.55, 0.2, 0.26))
+			PixelVFX.cue_segment(canvas, enemy.position, end, 4.0, color)
 	for shot: Dictionary in shots:
-		canvas.draw_circle(shot.position - Vector2(0, 18), 10, Color("#ffa671"))
-		canvas.draw_line(shot.position - Vector2(0, 18), shot.position - Vector2(0, 18) - shot.velocity.normalized() * 24, Color("#ffd89d"), 4, true)
+		PixelVFX.draw(canvas, "guard-stone", shot.position - Vector2(0, 18), (SHOT_LIFE - float(shot.life)) * 2.0, Vector2.ONE, shot.velocity.angle(), Color.WHITE, true)

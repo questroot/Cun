@@ -186,8 +186,8 @@ func draw_world() -> void:
 	for effect: Dictionary in visuals:
 		var color: Color = effect.color
 		color.a = clampf(float(effect.life) / 0.75, 0, 1)
-		var radius := float(effect.radius) * (1.15 - float(effect.life) * 0.4)
-		game.world_canvas.draw_arc(effect.position - Vector2(0, 22), radius, 0, TAU, 36, color, 3.0, true)
+		PixelVFX.draw(game.world_canvas, "pickup-flash", effect.position - Vector2(0, 22), 0.75 - float(effect.life),
+			Vector2.ONE * (float(effect.radius) / 38.0), 0.0, color)
 		game.world_canvas.draw_string(ThemeDB.fallback_font, effect.position + Vector2(-45, -85 - (0.75 - float(effect.life)) * 30), effect.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, color)
 
 func draw_ailments() -> void:

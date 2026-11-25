@@ -3,6 +3,7 @@ const Items = preload("res://scripts/scenes/exploration_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Loot = preload("res://scripts/scenes/loot_catalog.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const VFX := preload("res://scripts/scenes/pixel_vfx.gd")
 var game
 var tabs: TabContainer
 var texts: Array[RichTextLabel] = []
@@ -207,5 +208,5 @@ func draw_minimap() -> void:
 func draw_world() -> void:
 	var goal := target()
 	if goal.is_empty() or goal.region != game.region: return
-	game.world_canvas.draw_arc(goal.point, 72, 0, TAU, 40, Color("#ffe1a1"), 3, true)
+	VFX.cue_arc(game.world_canvas, goal.point, 72.0, 0.0, TAU, 4.0, Color("#ffe1a1"))
 	game.world_canvas.draw_string(ThemeDB.fallback_font, goal.point + Vector2(-55, -80), "追踪目标", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#ffe1a1"))

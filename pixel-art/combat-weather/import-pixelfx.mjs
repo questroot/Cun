@@ -1,12 +1,15 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { sceneEffects } from "./scene-pixelfx.mjs";
 
 if (process.argv.length !== 3) {
   throw new Error("Usage: node import-pixelfx.mjs <pixelfx checkout>");
 }
 const source = resolve(process.argv[2]);
-const { createFrame, clearFrame, createFx, composite } = await import(pathToFileURL(join(source, "src/core/index.js")));
+const core = await import(pathToFileURL(join(source, "src/core/index.js")));
+const { createFrame, clearFrame, createFx, composite } = core;
+const localEffects = sceneEffects(core);
 const { encodePNG } = await import(pathToFileURL(join(source, "tools/lib/png.mjs")));
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 const target = join(repo, "card-demo/assets/effects/fudi-pixelfx");
@@ -22,22 +25,35 @@ const replacements = {
   "H01-slash": ["melee/sword-slash", 77, 73, [.015, .40], { palette: red }],
   "H01-thrust": ["melee/thrust", 79, 26, [.035, .32], { palette: red }],
   "H01-banner": ["melee/heavy-cleave", 65, 57, [.19, .85], { palette: red }, 12],
+  "H01-spin": ["melee/spin-slash", 88, 78, [.075, .69], { palette: red, sparks: gold }],
+  "H01-flag": ["local/war-flag", 59, 82, [.04, .94]],
   "H02-stomp": ["nature/earth-spike", 81, 76, [.25, 1.96], { palette: green }],
   "H02-vine": ["nature/thorns", 82, 26, [.21, 1.88], { palette: green }],
   "H02-charge": ["nature/leaf-storm", 69, 66, [.25, 2.03], { palette: green }, 10],
+  "H02-seed": ["local/seed-burst", 72, 75, [.03, .94]],
+  "H02-grove": ["nature/root-snare", 56, 65, [.22, 1.92], { palette: green }],
   "H03-burst": ["water/geyser", 66, 76, [1.08, 4.38]],
   "H03-jet": ["water/water-jet", 71, 24, [.04, .91]],
   "H03-mine": ["water/splash", 60, 69, [.26, 2.12], { stone: false }],
   "H03-surge": ["water/wave-crash", 69, 65, [.69, 2.25], {}, 11],
+  "H03-tide": ["water/wave-crash", 74, 67, [.74, 2.42]],
   "H04-feather": ["holy/feather-burst", 75, 71, [.04, 1.75]],
   "H04-wing": ["melee/scythe-reap", 64, 58, [.2, .83], { palette: gold }, 13],
   "H04-verdict": ["holy/smite", 76, 76, [.54, 1.47]],
+  "H04-spears": ["ice/ice-lance", 86, 20, [.04, .74], { palette: gold }],
+  "H04-halo": ["holy/heal-aoe", 86, 62, [.36, 1.86], { palette: gold }],
   "H05-seal": ["arcane/rune-circle", 72, 65, [.04, 2.2], {
     palette: ["#23305b", "#334c8d", "#5874bb", "#75a6db", "#a5ddff", "#e8f7ff"],
   }],
   "H05-icicle": ["ice/ice-lance", 73, 23, [.02, .72]],
   "H05-spike": ["ice/icicle-fall", 57, 70, [.53, 2.12]],
+  "H05-script": ["arcane/arcane-beam", 88, 23, [.06, 1.16], { palette: spirit }],
+  "H05-frost": ["ice/frost-nova", 84, 72, [.37, 2.47]],
   "H06-hammer": ["melee/hammer-smash", 64, 63, [.06, 1.14], { palette: gold }, 11],
+  "H06-echo": ["impacts/ground-slam", 85, 70, [.06, 1.48], { palette: gold }],
+  "H06-chain": ["local/rust-chain", 88, 24, [.04, .91]],
+  "H06-resonance": ["nature/quake", 75, 54, [.09, 1.65], { palette: gold, glow: gold }],
+  "H06-pendulum": ["local/pendulum-chain", 87, 25, [.16, .91]],
 
   "player-w01": ["fire/fire-ring", 78, 65, [.29, 2.52]],
   "player-w02": ["melee/heavy-cleave", 73, 67, [.19, .83], { palette: gold }],
@@ -60,6 +76,7 @@ const replacements = {
   "guard-snow": ["ice/ice-spikes", 67, 64, [.32, 2.53]],
   "guard-storm": ["lightning/lightning-strike", 64, 81, [.75, 1.43]],
   "guard-wind": ["nature/tornado", 59, 74, [.2, 1.65]],
+  "guard-stone": ["local/stone-shot", 58, 35, undefined, undefined, -12],
 
   "status-buff": ["holy/blessing", 51, 66],
   "status-burn": ["fire/spirit-flame", 53, 65, undefined, { palette: red }],
@@ -74,6 +91,21 @@ const replacements = {
   }],
   "status-stun": ["lightning/zap-hit", 63, 62, [.055, .49]],
   "weather-storm": ["lightning/lightning-strike", 39, 84, [.77, 1.49]],
+  "weather-rain": ["local/rain", 52, 62],
+  "weather-snow": ["local/snow", 46, 48],
+  "weather-fog": ["local/fog", 82, 32],
+  "weather-wind": ["local/wind", 68, 49],
+  "weather-heat": ["local/embers", 52, 58],
+  "weather-clear": ["local/sun-motes", 54, 38],
+  "loot-glint": ["local/loot-glint", 38, 36],
+  "pickup-flash": ["pickups/collect-burst", 62, 62, [.015, 1.05]],
+  "building-ripple": ["water/ripples", 87, 35, undefined, {
+    palette: ["#161721", "#32363d", "#53616a", "#758785", "#9fb4af", "#bccfc9", "#ecf6eb", "#fffef1"],
+  }],
+  "stove-flame": ["fire/campfire", 67, 82],
+  "trap-spores": ["nature/spore-burst", 77, 71, [.58, 2.18]],
+  "trap-fissure": ["nature/quake", 82, 62, [.08, 2.0]],
+  "trap-debris": ["explosions/dirt-explosion", 80, 75, [.24, 2.1]],
 };
 
 const size = 96;
@@ -83,7 +115,7 @@ mkdirSync(target, { recursive: true });
 const effects = [];
 for (const [key, [id, width, height, window, options, dx = 0]] of Object.entries(replacements)) {
   const originalEntry = byKey.get(key);
-  const mod = await import(pathToFileURL(join(source, "src/fx", id + ".js")));
+  const mod = id.startsWith("local/") ? localEffects[id.slice(6)] : await import(pathToFileURL(join(source, "src/fx", id + ".js")));
   const { size: [w, h], origin: [x, y], duration, loop } = mod.meta;
   const [start, end] = window ?? [0, duration];
   const fullLoop = loop && window === undefined;
@@ -136,6 +168,10 @@ for (const [key, [id, width, height, window, options, dx = 0]] of Object.entries
   const durations = originalEntry?.durations ?? (fullLoop ? Array(count).fill(120) : original.effects[0].durations);
   effects.push({ key, source: id, durations });
 }
+const pattern = localEffects["warning-pattern"];
+const indicator = createFrame(96, 96);
+createFx(pattern, { x: 48, y: 48 }).draw(indicator);
+writeFileSync(join(target, "warning-pattern.png"), encodePNG(96, 96, composite(indicator, new Uint8ClampedArray(96 * 96 * 4))));
 writeFileSync(join(target, "manifest.json"), JSON.stringify({
   source: "https://github.com/patch-gg/pixelfx",
   revision: "5294518ce7c72e48b6100a744596e0acf57f2826",
@@ -144,5 +180,6 @@ writeFileSync(join(target, "manifest.json"), JSON.stringify({
   pivot: [48, 48],
   frameCount: count,
   effects,
+  cueTexture: { file: "warning-pattern.png", source: "local/warning-pattern" },
 }, null, 2) + "\n");
 console.log(`Wrote ${effects.length} pixelfx sheets to ${target}`);

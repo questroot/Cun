@@ -60,6 +60,9 @@ func _ready() -> void:
 	var fudi := _entry_button("继续福地探索" if has_expedition else "进入福地  ·  动作试玩", func() -> void: GameManager.goto_scene("fudi"))
 	fudi.name = "EnterFudi"
 	panel.add_child(fudi)
+	var stone_court := UI.button("福地 · 星纹石庭", func() -> void: GameManager.goto_scene("stone_court"))
+	stone_court.name = "EnterStoneCourt"
+	panel.add_child(stone_court)
 	var water := _entry_button("海底水世界", func() -> void: GameManager.goto_scene("water_activity"))
 	water.name = "EnterWater"
 	panel.add_child(water)

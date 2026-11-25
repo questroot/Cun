@@ -1,4 +1,5 @@
 extends RefCounted
+const VFX := preload("res://scripts/scenes/pixel_vfx.gd")
 
 static func tick(boss: Dictionary, delta: float) -> void:
 	if not boss.has("hp_trail") or boss.flash > 0.0:
@@ -18,7 +19,7 @@ static func draw(canvas: CanvasItem, bar: Rect2, boss: Dictionary, color: Color)
 	canvas.draw_rect(bar, Color("#302737"))
 	if trailing > fraction:
 		var lost := Rect2(bar.position + Vector2(bar.size.x * fraction, 0), Vector2(bar.size.x * (trailing - fraction), bar.size.y))
-		canvas.draw_rect(lost, color.lightened(0.32).lerp(Color("#fff3d6"), flash))
+		canvas.draw_texture_rect(VFX.CUE_ART, lost, false, color.lightened(0.32).lerp(Color("#fff3d6"), flash))
 	var remaining := Rect2(bar.position, Vector2(bar.size.x * fraction, bar.size.y))
 	canvas.draw_rect(remaining, color.darkened(0.23).lerp(color.lightened(0.35), flash))
 	canvas.draw_rect(Rect2(remaining.position, Vector2(remaining.size.x, 2)), color.lightened(0.30))

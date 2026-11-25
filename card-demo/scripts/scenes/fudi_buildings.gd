@@ -4,6 +4,7 @@ const Catalog = preload("res://scripts/scenes/building_catalog.gd")
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
 const Art = preload("res://scripts/scenes/fudi_material_art.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
+const VFX := preload("res://scripts/scenes/pixel_vfx.gd")
 const RIPPLE_PERIOD := 2.4
 var game
 var rng := RandomNumberGenerator.new()
@@ -17,11 +18,11 @@ func play_visible() -> Dictionary:
 	if game == null or game._paused() or game.finished: return {}
 	var door: Vector2 = game.world_to_screen(Catalog.entrance(game.region))
 	if not game.ARENA.has_point(door): return {}
-	var result := {"entrance":{"x":door.x,"y":door.y},"activation_radius":Catalog.RADIUS*game.WORLD_ZOOM,"appearance":"建筑入口光圈，走入自动生效"}
+	var result := {"entrance":{"x":door.x,"y":door.y},"activation_radius":Catalog.RADIUS*game.WORLD_ZOOM,"appearance":"建筑入口有贴地涟漪，靠近自动生效"}
 	var rect := Catalog.footprint(game.region)
 	var label_origin: Vector2 = door+Vector2(-rect.size.x*0.45,-132)*game.WORLD_ZOOM
 	var effect: Dictionary = Catalog.EFFECTS[states[game.region].effect]
-	var text := "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益",effect.name,effect.description]
+	var text := "%s【%s】%s · 靠近入口获得60秒" % ["增益" if effect.positive else "减益",effect.name,effect.description]
 	var font := ThemeDB.fallback_font
 	var text_size := font.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,17)
 	var bounds := Rect2(label_origin-Vector2(0,font.get_ascent(17))*game.WORLD_ZOOM,text_size*game.WORLD_ZOOM)
@@ -106,7 +107,7 @@ func summary(id: String) -> String:
 	var effect: String = states[id].effect
 	var config: Dictionary = Catalog.EFFECTS[effect]
 	var door := Catalog.entrance(id)
-	return "%s · %s【%s】%s\n入口%d,%d；进入光圈获得60秒效果。同类替换，增益/减益各保留一种；本轮已触发%d次。" % [data.name, "增益" if config.positive else "减益", config.name, config.description, int(door.x), int(door.y), states[id].visits]
+	return "%s · %s【%s】%s\n入口%d,%d；靠近入口获得60秒效果。同类替换，增益/减益各保留一种；本轮已触发%d次。" % [data.name, "增益" if config.positive else "减益", config.name, config.description, int(door.x), int(door.y), states[id].visits]
 
 func status_text() -> String:
 	var lines: Array[String] = []
@@ -115,7 +116,7 @@ func status_text() -> String:
 			var status: Dictionary = active[slot]
 			var data: Dictionary = Catalog.EFFECTS[status.effect]
 			lines.append("%s %s · %s · %d秒" % ["增益" if data.positive else "减益", data.name, data.description, ceili(status.left)])
-	return "\n".join(lines) if not lines.is_empty() else "建筑：绿光增益 / 紫光减益\n走进入口光圈获得60秒效果；M / B查看"
+	return "\n".join(lines) if not lines.is_empty() else "建筑：绿光增益 / 紫光减益\n靠近入口获得60秒效果；M / B查看"
 
 func refresh() -> void:
 	if banner != null:
@@ -148,21 +149,9 @@ func draw_world() -> void:
 
 func _draw_entrance(canvas: Control, id: String, door: Vector2, w: float, trim: Color, tint: Color) -> void:
 	var data: Dictionary = Catalog.REGIONS[id]
-	# The steady rim marks the activation boundary while the waves fade inside it.
-	canvas.draw_circle(door, Catalog.RADIUS, Color(tint, 0.055))
-	canvas.draw_arc(door, Catalog.RADIUS - 3.0, 0, TAU, 64, Color(tint, 0.12), 7.0, true)
-	canvas.draw_arc(door, Catalog.RADIUS, 0, TAU, 64, Color(tint, 0.68), 2.0, true)
-	var crest := tint.lerp(Color.WHITE, 0.3)
-	for wave in range(3):
-		var progress := fposmod(ripple_time / RIPPLE_PERIOD + float(wave) / 3.0, 1.0)
-		var radius := lerpf(15.0, Catalog.RADIUS - 4.0, progress)
-		var strength := sin(progress * PI) * (1.0 - 0.35 * progress)
-		canvas.draw_arc(door, radius, 0, TAU, 48, Color(tint, 0.16 * strength), 5.0, true)
-		canvas.draw_arc(door, radius, 0, TAU, 48, Color(crest, 0.65 * strength), 1.6, true)
-	var marker := PackedVector2Array([door + Vector2(0, -11), door + Vector2(11, 0), door + Vector2(0, 11), door + Vector2(-11, 0)])
-	canvas.draw_colored_polygon(marker, Color(crest, 0.68))
+	VFX.draw(canvas, "building-ripple", door, ripple_time * (0.96 / RIPPLE_PERIOD), Vector2(2, 2), 0.0, tint.lerp(Color.WHITE, 0.34), true)
 	var effect: Dictionary = Catalog.EFFECTS[states[id].effect]
-	var description := "%s【%s】%s · 走进光圈获得60秒" % ["增益" if effect.positive else "减益", effect.name, effect.description]
+	var description := "%s【%s】%s · 靠近入口获得60秒" % ["增益" if effect.positive else "减益", effect.name, effect.description]
 	var font := ThemeDB.fallback_font
 	var label_width := maxf(font.get_string_size(data.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 23).x, font.get_string_size(description, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x)
 	canvas.draw_style_box(UI.hud_panel(Color(0.04, 0.10, 0.12, 0.9)), Rect2(door + Vector2(-w * 0.45 - 10, -186), Vector2(label_width + 20, 66)))

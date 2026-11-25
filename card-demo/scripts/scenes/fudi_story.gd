@@ -1,6 +1,7 @@
 extends Node
 ## One playable local story: preparation, safety, repair and a usable shared stove.
 const Maps = preload("res://scripts/scenes/fudi_maps.gd")
+const VFX := preload("res://scripts/scenes/pixel_vfx.gd")
 const UI = preload("res://scripts/scenes/exploration_style.gd")
 var game
 var state := {"stage": 0, "meals": 0}
@@ -84,10 +85,10 @@ func draw_world() -> void:
 	var point := Maps.site_position("grove", 0)
 	var color := Color("#ffd18a") if state.stage == 3 else Color("#b9dbc0")
 	var canvas: Control = game.world_canvas
-	canvas.draw_arc(point, 54, 0, TAU, 40, color, 3, true)
+	VFX.cue_arc(canvas, point, 54.0, 0.0, TAU, 3.0, color)
 	canvas.draw_string(ThemeDB.fallback_font, point + Vector2(-100, -66), "祝婶的热汤 · E" if state.stage == 3 else "祝婶的灶台 · E", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, color)
 	if state.stage == 3:
-		canvas.draw_circle(point + Vector2(0, -22), 18, Color("#f7a54d", 0.65))
+		VFX.draw(canvas, "stove-flame", point - Vector2(0, 28), game.loot_glint_time * (0.96 / 1.25), Vector2.ONE, 0.0, Color.WHITE, true)
 		for x: int in [-40, 40]:
 			canvas.draw_circle(point + Vector2(x, 12), 9, Color("#f5e7c9"))
 			canvas.draw_arc(point + Vector2(x, 5), 9, PI, TAU, 12, Color("#eeb86b"), 2, true)
