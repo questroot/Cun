@@ -202,5 +202,16 @@ $manifest.files[0].name = '../escape.exe'
 $blocked = $false
 try { Initialize-CunBundledEngine $paths | Out-Null } catch { $blocked = $true }
 Assert-Cun $blocked 'Unsafe entry descriptors cannot escape the local cache'
+$channel = Join-Path $tempRoot 'fake session'
+$entryScene = 'scenes/AddedGame.tscn'
+[IO.File]::WriteAllText((Join-Path $paths.Project $entryScene),'[gd_scene format=3]')
+$run = Start-CunProject $paths $fixture 'Game' -ParentWindow 123456 -EntryScene $entryScene -WarmChannel $channel
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Registered scene can launch without a hardcoded route'
+$argv = [IO.File]::ReadAllLines($env:CUN_FIXTURE_ARGS)
+Assert-Cun (($argv -join '|') -ceq "--wid|123456|--single-window|--position|-30000,-30000|--path|$($paths.Project)|res://$entryScene|--|--cun-scroll|--cun-warm|$channel") 'Resident launch preserves exact scene and opaque local channel arguments'
+$run.Process.Dispose()
+[IO.File]::WriteAllText($channel + '.stop','')
+$run = Start-CunProject $paths $fixture 'Game' -ParentWindow 123456 -EntryScene $entryScene -WarmChannel $channel
+Assert-Cun ($null -eq $run) 'A retired prewarm never launches another GUI process'
 Remove-Item Env:CUN_FIXTURE_ARGS,Env:CUN_FIXTURE_VERSION -ErrorAction SilentlyContinue
 Write-Output ('LAUNCHER TESTS PASS: ' + $script:checks + ' checks. Fixture results are not Godot/gameplay verification.')

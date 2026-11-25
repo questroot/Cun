@@ -210,7 +210,7 @@ function Get-CunBlockingImportError {
 }
 
 function Invoke-CunProjectImport {
-    param([hashtable]$Paths, [string]$EnginePath, [switch]$NoGlobalClasses)
+    param([hashtable]$Paths, [string]$EnginePath, [switch]$NoGlobalClasses, [string]$StopFile = '')
     Get-CunProjectInfo $Paths | Out-Null
     $process = New-Object Diagnostics.Process
     $process.StartInfo.FileName = $EnginePath
@@ -225,7 +225,11 @@ function Invoke-CunProjectImport {
         if (-not $process.Start()) { throw '无法启动资源导入。' }
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit(180000)) { $process.Kill(); throw '资源导入超过3分钟，已停止本次导入，未启动游戏。' }
+        $wait = [Diagnostics.Stopwatch]::StartNew()
+        while (-not $process.WaitForExit(120)) {
+            if ($StopFile -and [IO.File]::Exists($StopFile)) { $process.Kill(); $process.WaitForExit(); return }
+            if ($wait.ElapsedMilliseconds -ge 180000) { $process.Kill(); throw '资源导入超过3分钟，已停止本次导入，未启动游戏。' }
+        }
         $output = $stdout.Result + "`n" + $stderr.Result
         if ($output) { Write-CunLog $Paths $output }
         if ($process.ExitCode -ne 0) { throw ('Godot 资源导入失败，退出码：' + $process.ExitCode) }
@@ -278,7 +282,7 @@ function Get-CunImportStamp {
 }
 
 function Initialize-CunGameResources {
-    param([hashtable]$Paths, [string]$EnginePath, [switch]$NoGlobalClasses, [switch]$ReuseImport)
+    param([hashtable]$Paths, [string]$EnginePath, [switch]$NoGlobalClasses, [switch]$ReuseImport, [string]$StopFile = '')
     if (-not $ReuseImport) { Invoke-CunProjectImport $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses; return }
     $receipt = Join-Path $Paths.Project '.godot\.cun-import-v1'
     if ([IO.File]::Exists($receipt)) {
@@ -292,7 +296,8 @@ function Initialize-CunGameResources {
         [IO.File]::Delete($receipt)
     }
     $sources = Get-CunImportStamp $Paths.Project $EnginePath -SourcesOnly
-    Invoke-CunProjectImport $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses
+    Invoke-CunProjectImport $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses -StopFile $StopFile
+    if ($StopFile -and [IO.File]::Exists($StopFile)) { return }
     if ($sources -and $sources -ceq (Get-CunImportStamp $Paths.Project $EnginePath -SourcesOnly)) {
         $stamp = Get-CunImportStamp $Paths.Project $EnginePath
         if ($stamp) {
@@ -303,9 +308,14 @@ function Initialize-CunGameResources {
 }
 
 function Start-CunProject {
-    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi', 'Water')][string]$Game = 'Menu', [switch]$NoGlobalClasses, [long]$ParentWindow = 0)
+    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi', 'Water')][string]$Game = 'Menu', [switch]$NoGlobalClasses, [long]$ParentWindow = 0, [string]$EntryScene = '', [string]$WarmChannel = '')
     $project = Get-CunProjectInfo $Paths
+    $stop = if ($WarmChannel) { $WarmChannel + '.stop' } else { '' }
     $launchArguments = Get-CunLaunchArguments $Paths $Mode $Game
+    if ($EntryScene) {
+        if (-not (Test-Path -LiteralPath (Join-Path $Paths.Project $EntryScene) -PathType Leaf)) { throw ('缺少游戏入口：' + $EntryScene) }
+        $launchArguments += ('res://' + $EntryScene)
+    }
     if ($ParentWindow -gt 0) {
         if ($Mode -ne 'Game') { throw 'Only games may use the embedded launch path.' }
         # Godot creates an owned borderless window first. Start it out of view until
@@ -316,7 +326,9 @@ function Start-CunProject {
         $engine = Get-CunEngineInfo $EnginePath $project.RequiredVersion
         if (-not $engine.Ready) { throw $engine.Message }
     }
-    if ($Mode -eq 'Game') { Initialize-CunGameResources $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses -ReuseImport:($ParentWindow -gt 0) }
+    if ($WarmChannel) { $launchArguments += @('--cun-warm',$WarmChannel) }
+    if ($Mode -eq 'Game') { Initialize-CunGameResources $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses -ReuseImport:($ParentWindow -gt 0) -StopFile $stop }
+    if ($stop -and [IO.File]::Exists($stop)) { return }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = $EnginePath
     $info.Arguments = (($launchArguments | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' ')

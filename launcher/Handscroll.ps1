@@ -6,7 +6,7 @@ try {
     $framework = [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()
     $csc = Join-Path $framework 'csc.exe'
     $wpf = Join-Path $framework 'WPF'
-    $sources = @('ScrollArtwork.cs','ScrollWindow.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
+    $sources = @('ScrollArtwork.cs','ScrollWindow.cs','ScrollCatalog.cs') | ForEach-Object { Join-Path $PSScriptRoot $_ }
     $sha = [Security.Cryptography.SHA256]::Create()
     try {
         $inputs = @($PSCommandPath) + $sources

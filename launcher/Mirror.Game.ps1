@@ -2,10 +2,11 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('city', 'fudi', 'water', 'ferry')][string]$Game,
+    [ValidatePattern('^[a-z][a-z0-9-]{0,31}$')][string]$Game,
     [string]$EnginePath = '',
     [long]$ParentWindow = 0,
-    [switch]$IsolatedFerry
+    [switch]$IsolatedFerry,
+    [string]$WarmToken = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,6 +17,23 @@ try {
     # The desktop launcher does not attach to an inherited play bridge.
     Remove-Item Env:CUN_PLAY_PORT,Env:CUN_PLAY_TOKEN -ErrorAction SilentlyContinue
     if ($IsolatedFerry -and $Game -ne 'ferry') { throw '隔离试玩仅支持末班渡船。' }
+    $rows = @(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'entries.tsv') -Encoding UTF8 | Where-Object { $_ -and -not $_.StartsWith('#') } | ForEach-Object { ,($_ -split "`t") })
+    $channel = ''
+    if ($Game -eq 'warm') {
+        if ($ParentWindow -le 0 -or $WarmToken -cnotmatch '^[a-f0-9]{32}$') { throw '无效的大厅预热会话。' }
+        $entry = $rows | Where-Object { $_[4] -ceq 'warm' } | Select-Object -First 1
+        $channel = Join-Path $paths.Local ('handscroll-session\' + $WarmToken)
+    } else {
+        $entry = $rows | Where-Object { $_[0] -ceq $Game } | Select-Object -First 1
+    }
+    if (-not $entry -or $entry.Length -ne 5) { throw '未找到有效游戏入口。' }
+    foreach ($relative in @($entry[2],$entry[3])) {
+        if ($relative -cnotmatch '^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$' -or ($relative.Split('/') | Where-Object { $_ -in '.','..' })) { throw '入口必须使用工程内相对路径。' }
+    }
+    if ($entry[3] -cnotmatch '\.tscn$') { throw '入口必须为 Godot 场景。' }
+    $paths.Project = Join-Path $paths.Root $entry[2]
+    $paths.ProjectFile = Join-Path $paths.Project 'project.godot'
+    $scene = if ($channel) { 'scenes/LauncherWarm.tscn' } else { $entry[3] }
     # This distinction is specific to the new lobby; leave the classic entry's behavior intact.
     if ($Game -eq 'water') {
         $scripts = Join-Path $paths.Project 'scripts\scenes'
@@ -36,7 +54,7 @@ try {
             $EnginePath = & $discover $paths
         }
     }
-    if ($Game -eq 'ferry') {
+    if ($IsolatedFerry) {
         $play = Join-Path $paths.Root 'activities\last-ferry\Play.ps1'
         $activity = Join-Path $paths.Root 'activities\last-ferry\game'
         $activityPaths = $paths.Clone()
@@ -110,12 +128,11 @@ try {
         }
         # Use the project's own run/main_scene. The shared runner bounds import
         # time and returns the engine process (or its wait-and-exit-code wrapper).
-        $run = Start-CunProject $activityPaths $EnginePath 'Game' -SkipVersionCheck -NoGlobalClasses -ParentWindow $ParentWindow
+        $run = Start-CunProject $activityPaths $EnginePath 'Game' -SkipVersionCheck -NoGlobalClasses -ParentWindow $ParentWindow -EntryScene $scene
     } else {
-        $target = @{ city = 'Spirit'; fudi = 'Fudi'; water = 'Water' }[$Game]
-        # The shared runner validates exact scene availability before import.
-        $run = Start-CunProject $paths $EnginePath 'Game' -Game $target -ParentWindow $ParentWindow
+        $run = Start-CunProject $paths $EnginePath 'Game' -ParentWindow $ParentWindow -EntryScene $scene -WarmChannel $channel -NoGlobalClasses:($entry[4] -eq 'ondemand')
     }
+    if (-not $run -and $channel -and [IO.File]::Exists($channel + '.stop')) { exit 0 }
     [Console]::Out.WriteLine(('Mirror engine launcher started: game={0}; launch_pid={1}' -f $Game, $run.Process.Id))
     $run.Process.WaitForExit()
     $exitCode = $run.Process.ExitCode
@@ -124,7 +141,7 @@ try {
     $errText = $run.Stderr.Result
     if ($outText) { [Console]::Out.WriteLine($outText) }
     if ($errText) { [Console]::Error.WriteLine($errText) }
-    if ($ParentWindow -gt 0 -and $Game -ne 'ferry' -and $exitCode -eq 42) { exit 42 }
+    if ($ParentWindow -gt 0 -and $exitCode -eq 42) { exit 42 }
     if ($exitCode -ne 0 -or ($outText + "`n" + $errText) -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error)') {
         throw '游戏报告运行错误，请查看启动日志。'
     }

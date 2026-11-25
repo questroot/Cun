@@ -13,7 +13,18 @@ const SEA_BACKUP := "user://sea_chapter_v1.json.bak"
 var sea_save_error := ""
 
 func _ready() -> void:
-	load_sea_save()
+	if "--cun-warm" not in OS.get_cmdline_user_args():
+		load_sea_save()
+
+func launcher_scene_ready(path: String) -> void:
+	# A parked native window may not draw. SceneTree emits scene_changed
+	# after the scene enters the tree; let deferred setup run before mounting.
+	await get_tree().process_frame
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		get_tree().quit(1)
+	else:
+		file.store_string("ready")
 
 func _read_sea_file(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

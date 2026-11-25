@@ -19,7 +19,8 @@ func _ready() -> void:
 			tables[key] = parsed
 		else:
 			push_error("配置格式错误: " + DATA_PATHS[key])
-	load_save()
+	if "--cun-warm" not in OS.get_cmdline_user_args():
+		load_save()
 
 ## 返回配置拷贝，避免战斗运行态污染原始表。
 func get_entry(table: String, key: String) -> Dictionary:
