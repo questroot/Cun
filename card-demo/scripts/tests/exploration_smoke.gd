@@ -359,7 +359,8 @@ func verify_large_maps() -> void:
 		game.enter_region(id)
 		var extent: Vector2 = Maps.MAPS[id].size
 		if Maps.Art.has_art(id):
-			check(Maps.Art.TEXTURES[id].get_size() == Vector2(1536, 1024), "生成地图成图纹理载入: " + id)
+			var painting := Maps.Art.texture(id)
+			check(painting != null and painting.get_size() == Vector2(1536, 1024) and Maps.Art.texture(id) == painting, "地图按区域载入原版成图并复用: " + id)
 		else:
 			check(id == "snowridge", "第十图保留原场景绘制")
 		check(extent.x >= 3600 and extent.y >= 2400, "实际世界尺寸扩大且超过单屏: " + id)

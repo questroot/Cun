@@ -183,6 +183,14 @@ $manifestPath = Join-Path $bundle 'manifest.json'
 $extracted = Initialize-CunBundledEngine $paths
 Assert-Cun (Test-Path -LiteralPath (Join-Path $extracted $names[0])) 'Verified bundled fixture archive extracts locally'
 Assert-Cun ((Initialize-CunBundledEngine $paths) -eq $extracted) 'Cached bundled files are idempotent'
+$originalGodotOverride = $env:GODOT_EXE
+try {
+    $env:GODOT_EXE = ''
+    Assert-Cun ((Find-CunDesktopEngine $paths) -eq (Join-Path $extracted $names[0])) 'Desktop discovers the cached GUI engine without global search'
+    $env:GODOT_EXE = $fixture
+    Assert-Cun ((Find-CunDesktopEngine $paths) -eq $fixture) 'Desktop honors the explicit environment engine override'
+    Assert-Cun ((Find-CunDesktopEngine $paths (Join-Path $extracted $names[0])) -eq (Join-Path $extracted $names[0])) 'Desktop saved engine retains highest precedence'
+} finally { $env:GODOT_EXE = $originalGodotOverride }
 $manifest.archive_sha256 = '0' * 64
 [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 5), [Text.Encoding]::UTF8)
 $blocked = $false

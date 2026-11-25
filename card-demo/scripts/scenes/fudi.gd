@@ -1141,8 +1141,9 @@ func _draw_minimap() -> void:
 	var extent: Vector2 = Maps.MAPS[region].size
 	minimap.draw_style_box(UI.panel(Color(0.03, 0.08, 0.1, 0.93)), Rect2(Vector2.ZERO, minimap.size))
 	minimap.draw_string(ThemeDB.fallback_font, Vector2(12, 22), "%s  %d × %d" % [Catalog.REGIONS[region].name, int(extent.x), int(extent.y)], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("#e7d4a8"))
-	if Maps.Art.has_art(region):
-		minimap.draw_texture_rect(Maps.Art.TEXTURES[region], rect, false, Color(0.8, 0.8, 0.8))
+	var painting := Maps.Art.texture(region)
+	if painting != null:
+		minimap.draw_texture_rect(painting, rect, false, Color(0.8, 0.8, 0.8))
 	for road: Array in Maps.MAPS[region].roads:
 		var points := PackedVector2Array()
 		for point: Vector2 in road:

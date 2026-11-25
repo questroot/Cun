@@ -21,9 +21,10 @@ static func paint(canvas: CanvasItem, id: String, visible: Rect2) -> void:
 	var extent: Vector2 = data.size
 	var ground := Color(data.ground)
 	var accent := Color(data.accent)
-	if Maps.Art.has_art(id):
+	var painting := Maps.Art.texture(id)
+	if painting != null:
 		canvas.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		canvas.draw_texture_rect(Maps.Art.TEXTURES[id], Rect2(Vector2.ZERO, extent), false)
+		canvas.draw_texture_rect(painting, Rect2(Vector2.ZERO, extent), false)
 		draw_scenery(canvas, id, visible)
 		return
 	canvas.draw_rect(Rect2(Vector2.ZERO, extent), ground)

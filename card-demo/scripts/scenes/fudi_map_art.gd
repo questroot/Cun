@@ -1,20 +1,19 @@
 extends RefCounted
 ## Finished map paintings. Navigation follows the visible roads, never image color guesses.
-const TEXTURES := {
-	"grove": preload("res://assets/backgrounds/fudi/grove.webp"),
-	"post": preload("res://assets/backgrounds/fudi/post.webp"),
-	"quarry": preload("res://assets/backgrounds/fudi/quarry.webp"),
-	"ruins": preload("res://assets/backgrounds/fudi/ruins.webp"),
-	"refuge": preload("res://assets/backgrounds/fudi/refuge.webp"),
-	"wetland": preload("res://assets/backgrounds/fudi/wetland.webp"),
-	"causeway": preload("res://assets/backgrounds/fudi/causeway.webp"),
-	"kilnwood": preload("res://assets/backgrounds/fudi/kilnwood.webp"),
-	"archive": preload("res://assets/backgrounds/fudi/archive.webp"),
-}
+const PAINTED_REGIONS := ["grove", "post", "quarry", "ruins", "refuge", "wetland", "causeway", "kilnwood", "archive"]
+# The world atlas uses the geometry in this script from other games too. Do not
+# decode any Fudi painting unless its region is actually being drawn.
+static var textures: Dictionary[String, Texture2D] = {}
 static var layouts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/backgrounds/fudi/manifest.json")).maps
 
 static func has_art(id: String) -> bool:
-	return TEXTURES.has(id)
+	return id in PAINTED_REGIONS
+
+static func texture(id: String) -> Texture2D:
+	if not has_art(id): return null
+	if not textures.has(id):
+		textures[id] = load("res://assets/backgrounds/fudi/%s.webp" % id) as Texture2D
+	return textures[id]
 
 static func apply_layouts(original: Dictionary) -> Dictionary:
 	var result := original.duplicate(true)

@@ -127,6 +127,25 @@ function Find-CunEngine {
     return ''
 }
 
+# Short-circuit only for the desktop path. Keep explicit overrides and the
+# classic arbitrary-install discovery path; don't scan PATH on each click when
+# the repository's bundled engine is already present.
+function Find-CunDesktopEngine {
+    param([hashtable]$Paths, [string]$SavedPath = '')
+    foreach ($candidate in @($SavedPath, $env:GODOT_EXE)) {
+        if ($candidate -and [IO.Path]::GetExtension($candidate) -ieq '.exe' -and [IO.File]::Exists($candidate)) { return [IO.Path]::GetFullPath($candidate) }
+    }
+    $manifest = Join-Path $Paths.Root '.setup\Godot\manifest.json'
+    try {
+        $entry = ([IO.File]::ReadAllText($manifest,[Text.Encoding]::UTF8) | ConvertFrom-Json).files | Where-Object { $_.name -cmatch '^Godot_v\d+\.\d+\.\d+-stable_win64\.exe$' } | Select-Object -First 1
+        if ($entry) {
+            $file = New-Object IO.FileInfo (Join-Path (Join-Path $Paths.Local 'godot') $entry.name)
+            if ($file.Exists -and $file.Length -eq $entry.bytes -and -not ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { return $file.FullName }
+        }
+    } catch {} # Missing/unusable bundle: ordinary discovery and validation still apply.
+    return Find-CunEngine $Paths $SavedPath
+}
+
 function ConvertTo-CunArgument {
     param([AllowEmptyString()][string]$Value)
     # Windows CommandLineToArgvW quoting, including embedded quotes/trailing backslashes.

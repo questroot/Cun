@@ -29,10 +29,11 @@ try {
     }
     if (-not $EnginePath) {
         $settings = Read-CunSettings $paths
-        $EnginePath = Find-CunEngine $paths $settings.EnginePath
+        $discover = if ($ParentWindow -gt 0) { 'Find-CunDesktopEngine' } else { 'Find-CunEngine' }
+        $EnginePath = & $discover $paths $settings.EnginePath
         if (-not $EnginePath) {
             Initialize-CunBundledEngine $paths | Out-Null
-            $EnginePath = Find-CunEngine $paths
+            $EnginePath = & $discover $paths
         }
     }
     if ($Game -eq 'ferry') {
