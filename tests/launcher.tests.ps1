@@ -48,7 +48,9 @@ public class CunLauncherFixture {
       if (Environment.GetEnvironmentVariable("CUN_FIXTURE_IMPORT_SKIP_CACHE") != "1") {
         string project = args[Array.IndexOf(args, "--path") + 1];
         string cache = Path.Combine(project, ".godot");
-        Directory.CreateDirectory(cache);
+        string artifacts = Path.Combine(cache, "imported");
+        Directory.CreateDirectory(artifacts);
+        File.WriteAllText(Path.Combine(artifacts, "fixture.ctex"), "fixture artifact");
         File.WriteAllText(Path.Combine(cache, "global_script_class_cache.cfg"), "fixture only, not real Godot import");
       }
       return 0;
@@ -102,6 +104,27 @@ Assert-Cun ($run.Process.WaitForExit(5000)) 'Embedded launch passes through the 
 $argv = [IO.File]::ReadAllLines($env:CUN_FIXTURE_ARGS)
 Assert-Cun (($argv -join '|') -ceq "--wid|123456|--single-window|--position|-30000,-30000|--path|$($paths.Project)|res://scenes/WaterActivity.tscn|--|--cun-scroll") 'Embedded route passes exact HWND, scene and handoff flag'
 $run.Process.Dispose()
+$receiptPath = Join-Path $paths.Project '.godot\.cun-import-v1'
+Assert-Cun ([IO.File]::Exists($receiptPath)) 'Successful embedded import writes a local reuse receipt'
+# Failing the import sentinel proves the next call never invokes it on a hit.
+$env:CUN_FIXTURE_IMPORT_ERROR = '1'
+$run = Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Unchanged cached resources bypass the importer'
+$run.Process.Dispose()
+[IO.File]::Delete((Join-Path $paths.Project '.godot\imported\fixture.ctex'))
+$blocked = $false
+try { Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456 | Out-Null } catch { $blocked = $true }
+Assert-Cun ($blocked -and -not [IO.File]::Exists($receiptPath)) 'Deleted import artifact forces validation; failed import leaves no receipt'
+Remove-Item Env:CUN_FIXTURE_IMPORT_ERROR
+$run = Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456
+Assert-Cun ($run.Process.WaitForExit(5000)) 'Clean import recovers after artifact loss'
+$run.Process.Dispose()
+[IO.File]::AppendAllText((Join-Path $paths.Project 'scenes\WaterActivity.tscn'), "`n; resource edit")
+$env:CUN_FIXTURE_IMPORT_ERROR = '1'
+$blocked = $false
+try { Start-CunProject $paths $fixture 'Game' -Game 'Water' -ParentWindow 123456 | Out-Null } catch { $blocked = $true }
+Assert-Cun ($blocked -and -not [IO.File]::Exists($receiptPath)) 'Source changes invalidate the import receipt'
+Remove-Item Env:CUN_FIXTURE_IMPORT_ERROR
 $shell = [PowerShell]::Create()
 $task = { param($CoreFile, $Paths, $Engine) $ErrorActionPreference='Stop'; . $CoreFile; Start-CunProject $Paths $Engine 'Game' }
 $shell.AddScript($task.ToString()).AddArgument((Join-Path $root 'launcher\Launcher.Core.ps1')).AddArgument($paths).AddArgument($fixture) | Out-Null

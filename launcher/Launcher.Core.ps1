@@ -218,6 +218,71 @@ function Invoke-CunProjectImport {
     } finally { $process.Dispose() }
 }
 
+# Reuse only imports performed successfully by this launcher. Include the actual
+# imported artifacts (not just the class cache) so partial cleanup forces a rebuild.
+function Get-CunImportStamp {
+    param([string]$Project, [string]$EnginePath, [switch]$SourcesOnly)
+    $lines = New-Object 'System.Collections.Generic.List[string]'
+    $pending = New-Object 'System.Collections.Generic.Stack[System.IO.DirectoryInfo]'
+    try {
+        $projectDir = New-Object IO.DirectoryInfo $Project
+        $pending.Push($projectDir)
+        if (-not $SourcesOnly) {
+            $engine = New-Object IO.FileInfo $EnginePath
+            if (-not $engine.Exists) { return }
+            $lines.Add(('engine|{0}|{1}|{2}' -f $engine.FullName,$engine.Length,$engine.LastWriteTimeUtc.Ticks))
+            $cache = Join-Path $Project '.godot'
+            $pending.Push((New-Object IO.DirectoryInfo (Join-Path $cache 'imported')))
+            foreach ($name in 'uid_cache.bin','global_script_class_cache.cfg') {
+                $f = New-Object IO.FileInfo (Join-Path $cache $name)
+                if ($f.Exists) { $lines.Add(('{0}|{1}|{2}' -f $name,$f.Length,$f.LastWriteTimeUtc.Ticks)) }
+            }
+        }
+        while ($pending.Count -gt 0) {
+            $dir = $pending.Pop()
+            if ($dir.Attributes -band [IO.FileAttributes]::ReparsePoint) { return }
+            foreach ($f in $dir.EnumerateFileSystemInfos()) {
+                if ($f.Attributes -band [IO.FileAttributes]::ReparsePoint) { return }
+                if ($f -is [IO.DirectoryInfo]) {
+                    if (($dir.FullName -eq $Project -and $f.Name -eq '.godot') -or $f.Name -eq '.git') { continue }
+                    $pending.Push($f)
+                } elseif (-not $SourcesOnly -or $f.Extension -notin '.uid','.import') {
+                    $lines.Add(('{0}|{1}|{2}' -f $f.FullName.Substring($projectDir.FullName.Length),$f.Length,$f.LastWriteTimeUtc.Ticks))
+                }
+            }
+        }
+    } catch { return } # An unverifiable tree never qualifies for fast launch.
+    $lines.Sort([StringComparer]::Ordinal)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return [Convert]::ToBase64String($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($lines -join "`n")))) }
+    finally { $sha.Dispose() }
+}
+
+function Initialize-CunGameResources {
+    param([hashtable]$Paths, [string]$EnginePath, [switch]$NoGlobalClasses, [switch]$ReuseImport)
+    if (-not $ReuseImport) { Invoke-CunProjectImport $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses; return }
+    $receipt = Join-Path $Paths.Project '.godot\.cun-import-v1'
+    if ([IO.File]::Exists($receipt)) {
+        $savedStamp = try { [IO.File]::ReadAllText($receipt) } catch { '' }
+        $stamp = Get-CunImportStamp $Paths.Project $EnginePath
+        if ($stamp -and $savedStamp -ceq $stamp -and ($NoGlobalClasses -or [IO.File]::Exists((Join-Path $Paths.Project '.godot\global_script_class_cache.cfg')))) {
+            Write-CunLog $Paths 'Reusing validated Godot resource import.'
+            return
+        }
+        # Invalidate the old success before importing. Never keep it on failure.
+        [IO.File]::Delete($receipt)
+    }
+    $sources = Get-CunImportStamp $Paths.Project $EnginePath -SourcesOnly
+    Invoke-CunProjectImport $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses
+    if ($sources -and $sources -ceq (Get-CunImportStamp $Paths.Project $EnginePath -SourcesOnly)) {
+        $stamp = Get-CunImportStamp $Paths.Project $EnginePath
+        if ($stamp) {
+            # A partial write cannot match the stamp at the next launch.
+            try { [IO.File]::WriteAllText($receipt,$stamp,[Text.Encoding]::ASCII) } catch { Write-CunLog $Paths 'Could not record resource import reuse; next launch will re-import.' }
+        }
+    }
+}
+
 function Start-CunProject {
     param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi', 'Water')][string]$Game = 'Menu', [switch]$NoGlobalClasses, [long]$ParentWindow = 0)
     $project = Get-CunProjectInfo $Paths
@@ -232,7 +297,7 @@ function Start-CunProject {
         $engine = Get-CunEngineInfo $EnginePath $project.RequiredVersion
         if (-not $engine.Ready) { throw $engine.Message }
     }
-    if ($Mode -eq 'Game') { Invoke-CunProjectImport $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses }
+    if ($Mode -eq 'Game') { Initialize-CunGameResources $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses -ReuseImport:($ParentWindow -gt 0) }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = $EnginePath
     $info.Arguments = (($launchArguments | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' ')

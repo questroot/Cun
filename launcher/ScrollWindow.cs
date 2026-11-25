@@ -34,7 +34,7 @@ namespace Cun {
         IntPtr hostHandle, gameHandle;
         uint enginePid;
         bool closeRequested;
-        double launchTime, closeTime;
+        double launchTime, closeTime, nextFitCheck, fitCheckUntil;
         static readonly FontFamily Serif = new FontFamily("Georgia, KaiTi, SimSun");
         const int WindowStyleIndex = -16, ExStyle = -20, WmClose = 0x10;
         const uint Child = 0x40000000, Popup = 0x80000000;
@@ -84,9 +84,14 @@ namespace Cun {
         void SetUI(bool hall,bool overview,string button){foreach(var b in places)b.Visibility=hall?Visibility.Visible:Visibility.Collapsed;foreach(var t in new[]{press,title,credit,edition})t.Opacity=overview?1:0;action.Content=button;action.Visibility=button==null?Visibility.Hidden:Visibility.Visible;AutomationProperties.SetName(action,button??"");}
         void Open(){phaseStart=clock.Elapsed.TotalSeconds;phase=Phase.Opening;notice.Text="";art.Zoom=0;art.Open=0;SetUI(false,true,"跳过展卷  Esc");if(!animate)Hall(false);else art.InvalidateVisual();}
         void Hall(bool focus){phase=Phase.Hall;notice.Text="";art.Open=1;art.Zoom=0;SetUI(true,true,"重展手卷 ↶");if(focus&&places[chosen].IsEnabled)places[chosen].Focus();art.InvalidateVisual();}
-        void Enter(int i){if(phase!=Phase.Hall||!places[i].IsEnabled)return;phase=Phase.Entering;phaseStart=clock.Elapsed.TotalSeconds;chosen=i;art.Selection=i;SetUI(false,false,null);notice.Text="";}
-        void Tick(){if(!laidOut)return;double now=clock.Elapsed.TotalSeconds,dt=now-phaseStart;if(phase==Phase.Playing){PollGame(now);return;}if(WindowState==WindowState.Minimized)return;if(phase==Phase.Hall||phase==Phase.Failed){if(!animate||!IsActive||now-lastAmbient<.066)return;lastAmbient=now;}art.TimeSeconds=animate?now:0;
-            if(phase==Phase.Opening){art.Open=Smooth((dt-.16)/2.56);if(dt>=3)Hall(false);}else if(phase==Phase.Entering){art.Zoom=animate?Smooth(dt/.92):1;if(!animate||dt>=.92)StartGame();}art.InvalidateVisual();}
+        void Enter(int i){if(phase!=Phase.Hall||!places[i].IsEnabled)return;phase=Phase.Entering;phaseStart=clock.Elapsed.TotalSeconds;chosen=i;art.Selection=i;SetUI(false,false,null);StartGame();}
+        void Tick(){if(!laidOut)return;double now=clock.Elapsed.TotalSeconds,dt=now-phaseStart;
+            if(phase==Phase.Entering){
+                art.TimeSeconds=animate?now:0;art.Zoom=animate?Smooth(dt/.92):1;art.InvalidateVisual();
+                if(!animate||dt>=.92||closeRequested){phase=Phase.Playing;if(!closeRequested)notice.Text="正在进入「"+names[chosen]+"」…";PollGame(now);}return;
+            }
+            if(phase==Phase.Playing){PollGame(now);return;}if(WindowState==WindowState.Minimized)return;if(phase==Phase.Hall||phase==Phase.Failed){if(!animate||!IsActive||now-lastAmbient<.066)return;lastAmbient=now;}art.TimeSeconds=animate?now:0;
+            if(phase==Phase.Opening){art.Open=Smooth((dt-.16)/2.56);if(dt>=3)Hall(false);}art.InvalidateVisual();}
         void Append(string s){lock(logLock){File.AppendAllText(log,s+Environment.NewLine,new UTF8Encoding(false));}}
         void Fail(string message){phase=Phase.Failed;SetUI(false,false,"返回全卷 ↶");notice.Text=message;action.Focus();}
         void Log(string s){try{Append(s);}catch(IOException){}catch(UnauthorizedAccessException){}}
@@ -118,18 +123,27 @@ namespace Cun {
                 Log("Desktop mount failed: game="+ids[chosen]);PostMessage(found,WmClose,IntPtr.Zero,IntPtr.Zero);return;
             }
             gameHandle=found;notice.Text="";FitGame();
-            Log("Desktop mounted: game="+ids[chosen]+"; hwnd="+found.ToInt64());
-            if(closeRequested)PostMessage(found,WmClose,IntPtr.Zero,IntPtr.Zero);
-            else {ShowWindow(found,4);FocusGame();}
+            nextFitCheck=clock.Elapsed.TotalSeconds+.20;fitCheckUntil=nextFitCheck+1;
+            Log("Desktop mounted: game="+ids[chosen]+"; hwnd="+found.ToInt64()+"; click_ms="+Math.Round((clock.Elapsed.TotalSeconds-launchTime)*1000).ToString(CultureInfo.InvariantCulture));
+            ShowWindow(found,4);FocusGame();
+            if(closeRequested){closeRequested=false;RequestGameClose();}
         }
         void RequestGameClose(){
+            uint pid;if(gameHandle!=IntPtr.Zero&&GetWindowThreadProcessId(gameHandle,out pid)!=0&&pid==enginePid){
+                // The game may show a save prompt or decline close. Do not latch
+                // this request once it has been delivered: × must work again.
+                PostMessage(gameHandle,WmClose,IntPtr.Zero,IntPtr.Zero);return;
+            }
             if(closeRequested)return;closeRequested=true;closeTime=clock.Elapsed.TotalSeconds;notice.Text="正在退出…";
-            uint pid;if(gameHandle!=IntPtr.Zero&&GetWindowThreadProcessId(gameHandle,out pid)!=0&&pid==enginePid)
-                PostMessage(gameHandle,WmClose,IntPtr.Zero,IntPtr.Zero);
         }
         void PollGame(double now){
             if(game==null||game.HasExited)return;
             if(enginePid!=0&&gameHandle==IntPtr.Zero)MountGame();
+            // The engine can still apply its initial bounds after it becomes visible.
+            // Reconcile client size briefly across the first frames, then use resize events.
+            if(gameHandle!=IntPtr.Zero&&nextFitCheck>0&&now>=nextFitCheck){
+                FitGame();nextFitCheck=now<fitCheckUntil?now+.25:0;
+            }
             // A normal exit is requested through Godot's window-close event. If
             // the user closes during import, the request is delivered on mount.
             if(closeRequested&&now-closeTime>4&&gameHandle==IntPtr.Zero)
@@ -137,7 +151,7 @@ namespace Cun {
             else if(!closeRequested&&now-launchTime>20&&gameHandle==IntPtr.Zero)
                 notice.Text="仍在准备「"+names[chosen]+"」…";
         }
-        void StartGame(){if(phase!=Phase.Entering)return;phase=Phase.Playing;SetUI(false,false,null);notice.Text="正在进入「"+names[chosen]+"」…  首次启动需要准备游戏资源。";
+        void StartGame(){if(phase!=Phase.Entering)return;notice.Text="";
             enginePid=0;gameHandle=IntPtr.Zero;closeRequested=false;launchTime=clock.Elapsed.TotalSeconds;
             var p=new Process();string adapter=Path.Combine(root,"launcher/Mirror.Game.ps1"), id=ids[chosen];
             p.StartInfo=new ProcessStartInfo(Path.Combine(Environment.SystemDirectory,@"WindowsPowerShell\v1.0\powershell.exe"),"-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \""+adapter+"\" -Game "+id+" -ParentWindow "+hostHandle.ToInt64().ToString(CultureInfo.InvariantCulture)){WorkingDirectory=root,UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};
