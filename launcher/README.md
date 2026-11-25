@@ -1,13 +1,15 @@
 # Windows 游戏启动器
 
-**《山海行卷·竹影》大厅视觉预览**：[6 秒演示](handscroll-bamboo/preview.mp4) · [离线交互页面](handscroll-bamboo/index.html)。下载 HTML 后直接用浏览器打开，无需安装依赖；可展卷、点入四境并返回。此版不启动游戏，原启动器用法不变。
+**正式入口：《山海行卷·竹影》**。Windows 双击仓库根目录的 [Launch.cmd](../Launch.cmd)，保持启动窗口开启，默认浏览器会自动打开卷轴。点画中一境即可启动对应 Godot 游戏，无需再次确认；首次导入可能较慢。正常关闭游戏窗口，页面会恢复到刚才的入口。不安装 Python/Node，不要求管理员权限，服务只监听本机回环地址。启动诊断见 `.local/mirror-launch.log` 与 `.local/launcher.log`。打不开默认浏览器时可复制控制台显示的本机地址；想切回原界面，使用 [Launch-Classic.cmd](../Launch-Classic.cmd)。
+
+[6 秒演示](handscroll-bamboo/preview.mp4) · [同一画面的离线预览](handscroll-bamboo/index.html)：直接打开 HTML 仅浏览，不启动游戏。
 
 支持已有“灵伴回合冒险”与新增“福地”动作试玩，共用现有 Godot 工程；不是独立游戏安装包。福地试玩不代表候选石化世界全部玩法已实施。
 
-## 使用
+## 经典启动器用法
 
 1. 下载/克隆**完整仓库**，保留 `card-demo/` 和 `launcher/`；不要只下载一个脚本。
-2. Windows 双击根 [Launch.cmd](../Launch.cmd)，进入原生桌面启动器。
+2. Windows 双击根 [Launch-Classic.cmd](../Launch-Classic.cmd)，进入经典 WPF 窗口。
 3. 发现已有Godot则检测版本；完整仓库已包含 [4.7.2压缩包](../.setup/Godot/README.md)，没有已有引擎时会校验并解压到 `.local/godot/`，不联网。也可点“选择Godot”手动指定可信的Windows编辑器 `.exe`。
 4. 在下拉框选择“游戏选择大厅 / 灵伴回合冒险 / 福地”，环境就绪后点“启动游戏”。启动器先在后台执行Godot资源/脚本导入，完成且无错误后才打开选择的游戏；界面会显示准备状态，首次需要等待。需要开发时点“在Godot编辑器打开”。
 

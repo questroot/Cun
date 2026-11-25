@@ -1,6 +1,6 @@
 # Cun 共享项目状态
 
-2026-11-25：《山海行卷·竹影》作为[独立交互预览](launcher/handscroll-bamboo/index.html)与[6 秒演示](launcher/handscroll-bamboo/preview.mp4)提供；已验证浏览器四处点选及返回。未替换原生入口，不读写游戏存档。
+2026-11-25：《山海行卷·竹影》成为 Windows [默认启动入口](Launch.cmd)，保留[经典窗口](Launch-Classic.cmd)、[离线预览](launcher/handscroll-bamboo/index.html)及[6 秒演示](launcher/handscroll-bamboo/preview.mp4)。在独立临时存档与无引擎缓存的完整副本中，经根入口、浏览器卷轴、内置 Godot 4.7.2 实测：四境各单击进入正确游戏窗口；正常关窗后均回到原入口、不重播。只验证进出，不代表通关。
 
 最近核对：2026-11-24。维护责任：实际承担本轮工作的成员/Agent。**每次工作先读本文件，结束核对并按事实更新**，规则见 [AGENTS.md](AGENTS.md)。这里只写现状，不把候选当批准、不复制私人对话或大段日志。
 

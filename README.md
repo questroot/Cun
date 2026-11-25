@@ -21,7 +21,7 @@ cd Cun
 .\Launch.cmd
 ```
 
-旧启动器不需要 Python。公开 `main` 的旧启动器可选灵伴、福地或海底水世界；末班渡船有自己的 [Play.cmd](activities/last-ferry/Play.cmd) 入口。仓库随附可校验解压的 [Godot 4.7.2](.setup/Godot/README.md)，首次导入需要等待。已有本地改动的成员请先保留改动，再同步 `main`；环境准备与排障见[启动器说明](launcher/README.md)。
+默认入口是《山海行卷·竹影》：保留启动窗口，在浏览器里的卷轴点选一境即可启动对应游戏，关闭游戏窗口后回到同一处，不重播。无需 Python、Node 或联网。想手动选择引擎或打开编辑器，可双击 [Launch-Classic.cmd](Launch-Classic.cmd)；末班渡船仍可独立用 [Play.cmd](activities/last-ferry/Play.cmd) 启动。仓库随附可校验解压的 [Godot 4.7.2](.setup/Godot/README.md)，首次导入需要等待。已有本地改动的成员请先保留改动，再同步 `main`；环境准备与排障见[启动器说明](launcher/README.md)。
 
 ## 哪些文件需要读？
 

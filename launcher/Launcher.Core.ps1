@@ -176,7 +176,7 @@ function Get-CunLaunchArguments {
 }
 
 function Invoke-CunProjectImport {
-    param([hashtable]$Paths, [string]$EnginePath)
+    param([hashtable]$Paths, [string]$EnginePath, [switch]$NoGlobalClasses)
     Get-CunProjectInfo $Paths | Out-Null
     $process = New-Object Diagnostics.Process
     $process.StartInfo.FileName = $EnginePath
@@ -196,20 +196,20 @@ function Invoke-CunProjectImport {
         if ($output) { Write-CunLog $Paths $output }
         if ($process.ExitCode -ne 0 -or $output -match '(?m)(SCRIPT ERROR:|ERROR:|Parse Error)') { throw '资源/脚本导入报告错误，游戏未启动。请查看启动日志中的具体文件与错误。' }
         $cache = Join-Path $Paths.Project '.godot\global_script_class_cache.cfg'
-        if (-not (Test-Path -LiteralPath $cache -PathType Leaf)) { throw '导入后仍缺少脚本类型缓存，已阻止空白游戏窗口。请查看启动日志。' }
+        if (-not $NoGlobalClasses -and -not (Test-Path -LiteralPath $cache -PathType Leaf)) { throw '导入后仍缺少脚本类型缓存，已阻止空白游戏窗口。请查看启动日志。' }
         Write-CunLog $Paths 'Godot import completed with no reported errors; launching game.'
     } finally { $process.Dispose() }
 }
 
 function Start-CunProject {
-    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi', 'Water')][string]$Game = 'Menu')
+    param([hashtable]$Paths, [string]$EnginePath, [ValidateSet('Game', 'Editor')][string]$Mode = 'Game', [switch]$SkipVersionCheck, [ValidateSet('Menu', 'Spirit', 'Fudi', 'Water')][string]$Game = 'Menu', [switch]$NoGlobalClasses)
     $project = Get-CunProjectInfo $Paths
     $launchArguments = Get-CunLaunchArguments $Paths $Mode $Game
     if (-not $SkipVersionCheck) {
         $engine = Get-CunEngineInfo $EnginePath $project.RequiredVersion
         if (-not $engine.Ready) { throw $engine.Message }
     }
-    if ($Mode -eq 'Game') { Invoke-CunProjectImport $Paths $EnginePath }
+    if ($Mode -eq 'Game') { Invoke-CunProjectImport $Paths $EnginePath -NoGlobalClasses:$NoGlobalClasses }
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = $EnginePath
     $info.Arguments = (($launchArguments | ForEach-Object { ConvertTo-CunArgument $_ }) -join ' ')
@@ -224,7 +224,8 @@ function Start-CunProject {
     if (-not $process.Start()) { throw '进程未能启动。' }
     $stdoutTask = $process.StandardOutput.ReadToEndAsync()
     $stderrTask = $process.StandardError.ReadToEndAsync()
-    Write-CunLog $Paths ('Started ' + $Mode + ' PID=' + $process.Id)
+    # The child is already running; logging must not lose its handle.
+    try { Write-CunLog $Paths ('Started ' + $Mode + ' PID=' + $process.Id) } catch {}
     return @{ Process = $process; Stdout = $stdoutTask; Stderr = $stderrTask; Mode = $Mode }
 }
 
